@@ -1,0 +1,12 @@
+[submodule "Core/Include/External/imgui"]
+	path = Core/Include/External/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "Core/Include/External/glfw"]
+	path = Core/Include/External/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "Core/Include/External/glm"]
+	path = Core/Include/External/glm
+	url = https://github.com/g-truc/glm.git
+[submodule "Core/Include/External/nativefiledialog"]
+	path = Core/Include/External/nativefiledialog
+	url = https://github.com/mlabbe/nativefiledialog.git

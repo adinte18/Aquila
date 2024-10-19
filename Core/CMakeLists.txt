@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 3.10)
+project(Core)
+
+find_package(Vulkan REQUIRED)
+
+add_subdirectory(${CMAKE_SOURCE_DIR}/Core/Include/External/glfw)
+
+set(GLM_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/Core/Include/External/glm)
+
+file(GLOB_RECURSE ENGINE_SOURCES
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine/*.cpp
+)
+
+add_library(Core STATIC ${ENGINE_SOURCES}
+        Include/RenderingSystems/SceneRenderingSystem.h
+        Source/RenderingSystems/SceneRenderingSystem.cpp
+        Include/Engine/ObjectManager.h)
+
+target_include_directories(Core PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/                            # Path to Core headers
+        ${Vulkan_INCLUDE_DIRS}                                          # Vulkan include directories
+        ${GLM_INCLUDE_DIRS}                                             # GLM include directories
+        ${CMAKE_SOURCE_DIR}/Core/Include                                # Path to include directory
+        ${CMAKE_SOURCE_DIR}/Core/Include/External/glfw/include
+)
+
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+    message(STATUS "Building in Debug mode with DEBUG")
+    add_definitions(-DDEBUG)
+else()
+    message(STATUS "Building in Release mode")
+endif()
+
+target_link_libraries(Core PRIVATE ${Vulkan_LIBRARIES} glfw)
