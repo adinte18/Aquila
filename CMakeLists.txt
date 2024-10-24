@@ -14,7 +14,7 @@ set(VALIDATE_COMMANDS)
 foreach(SHADER_FILE ${SHADER_FILES})
     get_filename_component(SHADER_NAME_WE ${SHADER_FILE} NAME_WE)
 
-    set(OUTPUT_FILE ${CMAKE_SOURCE_DIR}/shaders/${SHADER_NAME_WE}.spv)
+    set(OUTPUT_FILE "${CMAKE_SOURCE_DIR}/Resources/Shaders/${SHADER_NAME_WE}.spv")
 
     message("Validating shader: ${SHADER_FILE} -> ${OUTPUT_FILE}")
 

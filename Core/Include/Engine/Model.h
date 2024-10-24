@@ -22,10 +22,15 @@
 #include <glm/gtx/hash.hpp>
 
 #include <memory>
+#include <ECS/Scene.h>
 #include <vector>
 
 #include "Descriptor.h"
 #include "Engine/ObjectManager.h"
+
+namespace ECS {
+    class Scene; // Forward declare the Scene class
+}
 
 namespace std {
     template <typename T, typename... Rest>
@@ -45,7 +50,7 @@ namespace std {
     };
 }
 
-namespace Engine{
+namespace Engine {
     class Model3D
     {
         struct Material {
@@ -82,11 +87,8 @@ namespace Engine{
 
         std::string path;
 
-        std::unique_ptr<DescriptorPool> materialDescriptorPool;
-        std::unique_ptr<DescriptorSetLayout> materialSetLayout;
-
     public:
-        void Load(const std::string& filepath);
+        void Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool);
 
         Model3D(Device &device);
         ~Model3D();
@@ -94,10 +96,12 @@ namespace Engine{
         Model3D(const Model3D&) = delete;
         Model3D& operator=(const Model3D&) = delete;
 
-        static std::unique_ptr<Model3D> create(Device& device);
+        static std::shared_ptr<Model3D> create(Device& device);
         void bind(VkCommandBuffer commandBuffer);
         void draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout);
         void draw(VkCommandBuffer commandBuffer);
+
+        [[nodiscard]] std::string GetPath() const { return path; }
     };
 }
 

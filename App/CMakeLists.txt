@@ -15,13 +15,16 @@ set(IMGUI_SOURCES
         # Include only the necessary backends
         ${EXTERNAL_DIR}/imgui/backends/imgui_impl_glfw.cpp
         ${EXTERNAL_DIR}/imgui/backends/imgui_impl_vulkan.cpp
+
+        # Include ImGuizmo
+        ${EXTERNAL_DIR}/ImGuizmo/ImGuizmo.cpp
 )
 
 # Add Native File Dialog source
 set(NFD_SOURCES
         ${EXTERNAL_DIR}/nativefiledialog/src/nfd_common.c
-        ${EXTERNAL_DIR}/nativefiledialog/src/nfd_win.cpp  # If you're on Windows, choose the right backend
-        # For other platforms (Linux/macOS), replace this with the appropriate source file
+        ${EXTERNAL_DIR}/nativefiledialog/src/nfd_win.cpp  # If you're on Windows
+        # For other platforms (Linux/macOS)
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_gtk.c  # For Linux
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_cocoa.m # For macOS
 )
@@ -40,8 +43,11 @@ target_include_directories(App PUBLIC
         ${EXTERNAL_DIR}/                                                    # Path to external libraries
         ${EXTERNAL_DIR}/imgui/                                              # Path to ImGui
         ${EXTERNAL_DIR}/imgui/backends/                                     # Path to ImGui backends
-        ${EXTERNAL_DIR}/nativefiledialog/src/include                            # Path to Native File Dialog
+        ${EXTERNAL_DIR}/nativefiledialog/src/include                        # Path to Native File Dialog
+        ${EXTERNAL_DIR}/ImGuizmo/                                           # Path to ImGuizmo
 )
+
+add_dependencies(App validate_shaders)
 
 # Link against Core (assuming Core is another target in your project)
 target_link_libraries(App PRIVATE Core)

@@ -8,8 +8,12 @@
 #include <Engine/Device.h>
 #include <Engine/Renderpass.h>
 #include <Engine/Renderer.h>
+#include <ECS/Scene.h>
+#include <Engine/Buffer.h>
 
 #include "Engine/OffscreenRenderer.h"
+#include "RenderingSystems/SceneRenderingSystem.h"
+
 
 namespace Editor {
 
@@ -23,16 +27,37 @@ namespace Editor {
         std::unique_ptr<Engine::Device> device;
         std::unique_ptr<Engine::Renderer> renderer;
         std::unique_ptr<Engine::OffscreenRenderer> offscreenRenderer;
+        std::shared_ptr<RenderingSystem::SceneRenderingSystem> sceneRenderingSystem;
+
         std::unique_ptr<UI> ui;
+        std::unique_ptr<ECS::Scene> scene;
+
+        double lastX = 0;
+        double lastY = 0;
 
         virtual void OnStart() {
             // Initialize window
             window = std::make_unique<Engine::Window>(800, 600, "Aquila Editor");
             device = std::make_unique<Engine::Device>(*window);
+
+            // Initialize renderers
             renderer = std::make_unique<Engine::Renderer>(*window, *device);
             offscreenRenderer = std::make_unique<Engine::OffscreenRenderer>(*device,
-                VkExtent2D{300, 300});
+                VkExtent2D{1920, 1080});
 
+            // Initialize scene
+            scene = std::make_unique<ECS::Scene>(*device);
+
+            std::array<VkDescriptorSetLayout, 2> setLayouts =
+                {scene->GetSceneDescriptorSetLayout().getDescriptorSetLayout(),
+                scene->GetMaterialDescriptorSetLayout().getDescriptorSetLayout()};
+
+            // Initialize scene rendering system
+            sceneRenderingSystem = std::make_shared<RenderingSystem::SceneRenderingSystem>(*device,
+                offscreenRenderer->GetRenderPass(),
+                setLayouts);
+
+            // Initialize UI
             ui = std::make_unique<UI>(*device, *window, renderer->vk_GetCurrentRenderPass());
             ui->OnStart();
         }
@@ -40,6 +65,9 @@ namespace Editor {
         virtual void OnUpdate() {
             // Poll events
             window->pollEvents();
+
+            scene->OnUpdate();
+            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(50.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
 
             //Render ImGui to screen (to swapchain)
             if (auto commandBuffer = renderer->vk_BeginFrame()) {
@@ -49,6 +77,7 @@ namespace Editor {
                 offscreenRenderer->BeginRenderPass(commandBuffer);
                 // !!Render scene here!!
 
+                sceneRenderingSystem->Render(commandBuffer, *scene);
 
                 offscreenRenderer->EndRenderPass(commandBuffer);
 
@@ -57,8 +86,14 @@ namespace Editor {
                 //*************************************************
                 renderer->vk_BeginSwapChainRenderPass(commandBuffer);
 
+
+                //Maybe expensive? Temporary
+                if (scene->sceneView != offscreenRenderer->GetFramebuffer().GetDescriptorSet()) {
+                    scene->sceneView = offscreenRenderer->GetFramebuffer().GetDescriptorSet();
+                }
+
                 // Render UI
-                ui->OnUpdate(commandBuffer, offscreenRenderer->GetFramebuffer().GetDescriptorSet());
+                ui->OnUpdate(commandBuffer, *scene);
 
                 //End render pass
                 renderer->vk_EndSwapChainRenderPass(commandBuffer);

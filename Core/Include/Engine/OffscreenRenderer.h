@@ -14,7 +14,7 @@ namespace Engine {
     class OffscreenRenderer {
 
     public:
-        OffscreenRenderer(Device& device, VkExtent2D extent = {800, 600});
+        OffscreenRenderer(Device& device, VkExtent2D extent = {1920, 1080});
         ~OffscreenRenderer();
 
         OffscreenRenderer(const OffscreenRenderer&) = delete;
@@ -26,6 +26,7 @@ namespace Engine {
         void EndRenderPass(VkCommandBuffer commandBuffer);
 
         Framebuffer& GetFramebuffer() { return framebuffer; }
+        [[nodiscard]] VkRenderPass GetRenderPass() const { return renderPass; }
 
     private:
         Device& device;

@@ -1,6 +1,8 @@
 # Directories
 .vs/
 Binaries/
+cmake-build-debug-visual-studio
+Resources/Models/Porsche
 
 # Files
 *.vcxproj
@@ -9,6 +11,7 @@ Binaries/
 *.sln
 *.log
 Makefile
+tok.txt
 
 # Exclude
 !Vendor/Binaries

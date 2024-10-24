@@ -9,15 +9,20 @@ set(GLM_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/Core/Include/External/glm)
 
 file(GLOB_RECURSE ENGINE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/ECS/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/RenderingSystems/*.cpp
 )
 
 add_library(Core STATIC ${ENGINE_SOURCES}
-        Include/RenderingSystems/SceneRenderingSystem.h
-        Source/RenderingSystems/SceneRenderingSystem.cpp
-        Include/Engine/ObjectManager.h)
+        Include/ECS/Components/Components.h
+        Source/Engine/Shader.cpp
+        Include/Engine/Camera.h
+        Source/Engine/Camera.cpp)
 
 target_include_directories(Core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Include/                            # Path to Core headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS/Components              # Path to ECS headers
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS                         # Path to ECS headers
         ${Vulkan_INCLUDE_DIRS}                                          # Vulkan include directories
         ${GLM_INCLUDE_DIRS}                                             # GLM include directories
         ${CMAKE_SOURCE_DIR}/Core/Include                                # Path to include directory

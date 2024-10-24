@@ -10,3 +10,6 @@
 [submodule "Core/Include/External/nativefiledialog"]
 	path = Core/Include/External/nativefiledialog
 	url = https://github.com/mlabbe/nativefiledialog.git
+[submodule "Core/Include/External/ImGuizmo"]
+	path = Core/Include/External/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

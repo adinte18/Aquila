@@ -6,24 +6,14 @@
 #include "Engine/Descriptor.h"
 #include "Engine/Model.h"
 
+#include "Components.h"
 #include "External/tiny_gltf.h"
 
 Engine::Model3D::Model3D(Device &device) : device{device} {}
 
 Engine::Model3D::~Model3D() = default;
 
-void Engine::Model3D::Load(const std::string& filepath) {
-    materialDescriptorPool = DescriptorPool::Builder(device)
-                                  .setMaxSets(2048)
-                                  .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000) //Albedo
-                                  .build();
-
-    materialSetLayout = DescriptorSetLayout::Builder(device)
-                             .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                             .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                             .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-                             .build();
-
+void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool) {
     tinygltf::Model model;
     tinygltf::TinyGLTF loader;
     std::string err, warn;
@@ -41,8 +31,7 @@ void Engine::Model3D::Load(const std::string& filepath) {
 
     for (auto& image : model.images) {
         std::string uri = directoryPath + "/" + image.uri;
-        std::cout << "Loading image: " << uri << std::endl;
-        auto texture = Engine::Texture2D::create(device);
+        auto texture = Texture2D::create(device);
         texture->vk_CreateTexture(uri);
         images.push_back(texture);
     }
@@ -177,7 +166,7 @@ void Engine::Model3D::Load(const std::string& filepath) {
                     VkDescriptorImageInfo normalImageInfo = material.normalTexture->vk_GetDescriptorImageInfo();
                     VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->vk_GetDescriptorImageInfo();
 
-                    DescriptorWriter writer(*materialSetLayout, *materialDescriptorPool);
+                    DescriptorWriter writer(materialSetLayout, descriptorPool);
                     writer.writeImage(0, &albedoImageInfo);
                     writer.writeImage(1, &normalImageInfo);
                     writer.writeImage(2, &metallicRoughnessImageInfo);
@@ -284,8 +273,8 @@ void Engine::Model3D::draw(VkCommandBuffer commandBuffer) {
 }
 
 
-std::unique_ptr<Engine::Model3D> Engine::Model3D::create(Device& device) {
-    return std::make_unique<Engine::Model3D>(device);
+std::shared_ptr<Engine::Model3D> Engine::Model3D::create(Device& device) {
+    return std::make_shared<Engine::Model3D>(device);
 }
 
 
