@@ -21,9 +21,9 @@ void Engine::OffscreenRenderer::BeginRenderPass(VkCommandBuffer commandBuffer) {
 
 	VkViewport viewport{};
 	viewport.x = 0.0f;
-	viewport.y = 0.0f;
+	viewport.y = static_cast<float>(extent.height);
 	viewport.width = static_cast<float>(extent.width);
-	viewport.height = static_cast<float>(extent.height);
+	viewport.height = -static_cast<float>(extent.height);
 	viewport.minDepth = 0.0f;
 	viewport.maxDepth = 1.0f;
 	VkRect2D scissor{{0,0}, extent};

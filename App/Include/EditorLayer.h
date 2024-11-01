@@ -67,7 +67,7 @@ namespace Editor {
             window->pollEvents();
 
             scene->OnUpdate();
-            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(50.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
+            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
 
             //Render ImGui to screen (to swapchain)
             if (auto commandBuffer = renderer->vk_BeginFrame()) {

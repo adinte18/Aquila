@@ -4,7 +4,7 @@
 
 namespace ECS {
     Scene::Scene(Engine::Device& device) :
-        sceneBuffer{device, sizeof(UniformData), 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT},
+        sceneBuffer{device, sizeof(UniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT},
         device(&device)
     {
         // Create a descriptor pool and set for the scene

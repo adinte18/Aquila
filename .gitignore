@@ -12,6 +12,3 @@ Resources/Models/Porsche
 *.log
 Makefile
 tok.txt
-
-# Exclude
-!Vendor/Binaries

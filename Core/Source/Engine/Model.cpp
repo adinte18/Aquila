@@ -28,7 +28,7 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
 
     std::filesystem::path filePath(filepath);
     std::string directoryPath = filePath.parent_path().string();
-
+    path = directoryPath;
     for (auto& image : model.images) {
         std::string uri = directoryPath + "/" + image.uri;
         auto texture = Texture2D::create(device);
@@ -78,11 +78,10 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                         const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
                         tangentsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
                     }
-                    glm::mat4 correctionMatrix = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
 
                     for (size_t v = 0; v < vertexCount; v++) {
                         Vertex vertex{};
-                        vertex.pos = correctionMatrix * glm::vec4(glm::make_vec3(&positionBuffer[v * 3]), 1.0f);
+                        vertex.pos = glm::vec4(glm::make_vec3(&positionBuffer[v * 3]), 1.0f);
                         vertex.color = glm::vec3(1.0);
                         vertex.normals = glm::normalize(
                                 glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
@@ -191,6 +190,62 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
     vk_CreateIndexBuffer(indices);
 }
 
+void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout& materialSetLayout, Engine::DescriptorPool& descriptorPool) {
+    vertices.clear();
+    indices.clear();
+
+    if (type == Primitives::PrimitiveType::Cube) {
+        vertices = Primitives::CreateCube(size);
+        for (uint32_t i = 0; i < vertices.size(); ++i) {
+            indices.push_back(i);
+        }
+    }
+    else if (type == Primitives::PrimitiveType::Sphere) {
+        vertices = Primitives::CreateSphere(size, 36, 18);
+        for (uint32_t i = 0; i < vertices.size(); ++i) {
+            indices.push_back(i);
+        }
+    }
+    else if (type == Primitives::PrimitiveType::Cylinder) {
+        vertices = Primitives::CreateCylinder(size, size, 36);
+        for (uint32_t i = 0; i < vertices.size(); ++i) {
+            indices.push_back(i);
+        }
+    }
+
+    vk_CreateVertexBuffers(vertices);
+    vk_CreateIndexBuffer(indices);
+
+    // Create a default texture
+    auto defaultTex = Engine::Texture2D::create(device);
+    defaultTex->vk_CreateTexture("../../Resources/Textures/basecolor.jpg");
+
+    // Create a material and descriptor set for the primitive
+    Material material{};
+    material.albedoTexture = defaultTex;
+    material.normalTexture = defaultTex;
+    material.metallicRoughnessTexture = defaultTex;
+
+    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->vk_GetDescriptorImageInfo();
+    VkDescriptorImageInfo normalImageInfo = material.normalTexture->vk_GetDescriptorImageInfo();
+    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->vk_GetDescriptorImageInfo();
+
+    DescriptorWriter writer(materialSetLayout, descriptorPool);
+    writer.writeImage(0, &albedoImageInfo);
+    writer.writeImage(1, &normalImageInfo);
+    writer.writeImage(2, &metallicRoughnessImageInfo);
+    writer.build(material.descriptorSet);
+
+    // Create a primitive and link it to the material
+    Primitive prim{};
+    prim.firstVertex = 0;
+    prim.vertexCount = static_cast<uint32_t>(vertices.size());
+    prim.indexCount = static_cast<uint32_t>(indices.size());
+    prim.firstIndex = 0;
+    prim.material = material;
+    primitives.push_back(prim);
+}
+
 void Engine::Model3D::vk_CreateVertexBuffers(const std::vector<Vertex> &vertices) {
     vertexCount = static_cast<uint32_t>(vertices.size());
     assert(vertexCount >= 3 && "Vertex count must be at least 3");
@@ -252,26 +307,23 @@ void Engine::Model3D::vk_CreateIndexBuffer(const std::vector<uint32_t> &indices)
     device.vk_CopyBuffer(stagingBuffer.vk_GetBuffer(), indexBuffer->vk_GetBuffer(), bufferSize);
 }
 
-void Engine::Model3D::draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) {
-    for (auto& primitive : primitives) {
-        if (hasIndexBuffer) {
-            std::vector<VkDescriptorSet>sets{descriptorSet, primitive.material.descriptorSet};
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                0, sets.size(), sets.data(), 0, nullptr);
-            vkCmdDrawIndexed(commandBuffer, primitive.indexCount,
-                1, primitive.firstIndex, primitive.firstVertex, 0);
+void Engine::Model3D::draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) const {
+    if (!primitives.empty()) {
+        for (auto& primitive : primitives) {
+            if (hasIndexBuffer) {
+                std::array<VkDescriptorSet, 2> sets{descriptorSet, primitive.material.descriptorSet};
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                    0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+                vkCmdDrawIndexed(commandBuffer, primitive.indexCount,
+                    1, primitive.firstIndex, primitive.firstVertex, 0);
+            } else {
+                vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
+            }
         }
-        else vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
-
+    } else {
+        throw std::runtime_error("No primitives found");
     }
 }
-
-void Engine::Model3D::draw(VkCommandBuffer commandBuffer) {
-        if (hasIndexBuffer)
-            vkCmdDrawIndexed(commandBuffer, indexCount, 1, 0, 0, 0);
-        else vkCmdDraw(commandBuffer, vertexCount, 1, 0, 0);
-}
-
 
 std::shared_ptr<Engine::Model3D> Engine::Model3D::create(Device& device) {
     return std::make_shared<Engine::Model3D>(device);

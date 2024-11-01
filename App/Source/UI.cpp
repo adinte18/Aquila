@@ -45,7 +45,7 @@ void Editor::UI::OnStart() {
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
         io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 16.0f);
+        io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 13.0f);
 
         // Setup Dear ImGui style
         ImGui::StyleColorsDark();
@@ -158,6 +158,78 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
 
     //Scene Hierarchy
     if (ImGui::Begin("Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
+        // If RMB is pressed, open context menu
+        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
+            ImGui::OpenPopup("ViewportContextMenu");
+        }
+
+        // Render the context menu if it has been opened
+        if (ImGui::BeginPopup("ViewportContextMenu")) {
+            if (ImGui::MenuItem("Create empty entity")) {
+                auto entity = scene.CreateEntity();
+                entity->AddComponent<ECS::Transform>();
+                SetSelectedEntity(entity->GetHandle());
+            }
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Create cube")) {
+                auto entity = scene.CreateEntity();
+                entity->AddComponent<ECS::Transform>();
+
+                auto model = Engine::Model3D::create(device);
+                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
+                    1.0f,
+                    scene.GetMaterialDescriptorSetLayout(),
+                    scene.GetMaterialDescriptorPool());
+                entity->AddComponent<ECS::Mesh>();
+                entity->GetComponent<ECS::Mesh>().mesh = model;
+
+                SetSelectedEntity(entity->GetHandle());
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Create sphere")) {
+                auto entity = scene.CreateEntity();
+                entity->AddComponent<ECS::Transform>();
+
+                auto model = Engine::Model3D::create(device);
+                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
+                    1.0f,
+                    scene.GetMaterialDescriptorSetLayout(),
+                    scene.GetMaterialDescriptorPool());
+                entity->AddComponent<ECS::Mesh>();
+                entity->GetComponent<ECS::Mesh>().mesh = model;
+
+                SetSelectedEntity(entity->GetHandle());
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::MenuItem("Create cylinder")) {
+                auto entity = scene.CreateEntity();
+                entity->AddComponent<ECS::Transform>();
+
+                auto model = Engine::Model3D::create(device);
+                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cylinder,
+                    1.0f,
+                    scene.GetMaterialDescriptorSetLayout(),
+                    scene.GetMaterialDescriptorPool());
+                entity->AddComponent<ECS::Mesh>();
+                entity->GetComponent<ECS::Mesh>().mesh = model;
+
+                SetSelectedEntity(entity->GetHandle());
+            }
+
+            ImGui::Separator();
+
+
+            if (ImGui::MenuItem("Close")) {
+                ImGui::CloseCurrentPopup();  // Close the context menu
+            }
+            ImGui::EndPopup();  // Close the popup
+        }
+
         // Iterate over all entities in the scene, and display them in the hierarchy.
         // If clicked, select the entity and show its properties
 
@@ -218,16 +290,15 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 ImGui::EndPopup();
             }
 
-
             if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
                 ImGui::Text("Position");
-                ImGui::DragFloat3("##Position", &transform->position.x, 0.1f);
+                ImGui::DragFloat3("##Position", (float*)&transform->position, 0.1f);
 
                 ImGui::Text("Rotation");
-                ImGui::DragFloat3("##Rotation", &transform->rotation.x, 0.1f);
+                ImGui::DragFloat3("##Rotation", (float*)&transform->rotation, 0.1f);
 
                 ImGui::Text("Scale");
-                ImGui::DragFloat3("##Scale", &transform->scale.x, 0.1f);
+                ImGui::DragFloat3("##Scale", (float*)&transform->scale, 0.1f);
             }
 
             ImGui::Separator();
@@ -254,7 +325,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 // File input
                 if (ImGui::Button("Load model")) {
                     nfdchar_t *outPath = NULL;
-                    nfdresult_t result = NFD_OpenDialog( "gltf", NULL, &outPath );
+                    nfdresult_t result = NFD_OpenDialog("gltf", NULL, &outPath);
 
                     if (result == NFD_OKAY) {
                         // Load texture
@@ -273,33 +344,73 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                     }
                 }
             }
-
         }
 
         ImGui::End();
     }
 
     //Viewport
+    //TODO: Refactor this, not really working as intended right now
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     if (ImGui::Begin("Viewport", nullptr, ImGuiWindowFlags_NoScrollbar)) {
-        // If RMB is pressed, open context menu
-        if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-            ImGui::OpenPopup("ViewportContextMenu");
+
+        static bool isDragging = false;
+        static ImVec2 lastMousePos;
+
+        if (ImGui::IsWindowHovered()) {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                isDragging = true;
+                lastMousePos = ImGui::GetMousePos();
+            }
+
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+                isDragging = false;
+            }
+
+            if (isDragging) {
+                ImVec2 mousePos = ImGui::GetMousePos();
+                ImVec2 delta = {mousePos.x - lastMousePos.x, mousePos.y - lastMousePos.y};
+                lastMousePos = mousePos;
+
+                // Normalize delta
+                float deltaX = delta.x / ImGui::GetWindowSize().x;
+                float deltaY = delta.y / ImGui::GetWindowSize().y;
+
+                scene.GetActiveCamera().Rotate(deltaX, deltaY);
+            }
         }
 
-        // Render the context menu if it has been opened
-        if (ImGui::BeginPopup("ViewportContextMenu")) {
-            if (ImGui::MenuItem("Create empty entity")) {
-                auto entity = scene.CreateEntity();
-                entity->AddComponent<ECS::Transform>();
-                SetSelectedEntity(entity->GetHandle());
-            }
-            ImGui::Separator();
-            if (ImGui::MenuItem("Close")) {
-                ImGui::CloseCurrentPopup();  // Close the context menu
-            }
-            ImGui::EndPopup();  // Close the popup
+        static ImGuizmo::OPERATION m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE; // Default operation
+
+        // Small window with icons on the top left
+        ImGui::SetNextWindowPos({ImGui::GetWindowPos().x + 10, ImGui::GetWindowPos().y + 30}, ImGuiCond_Always);
+        ImGui::SetNextWindowSize(ImVec2(150, 50)); // Adjust the window size as needed
+        ImGui::Begin("Gizmo Controls", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
+
+        float windowWidth = ImGui::GetWindowSize().x;
+        float windowHeight = ImGui::GetWindowSize().y;
+        float buttonWidth = ImGui::CalcTextSize("T").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+        float buttonHeight = ImGui::GetFrameHeight();
+        float totalWidth = buttonWidth * 3 + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+        float totalHeight = buttonHeight;
+
+        ImGui::SetCursorPosX((windowWidth - totalWidth) / 2.0f);
+        ImGui::SetCursorPosY((windowHeight - totalHeight) / 2.0f);
+
+        if (ImGui::Button("T")) {
+            m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE;
         }
+        ImGui::SameLine();
+        if (ImGui::Button("S")) {
+            m_CurrentOperation = ImGuizmo::OPERATION::SCALE;
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("R")) {
+            m_CurrentOperation = ImGuizmo::OPERATION::ROTATE;
+        }
+
+        ImGui::End();
+
 
         // Render scene to viewport
         ImVec2 viewportSize = ImGui::GetWindowSize();
@@ -307,32 +418,37 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         auto textureId = reinterpret_cast<ImTextureID>(scene.sceneView);
         ImGui::Image(textureId, { viewportSize.x, viewportSize.y });
 
-
         // Gizmos
-        if (GetSelectedEntity() != entt::null && scene.GetRegistry().valid(GetSelectedEntity())) {
-            ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
-
-            if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
-                ImGuizmo::SetOrthographic(false);
-                ImGuizmo::SetDrawlist();
-                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-                auto cameraView = glm::inverse(scene.GetActiveCamera().GetView());
-                auto cameraProjection = scene.GetActiveCamera().GetProjection();
-                auto transformComponent = transform->TransformMatrix();
-
-                ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-                                     ImGuizmo::OPERATION::TRANSLATE, ImGuizmo::MODE::LOCAL, glm::value_ptr(transformComponent));
-
-                if (ImGuizmo::IsUsing()) {
-                    glm::vec3 translation, rotation, scale;
-                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformComponent), glm::value_ptr(translation), glm::value_ptr(rotation), glm::value_ptr(scale));
-                    transform->position = translation;
-                    transform->rotation = glm::radians(rotation);  // Convert rotation from degrees to radians
-                    transform->scale = scale;
-                }
-            }
-        }
-
+        // if (GetSelectedEntity() != entt::null && scene.GetRegistry().valid(GetSelectedEntity())) {
+        //     ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
+        //
+        //     if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
+        //         ImGuizmo::SetOrthographic(false);
+        //         ImGuizmo::SetDrawlist();
+        //         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+        //         auto cameraView = glm::inverse(scene.GetActiveCamera().GetView());
+        //         auto cameraProjection = scene.GetActiveCamera().GetProjection();
+        //         auto transformComponent = transform->TransformMatrix();
+        //
+        //         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+        //                              m_CurrentOperation, ImGuizmo::MODE::LOCAL, glm::value_ptr(transformComponent));
+        //
+        //         if (ImGuizmo::IsUsing()) {
+        //
+        //             glm::vec3 translation, rotation, scale;
+        //             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformComponent),
+        //                 glm::value_ptr(translation),
+        //                 glm::value_ptr(rotation),
+        //                 glm::value_ptr(scale));
+        //
+        //             glm::vec3 deltaRotation = rotation - transform->rotation;
+        //
+        //             transform->position = translation;
+        //             transform->rotation += deltaRotation;
+        //             transform->scale = scale;
+        //         }
+        //     }
+        // }
 
         ImGui::End();
     }

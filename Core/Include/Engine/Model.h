@@ -27,6 +27,7 @@
 
 #include "Descriptor.h"
 #include "Engine/ObjectManager.h"
+#include "Engine/Primitives.h"
 
 namespace ECS {
     class Scene; // Forward declare the Scene class
@@ -89,7 +90,8 @@ namespace Engine {
 
     public:
         void Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool);
-
+        void CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout &materialSetLayout, Engine::DescriptorPool &
+                             descriptorPool);
         Model3D(Device &device);
         ~Model3D();
 
@@ -98,7 +100,7 @@ namespace Engine {
 
         static std::shared_ptr<Model3D> create(Device& device);
         void bind(VkCommandBuffer commandBuffer);
-        void draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout);
+        void draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) const;
         void draw(VkCommandBuffer commandBuffer);
 
         [[nodiscard]] std::string GetPath() const { return path; }
