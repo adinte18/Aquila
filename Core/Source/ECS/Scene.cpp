@@ -2,6 +2,8 @@
 
 #include <Engine/Buffer.h>
 
+#include "Components.h"
+
 namespace ECS {
     Scene::Scene(Engine::Device& device) :
         sceneBuffer{device, sizeof(UniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT},
@@ -40,6 +42,7 @@ namespace ECS {
                 .build();
 
         camera = Engine::Camera{};
+        camera.SetPosition(glm::vec3(0.f, 0.f, 0.f));
     }
 
     // Create a new entity in the scene using the shared registry
@@ -48,8 +51,8 @@ namespace ECS {
     }
 
     // Destroy an entity in the scene
-    void Scene::DestroyEntity(const std::shared_ptr<Entity> &entity) {
-        registry.destroy(entity->GetHandle());
+    void Scene::DestroyEntity(const Entity &entity) {
+        registry.destroy(entity.GetHandle());
     }
 
     // Clear all entities from the scene
@@ -58,15 +61,31 @@ namespace ECS {
     }
 
     // Update all entities or components in the scene (e.g., per frame)
-    void Scene::OnUpdate() {
-        UniformData ubo{};
-        ubo.projection = camera.GetProjection();
-        ubo.view = camera.GetView();
-        ubo.inverseView = camera.GetInverseView();
+void Scene::OnUpdate() {
+    UniformData ubo{};
+    ubo.projection = camera.GetProjection();
+    ubo.view = camera.GetView();
+    ubo.inverseView = camera.GetInverseView();
 
-        sceneBuffer.vk_WriteToBuffer(&ubo);
-        sceneBuffer.vk_Flush();
+    bool lightFound = false;
+
+    registry.view<ECS::Light>().each([&](auto entity, const Light& light) {
+        if (registry.valid(entity)) {
+            lightFound = true;
+            ubo.light.type = static_cast<int>(light.type);
+            ubo.light.direction = glm::normalize(light.direction);
+            ubo.light.color = light.color;
+            ubo.light.intensity = light.intensity;
+        }
+    });
+
+    if (!lightFound) {
+        ubo.light.type = -1;
     }
+
+    sceneBuffer.vk_WriteToBuffer(&ubo);
+    sceneBuffer.vk_Flush();
+}
 
     // Access the registry directly if needed
     entt::registry& Scene::GetRegistry() {

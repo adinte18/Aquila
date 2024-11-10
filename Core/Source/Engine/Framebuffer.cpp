@@ -10,28 +10,16 @@ namespace Engine {
         DestroyFramebuffer();
     }
 
-	void Framebuffer::Resize(VkExtent2D newExtent) {
-    	vkDeviceWaitIdle(device.vk_GetDevice());
-
-    	vkDestroyFramebuffer(device.vk_GetDevice(), framebuffer, nullptr);
-    	vkDestroyImageView(device.vk_GetDevice(), colorImageView, nullptr);
-    	vkFreeMemory(device.vk_GetDevice(), colorImageMemory, nullptr);
-    	vkDestroyImage(device.vk_GetDevice(), colorImage, nullptr);
-
-    	CreateFramebuffer(newExtent, fbRenderPass);
-	}
-
-
     void Framebuffer::CreateFramebuffer(VkExtent2D extent, VkRenderPass renderPass) {
+    	this->extent = extent;
     	fbRenderPass = renderPass;
-		std::cout << "Got extent : " << extent.width << " " << extent.height << std::endl;
 
 	    // Create the color attachment image
 	    VkImageCreateInfo imageInfo{};
 	    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-	    imageInfo.extent.width = extent.width;
-    	imageInfo.extent.height = extent.height;
+	    imageInfo.extent.width = this->extent.width;
+    	imageInfo.extent.height = this->extent.height;
 	    imageInfo.extent.depth = 1;
 	    imageInfo.mipLevels = 1;
 	    imageInfo.arrayLayers = 1;
@@ -101,8 +89,8 @@ namespace Engine {
 	    VkImageCreateInfo depthImageInfo{};
 	    depthImageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
 	    depthImageInfo.imageType = VK_IMAGE_TYPE_2D;
-	    depthImageInfo.extent.width = extent.width;
-	    depthImageInfo.extent.height = extent.height;
+	    depthImageInfo.extent.width = this->extent.width;
+	    depthImageInfo.extent.height = this->extent.height;
 	    depthImageInfo.extent.depth = 1;
 	    depthImageInfo.mipLevels = 1;
 	    depthImageInfo.arrayLayers = 1;
@@ -150,14 +138,18 @@ namespace Engine {
         framebufferInfo.renderPass = renderPass;
     	framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
         framebufferInfo.pAttachments = attachments.data();
-        framebufferInfo.width = extent.width;
-        framebufferInfo.height = extent.height;
+        framebufferInfo.width = this->extent.width;
+        framebufferInfo.height = this->extent.height;
         framebufferInfo.layers = 1;
 
         // Create the framebuffer
-        if (vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffer) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create framebuffer!");
-        }
+    	VkResult result = vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffer);
+    	if (result != VK_SUCCESS) {
+    		std::cerr << "Failed to create framebuffer! Error code: " << result << std::endl;
+    		framebuffer = VK_NULL_HANDLE;
+    	} else {
+    		std::cout << "Framebuffer created successfully with extent: " << extent.width << " " << extent.height << std::endl;
+    	}
 
     	descriptorPool = DescriptorPool::Builder(device)
 							  .setMaxSets(1)
@@ -180,15 +172,19 @@ namespace Engine {
 
     void Framebuffer::DestroyFramebuffer() {
         if (framebuffer != VK_NULL_HANDLE) {
+        	std::cout << "Destroying framebuffer" << std::endl;
+        	vkDestroyFramebuffer(device.vk_GetDevice(), framebuffer, nullptr);
         	vkDestroyImageView(device.vk_GetDevice(), colorImageView, nullptr);
         	vkFreeMemory(device.vk_GetDevice(), colorImageMemory, nullptr);
         	vkDestroyImage(device.vk_GetDevice(), colorImage, nullptr);
+
         	vkDestroyImageView(device.vk_GetDevice(), depthImageView, nullptr);
         	vkFreeMemory(device.vk_GetDevice(), depthImageMemory, nullptr);
         	vkDestroyImage(device.vk_GetDevice(), depthImage, nullptr);
+
         	vkDestroySampler(device.vk_GetDevice(), colorSampler, nullptr);
-            vkDestroyFramebuffer(device.vk_GetDevice(), framebuffer, nullptr);
-            framebuffer = VK_NULL_HANDLE;
+        	vkDestroySampler(device.vk_GetDevice(), depthSampler, nullptr);
+        	framebuffer = VK_NULL_HANDLE;
         }
     }
 }

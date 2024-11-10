@@ -92,14 +92,14 @@ namespace Engine {
         void Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool);
         void CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout &materialSetLayout, Engine::DescriptorPool &
                              descriptorPool);
-        Model3D(Device &device);
+        explicit Model3D(Device &device);
         ~Model3D();
 
         Model3D(const Model3D&) = delete;
         Model3D& operator=(const Model3D&) = delete;
 
         static std::shared_ptr<Model3D> create(Device& device);
-        void bind(VkCommandBuffer commandBuffer);
+        void bind(VkCommandBuffer commandBuffer) const;
         void draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) const;
         void draw(VkCommandBuffer commandBuffer);
 

@@ -18,15 +18,12 @@ namespace Engine {
         enum class PrimitiveType {
             Cube,
             Sphere,
-            Plane,
-            Cylinder
+            Plane
         };
 
 
-        static void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkPipeline pipeline, VkBuffer vertexBuffer, VkDeviceSize offset, PrimitiveType type, int vertexCount);
         static std::vector<Vertex> CreateCube(float size);
         static std::vector<Vertex> CreateSphere(float radius, int sectorCount, int stackCount);
-        static std::vector<Vertex> CreateCylinder(float radius, float height, int segments);
     };
 }
 

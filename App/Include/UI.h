@@ -7,6 +7,7 @@
 
 #include <Scene.h>
 #include <Engine/Device.h>
+#include <Engine/Framebuffer.h>
 
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
@@ -20,7 +21,7 @@ namespace Editor{
     class UI {
     public:
         void OnStart();
-        void OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene &scene);
+        void OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene &scene, Engine::Framebuffer& viewportFramebuffer);
         void OnEnd();
 
         UI(Engine::Device& device, Engine::Window& window, const VkRenderPass renderPass)
@@ -30,14 +31,21 @@ namespace Editor{
             vkDestroyDescriptorPool(device.vk_GetDevice(), editorDescriptorPool, nullptr);
         };
 
+        [[nodiscard]] bool IsViewportResized() const { return viewportResized; }
+        [[nodiscard]] VkExtent2D GetViewportSize() const { return viewportExtent; }
+        void SetViewportResized(const bool resized) { viewportResized = resized; }
+
     private:
-        static void SetSelectedEntity(entt::entity entity) {
+        static void SetSelectedEntity(const entt::entity entity) {
             selectedEntity = entity;
         }
 
         static entt::entity GetSelectedEntity() {
             return selectedEntity;
         }
+
+        bool viewportResized = false;
+        VkExtent2D viewportExtent{};
 
         Engine::Device& device;
         Engine::Window& window;

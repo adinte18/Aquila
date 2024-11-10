@@ -9,9 +9,10 @@
 #include "Components.h"
 #include "External/tiny_gltf.h"
 
-Engine::Model3D::Model3D(Device &device) : device{device} {}
+Engine::Model3D::Model3D(Device &device) : device{device}, vertexCount(0), indexCount(0) {}
 
 Engine::Model3D::~Model3D() = default;
+
 
 void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool) {
     tinygltf::Model model;
@@ -125,7 +126,7 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                     }
 
                     auto defaultTex = Engine::Texture2D::create(device);
-                    defaultTex->vk_CreateTexture("../../Resources/Textures/basecolor.jpg");
+                    defaultTex->vk_CreateTexture("../../Resources/Textures/TemplateGrid_albedo.png");
 
                     Material material{};
 
@@ -206,19 +207,13 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
             indices.push_back(i);
         }
     }
-    else if (type == Primitives::PrimitiveType::Cylinder) {
-        vertices = Primitives::CreateCylinder(size, size, 36);
-        for (uint32_t i = 0; i < vertices.size(); ++i) {
-            indices.push_back(i);
-        }
-    }
 
     vk_CreateVertexBuffers(vertices);
     vk_CreateIndexBuffer(indices);
 
     // Create a default texture
     auto defaultTex = Engine::Texture2D::create(device);
-    defaultTex->vk_CreateTexture("../../Resources/Textures/basecolor.jpg");
+    defaultTex->vk_CreateTexture("../../Resources/Textures/TemplateGrid_albedo.png");
 
     // Create a material and descriptor set for the primitive
     Material material{};
@@ -330,7 +325,7 @@ std::shared_ptr<Engine::Model3D> Engine::Model3D::create(Device& device) {
 }
 
 
-void Engine::Model3D::bind(VkCommandBuffer commandBuffer) {
+void Engine::Model3D::bind(VkCommandBuffer commandBuffer) const {
     VkBuffer buffers[] = {vertexBuffer->vk_GetBuffer()};
     VkDeviceSize offsets[] = {0};
     vkCmdBindVertexBuffers(commandBuffer, 0, 1, buffers, offsets);

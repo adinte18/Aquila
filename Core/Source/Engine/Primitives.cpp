@@ -4,38 +4,68 @@
 #define M_PI 3.14159265358979323846
 
 namespace Engine {
-    std::vector<Vertex> Primitives::CreateCube(float size) {
-        std::vector<Vertex> vertices;
-        float halfSize = size / 2.0f;
+std::vector<Vertex> Primitives::CreateCube(float size) {
+    std::vector<Vertex> vertices;
+    float halfSize = size / 2.0f;
 
-        glm::vec3 positions[8] = {
-            {-halfSize, -halfSize, -halfSize},
-            {halfSize, -halfSize, -halfSize},
-            {halfSize, halfSize, -halfSize},
-            {-halfSize, halfSize, -halfSize},
-            {-halfSize, -halfSize, halfSize},
-            {halfSize, -halfSize, halfSize},
-            {halfSize, halfSize, halfSize},
-            {-halfSize, halfSize, halfSize}
-        };
+    // Define the positions
+    glm::vec3 positions[8] = {
+        {-halfSize, -halfSize, -halfSize}, // 0
+        { halfSize, -halfSize, -halfSize}, // 1
+        { halfSize,  halfSize, -halfSize}, // 2
+        {-halfSize,  halfSize, -halfSize}, // 3
+        {-halfSize, -halfSize,  halfSize}, // 4
+        { halfSize, -halfSize,  halfSize}, // 5
+        { halfSize,  halfSize,  halfSize}, // 6
+        {-halfSize,  halfSize,  halfSize}  // 7
+    };
 
-        int indices[36] = {
-            0, 1, 2, 2, 3, 0,
-            4, 5, 6, 6, 7, 4,
-            0, 1, 5, 5, 4, 0,
-            2, 3, 7, 7, 6, 2,
-            0, 3, 7, 7, 4, 0,
-            1, 2, 6, 6, 5, 1
-        };
+    // Indices for triangles and face normals
+    struct Face {
+        int indices[6];
+        glm::vec3 normal;
+        glm::vec3 tangent;
+        glm::vec2 texcoords[6]; // Define specific texture coords for each vertex
+    };
 
-        for (int indice : indices) {
+    Face faces[6] = {
+        // Front face (z+)
+        {{4, 5, 6, 6, 7, 4}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
+        // Back face (z-)
+        {{0, 1, 2, 2, 3, 0}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
+        // Left face (x-)
+        {{0, 4, 7, 7, 3, 0}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
+        // Right face (x+)
+        {{1, 5, 6, 6, 2, 1}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
+        // Top face (y+)
+        {{3, 7, 6, 6, 2, 3}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
+        // Bottom face (y-)
+        {{0, 4, 5, 5, 1, 0}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
+         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}}
+    };
+
+    // Populate vertices for each face
+    for (const auto& face : faces) {
+        for (int i = 0; i < 6; ++i) {
             Vertex vertex;
-            vertex.pos = positions[indice];
+            int idx = face.indices[i];
+            vertex.pos = positions[idx];
+            vertex.normals = face.normal;
+            vertex.tangent = face.tangent;
+            vertex.texcoord = face.texcoords[i]; // Use face-specific texcoords
+            vertex.color = {1.0f, 1.0f, 1.0f}; // Set a default white color, modify as needed
             vertices.push_back(vertex);
         }
-
-        return vertices;
     }
+
+    return vertices;
+}
+
 
     std::vector<Vertex> Primitives::CreateSphere(float radius, int latitudeSegments, int longitudeSegments) {
         std::vector<Vertex> vertices;
@@ -51,16 +81,34 @@ namespace Engine {
                 float cosPhi = cos(phi);
 
                 Vertex vertex;
+
+                // Position
                 vertex.pos = glm::vec3(
                     radius * cosPhi * sinTheta,
                     radius * cosTheta,
                     radius * sinPhi * sinTheta
                 );
+
+                // Normal
+                vertex.normals = glm::normalize(vertex.pos);
+
+                // Texture Coordinates
+                vertex.texcoord = glm::vec2(
+                    static_cast<float>(lon) / longitudeSegments,  // u
+                    static_cast<float>(lat) / latitudeSegments    // v
+                );
+
+                // Tangent (calculated in the direction of longitude)
+                vertex.tangent = glm::normalize(glm::vec3(-sinPhi, 0.0f, cosPhi));
+
+                // Color (for debugging purposes, optional)
+                vertex.color = glm::vec3(1.0f); // Set to white by default
+
                 vertices.push_back(vertex);
             }
         }
 
-        // Generate indices
+        // Generate indices for triangle strips
         std::vector<int> indices;
         for (int lat = 0; lat < latitudeSegments; ++lat) {
             for (int lon = 0; lon < longitudeSegments; ++lon) {
@@ -77,7 +125,7 @@ namespace Engine {
             }
         }
 
-        // Create final vertex array
+        // Create the final vertex array using indexed vertices
         std::vector<Vertex> finalVertices;
         for (int index : indices) {
             finalVertices.push_back(vertices[index]);
@@ -85,60 +133,4 @@ namespace Engine {
 
         return finalVertices;
     }
-
-    std::vector<Vertex> Primitives::CreateCylinder(float radius, float height, int segments) {
-        std::vector<Vertex> vertices;
-
-        float halfHeight = height / 2.0f;
-
-        // Create top and bottom circle vertices
-        for (int i = 0; i <= segments; ++i) {
-            float theta = i * 2.0f * glm::pi<float>() / segments;
-            float x = radius * cos(theta);
-            float z = radius * sin(theta);
-
-            Vertex topVertex, bottomVertex;
-            topVertex.pos = glm::vec3(x, halfHeight, z);
-            bottomVertex.pos = glm::vec3(x, -halfHeight, z);
-
-            vertices.push_back(topVertex);
-            vertices.push_back(bottomVertex);
-        }
-
-        // Generate indices for sides
-        std::vector<int> indices;
-        for (int i = 0; i < segments * 2; i += 2) {
-            int next = (i + 2) % (segments * 2);
-
-            indices.push_back(i);
-            indices.push_back(i + 1);
-            indices.push_back(next);
-
-            indices.push_back(i + 1);
-            indices.push_back(next + 1);
-            indices.push_back(next);
-        }
-
-        // Generate indices for top and bottom
-        for (int i = 2; i < segments * 2; i += 2) {
-            indices.push_back(0);
-            indices.push_back(i);
-            indices.push_back(i + 2);
-        }
-
-        for (int i = 3; i < segments * 2; i += 2) {
-            indices.push_back(1);
-            indices.push_back(i + 2);
-            indices.push_back(i);
-        }
-
-        // Create final vertex array
-        std::vector<Vertex> finalVertices;
-        for (int index : indices) {
-            finalVertices.push_back(vertices[index]);
-        }
-
-        return finalVertices;
-    }
-
 }

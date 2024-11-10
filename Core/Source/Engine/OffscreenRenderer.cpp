@@ -37,7 +37,6 @@ void Engine::OffscreenRenderer::EndRenderPass(VkCommandBuffer commandBuffer) {
 
 Engine::OffscreenRenderer::OffscreenRenderer(Device& device, VkExtent2D extent)
 	: device(device), framebuffer(device, renderPass), extent(extent) {
-	std::cout << "Got extent : " << extent.width << " " << extent.height << std::endl;
 	VkAttachmentDescription colorAttachment = {};
     colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB; // or VK_FORMAT_B8G8R8A8_SRGB for sRGB
     colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT; // No multisampling
@@ -108,8 +107,13 @@ Engine::OffscreenRenderer::~OffscreenRenderer() {
 }
 
 void Engine::OffscreenRenderer::Recreate(VkExtent2D newExtent) {
-	extent = newExtent;
-	vkDeviceWaitIdle(device.vk_GetDevice());
+    vkDeviceWaitIdle(device.vk_GetDevice());
 
-	framebuffer.Resize(newExtent);
+    framebuffer.DestroyFramebuffer();
+
+    extent = newExtent;
+
+    framebuffer.CreateFramebuffer(extent, renderPass);
+
+    std::cout << "Recreated framebuffer with extent: " << extent.width << " " << extent.height << std::endl;
 }

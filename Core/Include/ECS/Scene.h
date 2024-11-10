@@ -10,21 +10,18 @@
 #include "Engine/Camera.h"
 
 namespace ECS {
-    struct DirectionalLight {
-        glm::vec4 direction{0.f, 0.f, 1.f, 0.f};
-        glm::vec4 color{1.f, 1.f, 1.f, 1.f};
+    struct uboLight {
+        alignas(4) int type;
+        alignas(16) glm::vec3 color;
+        alignas(4) float intensity;
+        alignas(16) glm::vec3 direction;
     };
 
-
     struct UniformData {
-        glm::mat4 projection{1.f};
-        glm::mat4 view{1.f};
-        glm::mat4 inverseView{1.f};
-        glm::vec4 ambientLightColor{1.f, 1.f, 1.f, .02f};  // w is intensity
-        DirectionalLight directionalLight;
-        float shininess{1.f};
-        float reflectionIntensity{1.f};
-        float lightIntensity{1.f};
+        alignas(16) glm::mat4 projection{1.f};
+        alignas(16) glm::mat4 view{1.f};
+        alignas(16) glm::mat4 inverseView{1.f};
+        alignas(16) uboLight light{};
     };
 
     class Scene {
@@ -38,6 +35,7 @@ namespace ECS {
         [[nodiscard]] Engine::DescriptorSetLayout& GetSceneDescriptorSetLayout() const { return *sceneDescriptorSetLayout; }
         [[nodiscard]] Engine::DescriptorSetLayout& GetMaterialDescriptorSetLayout() const { return *materialDescriptorSetLayout; }
 
+        std::vector<Entity> queuedForDestruction{};
 
         VkDescriptorSet sceneView{};
         VkDescriptorSet sceneDescriptorSet{};
@@ -46,7 +44,7 @@ namespace ECS {
         std::shared_ptr<Entity> CreateEntity();
 
         // Destroy an entity in the scene
-        void DestroyEntity(const std::shared_ptr<Entity> &entity);
+        void DestroyEntity(const Entity &entity);
 
         // Clear all entities from the scene
         void Clear();

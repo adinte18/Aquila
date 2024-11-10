@@ -12,19 +12,18 @@ layout(location = 2) out vec3 fragNormalWorld;
 layout(location = 4) out vec2 fragTexCoord;
 layout(location = 5) out mat3 TBN;
 
-struct DirectionalLight {
-    vec4 direction;
-    vec4 color;
+struct uboLight {
+    int type;
+    vec3 color;
+    float intensity;
+    vec3 direction;
 };
-layout(set = 0, binding = 0) uniform UniformData {
+
+layout(std140, set = 0, binding = 0) uniform UniformData {
     mat4 projection;
     mat4 view;
     mat4 inverseView;
-    vec4 ambientLightColor; // w is intensity
-    DirectionalLight directionalLight;
-    float shininess;
-    float reflectionIntensity;
-    float lightIntensity;
+    uboLight light;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -35,6 +34,7 @@ layout(push_constant) uniform Push {
 void main() {
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
     gl_Position = ubo.projection * ubo.view * positionWorld;
+    gl_Position.y = -gl_Position.y;
 
     fragTexCoord = uv;
 

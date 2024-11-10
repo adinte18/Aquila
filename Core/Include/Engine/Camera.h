@@ -42,6 +42,9 @@ namespace Engine
             [[nodiscard]] const glm::vec3& GetDirection() const { return direction; }
             [[nodiscard]] float GetZoom() const { return zoom; }
 
+            void SetPosition(const glm::vec3 pos) { position = pos; }
+
+            void OnResize(float width, float height);
 
         private:
             glm::mat4 projectionMatrix{1.f};

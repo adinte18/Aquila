@@ -14,7 +14,7 @@ namespace Engine {
     class OffscreenRenderer {
 
     public:
-        OffscreenRenderer(Device& device, VkExtent2D extent = {1920, 1080});
+        OffscreenRenderer(Device& device, VkExtent2D extent = {1, 1});
         ~OffscreenRenderer();
 
         OffscreenRenderer(const OffscreenRenderer&) = delete;

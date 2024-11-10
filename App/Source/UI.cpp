@@ -5,10 +5,12 @@
 #include "UI.h"
 
 #include <Scene.h>
+#include <Engine/Framebuffer.h>
 #include <Engine/Model.h>
 #include <nativefiledialog/src/nfd_common.h>
 
 #include "Components.h"
+
 
 void Editor::UI::OnStart() {
         VkDescriptorPoolSize pool_sizes[] =
@@ -67,7 +69,7 @@ void Editor::UI::OnStart() {
         ImGui_ImplVulkan_Init(&init_info);
 }
 
-void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
+void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engine::Framebuffer& viewportFramebuffer) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -88,6 +90,9 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
     if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
         window_flags |= ImGuiWindowFlags_NoBackground;
     ImGui::PopStyleVar(2);
+
+    // Map to store the name buffer for each entity, keyed by entity ID
+    static std::unordered_map<entt::entity, std::string> nameBuffers;
 
     ImGui::Begin("DockSpace Demo", nullptr, window_flags);
 
@@ -119,7 +124,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                     model->Load(outPath, scene.GetMaterialDescriptorSetLayout(), scene.GetMaterialDescriptorPool());
 
                     // Create entity
-                    auto entity = scene.CreateEntity();
+                    const auto entity = scene.CreateEntity();
                     entity->AddComponent<ECS::Mesh>();
                     entity->AddComponent<ECS::Transform>();
 
@@ -166,59 +171,62 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         // Render the context menu if it has been opened
         if (ImGui::BeginPopup("ViewportContextMenu")) {
             if (ImGui::MenuItem("Create empty entity")) {
-                auto entity = scene.CreateEntity();
+                const auto entity = scene.CreateEntity();
                 entity->AddComponent<ECS::Transform>();
                 SetSelectedEntity(entity->GetHandle());
             }
             ImGui::Separator();
 
-            if (ImGui::MenuItem("Create cube")) {
-                auto entity = scene.CreateEntity();
-                entity->AddComponent<ECS::Transform>();
+            if (ImGui::BeginMenu("Primitives")) {
 
-                auto model = Engine::Model3D::create(device);
-                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
-                    1.0f,
-                    scene.GetMaterialDescriptorSetLayout(),
-                    scene.GetMaterialDescriptorPool());
-                entity->AddComponent<ECS::Mesh>();
-                entity->GetComponent<ECS::Mesh>().mesh = model;
+                if (ImGui::MenuItem("Create cube")) {
+                    auto entity = scene.CreateEntity();
+                    entity->AddComponent<ECS::Transform>();
 
-                SetSelectedEntity(entity->GetHandle());
+                    auto model = Engine::Model3D::create(device);
+                    model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
+                        1.0f,
+                        scene.GetMaterialDescriptorSetLayout(),
+                        scene.GetMaterialDescriptorPool());
+                    entity->AddComponent<ECS::Mesh>();
+                    entity->GetComponent<ECS::Mesh>().mesh = model;
+
+                    SetSelectedEntity(entity->GetHandle());
+                }
+
+
+                if (ImGui::MenuItem("Create sphere")) {
+                    const auto entity = scene.CreateEntity();
+                    entity->AddComponent<ECS::Transform>();
+
+                    const auto model = Engine::Model3D::create(device);
+                    model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
+                        1.0f,
+                        scene.GetMaterialDescriptorSetLayout(),
+                        scene.GetMaterialDescriptorPool());
+                    entity->AddComponent<ECS::Mesh>();
+                    entity->GetComponent<ECS::Mesh>().mesh = model;
+
+                    SetSelectedEntity(entity->GetHandle());
+                }
+
+                ImGui::EndMenu();
             }
 
-            ImGui::Separator();
-
-            if (ImGui::MenuItem("Create sphere")) {
-                auto entity = scene.CreateEntity();
-                entity->AddComponent<ECS::Transform>();
-
-                auto model = Engine::Model3D::create(device);
-                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
-                    1.0f,
-                    scene.GetMaterialDescriptorSetLayout(),
-                    scene.GetMaterialDescriptorPool());
-                entity->AddComponent<ECS::Mesh>();
-                entity->GetComponent<ECS::Mesh>().mesh = model;
-
-                SetSelectedEntity(entity->GetHandle());
-            }
-
-            ImGui::Separator();
-
-            if (ImGui::MenuItem("Create cylinder")) {
-                auto entity = scene.CreateEntity();
-                entity->AddComponent<ECS::Transform>();
-
-                auto model = Engine::Model3D::create(device);
-                model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cylinder,
-                    1.0f,
-                    scene.GetMaterialDescriptorSetLayout(),
-                    scene.GetMaterialDescriptorPool());
-                entity->AddComponent<ECS::Mesh>();
-                entity->GetComponent<ECS::Mesh>().mesh = model;
-
-                SetSelectedEntity(entity->GetHandle());
+            if (ImGui::MenuItem("Create light")) {
+                const auto entity = scene.CreateEntity();
+                if (entity) {
+                    std::cout << "Entity created successfully." << std::endl;
+                    entity->AddComponent<ECS::Light>();
+                    if (entity->HasComponent<ECS::Light>()) {
+                        std::cout << "Light component added successfully." << std::endl;
+                    } else {
+                        std::cout << "Failed to add Light component." << std::endl;
+                    }
+                    SetSelectedEntity(entity->GetHandle());
+                } else {
+                    std::cout << "Failed to create entity." << std::endl;
+                }
             }
 
             ImGui::Separator();
@@ -234,20 +242,24 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         // If clicked, select the entity and show its properties
 
         // Iterate over all entities in the scene
-        scene.GetRegistry().view<ECS::Transform>().each([&](auto entity, auto& transform) {
-            ImGui::PushID((int)entity);
+        for (auto entity : scene.GetRegistry().view<entt::entity>()) {
+            ImGui::PushID(static_cast<int>(entity));
 
-            bool isSelected = selectedEntity == entity;
-
+            const bool isSelected = (selectedEntity == entity);
             ECS::Entity ent = {scene.GetRegistry(), entity};
 
-            if (ImGui::Selectable(ent.GetName().c_str(), isSelected)) {
-                SetSelectedEntity(entity);
+            // Check if the entity's name is in nameBuffers, and display it if present
+            std::string displayName = ent.GetName(); // Default to entity's stored name
+            if (nameBuffers.find(entity) != nameBuffers.end()) {
+                displayName = nameBuffers[entity];  // Use updated name if edited
+            }
+
+            if (ImGui::Selectable(displayName.c_str(), isSelected)) {
+                SetSelectedEntity(entity);  // Update the selected entity when clicked
             }
 
             ImGui::PopID();
-        });
-
+        }
         // Separator between hierarchy and properties panel
         ImGui::Separator();
 
@@ -259,34 +271,55 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
 
         // If an entity is selected and is valid, display its properties
         if (GetSelectedEntity() != entt::null && scene.GetRegistry().valid(GetSelectedEntity())) {
+            ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
+            entt::entity entityID = GetSelectedEntity();
 
+            if (nameBuffers.find(entityID) == nameBuffers.end()) {
+                nameBuffers[entityID] = ent.GetName();
+            }
+
+            ImGui::Text("Name");
+            ImGui::SameLine();
+
+            std::string& nameBuffer = nameBuffers[entityID];
+            char tempBuffer[128] = {0};  // Ensure null-termination
+
+            // Use std::string::copy with the appropriate size
+            nameBuffer.copy(tempBuffer, sizeof(tempBuffer) - 1);
+
+            if (ImGui::InputText("##", tempBuffer, sizeof(tempBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                nameBuffer = tempBuffer;
+                ent.SetName(nameBuffer);
+                std::cout << "Current entity name: " << ent.GetName() << std::endl;
+            }
             ImGui::Separator();
 
             if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-                ImGui::OpenPopup("PropertiesContextMenu");
+                ImGui::OpenPopup("AddComponentPopup");
             }
 
-            if (ImGui::BeginPopup("PropertiesContextMenu")) {
+            // Make sure the popup is displayed when triggered
+            if (ImGui::BeginPopup("AddComponentPopup")) {
                 ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
 
-                if (ImGui::MenuItem("Add Mesh")) {
+                // Add menu items for different components
+                if (ImGui::MenuItem("Mesh")) {
                     if (!ent.HasComponent<ECS::Mesh>()) {
                         ent.AddComponent<ECS::Mesh>();
                     }
                 }
-
-                if (ImGui::MenuItem("Add Transform")) {
+                if (ImGui::MenuItem("Transform")) {
                     if (!ent.HasComponent<ECS::Transform>()) {
                         ent.AddComponent<ECS::Transform>();
                     }
                 }
-
-                if (ImGui::MenuItem("Add Light")) {
-                    if (!ent.HasComponent<ECS::Light>()) {
+                if (!ent.HasComponent<ECS::Light>() && !ent.HasComponent<ECS::Mesh>()) {
+                    if (ImGui::MenuItem("Light")) {
                         ent.AddComponent<ECS::Light>();
                     }
                 }
 
+                // Close the popup after the menu items are displayed
                 ImGui::EndPopup();
             }
 
@@ -295,7 +328,10 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 ImGui::DragFloat3("##Position", (float*)&transform->position, 0.1f);
 
                 ImGui::Text("Rotation");
-                ImGui::DragFloat3("##Rotation", (float*)&transform->rotation, 0.1f);
+                glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform->rotation));
+                if (ImGui::DragFloat3("##Rotation", glm::value_ptr(eulerRotation), 0.5f)) {
+                    transform->rotation = glm::quat(glm::radians(eulerRotation));
+                }
 
                 ImGui::Text("Scale");
                 ImGui::DragFloat3("##Scale", (float*)&transform->scale, 0.1f);
@@ -314,7 +350,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 ImGui::DragFloat3("##Direction", (float*)&light->direction, 0.1f);
 
                 ImGui::Text("Intensity"); // Label
-                ImGui::DragFloat("##Intensity", &light->intensity, 0.1f);
+                ImGui::SliderFloat("##Intensity", &light->intensity, 0.f, 1.0f);
             }
 
             ImGui::Separator();
@@ -344,6 +380,14 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                     }
                 }
             }
+
+            ImGui::Separator();
+
+            if (ImGui::Button("Delete entity")) {
+                ECS::Entity entityToDelete = {scene.GetRegistry(), GetSelectedEntity()};
+                scene.queuedForDestruction.push_back(entityToDelete);
+                SetSelectedEntity(entt::null);
+            }
         }
 
         ImGui::End();
@@ -358,12 +402,12 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         static ImVec2 lastMousePos;
 
         if (ImGui::IsWindowHovered()) {
-            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
                 isDragging = true;
                 lastMousePos = ImGui::GetMousePos();
             }
 
-            if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+            if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
                 isDragging = false;
             }
 
@@ -413,42 +457,47 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
 
 
         // Render scene to viewport
-        ImVec2 viewportSize = ImGui::GetWindowSize();
+        ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+
+        if (viewportFramebuffer.GetExtent().height != viewportSize.y
+            || viewportFramebuffer.GetExtent().width != viewportSize.x) {
+            viewportResized = true;
+            viewportExtent = { static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y) };
+        }
 
         auto textureId = reinterpret_cast<ImTextureID>(scene.sceneView);
-        ImGui::Image(textureId, { viewportSize.x, viewportSize.y });
+        ImGui::Image(textureId, { viewportSize.x, viewportSize.y }, { 0, 1 }, { 1, 0 });
 
         // Gizmos
-        // if (GetSelectedEntity() != entt::null && scene.GetRegistry().valid(GetSelectedEntity())) {
-        //     ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
-        //
-        //     if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
-        //         ImGuizmo::SetOrthographic(false);
-        //         ImGuizmo::SetDrawlist();
-        //         ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-        //         auto cameraView = glm::inverse(scene.GetActiveCamera().GetView());
-        //         auto cameraProjection = scene.GetActiveCamera().GetProjection();
-        //         auto transformComponent = transform->TransformMatrix();
-        //
-        //         ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
-        //                              m_CurrentOperation, ImGuizmo::MODE::LOCAL, glm::value_ptr(transformComponent));
-        //
-        //         if (ImGuizmo::IsUsing()) {
-        //
-        //             glm::vec3 translation, rotation, scale;
-        //             ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformComponent),
-        //                 glm::value_ptr(translation),
-        //                 glm::value_ptr(rotation),
-        //                 glm::value_ptr(scale));
-        //
-        //             glm::vec3 deltaRotation = rotation - transform->rotation;
-        //
-        //             transform->position = translation;
-        //             transform->rotation += deltaRotation;
-        //             transform->scale = scale;
-        //         }
-        //     }
-        // }
+        if (GetSelectedEntity() != entt::null && scene.GetRegistry().valid(GetSelectedEntity())) {
+            ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
+
+            if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
+                ImGuizmo::SetOrthographic(false);
+                ImGuizmo::SetDrawlist();
+                ImGuizmo::SetRect(ImGui::GetWindowPos().x, ImGui::GetWindowPos().y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+                auto cameraView = scene.GetActiveCamera().GetView();
+                auto cameraProjection = scene.GetActiveCamera().GetProjection();
+                auto transformComponent = transform->TransformMatrix();
+
+                ImGuizmo::Manipulate(glm::value_ptr(cameraView), glm::value_ptr(cameraProjection),
+                                     m_CurrentOperation, ImGuizmo::MODE::LOCAL, glm::value_ptr(transformComponent));
+
+                if (ImGuizmo::IsUsing()) {
+
+                    glm::vec3 translation, rotation, scale;
+                    ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformComponent),
+                            glm::value_ptr(translation),
+                            glm::value_ptr(rotation),
+                            glm::value_ptr(scale));
+
+                    transform->position = translation;
+                    transform->scale = scale;
+
+                    transform->rotation = glm::quat(glm::radians(rotation));
+                }
+            }
+        }
 
         ImGui::End();
     }

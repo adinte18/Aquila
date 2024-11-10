@@ -43,7 +43,7 @@ namespace Editor {
             // Initialize renderers
             renderer = std::make_unique<Engine::Renderer>(*window, *device);
             offscreenRenderer = std::make_unique<Engine::OffscreenRenderer>(*device,
-                VkExtent2D{1920, 1080});
+                VkExtent2D{1, 1});
 
             // Initialize scene
             scene = std::make_unique<ECS::Scene>(*device);
@@ -60,6 +60,8 @@ namespace Editor {
             // Initialize UI
             ui = std::make_unique<UI>(*device, *window, renderer->vk_GetCurrentRenderPass());
             ui->OnStart();
+
+            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
         }
 
         virtual void OnUpdate() {
@@ -67,7 +69,13 @@ namespace Editor {
             window->pollEvents();
 
             scene->OnUpdate();
-            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
+
+            // Verify if the viewport was resized
+            if (ui->IsViewportResized()) {
+                offscreenRenderer->Recreate(ui->GetViewportSize());
+                ui->SetViewportResized(false);
+                scene->GetActiveCamera().OnResize(ui->GetViewportSize().width, ui->GetViewportSize().height);
+            }
 
             //Render ImGui to screen (to swapchain)
             if (auto commandBuffer = renderer->vk_BeginFrame()) {
@@ -93,7 +101,8 @@ namespace Editor {
                 }
 
                 // Render UI
-                ui->OnUpdate(commandBuffer, *scene);
+                Engine::Framebuffer& framebuffer = offscreenRenderer->GetFramebuffer();
+                ui->OnUpdate(commandBuffer, *scene, framebuffer);
 
                 //End render pass
                 renderer->vk_EndSwapChainRenderPass(commandBuffer);
@@ -101,6 +110,16 @@ namespace Editor {
                 // End recording
                 renderer->vk_EndFrame();
             }
+
+            // Wait for everything to finish before deleting entities
+            vkDeviceWaitIdle(device->vk_GetDevice());
+
+            // Delete entities that were queued for destruction last frame
+            for(auto& entity : scene->queuedForDestruction) {
+                scene->DestroyEntity(entity);
+            }
+
+            scene->queuedForDestruction.clear();
         }
 
         virtual void OnEnd() {
