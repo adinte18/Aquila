@@ -20,10 +20,12 @@ struct uboLight {
 };
 
 layout(std140, set = 0, binding = 0) uniform UniformData {
-    mat4 projection;
-    mat4 view;
+    mat4 cameraProjection;
+    mat4 cameraView;
     mat4 inverseView;
     uboLight light;
+    mat4 lightView;
+    mat4 lightProjection;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -33,7 +35,7 @@ layout(push_constant) uniform Push {
 
 void main() {
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
-    gl_Position = ubo.projection * ubo.view * positionWorld;
+    gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;
     gl_Position.y = -gl_Position.y;
 
     fragTexCoord = uv;

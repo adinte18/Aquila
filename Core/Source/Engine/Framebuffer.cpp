@@ -3,8 +3,8 @@
 #include <array>
 
 namespace Engine {
-    Framebuffer::Framebuffer(Device& device, VkRenderPass renderPass)
-        : device(device), fbRenderPass(renderPass) {}
+    Framebuffer::Framebuffer(Device& device)
+        : device(device) {}
 
     Framebuffer::~Framebuffer() {
         DestroyFramebuffer();

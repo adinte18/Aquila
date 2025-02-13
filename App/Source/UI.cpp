@@ -69,7 +69,7 @@ void Editor::UI::OnStart() {
         ImGui_ImplVulkan_Init(&init_info);
 }
 
-void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engine::Framebuffer& viewportFramebuffer) {
+void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -101,6 +101,8 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
     {
         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+
+
     }
 
     if (ImGui::BeginMenuBar())
@@ -113,8 +115,8 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
 
             if (ImGui::MenuItem("Load")) {
 
-                nfdchar_t *outPath = NULL;
-                nfdresult_t result = NFD_OpenDialog( "gltf", NULL, &outPath );
+                nfdchar_t *outPath = nullptr;
+                nfdresult_t result = NFD_OpenDialog( "gltf", nullptr, &outPath );
 
                 if (result == NFD_OKAY) {
                     std::cout << "Selected file: " << outPath << std::endl;
@@ -214,8 +216,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
             }
 
             if (ImGui::MenuItem("Create light")) {
-                const auto entity = scene.CreateEntity();
-                if (entity) {
+                if (const auto entity = scene.CreateEntity()) {
                     std::cout << "Entity created successfully." << std::endl;
                     entity->AddComponent<ECS::Light>();
                     if (entity->HasComponent<ECS::Light>()) {
@@ -300,22 +301,22 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
 
             // Make sure the popup is displayed when triggered
             if (ImGui::BeginPopup("AddComponentPopup")) {
-                ECS::Entity ent = {scene.GetRegistry(), GetSelectedEntity()};
+                ECS::Entity entity = {scene.GetRegistry(), GetSelectedEntity()};
 
                 // Add menu items for different components
                 if (ImGui::MenuItem("Mesh")) {
-                    if (!ent.HasComponent<ECS::Mesh>()) {
-                        ent.AddComponent<ECS::Mesh>();
+                    if (!entity.HasComponent<ECS::Mesh>()) {
+                        entity.AddComponent<ECS::Mesh>();
                     }
                 }
                 if (ImGui::MenuItem("Transform")) {
-                    if (!ent.HasComponent<ECS::Transform>()) {
-                        ent.AddComponent<ECS::Transform>();
+                    if (!entity.HasComponent<ECS::Transform>()) {
+                        entity.AddComponent<ECS::Transform>();
                     }
                 }
-                if (!ent.HasComponent<ECS::Light>() && !ent.HasComponent<ECS::Mesh>()) {
+                if (!entity.HasComponent<ECS::Light>() && !entity.HasComponent<ECS::Mesh>()) {
                     if (ImGui::MenuItem("Light")) {
-                        ent.AddComponent<ECS::Light>();
+                        entity.AddComponent<ECS::Light>();
                     }
                 }
 
@@ -325,7 +326,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
 
             if (auto* transform = scene.GetRegistry().try_get<ECS::Transform>(GetSelectedEntity())) {
                 ImGui::Text("Position");
-                ImGui::DragFloat3("##Position", (float*)&transform->position, 0.1f);
+                ImGui::DragFloat3("##Position", reinterpret_cast<float *>(&transform->position), 0.1f);
 
                 ImGui::Text("Rotation");
                 glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform->rotation));
@@ -334,23 +335,25 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
                 }
 
                 ImGui::Text("Scale");
-                ImGui::DragFloat3("##Scale", (float*)&transform->scale, 0.1f);
+                ImGui::DragFloat3("##Scale", reinterpret_cast<float *>(&transform->scale), 0.1f);
             }
 
             ImGui::Separator();
 
             if (auto* light = scene.GetRegistry().try_get<ECS::Light>(GetSelectedEntity())) {
                 ImGui::Text("Light Type"); // Label
-                ImGui::Combo("##LightType", (int*)&light->type, "Directional\0Point\0Spot\0\0");
+                ImGui::Combo("##LightType", reinterpret_cast<int *>(&light->type), "Directional\0Point\0Spot\0\0");
 
                 ImGui::Text("Color"); // Label
-                ImGui::ColorEdit3("##ColorPicker", (float*)&light->color);
+                ImGui::ColorEdit3("##ColorPicker", reinterpret_cast<float *>(&light->color));
 
                 ImGui::Text("Direction"); // Label
-                ImGui::DragFloat3("##Direction", (float*)&light->direction, 0.1f);
+                ImGui::DragFloat3("##Direction", reinterpret_cast<float *>(&light->direction), 0.1f);
 
                 ImGui::Text("Intensity"); // Label
                 ImGui::SliderFloat("##Intensity", &light->intensity, 0.f, 1.0f);
+
+                light->updateMatrices();
             }
 
             ImGui::Separator();
@@ -360,8 +363,8 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
 
                 // File input
                 if (ImGui::Button("Load model")) {
-                    nfdchar_t *outPath = NULL;
-                    nfdresult_t result = NFD_OpenDialog("gltf", NULL, &outPath);
+                    nfdchar_t *outPath = nullptr;
+                    nfdresult_t result = NFD_OpenDialog("gltf", nullptr, &outPath);
 
                     if (result == NFD_OKAY) {
                         // Load texture
@@ -420,7 +423,21 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
                 float deltaX = delta.x / ImGui::GetWindowSize().x;
                 float deltaY = delta.y / ImGui::GetWindowSize().y;
 
+                // sets yaw and pitch
                 scene.GetActiveCamera().Rotate(deltaX, deltaY);
+
+                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_W))) {
+                    scene.GetActiveCamera().MoveForward(scene.GetFrameTime());
+                }
+                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_S))) {
+                    scene.GetActiveCamera().MoveBackward(scene.GetFrameTime());
+                }
+                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_D))) {
+                    scene.GetActiveCamera().MoveRight(scene.GetFrameTime());
+                }
+                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_A))) {
+                    scene.GetActiveCamera().MoveLeft(scene.GetFrameTime());
+                }
             }
         }
 
@@ -431,38 +448,40 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
         ImGui::SetNextWindowSize(ImVec2(150, 50)); // Adjust the window size as needed
         ImGui::Begin("Gizmo Controls", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize);
 
-        float windowWidth = ImGui::GetWindowSize().x;
-        float windowHeight = ImGui::GetWindowSize().y;
-        float buttonWidth = ImGui::CalcTextSize("T").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-        float buttonHeight = ImGui::GetFrameHeight();
-        float totalWidth = buttonWidth * 3 + ImGui::GetStyle().ItemSpacing.x * 2.0f;
-        float totalHeight = buttonHeight;
+            float windowWidth = ImGui::GetWindowSize().x;
+            float windowHeight = ImGui::GetWindowSize().y;
+            float buttonWidth = ImGui::CalcTextSize("T").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+            float buttonHeight = ImGui::GetFrameHeight();
+            float totalWidth = buttonWidth * 3 + ImGui::GetStyle().ItemSpacing.x * 2.0f;
+            float totalHeight = buttonHeight;
 
-        ImGui::SetCursorPosX((windowWidth - totalWidth) / 2.0f);
-        ImGui::SetCursorPosY((windowHeight - totalHeight) / 2.0f);
+            ImGui::SetCursorPosX((windowWidth - totalWidth) / 2.0f);
+            ImGui::SetCursorPosY((windowHeight - totalHeight) / 2.0f);
 
-        if (ImGui::Button("T")) {
-            m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("S")) {
-            m_CurrentOperation = ImGuizmo::OPERATION::SCALE;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("R")) {
-            m_CurrentOperation = ImGuizmo::OPERATION::ROTATE;
-        }
+            if (ImGui::Button("T")) {
+                m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("S")) {
+                m_CurrentOperation = ImGuizmo::OPERATION::SCALE;
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("R")) {
+                m_CurrentOperation = ImGuizmo::OPERATION::ROTATE;
+            }
 
         ImGui::End();
 
 
         // Render scene to viewport
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+        int newWidth = static_cast<int>(viewportSize.x);
+        int newHeight = static_cast<int>(viewportSize.y);
 
-        if (viewportFramebuffer.GetExtent().height != viewportSize.y
-            || viewportFramebuffer.GetExtent().width != viewportSize.x) {
+        if (newWidth != lastViewportSize.x || newHeight != lastViewportSize.y) {
             viewportResized = true;
             viewportExtent = { static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y) };
+            lastViewportSize = viewportSize;
         }
 
         auto textureId = reinterpret_cast<ImTextureID>(scene.sceneView);
@@ -493,7 +512,6 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene, Engi
 
                     transform->position = translation;
                     transform->scale = scale;
-
                     transform->rotation = glm::quat(glm::radians(rotation));
                 }
             }

@@ -1,13 +1,15 @@
 #include "ECS/Scene.h"
 
 #include <Engine/Buffer.h>
+#include <Engine/OffscreenRenderer.h>
 
 #include "Components.h"
 
 namespace ECS {
-    Scene::Scene(Engine::Device& device) :
+    Scene::Scene(Engine::Device& device, Engine::OffscreenRenderer& offscreenRenderer) :
         sceneBuffer{device, sizeof(UniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT},
-        device(&device)
+        device(&device),
+        renderer(&offscreenRenderer)
     {
         // Create a descriptor pool and set for the scene
         sceneDescriptorPool = Engine::DescriptorPool::Builder(device)
@@ -17,8 +19,8 @@ namespace ECS {
                 .build();
 
         sceneDescriptorSetLayout = Engine::DescriptorSetLayout::Builder(device)
-                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+                .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS) // ubo
+                .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) //shadow map
                 .build();
 
         sceneBuffer.map();
@@ -27,7 +29,9 @@ namespace ECS {
 
         Engine::DescriptorWriter writer(*sceneDescriptorSetLayout, *sceneDescriptorPool);
         writer.writeBuffer(0, &sceneDescriptorInfo);
-        writer.build(sceneDescriptorSet);
+        if (!writer.build(sceneDescriptorSet)) {
+            throw std::runtime_error("Failed to update scene descriptor set!");
+        }
 
         // Material descriptor pool and set. This is used for materials that are shared across multiple entities in the scene
         materialDescriptorPool = Engine::DescriptorPool::Builder(device)
@@ -43,6 +47,8 @@ namespace ECS {
 
         camera = Engine::Camera{};
         camera.SetPosition(glm::vec3(0.f, 0.f, 0.f));
+
+        currentTime = std::chrono::high_resolution_clock::now();
     }
 
     // Create a new entity in the scene using the shared registry
@@ -61,30 +67,36 @@ namespace ECS {
     }
 
     // Update all entities or components in the scene (e.g., per frame)
-void Scene::OnUpdate() {
-    UniformData ubo{};
-    ubo.projection = camera.GetProjection();
-    ubo.view = camera.GetView();
-    ubo.inverseView = camera.GetInverseView();
+    void Scene::OnUpdate() {
+        auto newTime = std::chrono::high_resolution_clock::now();
+        frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+        currentTime = newTime;
 
-    bool lightFound = false;
+        UniformData ubo{};
+        ubo.projection = camera.GetProjection();
+        ubo.view = camera.GetView();
+        ubo.inverseView = camera.GetInverseView();
 
-    registry.view<ECS::Light>().each([&](auto entity, const Light& light) {
-        if (registry.valid(entity)) {
-            lightFound = true;
-            ubo.light.type = static_cast<int>(light.type);
-            ubo.light.direction = glm::normalize(light.direction);
-            ubo.light.color = light.color;
-            ubo.light.intensity = light.intensity;
+        bool lightFound = false;
+
+        registry.view<ECS::Light>().each([&](auto entity, const Light& light) {
+            if (registry.valid(entity)) {
+                lightFound = true;
+                ubo.light.type = static_cast<int>(light.type);
+                ubo.light.direction = glm::normalize(light.direction);
+                ubo.light.color = light.color;
+                ubo.light.intensity = light.intensity;
+                ubo.lightView = light.view;
+                ubo.lightProjection = light.projection;
+            }
+        });
+
+        if (!lightFound) {
+            ubo.light.type = -1;
         }
-    });
 
-    if (!lightFound) {
-        ubo.light.type = -1;
-    }
-
-    sceneBuffer.vk_WriteToBuffer(&ubo);
-    sceneBuffer.vk_Flush();
+        sceneBuffer.vk_WriteToBuffer(&ubo);
+        sceneBuffer.vk_Flush();
 }
 
     // Access the registry directly if needed

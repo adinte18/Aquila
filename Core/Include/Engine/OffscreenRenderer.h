@@ -5,35 +5,35 @@
 #ifndef OFFSCREENRENDERER_H
 #define OFFSCREENRENDERER_H
 
-#include "Common.h"
 #include <Engine/Device.h>
-#include <Engine/RenderPass.h>
-#include <Engine/Framebuffer.h>
+#include <Engine/Renderpass.h>
 
 namespace Engine {
     class OffscreenRenderer {
 
     public:
-        OffscreenRenderer(Device& device, VkExtent2D extent = {1, 1});
+        explicit OffscreenRenderer(Device& device);
         ~OffscreenRenderer();
+
+        VkDescriptorImageInfo GetDepthInfo(RenderPassType type) const;
 
         OffscreenRenderer(const OffscreenRenderer&) = delete;
         OffscreenRenderer& operator=(const OffscreenRenderer&) = delete;
 
+        void Initialize(uint32_t width, uint32_t height);
+        void Resize(VkExtent2D newExtent);
 
-        void Recreate(VkExtent2D newExtent);
-        void BeginRenderPass(VkCommandBuffer commandBuffer);
+        void BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type);
         void EndRenderPass(VkCommandBuffer commandBuffer);
 
-        Framebuffer& GetFramebuffer() { return framebuffer; }
-        [[nodiscard]] VkRenderPass GetRenderPass() const { return renderPass; }
+        [[nodiscard]] VkRenderPass GetRenderPass(RenderPassType type) const { return renderpass.GetRenderPass(type); }
+        [[nodiscard]] VkDescriptorSet GetRenderPassImage(RenderPassType type) const {return renderpass.GetImage(type); }
 
     private:
         Device& device;
-        VkExtent2D extent;
-        VkRenderPass renderPass;
-        Framebuffer framebuffer;
-    };;
+        VkExtent2D extent{};
+        Renderpass renderpass;
+    };
 }
 
 #endif //OFFSCREENRENDERER_H

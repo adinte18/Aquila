@@ -6,13 +6,13 @@
 
 #include <Engine/Window.h>
 #include <Engine/Device.h>
-#include <Engine/Renderpass.h>
 #include <Engine/Renderer.h>
 #include <ECS/Scene.h>
 #include <Engine/Buffer.h>
 
 #include "Engine/OffscreenRenderer.h"
 #include "RenderingSystems/SceneRenderingSystem.h"
+#include "RenderingSystems/DepthRenderingSystem.h"
 
 
 namespace Editor {
@@ -28,6 +28,7 @@ namespace Editor {
         std::unique_ptr<Engine::Renderer> renderer;
         std::unique_ptr<Engine::OffscreenRenderer> offscreenRenderer;
         std::shared_ptr<RenderingSystem::SceneRenderingSystem> sceneRenderingSystem;
+        std::shared_ptr<RenderingSystem::DepthRenderingSystem> shadowRenderingSystem;
 
         std::unique_ptr<UI> ui;
         std::unique_ptr<ECS::Scene> scene;
@@ -42,11 +43,11 @@ namespace Editor {
 
             // Initialize renderers
             renderer = std::make_unique<Engine::Renderer>(*window, *device);
-            offscreenRenderer = std::make_unique<Engine::OffscreenRenderer>(*device,
-                VkExtent2D{1, 1});
+            offscreenRenderer = std::make_unique<Engine::OffscreenRenderer>(*device);
+            offscreenRenderer->Initialize(800, 600);
 
             // Initialize scene
-            scene = std::make_unique<ECS::Scene>(*device);
+            scene = std::make_unique<ECS::Scene>(*device, *offscreenRenderer);
 
             std::array<VkDescriptorSetLayout, 2> setLayouts =
                 {scene->GetSceneDescriptorSetLayout().getDescriptorSetLayout(),
@@ -54,14 +55,18 @@ namespace Editor {
 
             // Initialize scene rendering system
             sceneRenderingSystem = std::make_shared<RenderingSystem::SceneRenderingSystem>(*device,
-                offscreenRenderer->GetRenderPass(),
+                offscreenRenderer->GetRenderPass(Engine::RenderPassType::SCENE),
+                setLayouts);
+
+            shadowRenderingSystem = std::make_shared<RenderingSystem::DepthRenderingSystem>(*device,
+                offscreenRenderer->GetRenderPass(Engine::RenderPassType::SHADOW),
                 setLayouts);
 
             // Initialize UI
             ui = std::make_unique<UI>(*device, *window, renderer->vk_GetCurrentRenderPass());
             ui->OnStart();
 
-            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1, 1000.f);
+            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1f, 1000.f);
         }
 
         virtual void OnUpdate() {
@@ -72,37 +77,57 @@ namespace Editor {
 
             // Verify if the viewport was resized
             if (ui->IsViewportResized()) {
-                offscreenRenderer->Recreate(ui->GetViewportSize());
+                offscreenRenderer->Resize(ui->GetViewportSize());
                 ui->SetViewportResized(false);
                 scene->GetActiveCamera().OnResize(ui->GetViewportSize().width, ui->GetViewportSize().height);
             }
 
-            //Render ImGui to screen (to swapchain)
+            // 🔹 Get updated depth texture info
+            auto testInfo = offscreenRenderer->GetDepthInfo(Engine::RenderPassType::SHADOW);
+
+            // // 🔹 Only update the shadow map descriptor, keep UBO intact
+            // VkWriteDescriptorSet write{};
+            // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+            // write.dstSet = scene->GetSceneDescriptorSet(); // No need to reallocate, just update
+            // write.dstBinding = 1; // Binding 1 is the shadow map
+            // write.dstArrayElement = 0;
+            // write.descriptorCount = 1;
+            // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+            // write.pImageInfo = &testInfo;
+            //
+            // vkUpdateDescriptorSets(device->vk_GetDevice(), 1, &write, 0, nullptr);
+
+            auto descriptorSet = scene->GetSceneDescriptorSet();
+            Engine::DescriptorWriter writer(scene->GetSceneDescriptorSetLayout(), scene->GetSceneDescriptorPool());
+            writer.writeImage(1, &testInfo);
+            writer.overwrite(descriptorSet);
+
             if (auto commandBuffer = renderer->vk_BeginFrame()) {
-                //*************************************************
-                //*             Offscreen rendering             *//
-                //*************************************************
-                offscreenRenderer->BeginRenderPass(commandBuffer);
-                // !!Render scene here!!
+                 //*************************************************
+                 //*             Offscreen rendering             *//
+                 //*************************************************
+                 // !!Render scene here!!
 
-                sceneRenderingSystem->Render(commandBuffer, *scene);
-
+                offscreenRenderer->BeginRenderPass(commandBuffer, Engine::RenderPassType::SHADOW);
+                shadowRenderingSystem->Render(commandBuffer, *scene);
                 offscreenRenderer->EndRenderPass(commandBuffer);
 
-                //*************************************************
-                //*             Onscreen rendering              *//
-                //*************************************************
-                renderer->vk_BeginSwapChainRenderPass(commandBuffer);
+                offscreenRenderer->BeginRenderPass(commandBuffer, Engine::RenderPassType::SCENE);
+                sceneRenderingSystem->Render(commandBuffer, *scene);
+                offscreenRenderer->EndRenderPass(commandBuffer);
 
+                 //*************************************************
+                 //*             Onscreen rendering              *//
+                 //*************************************************
+                 renderer->vk_BeginSwapChainRenderPass(commandBuffer);
 
-                //Maybe expensive? Temporary
-                if (scene->sceneView != offscreenRenderer->GetFramebuffer().GetDescriptorSet()) {
-                    scene->sceneView = offscreenRenderer->GetFramebuffer().GetDescriptorSet();
-                }
+                 //Maybe expensive? Temporary
+                 if (scene->sceneView != offscreenRenderer->GetRenderPassImage(Engine::RenderPassType::SCENE)) {
+                     scene->sceneView = offscreenRenderer->GetRenderPassImage(Engine::RenderPassType::SCENE);
+                 }
 
-                // Render UI
-                Engine::Framebuffer& framebuffer = offscreenRenderer->GetFramebuffer();
-                ui->OnUpdate(commandBuffer, *scene, framebuffer);
+                 //Render UI
+                 ui->OnUpdate(commandBuffer, *scene);
 
                 //End render pass
                 renderer->vk_EndSwapChainRenderPass(commandBuffer);
@@ -110,6 +135,7 @@ namespace Editor {
                 // End recording
                 renderer->vk_EndFrame();
             }
+
 
             // Wait for everything to finish before deleting entities
             vkDeviceWaitIdle(device->vk_GetDevice());

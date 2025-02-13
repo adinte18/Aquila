@@ -7,21 +7,21 @@
 namespace Engine {
 
     void Camera::MoveForward(float delta) {
-        position += direction * movementSpeed * delta;
+        position -= direction * movementSpeed * delta;
     }
 
     void Camera::MoveBackward(float delta) {
-        position -= direction * movementSpeed * delta;
+        position += direction * movementSpeed * delta;
     }
 
     void Camera::MoveRight(float delta) {
         glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.f, -1.f, 0.f)));
-        position += right * movementSpeed * delta;
+        position -= right * movementSpeed * delta;
     }
 
     void Camera::MoveLeft(float delta) {
         glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.f, -1.f, 0.f)));
-        position -= right * movementSpeed * delta;
+        position += right * movementSpeed * delta;
     }
 
     void Camera::Rotate(double yaw, double pitch) {

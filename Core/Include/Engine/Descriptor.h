@@ -35,7 +35,7 @@ namespace Engine
     DescriptorSetLayout(const DescriptorSetLayout &) = delete;
     DescriptorSetLayout &operator=(const DescriptorSetLayout &) = delete;
 
-    VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
+    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
 
    private:
     Device &device;

@@ -12,6 +12,8 @@ layout(set = 1, binding = 0) uniform sampler2D albedo;
 layout(set = 1, binding = 1) uniform sampler2D normal;
 layout(set = 1, binding = 2) uniform sampler2D metallic;
 
+layout(set = 0, binding = 1) uniform sampler2D shadowMap;
+
 struct uboLight {
     int type;
     vec3 color;
@@ -20,16 +22,21 @@ struct uboLight {
 };
 
 layout(std140, set = 0, binding = 0) uniform UniformData {
-    mat4 projection;
-    mat4 view;
+    mat4 cameraProjection;
+    mat4 cameraView;
     mat4 inverseView;
     uboLight light;
+    mat4 lightView;
+    mat4 lightProjection;
 } ubo;
 
 void main() {
+
     vec4 albedoColor = texture(albedo, fragTexCoord);
     vec4 normalMap = texture(normal, fragTexCoord);
     vec4 metallicMap = texture(metallic, fragTexCoord);
+
+    vec4 shadow = texture(shadowMap, fragTexCoord);
 
     // Set final color as default texture
     vec3 finalColor = albedoColor.rgb;

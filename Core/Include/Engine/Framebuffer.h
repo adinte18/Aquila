@@ -5,12 +5,14 @@
 #include <stdexcept>
 
 #include "Descriptor.h"
+#include "Texture2D.h"
 #include "Engine/Device.h"
 
 namespace Engine {
     class Framebuffer {
     public:
-        Framebuffer(Device &device, VkRenderPass renderPass);
+        Framebuffer();
+        Framebuffer(Device &device);
 
         ~Framebuffer();
 
@@ -21,14 +23,21 @@ namespace Engine {
         Framebuffer(Framebuffer&& other) = delete;
 
         void CreateFramebuffer(VkExtent2D extent, VkRenderPass renderPass);
+
+        void CreateDepthFramebuffer(VkExtent2D extent, VkRenderPass renderPass);
+
         void DestroyFramebuffer();
         void Resize(VkExtent2D newExtent);
 
         [[nodiscard]] VkExtent2D GetExtent() const { return extent; }
 
         [[nodiscard]] VkFramebuffer GetFramebuffer() const { return framebuffer; }
-
         [[nodiscard]] VkDescriptorSet GetDescriptorSet() const { return descriptorSet; }
+
+        [[nodiscard]] VkSampler GetDepthSampler() const {return depthSampler; }
+        [[nodiscard]] VkImageView GetDepthImageView() const {return depthImageView; }
+        [[nodiscard]] VkImage GetDepthImage() const {return depthImage; }
+
 
     private:
         VkDescriptorSet descriptorSet{};

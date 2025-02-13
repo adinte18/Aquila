@@ -20,8 +20,10 @@ namespace Editor{
 
     class UI {
     public:
+        ImVec2 lastViewportSize = {0, 0};
+
         void OnStart();
-        void OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene &scene, Engine::Framebuffer& viewportFramebuffer);
+        void OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene &scene);
         void OnEnd();
 
         UI(Engine::Device& device, Engine::Window& window, const VkRenderPass renderPass)
@@ -34,6 +36,7 @@ namespace Editor{
         [[nodiscard]] bool IsViewportResized() const { return viewportResized; }
         [[nodiscard]] VkExtent2D GetViewportSize() const { return viewportExtent; }
         void SetViewportResized(const bool resized) { viewportResized = resized; }
+        void GetTimings(float time);
 
     private:
         static void SetSelectedEntity(const entt::entity entity) {
@@ -51,6 +54,8 @@ namespace Editor{
         Engine::Window& window;
         VkRenderPass renderPass;
         VkDescriptorPool editorDescriptorPool{};
+
+        float gpuTime{0.0f};
     };
 }
 

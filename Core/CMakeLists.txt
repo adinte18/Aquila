@@ -18,7 +18,8 @@ add_library(Core STATIC ${ENGINE_SOURCES}
         Source/Engine/Shader.cpp
         Include/Engine/Camera.h
         Source/Engine/Camera.cpp
-        Include/Engine/Primitives.h)
+        Include/Engine/Primitives.h
+        Source/RenderingSystems/DepthRenderingSystem.cpp)
 
 target_include_directories(Core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Include/                            # Path to Core headers
@@ -29,6 +30,13 @@ target_include_directories(Core PUBLIC
         ${CMAKE_SOURCE_DIR}/Core/Include                                # Path to include directory
         ${CMAKE_SOURCE_DIR}/Core/Include/External/glfw/include
 )
+
+set(SHADERS_PATH "${CMAKE_SOURCE_DIR}/Resources/Shaders")
+add_compile_definitions(SHADERS_PATH="${SHADERS_PATH}")
+
+set(TEXTURES_PATH "${CMAKE_SOURCE_DIR}/Resources/Textures")
+add_compile_definitions(TEXTURES_PATH="${TEXTURES_PATH}")
+
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     message(STATUS "Building in Debug mode with DEBUG")

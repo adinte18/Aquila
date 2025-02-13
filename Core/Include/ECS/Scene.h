@@ -5,7 +5,9 @@
 #include <memory>
 #include <Engine/Buffer.h>
 #include <Engine/Descriptor.h>
+#include <Engine/OffscreenRenderer.h>
 #include <glm/glm.hpp>
+#include <chrono>
 
 #include "Engine/Camera.h"
 
@@ -22,12 +24,16 @@ namespace ECS {
         alignas(16) glm::mat4 view{1.f};
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) uboLight light{};
+        alignas(16) glm::mat4 lightView{1.f};
+        alignas(16) glm::mat4 lightProjection{1.f};
     };
 
     class Scene {
     public:
-        explicit Scene(Engine::Device &device);
+        explicit Scene(Engine::Device &device, Engine::OffscreenRenderer &offscreenRenderer);
         ~Scene() = default;
+
+        [[nodiscard]] VkDescriptorSet GetSceneDescriptorSet() const { return sceneDescriptorSet; }
 
         [[nodiscard]] Engine::DescriptorPool& GetMaterialDescriptorPool() const { return *materialDescriptorPool; }
         [[nodiscard]] Engine::DescriptorPool& GetSceneDescriptorPool() const { return *sceneDescriptorPool; }
@@ -39,6 +45,9 @@ namespace ECS {
 
         VkDescriptorSet sceneView{};
         VkDescriptorSet sceneDescriptorSet{};
+
+        VkSampler depthSampler{};
+        VkImageView depthImageView{};
 
         // Create a new entity in the scene using the shared registry
         std::shared_ptr<Entity> CreateEntity();
@@ -56,6 +65,7 @@ namespace ECS {
         entt::registry& GetRegistry();
 
         Engine::Camera& GetActiveCamera() { return camera; }
+        [[nodiscard]] float GetFrameTime() const { return frameTime; }
 
     private:
         Engine::Camera camera;
@@ -70,6 +80,9 @@ namespace ECS {
 
         Engine::Device *device;
         entt::registry registry;
+        Engine::OffscreenRenderer * renderer;
+        float frameTime{0.f};
+        std::chrono::time_point<std::chrono::steady_clock> currentTime{};
     };
 }
 

@@ -126,7 +126,7 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                     }
 
                     auto defaultTex = Engine::Texture2D::create(device);
-                    defaultTex->vk_CreateTexture("../../Resources/Textures/TemplateGrid_albedo.png");
+                    defaultTex->vk_CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
 
                     Material material{};
 
@@ -213,7 +213,7 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
 
     // Create a default texture
     auto defaultTex = Engine::Texture2D::create(device);
-    defaultTex->vk_CreateTexture("../../Resources/Textures/TemplateGrid_albedo.png");
+    defaultTex->vk_CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
 
     // Create a material and descriptor set for the primitive
     Material material{};

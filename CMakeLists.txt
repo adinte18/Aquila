@@ -8,8 +8,14 @@ add_subdirectory(Core)
 add_subdirectory(App)
 
 file(GLOB SHADER_FILES "${CMAKE_SOURCE_DIR}/Resources/Shaders/*.frag" "${CMAKE_SOURCE_DIR}/Resources/Shaders/*.vert")
-
 set(VALIDATE_COMMANDS)
+
+set(SHADERS_PATH "${CMAKE_SOURCE_DIR}/Resources/Shaders")
+set(TEXTURES_PATH "${CMAKE_SOURCE_DIR}/Resources/Textures")
+target_compile_definitions(App PRIVATE 
+    SHADERS_PATH="${SHADERS_PATH}" 
+    TEXTURES_PATH="${TEXTURES_PATH}"
+)
 
 foreach(SHADER_FILE ${SHADER_FILES})
     get_filename_component(SHADER_NAME_WE ${SHADER_FILE} NAME_WE)
@@ -27,5 +33,6 @@ foreach(SHADER_FILE ${SHADER_FILES})
 
     list(APPEND VALIDATE_COMMANDS ${OUTPUT_FILE})
 endforeach()
+
 
 add_custom_target(validate_shaders ALL DEPENDS ${VALIDATE_COMMANDS})

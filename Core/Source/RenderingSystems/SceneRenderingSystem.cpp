@@ -49,8 +49,8 @@ void RenderingSystem::SceneRenderingSystem::CreatePipeline(VkRenderPass renderPa
     pipelineConfig.pipelineLayout = pipelineLayout;
     pipeline = std::make_unique<Engine::Pipeline>(
             device,
-            "../../Resources/Shaders/shader_vert.spv",
-            "../../Resources/Shaders/shader_frag.spv",
+            std::string(SHADERS_PATH) + "/shader_vert.spv",
+            std::string(SHADERS_PATH) + "/shader_frag.spv",
             pipelineConfig);
 
 }
