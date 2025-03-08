@@ -13,6 +13,7 @@
 #include "Engine/OffscreenRenderer.h"
 #include "RenderingSystems/SceneRenderingSystem.h"
 #include "RenderingSystems/DepthRenderingSystem.h"
+#include "RenderingSystems/GridRenderingSystem.h"
 
 
 namespace Editor {
@@ -29,6 +30,8 @@ namespace Editor {
         std::unique_ptr<Engine::OffscreenRenderer> offscreenRenderer;
         std::shared_ptr<RenderingSystem::SceneRenderingSystem> sceneRenderingSystem;
         std::shared_ptr<RenderingSystem::DepthRenderingSystem> shadowRenderingSystem;
+        std::shared_ptr<RenderingSystem::GridRenderingSystem> gridRenderingSystem;
+
 
         std::unique_ptr<UI> ui;
         std::unique_ptr<ECS::Scene> scene;
@@ -58,15 +61,22 @@ namespace Editor {
                 offscreenRenderer->GetRenderPass(Engine::RenderPassType::SCENE),
                 setLayouts);
 
+            gridRenderingSystem = std::make_shared<RenderingSystem::GridRenderingSystem>(*device,
+                 offscreenRenderer->GetRenderPass(Engine::RenderPassType::SCENE),
+                 setLayouts);
+
             shadowRenderingSystem = std::make_shared<RenderingSystem::DepthRenderingSystem>(*device,
                 offscreenRenderer->GetRenderPass(Engine::RenderPassType::SHADOW),
                 setLayouts);
+
 
             // Initialize UI
             ui = std::make_unique<UI>(*device, *window, renderer->vk_GetCurrentRenderPass());
             ui->OnStart();
 
-            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), renderer->vk_GetAspectRatio(), 0.1f, 1000.f);
+            scene->GetActiveCamera().SetPerspectiveProjection(glm::radians(80.f), offscreenRenderer->GetAspectRatio(), 1.0f, 100.f);
+            scene->GetActiveCamera().SetPosition(glm::vec3(0,1,-10));
+            scene->GetActiveCamera().SetViewYXZ(scene->GetActiveCamera().GetPosition(), glm::vec3(0,0,0));
         }
 
         virtual void OnUpdate() {
@@ -82,21 +92,7 @@ namespace Editor {
                 scene->GetActiveCamera().OnResize(ui->GetViewportSize().width, ui->GetViewportSize().height);
             }
 
-            // 🔹 Get updated depth texture info
             auto testInfo = offscreenRenderer->GetDepthInfo(Engine::RenderPassType::SHADOW);
-
-            // // 🔹 Only update the shadow map descriptor, keep UBO intact
-            // VkWriteDescriptorSet write{};
-            // write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-            // write.dstSet = scene->GetSceneDescriptorSet(); // No need to reallocate, just update
-            // write.dstBinding = 1; // Binding 1 is the shadow map
-            // write.dstArrayElement = 0;
-            // write.descriptorCount = 1;
-            // write.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            // write.pImageInfo = &testInfo;
-            //
-            // vkUpdateDescriptorSets(device->vk_GetDevice(), 1, &write, 0, nullptr);
-
             auto descriptorSet = scene->GetSceneDescriptorSet();
             Engine::DescriptorWriter writer(scene->GetSceneDescriptorSetLayout(), scene->GetSceneDescriptorPool());
             writer.writeImage(1, &testInfo);
@@ -112,8 +108,12 @@ namespace Editor {
                 shadowRenderingSystem->Render(commandBuffer, *scene);
                 offscreenRenderer->EndRenderPass(commandBuffer);
 
+
                 offscreenRenderer->BeginRenderPass(commandBuffer, Engine::RenderPassType::SCENE);
                 sceneRenderingSystem->Render(commandBuffer, *scene);
+
+                // Transparent grid
+                gridRenderingSystem->Render(commandBuffer, *scene);
                 offscreenRenderer->EndRenderPass(commandBuffer);
 
                  //*************************************************

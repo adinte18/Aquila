@@ -4,58 +4,104 @@
 
 #include "Engine/Camera.h"
 
+#include <iostream>
+
 namespace Engine {
 
-    void Camera::MoveForward(float delta) {
-        position -= direction * movementSpeed * delta;
+void Camera::SpeedUp() {
+    if (!isSpedUp) {
+        movementSpeed *= 5.0f;
+        isSpedUp = true;
     }
+}
 
-    void Camera::MoveBackward(float delta) {
-        position += direction * movementSpeed * delta;
+void Camera::ResetSpeed() {
+    if (isSpedUp) {
+        movementSpeed /= 5.0f;
+        isSpedUp = false;
     }
+}
 
-    void Camera::MoveRight(float delta) {
-        glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.f, -1.f, 0.f)));
-        position -= right * movementSpeed * delta;
+void Camera::MoveForward(float delta) {
+    glm::mat4 viewMatrix = GetInverseView();  // Get the camera's inverse view matrix
+
+    glm::vec3 forward = glm::normalize(glm::vec3(viewMatrix[2]));
+
+    glm::vec3 moveDir = forward;
+
+    // Only move if moveDir is not zero (which should always be the case)
+    if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
+        position += movementSpeed * delta * glm::normalize(moveDir);
     }
+}
 
-    void Camera::MoveLeft(float delta) {
-        glm::vec3 right = glm::normalize(glm::cross(direction, glm::vec3(0.f, -1.f, 0.f)));
-        position += right * movementSpeed * delta;
+
+void Camera::MoveBackward(float delta) {
+    glm::mat4 viewMatrix = GetInverseView();  // Get the camera's inverse view matrix
+
+    glm::vec3 forward = glm::normalize(glm::vec3(viewMatrix[2]));
+
+    glm::vec3 moveDir = -forward;
+
+    // Only move if moveDir is not zero (which should always be the case)
+    if (glm::dot(moveDir, moveDir) > std::numeric_limits<float>::epsilon()) {
+        position += movementSpeed * delta * glm::normalize(moveDir);
     }
+}
 
-    void Camera::Rotate(double yaw, double pitch) {
-        rotation.x += pitch;
-        rotation.y += yaw;
 
-        // Clamp the pitch to avoid flipping the camera
-        rotation.x = glm::clamp(rotation.x, -89.0f, 89.0f);
+void Camera::MoveRight(float delta) {
+    glm::mat4 viewMatrix = GetInverseView();  // Get the camera's inverse view matrix
 
-        // Update view matrix based on new rotation
-        SetViewYXZ(position, rotation);
-    }
+    // Get the right vector (first column of the inverse view matrix)
+    glm::vec3 right = glm::normalize(glm::vec3(viewMatrix[0]));
 
-    void Camera::Zoom(float offset, float aspectRatio) {
-        // Update zoom level and clamp it
-        zoom -= offset;
-        zoom = glm::clamp(zoom, 1.0f, 90.0f); // Clamping to avoid extreme zoom levels
+    // Move in the right direction
+    position += right * movementSpeed * delta;
+}
 
-        // Update the perspective projection matrix based on new zoom level
-        SetPerspectiveProjection(glm::radians(zoom), aspectRatio, 0.1, 100.f);
-    }
+void Camera::MoveLeft(float delta) {
+    glm::mat4 viewMatrix = GetInverseView();  // Get the camera's inverse view matrix
 
-    void Camera::OnResize(float width, float height) {
-        SetPerspectiveProjection(glm::radians(zoom), width / height, 0.1, 1000.f);
-    }
+    // Get the right vector (first column of the inverse view matrix)
+    glm::vec3 right = glm::normalize(glm::vec3(viewMatrix[0]));
+
+    // Move in the opposite direction of the right vector (i.e., left)
+    position -= right * movementSpeed * delta;
+}
+
+
+void Camera::Rotate(double yaw, double pitch) {
+
+    rotation.x += pitch;
+    rotation.y += yaw;
+
+    rotation.x = glm::clamp(rotation.x, -89.0f, 89.0f);
+
+    SetViewYXZ(position, rotation);
+}
+
+void Camera::Zoom(float offset, float aspectRatio) {
+    // Update zoom level and clamp it
+    zoom -= offset;
+    zoom = glm::clamp(zoom, 1.0f, 90.0f); // Clamping to avoid extreme zoom levels
+
+    // Update the perspective projection matrix based on new zoom level
+    SetPerspectiveProjection(glm::radians(zoom), aspectRatio, 0.1, 100.f);
+}
+
+void Camera::OnResize(float width, float height) {
+    SetPerspectiveProjection(glm::radians(zoom), width / height, 0.1, 1000.f);
+}
 
 
 void Camera::SetOrthographicProjection(float left, float right, float top, float bottom, float near, float far) {
     projectionMatrix = glm::mat4{1.0f};
     projectionMatrix[0][0] = 2.f / (right - left);
-    projectionMatrix[1][1] = 2.f / (top - bottom); // Flip the Y-axis
+    projectionMatrix[1][1] = 2.f / (top - bottom);
     projectionMatrix[2][2] = 1.f / (far - near);
     projectionMatrix[3][0] = -(right + left) / (right - left);
-    projectionMatrix[3][1] = -(top + bottom) / (top - bottom); // Flip the Y-axis
+    projectionMatrix[3][1] = -(top + bottom) / (top - bottom);
     projectionMatrix[3][2] = -near / (far - near);
 }
 
@@ -67,7 +113,7 @@ void Camera::SetPerspectiveProjection(float FOV_y, float aspect, float near, flo
     projectionMatrix[1][1] = 1.f / (tanHalfFovy);
     projectionMatrix[2][2] = far / (far - near);
     projectionMatrix[2][3] = 1.f;
-    projectionMatrix[3][2] = -(far * near) / (far - near); // Flip the Y-axis
+    projectionMatrix[3][2] = -(far * near) / (far - near);
 }
 
 void Camera::SetViewDirection(glm::vec3 position, glm::vec3 direction, glm::vec3 up) {

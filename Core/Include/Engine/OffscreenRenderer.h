@@ -26,6 +26,10 @@ namespace Engine {
         void BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type);
         void EndRenderPass(VkCommandBuffer commandBuffer);
 
+        [[nodiscard]] float GetAspectRatio() const {
+            return static_cast<float>(extent.width) / static_cast<float>(extent.height);
+        }
+
         [[nodiscard]] VkRenderPass GetRenderPass(RenderPassType type) const { return renderpass.GetRenderPass(type); }
         [[nodiscard]] VkDescriptorSet GetRenderPassImage(RenderPassType type) const {return renderpass.GetImage(type); }
 

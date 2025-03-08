@@ -4,7 +4,7 @@
 
 struct PushConstantData
 {
-    glm::mat4 modelMatrix{1.f}; //identity
+    glm::mat4 modelMatrix{1.f};
     glm::mat4 normalMatrix{1.f};
 };
 
@@ -15,25 +15,19 @@ RenderingSystem::DepthRenderingSystem::DepthRenderingSystem(Engine::Device &devi
 }
 
 void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
+    pipeline->bind(commandBuffer);
+
     scene.GetRegistry().view<ECS::Light>().each([&scene, this, &commandBuffer](ECS::Light& light) {
         if (light.type == ECS::Light::LightType::Directional) {
-            glm::mat4 lightView = light.view;
-            glm::mat4 lightProjection = light.projection;
-
-            pipeline->bind(commandBuffer);
-
-
 
             scene.GetRegistry().view<ECS::Transform, ECS::Mesh>()
-                .each([&scene, this, &commandBuffer, &lightView, &lightProjection](ECS::Transform& transform, ECS::Mesh& mesh) {
+                .each([&scene, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
 
                 if (mesh.mesh) {
                     PushConstantData push{};
-                    // Apply the light's view and projection matrices to the mesh's transformation matrix
-                    push.modelMatrix = lightProjection * lightView * transform.TransformMatrix();
-                    push.normalMatrix = glm::transpose(glm::inverse(push.modelMatrix));
+                    push.modelMatrix = transform.TransformMatrix();
+                    push.normalMatrix = transform.NormalMatrix();
 
-                    // Push the model and normal matrices as push constants
                     vkCmdPushConstants(commandBuffer,
                         pipelineLayout,
                         VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
@@ -41,7 +35,6 @@ void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer
                         sizeof(PushConstantData),
                         &push);
 
-                    // Bind the mesh's vertex buffers and draw it to the shadow map
                     mesh.mesh->bind(commandBuffer);
                     mesh.mesh->draw(commandBuffer, scene.sceneDescriptorSet, pipelineLayout);
                 }
@@ -57,6 +50,7 @@ void RenderingSystem::DepthRenderingSystem::CreatePipeline(VkRenderPass renderPa
     Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = pipelineLayout;
+    pipelineConfig.colorBlendAttachment.blendEnable = VK_FALSE;
     pipeline = std::make_unique<Engine::Pipeline>(
             device,
             std::string(SHADERS_PATH) + "/shadows_vert.spv",

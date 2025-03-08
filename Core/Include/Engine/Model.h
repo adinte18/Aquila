@@ -92,6 +92,9 @@ namespace Engine {
         void Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool);
         void CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout &materialSetLayout, Engine::DescriptorPool &
                              descriptorPool);
+
+        void CreateQuad(float size);
+
         explicit Model3D(Device &device);
         ~Model3D();
 

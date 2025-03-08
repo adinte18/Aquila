@@ -241,6 +241,41 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
     primitives.push_back(prim);
 }
 
+void Engine::Model3D::CreateQuad(float size) {
+    vertices.clear();
+    indices.clear();
+
+    std::vector<Vertex> quadVertices = {
+        // Change y positions for horizontal alignment
+        {glm::vec4(-size / 2.0f, 0.0f, -size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f)}, // Bottom-left
+        {glm::vec4( size / 2.0f, 0.0f, -size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)}, // Bottom-right
+        {glm::vec4(-size / 2.0f, 0.0f,  size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)}, // Top-left
+
+        {glm::vec4( size / 2.0f, 0.0f, -size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f)}, // Bottom-right
+        {glm::vec4( size / 2.0f, 0.0f,  size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f)}, // Top-right
+        {glm::vec4(-size / 2.0f, 0.0f,  size / 2.0f, 1.0f), glm::vec3(1.0f), glm::vec3(0.0f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f)}  // Top-left
+    };
+
+
+    std::vector<uint32_t> quadIndices = {
+        0, 1, 2,
+        3, 4, 5
+    };
+
+    vk_CreateVertexBuffers(quadVertices);
+    vk_CreateIndexBuffer(quadIndices);
+
+    // Create a primitive and link it to the material
+    Primitive prim{};
+    prim.firstVertex = 0;
+    prim.vertexCount = static_cast<uint32_t>(quadVertices.size());
+    prim.indexCount = static_cast<uint32_t>(quadIndices.size());
+    prim.firstIndex = 0;
+    primitives.push_back(prim);
+}
+
+
+
 void Engine::Model3D::vk_CreateVertexBuffers(const std::vector<Vertex> &vertices) {
     vertexCount = static_cast<uint32_t>(vertices.size());
     assert(vertexCount >= 3 && "Vertex count must be at least 3");
@@ -306,12 +341,22 @@ void Engine::Model3D::draw(VkCommandBuffer commandBuffer, VkDescriptorSet descri
     if (!primitives.empty()) {
         for (auto& primitive : primitives) {
             if (hasIndexBuffer) {
-                std::array<VkDescriptorSet, 2> sets{descriptorSet, primitive.material.descriptorSet};
-                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                    0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+                if (primitive.material.descriptorSet) {
+                    // Only bind the material descriptor set if it exists
+                    std::array<VkDescriptorSet, 2> sets{descriptorSet, primitive.material.descriptorSet};
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                        0, static_cast<uint32_t>(sets.size()), sets.data(), 0, nullptr);
+                } else {
+                    // If no material descriptor set, just bind the default descriptor set
+                    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                        0, 1, &descriptorSet, 0, nullptr);
+                }
                 vkCmdDrawIndexed(commandBuffer, primitive.indexCount,
                     1, primitive.firstIndex, primitive.firstVertex, 0);
             } else {
+                // If no index buffer, just draw the vertices
+                vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                    0, 1, &descriptorSet, 0, nullptr);
                 vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
             }
         }
@@ -319,6 +364,7 @@ void Engine::Model3D::draw(VkCommandBuffer commandBuffer, VkDescriptorSet descri
         throw std::runtime_error("No primitives found");
     }
 }
+
 
 std::shared_ptr<Engine::Model3D> Engine::Model3D::create(Device& device) {
     return std::make_shared<Engine::Model3D>(device);

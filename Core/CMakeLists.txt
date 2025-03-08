@@ -19,7 +19,8 @@ add_library(Core STATIC ${ENGINE_SOURCES}
         Include/Engine/Camera.h
         Source/Engine/Camera.cpp
         Include/Engine/Primitives.h
-        Source/RenderingSystems/DepthRenderingSystem.cpp)
+        Source/RenderingSystems/DepthRenderingSystem.cpp
+        Include/RenderingSystems/GridRenderingSystem.h)
 
 target_include_directories(Core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Include/                            # Path to Core headers

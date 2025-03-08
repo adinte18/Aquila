@@ -13,34 +13,66 @@ namespace ECS {
     };
 
     struct Light {
-        enum class LightType { Directional, Point } type { LightType::Directional };
-        glm::vec3 color{ glm::vec3{1.f} };
-        float intensity{ 0.5f };
-        glm::vec3 direction{ glm::vec3{0.f} }; // For directional/spotlights
-        glm::vec3 position{ glm::vec3{0.f, 0.f, 0.f} }; // For point/spotlights
+        enum class LightType { Directional, Point, Spot };
+        LightType type;
 
-        // The view and projection matrices for the light
-        glm::mat4 view{ 1.0f };
-        glm::mat4 projection{ 1.0f };
+        glm::vec3 color{1.f};
+        float intensity{0.5f};
+        glm::vec3 direction{0.f};
+        glm::vec3 position{0.f};
 
-        explicit Light(const LightType t = LightType::Directional, const glm::vec3 col = glm::vec3{ 1.f },
-                       const float intens = 0.5f, const glm::vec3 dir = glm::vec3{ 0.f, 0.f, -1.f },
-                       const glm::vec3 pos = glm::vec3{ 0.f, -1.f, 0.f })
-            : type(t), color(col), intensity(intens), direction(dir), position(pos)
-        {
-            updateMatrices();
+        glm::mat4 view{1.0f};
+        glm::mat4 projection{1.0f};
+        glm::mat4 lightSpaceMatrix{1.0f};
+
+        explicit Light(const glm::vec3& pos = glm::vec3{-10.0f, 10.0f, -10.0f},
+                       const glm::vec3& col = glm::vec3{1.f},
+                       float intens = 0.5f,
+                       LightType t = LightType::Directional)
+            : type(t), color(col), intensity(intens), position(pos) {
+            UpdateMatrices();
         }
 
-        void updateMatrices() {
-            if (type == LightType::Directional) {
-                view = glm::lookAt(position, position + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                projection = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 50.f);
-            } else if (type == LightType::Point) {
-                view = glm::lookAt(position, position + direction, glm::vec3(0.0f, 1.0f, 0.0f));
-                projection = glm::ortho(-1.5f, 1.5f, -1.5f, 1.5f, 0.1f, 10.f);
-            }
+        void SetLightViewMatrix(const glm::vec3& target = glm::vec3(0.f),
+                                const glm::vec3& up = glm::vec3(0.0f, -1.0f, 0.0f)) {
+            view = glm::lookAtRH(position, target, up);
+            direction = glm::normalize(target - position);
+        }
+
+        void SetLightProjection(float left, float right, float top, float bottom, float near, float far) {
+            projection = glm::orthoRH_ZO(left, right, bottom, top, near, far);
+            projection[1][1] *= -1;
+        }
+
+        void UpdateMatrices() {
+            //Day/Night simulation
+            float angle = glfwGetTime() * 0.5f;
+            float radius = 10.0f;
+
+            position.x = cos(angle) * radius;
+            position.z = sin(angle) * radius;
+            position.y = 10.0f;
+
+            SetLightViewMatrix(glm::vec3(0.f));
+            SetLightProjection(-50.f, 50.f, -50.f, 50.f, 0.1f, 100.f);
+
+            lightSpaceMatrix = projection * view;
+
+            auto isnan_mat4 = [](const glm::mat4& mat) {
+                for (int i = 0; i < 4; ++i) {
+                    for (int j = 0; j < 4; ++j) {
+                        if (glm::isnan(mat[i][j])) return true;
+                    }
+                }
+                return false;
+            };
+
+            assert(!isnan_mat4(view) && "View matrix contains NaN values");
+            assert(!isnan_mat4(projection) && "Projection matrix contains NaN values");
+            assert(!isnan_mat4(lightSpaceMatrix) && "Light space matrix contains NaN values");
         }
     };
+
 
 
     struct Transform {

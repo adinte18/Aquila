@@ -7,9 +7,9 @@ namespace Engine {
 
     VkDescriptorImageInfo OffscreenRenderer::GetDepthInfo(RenderPassType type) const {
         VkDescriptorImageInfo info = {};
-        info.imageView = renderpass.GetRenderTarget(type);  // Ensure this is valid
-        info.sampler = renderpass.GetRenderSampler(type);      // Ensure this is valid
-        info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;  // Correct layout for shadow map
+        info.imageView = renderpass.GetRenderTarget(type);
+        info.sampler = renderpass.GetRenderSampler(type);
+        info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
         return info;
     }
 
@@ -18,16 +18,20 @@ namespace Engine {
 
         renderpass.CreateRenderTarget(device, width, height);
 
-        //Scene RenderPass
+        // Scene RenderPass
+        renderpass.CreateRenderPass(RenderPassType::GRID);
+        renderpass.CreateFramebuffer(RenderPassType::GRID);
+
+        // Scene RenderPass
         renderpass.CreateRenderPass(RenderPassType::SCENE);
         renderpass.CreateFramebuffer(RenderPassType::SCENE);
-    
-        //Depth RenderPass
+
+        // Depth RenderPass
         renderpass.CreateRenderPass(RenderPassType::SHADOW);
         renderpass.CreateFramebuffer(RenderPassType::SHADOW);
 
-        //Add here other render passes
-        //....
+        // Add here other render passes
+        // ....
     }
 
     void OffscreenRenderer::Resize(VkExtent2D newExtent) {
@@ -40,17 +44,19 @@ namespace Engine {
 
         renderpass.CreateRenderTarget(device, extent.width, extent.height);
 
+        // Scene RenderPass
+        renderpass.CreateRenderPass(RenderPassType::GRID);
+        renderpass.CreateFramebuffer(RenderPassType::GRID);
+
         renderpass.CreateRenderPass(RenderPassType::SCENE);
         renderpass.CreateFramebuffer(RenderPassType::SCENE);
 
-        //Depth RenderPass
+        // Depth RenderPass
         renderpass.CreateRenderPass(RenderPassType::SHADOW);
         renderpass.CreateFramebuffer(RenderPassType::SHADOW);
 
-        //Add here other render passes (if there are any)
-        //....
-
-        std::cout << "Resizing passes" << std::endl;
+        // Add here other render passes (if there are any)
+        // ....
     }
 
     void OffscreenRenderer::BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type) {
@@ -60,7 +66,7 @@ namespace Engine {
         renderPassInfo.framebuffer = renderpass.GetFramebuffer(type);
         renderPassInfo.renderArea.offset = {0, 0};
         if (type == RenderPassType::SHADOW) {
-            renderPassInfo.renderArea.extent = {4096, 4096};
+            renderPassInfo.renderArea.extent = {8192, 8192};
         } else {
             renderPassInfo.renderArea.extent = extent;
         }
@@ -79,22 +85,36 @@ namespace Engine {
         }
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
     
-        VkViewport viewport{};
+        VkViewport viewport = {};
         viewport.x = 0.0f;
-        viewport.y = static_cast<float>(extent.height);
-        viewport.width = static_cast<float>(extent.width);
-        viewport.height = -static_cast<float>(extent.height); // inverse coordinate system
+        viewport.y = 0.0f;
+        if (type == RenderPassType::SHADOW) {
+            viewport.width = 8192.0f;
+            viewport.height = 8192.0f;
+        } else {
+            viewport.width = static_cast<float>(extent.width);
+            viewport.height = static_cast<float>(extent.height);
+        }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
-        VkRect2D scissor{{0,0}, extent};
-        vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
-        vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        if (type == RenderPassType::SHADOW) {
+            VkRect2D scissor{{0, 0}, {8192, 8192}};
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        }
+        else {
+            VkRect2D scissor{{0, 0}, extent};
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        }
     }
     
     void OffscreenRenderer::EndRenderPass(VkCommandBuffer commandBuffer) {
         vkCmdEndRenderPass(commandBuffer);
     }
-    
+
 
 }
 

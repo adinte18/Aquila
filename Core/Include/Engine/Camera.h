@@ -30,6 +30,10 @@ namespace Engine
 
             void SetViewYXZ(glm::vec3 position, glm::vec3 rotation);
 
+            void SpeedUp();
+
+            void ResetSpeed();
+
             void MoveForward(float delta);
             void MoveBackward(float delta);
             void MoveRight(float delta);
@@ -57,6 +61,8 @@ namespace Engine
             float rotationSpeed{0.1f};  // Speed of rotation
             glm::vec3 direction{0.0f, 0.0f, -1.0f}; // Camera direction
             float zoom{45.0f}; // Field of view
+
+            bool isSpedUp{false};
 
     };
 }

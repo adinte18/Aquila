@@ -2,52 +2,60 @@
 
 namespace Engine {
     void Renderpass::DestroyAll() {
-        // Destroy all render passes
-        for (auto&[fst, snd] : renderPasses) {
-            if (snd != VK_NULL_HANDLE) vkDestroyRenderPass(device.vk_GetDevice(), snd, nullptr);
-        }
+        vkDeviceWaitIdle(device.vk_GetDevice());
 
-        // Destroy all framebuffers
-        for (auto&[fst, snd] : framebuffers) {
-            if (snd != VK_NULL_HANDLE) vkDestroyFramebuffer(device.vk_GetDevice(), snd, nullptr);
+        for (auto& [fst, snd] : framebuffers) {
+            if (snd != VK_NULL_HANDLE) {
+                std::cout << "Destroying Framebuffer: " << snd << std::endl;
+                vkDestroyFramebuffer(device.vk_GetDevice(), snd, nullptr);
+            }
         }
+        framebuffers.clear();
 
-        // Destroy all render targets
+        for (auto& [fst, snd] : renderPasses) {
+            if (snd != VK_NULL_HANDLE) {
+                vkDestroyRenderPass(device.vk_GetDevice(), snd, nullptr);
+            }
+        }
+        renderPasses.clear();
+
         for (auto& [fst, snd] : renderTargets) {
-            if (snd->colorImageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(device.vk_GetDevice(), snd->colorImageView, nullptr);
-                snd->colorImageView = VK_NULL_HANDLE;
-            }
-            if (snd->depthImageView != VK_NULL_HANDLE) {
-                vkDestroyImageView(device.vk_GetDevice(), snd->depthImageView, nullptr);
-                snd->depthImageView = VK_NULL_HANDLE;
-            }
-            if (snd->colorImage != VK_NULL_HANDLE) {
-                vkDestroyImage(device.vk_GetDevice(), snd->colorImage, nullptr);
-                snd->colorImage = VK_NULL_HANDLE;
-            }
-            if (snd->depthImage != VK_NULL_HANDLE) {
-                vkDestroyImage(device.vk_GetDevice(), snd->depthImage, nullptr);
-                snd->depthImage = VK_NULL_HANDLE;
-            }
-            if (snd->colorMemory != VK_NULL_HANDLE) {
-                vkFreeMemory(device.vk_GetDevice(), snd->colorMemory, nullptr);
-                snd->colorMemory = VK_NULL_HANDLE;
-            }
-            if (snd->depthMemory != VK_NULL_HANDLE) {
-                vkFreeMemory(device.vk_GetDevice(), snd->depthMemory, nullptr);
-                snd->depthMemory = VK_NULL_HANDLE;
-            }
-            if (snd->colorSampler != VK_NULL_HANDLE) {
-                vkDestroySampler(device.vk_GetDevice(), snd->colorSampler, nullptr);
-                snd->colorSampler = VK_NULL_HANDLE;
-            }
-            if (snd->depthSampler != VK_NULL_HANDLE) {
-                vkDestroySampler(device.vk_GetDevice(), snd->depthSampler, nullptr);
-                snd->depthSampler = VK_NULL_HANDLE;
+            if (snd) {
+                if (snd->colorImageView != VK_NULL_HANDLE) {
+                    vkDestroyImageView(device.vk_GetDevice(), snd->colorImageView, nullptr);
+                    snd->colorImageView = VK_NULL_HANDLE;
+                }
+                if (snd->depthImageView != VK_NULL_HANDLE) {
+                    vkDestroyImageView(device.vk_GetDevice(), snd->depthImageView, nullptr);
+                    snd->depthImageView = VK_NULL_HANDLE;
+                }
+                if (snd->colorImage != VK_NULL_HANDLE) {
+                    vkDestroyImage(device.vk_GetDevice(), snd->colorImage, nullptr);
+                    snd->colorImage = VK_NULL_HANDLE;
+                }
+                if (snd->depthImage != VK_NULL_HANDLE) {
+                    vkDestroyImage(device.vk_GetDevice(), snd->depthImage, nullptr);
+                    snd->depthImage = VK_NULL_HANDLE;
+                }
+                if (snd->colorMemory != VK_NULL_HANDLE) {
+                    vkFreeMemory(device.vk_GetDevice(), snd->colorMemory, nullptr);
+                    snd->colorMemory = VK_NULL_HANDLE;
+                }
+                if (snd->depthMemory != VK_NULL_HANDLE) {
+                    vkFreeMemory(device.vk_GetDevice(), snd->depthMemory, nullptr);
+                    snd->depthMemory = VK_NULL_HANDLE;
+                }
+                if (snd->colorSampler != VK_NULL_HANDLE) {
+                    vkDestroySampler(device.vk_GetDevice(), snd->colorSampler, nullptr);
+                    snd->colorSampler = VK_NULL_HANDLE;
+                }
+                if (snd->depthSampler != VK_NULL_HANDLE) {
+                    vkDestroySampler(device.vk_GetDevice(), snd->depthSampler, nullptr);
+                    snd->depthSampler = VK_NULL_HANDLE;
+                }
             }
         }
-
+        renderTargets.clear();
     }
 
     void Renderpass::SetExtent(VkExtent2D extent) {
@@ -62,12 +70,16 @@ namespace Engine {
 
         // SHADOW pass, only depth attachment
         renderTargets[RenderPassType::SHADOW] = std::make_shared<RenderTarget>(
-            device, 4096, 4096, VK_FORMAT_UNDEFINED, 0,
+            device, 8192, 8192, VK_FORMAT_UNDEFINED, 0,
             VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, RenderTarget::AttachmentType::DEPTH);
 
         // SSAO pass, only color attachment
         renderTargets[RenderPassType::SSAO] = std::make_shared<RenderTarget>(
             device, width, height, VK_FORMAT_R16G16B16A16_SFLOAT, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            VK_FORMAT_UNDEFINED, 0, RenderTarget::AttachmentType::COLOR);
+
+        renderTargets[RenderPassType::GRID] = std::make_shared<RenderTarget>(
+            device, width, height, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_FORMAT_UNDEFINED, 0, RenderTarget::AttachmentType::COLOR);
 
         // POST_PROCESSING pass, only color attachment
@@ -144,56 +156,56 @@ namespace Engine {
     }
 
 
-    void Renderpass::CreateFramebuffer(RenderPassType type){
-        VkRenderPass renderPass = renderPasses[type];
-
-        std::vector<VkImageView> attachments;
-    
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = renderPass;
-        if (type == RenderPassType::SHADOW) {
-            framebufferInfo.width = 4096;
-            framebufferInfo.height = 4096;
-        }else {
-            framebufferInfo.width = extent.width;
-            framebufferInfo.height = extent.height;
-        }
-        framebufferInfo.layers = 1;
-    
-        switch (type) {    
-            case RenderPassType::SHADOW:
-                attachments = { renderTargets[RenderPassType::SHADOW]->depthImageView }; // Depth-only
-                break;
-    
-            case RenderPassType::SSAO:
-                attachments = { renderTargets[RenderPassType::SSAO]->colorImageView }; // SSAO color output
-                break;
-    
-            case RenderPassType::POST_PROCESSING:
-                attachments = { renderTargets[RenderPassType::POST_PROCESSING]->colorImageView }; // Post-processing output
-                break;
-    
-            case RenderPassType::SCENE:
-                attachments = {
-                    renderTargets[RenderPassType::SCENE]->colorImageView,
-                    renderTargets[RenderPassType::SCENE]->depthImageView
-                };
-                break;
-    
-            default:
-                throw std::runtime_error("Unsupported RenderPassType for framebuffer creation!");
-        }
-    
-        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-        framebufferInfo.pAttachments = attachments.data();
-    
-        if (vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffers[type]) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create framebuffer for render pass: " + std::to_string(static_cast<int>(type)));
-        }
-
-        WriteImageToDescriptor(type);
+void Renderpass::CreateFramebuffer(RenderPassType type) {
+    //safety precaution - destroy existing framebuffer if it exists
+    if (framebuffers.find(type) != framebuffers.end()) {
+        std::cout << "Destroying existing framebuffer for render pass: " << static_cast<int>(type) << std::endl;
+        vkDestroyFramebuffer(device.vk_GetDevice(), framebuffers[type], nullptr);
     }
+
+    VkRenderPass renderPass = renderPasses[type];
+
+    std::vector<VkImageView> attachments;
+    VkFramebufferCreateInfo framebufferInfo{};
+    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+    framebufferInfo.renderPass = renderPass;
+    framebufferInfo.width = (type == RenderPassType::SHADOW) ? 8192 : extent.width;
+    framebufferInfo.height = (type == RenderPassType::SHADOW) ? 8192 : extent.height;
+    framebufferInfo.layers = 1;
+
+    switch (type) {
+        case RenderPassType::SHADOW:
+            attachments = { renderTargets[RenderPassType::SHADOW]->depthImageView };
+            break;
+        case RenderPassType::SSAO:
+            attachments = { renderTargets[RenderPassType::SSAO]->colorImageView };
+            break;
+        case RenderPassType::GRID:
+            attachments = { renderTargets[RenderPassType::GRID]->colorImageView };
+            break;
+        case RenderPassType::POST_PROCESSING:
+            attachments = { renderTargets[RenderPassType::POST_PROCESSING]->colorImageView };
+            break;
+        case RenderPassType::SCENE:
+            attachments = {
+                renderTargets[RenderPassType::SCENE]->colorImageView,
+                renderTargets[RenderPassType::SCENE]->depthImageView
+            };
+            break;
+        default:
+            throw std::runtime_error("Unsupported RenderPassType for framebuffer creation!");
+    }
+
+    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+    framebufferInfo.pAttachments = attachments.data();
+
+    if (vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffers[type]) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create framebuffer for render pass: " + std::to_string(static_cast<int>(type)));
+    }
+
+    WriteImageToDescriptor(type);
+}
+
 
 
 
@@ -213,6 +225,9 @@ namespace Engine {
                 break;
             case RenderPassType::SCENE:
                 CreateScenePass();
+                break;
+            case RenderPassType::GRID:
+                CreateGridPass();
                 break;
             default:
                 throw std::runtime_error("Unsupported RenderPassType!");
@@ -285,6 +300,58 @@ namespace Engine {
     }
 
     void Renderpass::CreatePostProcessingPass() {
+    }
+
+    void Renderpass::CreateGridPass() {
+        // Color attachment description
+        VkAttachmentDescription colorAttachment = {};
+        colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;  // Use the swap chain's image format
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;  // Single sampling (no anti-aliasing)
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // Clear before rendering
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  // Store the result to the swap chain
+        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // No stencil buffer used
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;  // No stencil buffer used
+        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;  // Unused layout at the start
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // Ready for presentation to the screen
+
+        // Attachment references (we have only one color attachment)
+        VkAttachmentReference colorAttachmentRef = {};
+        colorAttachmentRef.attachment = 0;  // First attachment
+        colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        // Subpass description
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;  // We are using a graphics pipeline
+        subpass.colorAttachmentCount = 1;  // One color attachment
+        subpass.pColorAttachments = &colorAttachmentRef;  // Color attachment reference
+
+        // No dependencies (since we are only rendering color)
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;  // External (previous) pass
+        dependency.dstSubpass = 0;  // Our subpass
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  // Writing to color attachment
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  // Writing to color attachment
+        dependency.srcAccessMask = 0;  // No access before this
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  // Write access to the color attachment
+
+        // Render pass creation info
+        VkRenderPassCreateInfo renderPassInfo = {};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        renderPassInfo.attachmentCount = 1;
+        renderPassInfo.pAttachments = &colorAttachment;  // One attachment (color)
+        renderPassInfo.subpassCount = 1;
+        renderPassInfo.pSubpasses = &subpass;  // Only one subpass
+        renderPassInfo.dependencyCount = 1;  // One dependency
+        renderPassInfo.pDependencies = &dependency;
+
+        // Create the render pass
+        if (vkCreateRenderPass(device.vk_GetDevice(), &renderPassInfo, nullptr, &renderPasses[RenderPassType::GRID]) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create grid render pass!");
+        }
+
+        CreateFramebuffer(RenderPassType::GRID);
+
+        std::cout << "Created grid render pass!" << std::endl;
     }
 
     void Renderpass::CreateScenePass()

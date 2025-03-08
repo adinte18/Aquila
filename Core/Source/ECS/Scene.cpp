@@ -46,7 +46,6 @@ namespace ECS {
                 .build();
 
         camera = Engine::Camera{};
-        camera.SetPosition(glm::vec3(0.f, 0.f, 0.f));
 
         currentTime = std::chrono::high_resolution_clock::now();
     }
@@ -76,6 +75,7 @@ namespace ECS {
         ubo.projection = camera.GetProjection();
         ubo.view = camera.GetView();
         ubo.inverseView = camera.GetInverseView();
+        ubo.cameraPos = camera.GetPosition();
 
         bool lightFound = false;
 
@@ -86,8 +86,7 @@ namespace ECS {
                 ubo.light.direction = glm::normalize(light.direction);
                 ubo.light.color = light.color;
                 ubo.light.intensity = light.intensity;
-                ubo.lightView = light.view;
-                ubo.lightProjection = light.projection;
+                ubo.lightSpaceMatrix = light.lightSpaceMatrix;
             }
         });
 

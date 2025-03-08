@@ -347,13 +347,13 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 ImGui::Text("Color"); // Label
                 ImGui::ColorEdit3("##ColorPicker", reinterpret_cast<float *>(&light->color));
 
-                ImGui::Text("Direction"); // Label
-                ImGui::DragFloat3("##Direction", reinterpret_cast<float *>(&light->direction), 0.1f);
+                ImGui::Text("Position"); // Label
+                ImGui::DragFloat3("##Position", reinterpret_cast<float *>(&light->position), 0.1f);
 
                 ImGui::Text("Intensity"); // Label
                 ImGui::SliderFloat("##Intensity", &light->intensity, 0.f, 1.0f);
 
-                light->updateMatrices();
+                light->UpdateMatrices();
             }
 
             ImGui::Separator();
@@ -437,6 +437,12 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                 }
                 if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_A))) {
                     scene.GetActiveCamera().MoveLeft(scene.GetFrameTime());
+                }
+                if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_LeftShift))) {
+                    scene.GetActiveCamera().SpeedUp();
+                }
+                else {
+                    scene.GetActiveCamera().ResetSpeed();
                 }
             }
         }

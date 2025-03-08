@@ -24,8 +24,8 @@ namespace ECS {
         alignas(16) glm::mat4 view{1.f};
         alignas(16) glm::mat4 inverseView{1.f};
         alignas(16) uboLight light{};
-        alignas(16) glm::mat4 lightView{1.f};
-        alignas(16) glm::mat4 lightProjection{1.f};
+        alignas(16) glm::mat4 lightSpaceMatrix{1.f};
+        alignas(16) glm::vec3 cameraPos{0.f};
     };
 
     class Scene {

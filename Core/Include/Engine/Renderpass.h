@@ -13,7 +13,8 @@ namespace Engine {
         SCENE,
         SHADOW,          
         SSAO,            
-        POST_PROCESSING, 
+        POST_PROCESSING,
+        GRID
     };
     
     class Renderpass {
@@ -61,6 +62,9 @@ namespace Engine {
             void CreateShadowPass();
             void CreateSSAOPass();
             void CreatePostProcessingPass();
+
+            void CreateGridPass();
+
             void CreateScenePass();
 
         };

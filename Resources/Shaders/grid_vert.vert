@@ -10,13 +10,13 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec3 fragPosWorld;
 layout(location = 2) out vec3 fragNormalWorld;
 layout(location = 4) out vec2 fragTexCoord;
-layout(location = 5) out vec4 fragPosLightSpace;
+layout(location = 5) out mat3 TBN;
 
 struct uboLight {
     int type;
     vec3 color;
     float intensity;
-    vec3 position; // Direction of light (for directional lights)
+    vec3 direction;
 };
 
 layout(std140, set = 0, binding = 0) uniform UniformData {
@@ -24,7 +24,9 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
     mat4 cameraView;
     mat4 inverseView;
     uboLight light;
-    mat4 lightSpaceMatrix;
+    mat4 lightView;
+    mat4 lightProjection;
+    vec3 cameraPosition;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -33,15 +35,16 @@ layout(push_constant) uniform Push {
 } push;
 
 void main() {
+    // Compute world position normally
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
 
-    fragTexCoord = uv;
+    positionWorld.xz += ubo.cameraPosition.xz;
 
+    // Transform into clip space
+    gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;
+
+    fragTexCoord = uv;
     fragNormalWorld = normalize(mat3(push.normalMatrix) * normal);
     fragPosWorld = positionWorld.xyz;
     fragColor = color;
-
-    fragPosLightSpace = ubo.lightSpaceMatrix * vec4(fragPosWorld, 1.0);
-
-    gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;
 }

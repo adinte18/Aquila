@@ -17,6 +17,7 @@ Engine::Window::Window(const int width, const int height, std::string title)
     glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, vk_FBResizedCallback);
+    glfwMaximizeWindow(window);
 
     if (window == nullptr) {
         throw std::runtime_error("Failed to create GLFW window");

@@ -20,8 +20,7 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
     mat4 cameraView;
     mat4 inverseView;
     uboLight light;
-    mat4 lightView;
-    mat4 lightProjection;
+    mat4 lightSpaceMatrix;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -30,10 +29,7 @@ layout(push_constant) uniform Push {
 } push;
 
 void main(){
-    mat4 viewProjection = ubo.lightProjection * ubo.lightView;
-
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
 
-    gl_Position = viewProjection * positionWorld;
-    gl_Position.y = -gl_Position.y;
+    gl_Position = ubo.lightSpaceMatrix * positionWorld;
 }
