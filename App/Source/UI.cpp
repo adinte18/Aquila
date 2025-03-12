@@ -1,7 +1,3 @@
-//
-// Created by alexa on 19/10/2024.
-//
-
 #include "UI.h"
 
 #include <Scene.h>
@@ -10,63 +6,86 @@
 #include <nativefiledialog/src/nfd_common.h>
 
 #include "Components.h"
-
+#include "Icon.h"
 
 void Editor::UI::OnStart() {
-        VkDescriptorPoolSize pool_sizes[] =
-        {
-            { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-            { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-            { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-            { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-        };
+    VkDescriptorPoolSize pool_sizes[] =
+    {
+        { VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
+        { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
+        { VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
+    };
 
-        VkDescriptorPoolCreateInfo pool_info = {};
-        pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-        pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-        pool_info.maxSets = 1000;
-        pool_info.poolSizeCount = std::size(pool_sizes);
-        pool_info.pPoolSizes = pool_sizes;
+    VkDescriptorPoolCreateInfo pool_info = {};
+    pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
+    pool_info.maxSets = 1000;
+    pool_info.poolSizeCount = std::size(pool_sizes);
+    pool_info.pPoolSizes = pool_sizes;
 
-        if (vkCreateDescriptorPool(device.vk_GetDevice(), &pool_info, nullptr, &editorDescriptorPool) != VK_SUCCESS) 	{
-            throw std::runtime_error("Cannot create descriptor pool for ImGui");
-        }
+    if (vkCreateDescriptorPool(device.vk_GetDevice(), &pool_info, nullptr, &editorDescriptorPool) != VK_SUCCESS) 	{
+        throw std::runtime_error("Cannot create descriptor pool for ImGui");
+    }
 
 
-        // Initialize ImGui
-        IMGUI_CHECKVERSION();
-        ImGui::CreateContext();
-        ImGuiIO& io = ImGui::GetIO(); (void)io;
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-        io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-        io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 13.0f);
+    // Initialize ImGui
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO(); (void)io;
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 13.0f);
 
-        // Setup Dear ImGui style
-        ImGui::StyleColorsDark();
+    // Setup Dear ImGui style
+    ImGui::StyleColorsDark();
 
-        // Setup Platform/Renderer backends
-        ImGui_ImplGlfw_InitForVulkan(window.glfw_GetWindow(), true);
-        ImGui_ImplVulkan_InitInfo init_info = {};
-        init_info.Instance = device.vk_GetInstance();
-        init_info.PhysicalDevice = device.vk_GetPhysicalDevice();
-        init_info.Device = device.vk_GetDevice();
-        init_info.Queue = device.vk_GetGraphicsQueue();
-        init_info.DescriptorPool = editorDescriptorPool;
-        init_info.RenderPass = renderPass;
-        init_info.Subpass = 0;
-        init_info.MinImageCount = 3;
-        init_info.ImageCount = 3;
-        init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-        init_info.Allocator = VK_NULL_HANDLE;
-        ImGui_ImplVulkan_Init(&init_info);
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForVulkan(window.glfw_GetWindow(), true);
+    ImGui_ImplVulkan_InitInfo init_info = {};
+    init_info.Instance = device.vk_GetInstance();
+    init_info.PhysicalDevice = device.vk_GetPhysicalDevice();
+    init_info.Device = device.vk_GetDevice();
+    init_info.Queue = device.vk_GetGraphicsQueue();
+    init_info.DescriptorPool = editorDescriptorPool;
+    init_info.RenderPass = renderPass;
+    init_info.Subpass = 0;
+    init_info.MinImageCount = 3;
+    init_info.ImageCount = 3;
+    init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
+    init_info.Allocator = VK_NULL_HANDLE;
+    ImGui_ImplVulkan_Init(&init_info);
+
+    //Load icons
+    rotateIconTexture = Engine::Texture2D::Builder(device)
+    .setFilepath(std::string(ICONS_PATH) + "/rotate.png")
+    .setSize(16,16)
+    .build();
+
+    scaleIconTexture = Engine::Texture2D::Builder(device)
+    .setFilepath(std::string(ICONS_PATH) + "/scale.png")
+    .setSize(16,16)
+    .build();
+
+    translateIconTexture = Engine::Texture2D::Builder(device)
+    .setFilepath(std::string(ICONS_PATH) + "/translate.png")
+    .setSize(16,16)
+    .build();
+
+
+    rotateIcon = IconBuilder().setTexture(rotateIconTexture).setSize({16,16}).build();
+    scaleIcon = IconBuilder().setTexture(scaleIconTexture).setSize({16,16}).build();
+    translateIcon = IconBuilder().setTexture(translateIconTexture).setSize({16,16}).build();
+
+
 }
 
 void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
@@ -101,8 +120,6 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
     {
         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-
-
     }
 
     if (ImGui::BeginMenuBar())
@@ -158,11 +175,23 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         ImGui::EndMenuBar();
     }
 
-    if (ImGui::Begin("Asset manager")) {
+    if (ImGui::Begin("Texture viewer")) {
+        ImGui::PushID("translateIcon"); // Unique ID for translate icon
+        translateIcon->Display();
+        ImGui::PopID();
+
+        ImGui::SameLine();
+        ImGui::PushID("rotateIcon"); // Unique ID for rotate icon
+        rotateIcon->Display();
+        ImGui::PopID();
+
+        ImGui::SameLine();
+        ImGui::PushID("scaleIcon"); // Unique ID for scale icon
+        scaleIcon->Display();
+        ImGui::PopID();
 
         ImGui::End();
     }
-
     //Scene Hierarchy
     if (ImGui::Begin("Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
         // If RMB is pressed, open context menu
@@ -352,8 +381,6 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
 
                 ImGui::Text("Intensity"); // Label
                 ImGui::SliderFloat("##Intensity", &light->intensity, 0.f, 1.0f);
-
-                light->UpdateMatrices();
             }
 
             ImGui::Separator();
@@ -456,25 +483,33 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
 
             float windowWidth = ImGui::GetWindowSize().x;
             float windowHeight = ImGui::GetWindowSize().y;
-            float buttonWidth = ImGui::CalcTextSize("T").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-            float buttonHeight = ImGui::GetFrameHeight();
+            float buttonWidth = 32;
+            float buttonHeight = 32;
             float totalWidth = buttonWidth * 3 + ImGui::GetStyle().ItemSpacing.x * 2.0f;
             float totalHeight = buttonHeight;
 
             ImGui::SetCursorPosX((windowWidth - totalWidth) / 2.0f);
             ImGui::SetCursorPosY((windowHeight - totalHeight) / 2.0f);
 
-            if (ImGui::Button("T")) {
+            ImGui::PushID("translateIcon");
+            if (translateIcon->Display()) {
                 m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE;
             }
+            ImGui::PopID();
             ImGui::SameLine();
-            if (ImGui::Button("S")) {
+            ImGui::PushID("scaleIcon");
+            if (scaleIcon->Display()) {
                 m_CurrentOperation = ImGuizmo::OPERATION::SCALE;
             }
+            ImGui::PopID();
             ImGui::SameLine();
-            if (ImGui::Button("R")) {
+            ImGui::PushID("rotateIcon"); // Unique ID for rotate icon
+
+            if (rotateIcon->Display()) {
                 m_CurrentOperation = ImGuizmo::OPERATION::ROTATE;
             }
+            ImGui::PopID();
+
 
         ImGui::End();
 
@@ -532,4 +567,3 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
 
 }
-

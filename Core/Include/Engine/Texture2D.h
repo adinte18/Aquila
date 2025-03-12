@@ -2,89 +2,126 @@
 // Created by alexa on 09/08/2024.
 //
 
-#ifndef Texture2D_H
-#define Texture2D_H
+#ifndef TEXTURE2D_H
+#define TEXTURE2D_H
 
 #include <array>
 #include <memory>
-
+#include "Descriptor.h"
 #include "Engine/Device.h"
 
-namespace Engine
-{
+namespace Engine {
     class Texture2D {
     public:
-        [[nodiscard]] static std::shared_ptr<Texture2D> create(Device& device);
+        class Builder {
+        public:
+            explicit Builder(Device& device) : device(device) {}
 
-        void vk_CreateCubeMap(const std::vector<std::string>& filepath);
-        void vk_CreateCubeMap(const std::string& filepath);
-        void vk_CreateDepthCubeMap();
-        std::string GetName();
-        void vk_CreateTexture(const std::string& filepath);
-        [[nodiscard]] VkImage vk_GetTextureImage() const { return textureImage; }
-        [[nodiscard]] VkImageView vk_GetTextureImageView() const { return textureImageView; }
-        [[nodiscard]] VkSampler vk_GetTextureSampler() const { return textureSampler; }
-        void vk_CreateShadowMap(uint32_t width, uint32_t height);
-        void vk_TransitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout,
-                              VkImageLayout newLayout, uint32_t layerCount);
+            Builder& setSize(uint32_t width, uint32_t height) {
+                this->width = width;
+                this->height = height;
+                return *this;
+            }
 
-        VkImageView vk_GetDepthImageView(uint32_t i) { return shadowCubeMapFaceImageViews[i]; }
-        VkDeviceMemory vk_GetTextureImageMemory() { return textureImageMemory; };
+            Builder& setFormat(VkFormat format) {
+                this->format = format;
+                return *this;
+            }
 
-        [[nodiscard]] VkDescriptorImageInfo vk_GetDescriptorImageInfo() const {
-            VkDescriptorImageInfo imageInfo{};
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            imageInfo.imageView = vk_GetTextureImageView();
-            imageInfo.sampler = vk_GetTextureSampler();
-            return imageInfo;
+            Builder& setUsage(VkImageUsageFlags usage) {
+                this->usage = usage;
+                return *this;
+            }
+
+            Builder& setFilepath(const std::string& filepath) {
+                this->filepath = filepath;
+                return *this;
+            }
+
+            [[nodiscard]] std::shared_ptr<Texture2D> Builder::build() const {
+                auto texture = std::make_shared<Texture2D>(device);
+                if (!filepath.empty()) {
+                    texture->CreateTexture(filepath, format);
+                } else {
+                    texture->CreateTexture(width, height, format, usage);
+                }
+                return texture;
+            }
+
+        private:
+            Device& device;
+            uint32_t width = 512;
+            uint32_t height = 512;
+            VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
+            VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            std::string filepath;
         };
 
-
-        Texture2D(Device& device) : dev(device) {}
-
-        ~Texture2D()
-        {
-            vkDestroyImageView(dev.vk_GetDevice(), textureImageView, nullptr);
-
-            vkDestroyImage(dev.vk_GetDevice(), textureImage, nullptr);
-            vkDestroySampler(dev.vk_GetDevice(), textureSampler, nullptr);
-            vkFreeMemory(dev.vk_GetDevice(), textureImageMemory, nullptr);
+        // Static function to create a shared Texture2D instance
+        [[nodiscard]] static std::shared_ptr<Texture2D> create(Device& device) {
+            return std::make_shared<Texture2D>(device);
         }
 
-        void vk_CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
-                            VkImageUsageFlags usage,
-                            VkMemoryPropertyFlags properties, VkImage& image, VkDeviceMemory& imageMemory,
-                            uint32_t layerCount);
+        void CreateTexture(const std::string& filepath, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB);
+        void CreateTexture(uint32_t width, uint32_t height, VkFormat format = VK_FORMAT_R8G8B8A8_SRGB,
+                           VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+        // Getters
+        [[nodiscard]] VkImage GetTextureImage() const { return textureImage; }
+        [[nodiscard]] VkImageView GetTextureImageView() const { return textureImageView; }
+        [[nodiscard]] VkSampler GetTextureSampler() const { return textureSampler; }
+        [[nodiscard]] VkDeviceMemory GetTextureImageMemory() const { return textureImageMemory; }
+        [[nodiscard]] VkDescriptorImageInfo GetDescriptorSetInfo() const;
+        [[nodiscard]] VkDescriptorSet Engine::Texture2D::GetDescriptorSet() const { return descriptorSet; }
+
+
+        [[nodiscard]] bool HasImage() const { return textureImage != VK_NULL_HANDLE; }
+        [[nodiscard]] bool HasImageView() const { return textureImageView != VK_NULL_HANDLE; }
+        [[nodiscard]] bool HasSampler() const { return textureSampler != VK_NULL_HANDLE; }
+        [[nodiscard]] bool HasImageMemory() const { return textureImageMemory != VK_NULL_HANDLE; }
+
+        void DestroyAll();
+
+        void CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling,
+                         VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
+                         VkImage& image, VkDeviceMemory& imageMemory);
+
+        Texture2D(Device& device) : dev(device) {
+            textureImage = VK_NULL_HANDLE;
+            textureSampler = VK_NULL_HANDLE;
+            textureImageView = VK_NULL_HANDLE;
+            textureImageMemory = VK_NULL_HANDLE;
+        }
+
+        ~Texture2D() {
+            DestroyAll();
+        }
+
 
     private:
+
         Device& dev;
+        VkImage textureImage{};
+        VkSampler textureSampler{};
+        VkImageView textureImageView{};
+        VkDeviceMemory textureImageMemory{};
 
-        VkImage textureImage;
-
-        VkDeviceMemory textureImageMemory;
-
-        VkImageView textureImageView;
-
-        VkSampler textureSampler;
-
-        std::string filename;
-
-        VkImage shadowCubeMap;
-
-        std::array<VkImageView, 6> shadowCubeMapFaceImageViews{};
+        std::unique_ptr<DescriptorPool> descriptorPool;
+        std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
+        VkDescriptorSet descriptorSet;
 
         void vk_CreateTextureImage(const std::string& filepath);
-
-        VkImageView vk_CreateImageView(VkImage image, VkFormat format, VkImageViewType type, uint32_t layerCount);
-        void vk_CreateTextureImageView(VkImageViewType type, uint32_t layerCount);
-
-        void vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount);
-
-        void vk_CreateTextureSampler(bool isCubemap);
-
-        void vk_CreateCubeMapImage(const std::vector<std::string>& cubeMapFiles);
-        void vk_CreateCubeMapImage(const std::string& hdrFile);
+        void vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
+        void vk_CreateTextureImageView(VkFormat format);
+        void vk_CreateTextureSampler();
+        void vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;
+        void vk_WriteToDescriptorSet();
+        void TransitionImageLayout(
+            VkImage image,
+            VkFormat format,
+            VkImageLayout oldLayout,
+            VkImageLayout newLayout);
     };
 }
 
-#endif //Texture2D_H
+#endif // TEXTURE2D_H

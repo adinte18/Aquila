@@ -13,14 +13,7 @@ file(GLOB_RECURSE ENGINE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/RenderingSystems/*.cpp
 )
 
-add_library(Core STATIC ${ENGINE_SOURCES}
-        Include/ECS/Components/Components.h
-        Source/Engine/Shader.cpp
-        Include/Engine/Camera.h
-        Source/Engine/Camera.cpp
-        Include/Engine/Primitives.h
-        Source/RenderingSystems/DepthRenderingSystem.cpp
-        Include/RenderingSystems/GridRenderingSystem.h)
+add_library(Core STATIC ${ENGINE_SOURCES})
 
 target_include_directories(Core PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/Include/                            # Path to Core headers

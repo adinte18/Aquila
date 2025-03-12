@@ -20,6 +20,8 @@ void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer
     scene.GetRegistry().view<ECS::Light>().each([&scene, this, &commandBuffer](ECS::Light& light) {
         if (light.type == ECS::Light::LightType::Directional) {
 
+            light.UpdateMatrices();
+
             scene.GetRegistry().view<ECS::Transform, ECS::Mesh>()
                 .each([&scene, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
 

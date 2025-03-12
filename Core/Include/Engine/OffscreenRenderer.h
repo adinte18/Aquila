@@ -15,13 +15,15 @@ namespace Engine {
         explicit OffscreenRenderer(Device& device);
         ~OffscreenRenderer();
 
-        VkDescriptorImageInfo GetDepthInfo(RenderPassType type) const;
+        VkDescriptorImageInfo GetImageInfo(RenderPassType type, VkImageLayout layout) const;
 
         OffscreenRenderer(const OffscreenRenderer&) = delete;
         OffscreenRenderer& operator=(const OffscreenRenderer&) = delete;
 
         void Initialize(uint32_t width, uint32_t height);
         void Resize(VkExtent2D newExtent);
+
+        void TransitionImages(VkCommandBuffer commandBuffer, RenderPassType src, RenderPassType dst);
 
         void BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type);
         void EndRenderPass(VkCommandBuffer commandBuffer);
@@ -31,7 +33,7 @@ namespace Engine {
         }
 
         [[nodiscard]] VkRenderPass GetRenderPass(RenderPassType type) const { return renderpass.GetRenderPass(type); }
-        [[nodiscard]] VkDescriptorSet GetRenderPassImage(RenderPassType type) const {return renderpass.GetImage(type); }
+        [[nodiscard]] VkDescriptorSet GetRenderPassImage(RenderPassType type) const {return renderpass.GetDescriptorSet(type); }
 
     private:
         Device& device;

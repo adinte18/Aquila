@@ -33,7 +33,7 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
     for (auto& image : model.images) {
         std::string uri = directoryPath + "/" + image.uri;
         auto texture = Texture2D::create(device);
-        texture->vk_CreateTexture(uri);
+        texture->CreateTexture(uri);
         images.push_back(texture);
     }
 
@@ -126,7 +126,7 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                     }
 
                     auto defaultTex = Engine::Texture2D::create(device);
-                    defaultTex->vk_CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
+                    defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
 
                     Material material{};
 
@@ -162,9 +162,9 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                         material.metallicRoughnessTexture = defaultTex;
                     }
 
-                    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->vk_GetDescriptorImageInfo();
-                    VkDescriptorImageInfo normalImageInfo = material.normalTexture->vk_GetDescriptorImageInfo();
-                    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->vk_GetDescriptorImageInfo();
+                    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
+                    VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
+                    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
 
                     DescriptorWriter writer(materialSetLayout, descriptorPool);
                     writer.writeImage(0, &albedoImageInfo);
@@ -213,7 +213,7 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
 
     // Create a default texture
     auto defaultTex = Engine::Texture2D::create(device);
-    defaultTex->vk_CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
+    defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
 
     // Create a material and descriptor set for the primitive
     Material material{};
@@ -221,9 +221,9 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
     material.normalTexture = defaultTex;
     material.metallicRoughnessTexture = defaultTex;
 
-    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->vk_GetDescriptorImageInfo();
-    VkDescriptorImageInfo normalImageInfo = material.normalTexture->vk_GetDescriptorImageInfo();
-    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->vk_GetDescriptorImageInfo();
+    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
+    VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
+    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
 
     DescriptorWriter writer(materialSetLayout, descriptorPool);
     writer.writeImage(0, &albedoImageInfo);

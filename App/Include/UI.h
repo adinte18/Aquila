@@ -9,6 +9,7 @@
 #include <Engine/Device.h>
 #include <Engine/Framebuffer.h>
 
+#include "Icon.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -49,6 +50,16 @@ namespace Editor{
 
         bool viewportResized = false;
         VkExtent2D viewportExtent{};
+
+        std::shared_ptr<Engine::Texture2D> rotateIconTexture;
+        std::shared_ptr<Engine::Texture2D> translateIconTexture;
+        std::shared_ptr<Engine::Texture2D> scaleIconTexture;
+
+        IconBuilder iconBuilder;
+
+        std::shared_ptr<Icon> rotateIcon;
+        std::shared_ptr<Icon> translateIcon;
+        std::shared_ptr<Icon> scaleIcon;
 
         Engine::Device& device;
         Engine::Window& window;

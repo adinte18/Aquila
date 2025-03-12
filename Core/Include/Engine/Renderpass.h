@@ -10,11 +10,12 @@ namespace Engine {
 
     enum class RenderPassType {
         G_BUFFER,
-        SCENE,
+        GEOMETRY,
         SHADOW,          
         SSAO,            
         POST_PROCESSING,
-        GRID
+        GRID,
+        FINAL
     };
     
     class Renderpass {
@@ -25,14 +26,18 @@ namespace Engine {
             }
 
             void CreateRenderPass(RenderPassType type);
+
             void CreateFramebuffer(RenderPassType type);
+            void CreateFramebuffer(RenderPassType type, int cascades);
+
             void CreateRenderTarget(Device& device, uint32_t width, uint32_t height);
             void WriteImageToDescriptor(RenderPassType type);
             [[nodiscard]] VkRenderPass GetRenderPass(RenderPassType type) const;
             [[nodiscard]] VkFramebuffer GetFramebuffer(RenderPassType type) const;
+            [[nodiscard]] VkImage GetImage(RenderPassType type) const;
             [[nodiscard]] VkImageView GetRenderTarget(RenderPassType type) const;
             [[nodiscard]] VkSampler GetRenderSampler(RenderPassType type) const;
-            [[nodiscard]] VkDescriptorSet GetImage(RenderPassType) const;
+            [[nodiscard]] VkDescriptorSet GetDescriptorSet(RenderPassType) const;
 
             void WriteDepthImageToDescriptor(RenderPassType type, DescriptorSetLayout &sceneSetLayout, DescriptorPool &descriptorPool);
 
@@ -65,9 +70,10 @@ namespace Engine {
 
             void CreateGridPass();
 
-            void CreateScenePass();
+            void CreateGeometryPass();
 
-        };
+            void CreateFinalPass();
+    };
         
 };
 

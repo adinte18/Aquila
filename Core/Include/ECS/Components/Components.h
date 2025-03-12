@@ -54,7 +54,7 @@ namespace ECS {
             position.y = 10.0f;
 
             SetLightViewMatrix(glm::vec3(0.f));
-            SetLightProjection(-50.f, 50.f, -50.f, 50.f, 0.1f, 100.f);
+            SetLightProjection(-50.f, 50.f, -50.f, 50.f, 0.1f, 60.f);
 
             lightSpaceMatrix = projection * view;
 
