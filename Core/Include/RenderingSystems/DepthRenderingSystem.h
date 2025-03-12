@@ -14,7 +14,7 @@ namespace RenderingSystem {
         DepthRenderingSystem(const DepthRenderingSystem&) = delete;
         DepthRenderingSystem& operator=(const DepthRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, ECS::Scene& scene);
+        void Render(VkCommandBuffer commandBuffer, ECS::Scene &scene);
 
     private:
         Engine::Device& device;

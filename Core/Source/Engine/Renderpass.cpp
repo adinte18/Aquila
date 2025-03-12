@@ -21,38 +21,8 @@ namespace Engine {
 
         for (auto& [fst, snd] : renderTargets) {
             if (snd) {
-                if (snd->colorImageView != VK_NULL_HANDLE) {
-                    vkDestroyImageView(device.vk_GetDevice(), snd->colorImageView, nullptr);
-                    snd->colorImageView = VK_NULL_HANDLE;
-                }
-                if (snd->depthImageView != VK_NULL_HANDLE) {
-                    vkDestroyImageView(device.vk_GetDevice(), snd->depthImageView, nullptr);
-                    snd->depthImageView = VK_NULL_HANDLE;
-                }
-                if (snd->colorImage != VK_NULL_HANDLE) {
-                    vkDestroyImage(device.vk_GetDevice(), snd->colorImage, nullptr);
-                    snd->colorImage = VK_NULL_HANDLE;
-                }
-                if (snd->depthImage != VK_NULL_HANDLE) {
-                    vkDestroyImage(device.vk_GetDevice(), snd->depthImage, nullptr);
-                    snd->depthImage = VK_NULL_HANDLE;
-                }
-                if (snd->colorMemory != VK_NULL_HANDLE) {
-                    vkFreeMemory(device.vk_GetDevice(), snd->colorMemory, nullptr);
-                    snd->colorMemory = VK_NULL_HANDLE;
-                }
-                if (snd->depthMemory != VK_NULL_HANDLE) {
-                    vkFreeMemory(device.vk_GetDevice(), snd->depthMemory, nullptr);
-                    snd->depthMemory = VK_NULL_HANDLE;
-                }
-                if (snd->colorSampler != VK_NULL_HANDLE) {
-                    vkDestroySampler(device.vk_GetDevice(), snd->colorSampler, nullptr);
-                    snd->colorSampler = VK_NULL_HANDLE;
-                }
-                if (snd->depthSampler != VK_NULL_HANDLE) {
-                    vkDestroySampler(device.vk_GetDevice(), snd->depthSampler, nullptr);
-                    snd->depthSampler = VK_NULL_HANDLE;
-                }
+                if (snd->colorTexture) snd->colorTexture->DestroyAll();
+                if (snd->depthTexture) snd->depthTexture->DestroyAll();
             }
         }
         renderTargets.clear();
@@ -64,7 +34,7 @@ namespace Engine {
 
     void Renderpass::CreateRenderTarget(Device& device, uint32_t width, uint32_t height) {
         // For SCENE, we need both color and depth attachments
-        renderTargets[RenderPassType::SCENE] = std::make_shared<RenderTarget>(
+        renderTargets[RenderPassType::GEOMETRY] = std::make_shared<RenderTarget>(
             device, width, height, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, RenderTarget::AttachmentType::BOTH);
 
@@ -86,10 +56,15 @@ namespace Engine {
         renderTargets[RenderPassType::POST_PROCESSING] = std::make_shared<RenderTarget>(
             device, width, height, VK_FORMAT_B8G8R8A8_SRGB, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
             VK_FORMAT_UNDEFINED, 0, RenderTarget::AttachmentType::COLOR);
+
+        renderTargets[RenderPassType::FINAL] = std::make_shared<RenderTarget>(
+            device, width, height, VK_FORMAT_B8G8R8A8_SRGB,
+            VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            VK_FORMAT_UNDEFINED, 0, RenderTarget::AttachmentType::COLOR);
     }
 
 
-    VkDescriptorSet Renderpass::GetImage(RenderPassType type) const {
+    VkDescriptorSet Renderpass::GetDescriptorSet(RenderPassType type) const {
         auto it = imageToViewport.find(type);
         if (it != imageToViewport.end()) {
             return it->second;
@@ -99,14 +74,30 @@ namespace Engine {
     }
 
 
+    VkImage Renderpass::GetImage(RenderPassType type) const {
+        auto it = renderTargets.find(type);
+        if (it != renderTargets.end()) {
+            if (it->second->colorTexture->GetTextureImage()) {
+                return it->second->colorTexture->GetTextureImage();
+            }
+            if (it->second->depthTexture->GetTextureImageView()) {
+                return it->second->depthTexture->GetTextureImage();
+            }
+        } else {
+            throw std::runtime_error("Image for this RenderPassType not found!");
+        }
+        return VK_NULL_HANDLE;
+
+    }
+
     VkImageView Renderpass::GetRenderTarget(RenderPassType type) const {
         auto it = renderTargets.find(type);
         if (it != renderTargets.end()) {
-            if (it->second->colorImageView) {
-                return it->second->colorImageView;
+            if (it->second->colorTexture->GetTextureImageView()) {
+                return it->second->colorTexture->GetTextureImageView();
             }
-            if (it->second->depthImageView) {
-                return it->second->depthImageView;
+            if (it->second->depthTexture->GetTextureImageView()) {
+                return it->second->depthTexture->GetTextureImageView();
             }
         } else {
             throw std::runtime_error("Render target for this RenderPassType not found!");
@@ -117,11 +108,11 @@ namespace Engine {
     VkSampler Renderpass::GetRenderSampler(RenderPassType type) const {
         auto it = renderTargets.find(type);
         if (it != renderTargets.end()) {
-            if (it->second->colorSampler) {
-                return it->second->colorSampler;
+            if (it->second->colorTexture->GetTextureSampler()) {
+                return it->second->colorTexture->GetTextureSampler();
             }
-            if (it->second->depthSampler) {
-                return it->second->depthSampler;
+            if (it->second->depthTexture->GetTextureSampler()) {
+                return it->second->depthTexture->GetTextureSampler();
             }
         } else {
             throw std::runtime_error("Render target for this RenderPassType not found!");
@@ -140,13 +131,13 @@ namespace Engine {
                 .build();
 
         VkDescriptorImageInfo descriptorInfo{};
-        if (renderTargets[type]->colorImageView) {
-            descriptorInfo.sampler = renderTargets[type]->colorSampler;
-            descriptorInfo.imageView = renderTargets[type]->colorImageView;
+        if (renderTargets[type]->colorTexture->HasImageView()) {
+            descriptorInfo.sampler = renderTargets[type]->colorTexture->GetTextureSampler();
+            descriptorInfo.imageView = renderTargets[type]->colorTexture->GetTextureImageView();
             descriptorInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;  // For color
-        } else if (renderTargets[type]->depthImageView) {
-            descriptorInfo.sampler = renderTargets[type]->depthSampler;
-            descriptorInfo.imageView = renderTargets[type]->depthImageView;
+        } else if (renderTargets[type]->depthTexture->HasImageView()) {
+            descriptorInfo.sampler = renderTargets[type]->depthTexture->GetTextureSampler();
+            descriptorInfo.imageView = renderTargets[type]->depthTexture->GetTextureImageView();
             descriptorInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;  // For depth
         }
 
@@ -155,58 +146,58 @@ namespace Engine {
         writer.build(imageToViewport[type]);
     }
 
+    void Renderpass::CreateFramebuffer(RenderPassType type) {
+        //safety precaution - destroy existing framebuffer if it exists
+        if (framebuffers.find(type) != framebuffers.end()) {
+            std::cout << "Destroying existing framebuffer for render pass: " << static_cast<int>(type) << std::endl;
+            vkDestroyFramebuffer(device.vk_GetDevice(), framebuffers[type], nullptr);
+        }
 
-void Renderpass::CreateFramebuffer(RenderPassType type) {
-    //safety precaution - destroy existing framebuffer if it exists
-    if (framebuffers.find(type) != framebuffers.end()) {
-        std::cout << "Destroying existing framebuffer for render pass: " << static_cast<int>(type) << std::endl;
-        vkDestroyFramebuffer(device.vk_GetDevice(), framebuffers[type], nullptr);
+        VkRenderPass renderPass = renderPasses[type];
+
+        std::vector<VkImageView> attachments;
+        VkFramebufferCreateInfo framebufferInfo{};
+        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebufferInfo.renderPass = renderPass;
+        framebufferInfo.width = (type == RenderPassType::SHADOW) ? 8192 : extent.width;
+        framebufferInfo.height = (type == RenderPassType::SHADOW) ? 8192 : extent.height;
+        framebufferInfo.layers = 1;
+
+        switch (type) {
+            case RenderPassType::SHADOW:
+                attachments = { renderTargets[RenderPassType::SHADOW]->depthTexture->GetTextureImageView() };
+                break;
+            case RenderPassType::SSAO:
+                attachments = { renderTargets[RenderPassType::SSAO]->colorTexture->GetTextureImageView() };
+                break;
+            case RenderPassType::GRID:
+                attachments = { renderTargets[RenderPassType::GRID]->colorTexture->GetTextureImageView() };
+                break;
+            case RenderPassType::POST_PROCESSING:
+                attachments = { renderTargets[RenderPassType::POST_PROCESSING]->colorTexture->GetTextureImageView() };
+                break;
+            case RenderPassType::GEOMETRY:
+                attachments = {
+                    renderTargets[RenderPassType::GEOMETRY]->colorTexture->GetTextureImageView(),
+                    renderTargets[RenderPassType::GEOMETRY]->depthTexture->GetTextureImageView()
+                };
+                break;
+            case RenderPassType::FINAL:
+                attachments = { renderTargets[RenderPassType::FINAL]->colorTexture->GetTextureImageView() };
+                break;
+            default:
+                throw std::runtime_error("Unsupported RenderPassType for framebuffer creation!");
+        }
+
+        framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
+        framebufferInfo.pAttachments = attachments.data();
+
+        if (vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffers[type]) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create framebuffer for render pass: " + std::to_string(static_cast<int>(type)));
+        }
+
+        WriteImageToDescriptor(type);
     }
-
-    VkRenderPass renderPass = renderPasses[type];
-
-    std::vector<VkImageView> attachments;
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.renderPass = renderPass;
-    framebufferInfo.width = (type == RenderPassType::SHADOW) ? 8192 : extent.width;
-    framebufferInfo.height = (type == RenderPassType::SHADOW) ? 8192 : extent.height;
-    framebufferInfo.layers = 1;
-
-    switch (type) {
-        case RenderPassType::SHADOW:
-            attachments = { renderTargets[RenderPassType::SHADOW]->depthImageView };
-            break;
-        case RenderPassType::SSAO:
-            attachments = { renderTargets[RenderPassType::SSAO]->colorImageView };
-            break;
-        case RenderPassType::GRID:
-            attachments = { renderTargets[RenderPassType::GRID]->colorImageView };
-            break;
-        case RenderPassType::POST_PROCESSING:
-            attachments = { renderTargets[RenderPassType::POST_PROCESSING]->colorImageView };
-            break;
-        case RenderPassType::SCENE:
-            attachments = {
-                renderTargets[RenderPassType::SCENE]->colorImageView,
-                renderTargets[RenderPassType::SCENE]->depthImageView
-            };
-            break;
-        default:
-            throw std::runtime_error("Unsupported RenderPassType for framebuffer creation!");
-    }
-
-    framebufferInfo.attachmentCount = static_cast<uint32_t>(attachments.size());
-    framebufferInfo.pAttachments = attachments.data();
-
-    if (vkCreateFramebuffer(device.vk_GetDevice(), &framebufferInfo, nullptr, &framebuffers[type]) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create framebuffer for render pass: " + std::to_string(static_cast<int>(type)));
-    }
-
-    WriteImageToDescriptor(type);
-}
-
-
 
 
     void Renderpass::CreateRenderPass(RenderPassType type) {
@@ -223,11 +214,14 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
             case RenderPassType::POST_PROCESSING:
                 CreatePostProcessingPass();
                 break;
-            case RenderPassType::SCENE:
-                CreateScenePass();
+            case RenderPassType::GEOMETRY:
+                CreateGeometryPass();
                 break;
             case RenderPassType::GRID:
                 CreateGridPass();
+                break;
+            case RenderPassType::FINAL:
+                CreateFinalPass();
                 break;
             default:
                 throw std::runtime_error("Unsupported RenderPassType!");
@@ -249,7 +243,7 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
         }
         throw std::runtime_error("Unsupported RenderPassType!");
     }
-    
+
 
     // *********************************************
     // ***         RENDER PASSES CREATION        ***
@@ -299,49 +293,93 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
     void Renderpass::CreateSSAOPass() {
     }
 
-    void Renderpass::CreatePostProcessingPass() {
+void Renderpass::CreatePostProcessingPass() {
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // No need to keep previous data
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE; // Store result for presentation
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // Subpass dependency to ensure scene output is ready for post-processing
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(device.vk_GetDevice(), &renderPassInfo, nullptr, &renderPasses[RenderPassType::POST_PROCESSING]) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create post-processing render pass!");
     }
+
+    CreateFramebuffer(RenderPassType::POST_PROCESSING);
+
+    std::cout << "Created post-processing render pass!" << std::endl;
+
+}
 
     void Renderpass::CreateGridPass() {
         // Color attachment description
         VkAttachmentDescription colorAttachment = {};
-        colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;  // Use the swap chain's image format
-        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;  // Single sampling (no anti-aliasing)
-        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;  // Clear before rendering
-        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;  // Store the result to the swap chain
-        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;  // No stencil buffer used
-        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;  // No stencil buffer used
-        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;  // Unused layout at the start
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;  // Ready for presentation to the screen
+        colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+        colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+        colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        // Attachment references (we have only one color attachment)
         VkAttachmentReference colorAttachmentRef = {};
-        colorAttachmentRef.attachment = 0;  // First attachment
+        colorAttachmentRef.attachment = 0;
         colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
         // Subpass description
         VkSubpassDescription subpass = {};
-        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;  // We are using a graphics pipeline
-        subpass.colorAttachmentCount = 1;  // One color attachment
-        subpass.pColorAttachments = &colorAttachmentRef;  // Color attachment reference
+        subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments = &colorAttachmentRef;
 
-        // No dependencies (since we are only rendering color)
+
         VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;  // External (previous) pass
-        dependency.dstSubpass = 0;  // Our subpass
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  // Writing to color attachment
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;  // Writing to color attachment
-        dependency.srcAccessMask = 0;  // No access before this
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;  // Write access to the color attachment
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
         // Render pass creation info
         VkRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         renderPassInfo.attachmentCount = 1;
-        renderPassInfo.pAttachments = &colorAttachment;  // One attachment (color)
+        renderPassInfo.pAttachments = &colorAttachment;
         renderPassInfo.subpassCount = 1;
-        renderPassInfo.pSubpasses = &subpass;  // Only one subpass
-        renderPassInfo.dependencyCount = 1;  // One dependency
+        renderPassInfo.pSubpasses = &subpass;
+        renderPassInfo.dependencyCount = 1;
         renderPassInfo.pDependencies = &dependency;
 
         // Create the render pass
@@ -354,7 +392,7 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
         std::cout << "Created grid render pass!" << std::endl;
     }
 
-    void Renderpass::CreateScenePass()
+    void Renderpass::CreateGeometryPass()
     {
         //Define the color attachment
         VkAttachmentDescription colorAttachment = {};
@@ -365,7 +403,7 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE; // No stencil buffer
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED; // Undefined layout at the start
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // Layout for presentation
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // Layout for presentation
 
         // Define the depth attachment
         VkAttachmentDescription depthAttachment = {};
@@ -395,13 +433,13 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
 
         // Specify dependencies for the render pass
         VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL; // External subpass (before the first subpass)
-        dependency.dstSubpass = 0; // First subpass
-        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // Stage for the source
-        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT; // Stage for the destination
-        dependency.srcAccessMask = 0; // No access mask for the source
-        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT; // Write access to color attachment
-        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT; // Dependency is local
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+        dependency.dependencyFlags = VK_DEPENDENCY_BY_REGION_BIT;
 
         // Create the render pass
         VkRenderPassCreateInfo renderPassInfo = {};
@@ -415,13 +453,62 @@ void Renderpass::CreateFramebuffer(RenderPassType type) {
         renderPassInfo.pDependencies = &dependency; // Pointer to the dependencies
 
         // Create the render pass
-        if (vkCreateRenderPass(device.vk_GetDevice(), &renderPassInfo, nullptr, &renderPasses[RenderPassType::SCENE]) != VK_SUCCESS) {
+        if (vkCreateRenderPass(device.vk_GetDevice(), &renderPassInfo, nullptr, &renderPasses[RenderPassType::GEOMETRY]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create render pass!");
         }
 
-        CreateFramebuffer(RenderPassType::SCENE);
+        CreateFramebuffer(RenderPassType::GEOMETRY);
 
         std::cout << "Created scene render pass!" << std::endl;
     }
+
+void Renderpass::CreateFinalPass() {
+    VkAttachmentDescription colorAttachment{};
+    colorAttachment.format = VK_FORMAT_B8G8R8A8_SRGB;
+    colorAttachment.samples = VK_SAMPLE_COUNT_1_BIT;
+    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+    colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+    colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // ImGui uses it
+
+    VkAttachmentReference colorAttachmentRef{};
+    colorAttachmentRef.attachment = 0;
+    colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+    VkSubpassDescription subpass{};
+    subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    subpass.colorAttachmentCount = 1;
+    subpass.pColorAttachments = &colorAttachmentRef;
+
+    // Subpass dependency to ensure proper synchronization
+    VkSubpassDependency dependency{};
+    dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+    dependency.dstSubpass = 0;
+    dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+    dependency.dstStageMask = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    dependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+    dependency.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+    dependency.dependencyFlags = 0;
+
+    VkRenderPassCreateInfo renderPassInfo{};
+    renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+    renderPassInfo.attachmentCount = 1;
+    renderPassInfo.pAttachments = &colorAttachment;
+    renderPassInfo.subpassCount = 1;
+    renderPassInfo.pSubpasses = &subpass;
+    renderPassInfo.dependencyCount = 1;
+    renderPassInfo.pDependencies = &dependency;
+
+    if (vkCreateRenderPass(device.vk_GetDevice(), &renderPassInfo, nullptr, &renderPasses[RenderPassType::FINAL]) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create final render pass!");
+    }
+
+        CreateFramebuffer(RenderPassType::FINAL);
+
+        std::cout << "Created composite/final render pass!" << std::endl;
+
+}
 
 }

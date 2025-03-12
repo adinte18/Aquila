@@ -4,31 +4,73 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "External/stb_image.h"
 
-
-std::string Engine::Texture2D::GetName() {
-    return filename;
+void Engine::Texture2D::DestroyAll() {
+    if (textureImageView != VK_NULL_HANDLE) {
+        vkDestroyImageView(dev.vk_GetDevice(), textureImageView, nullptr);
+        textureImageView = VK_NULL_HANDLE;
+    }
+    if (textureImage != VK_NULL_HANDLE) {
+        vkDestroyImage(dev.vk_GetDevice(), textureImage, nullptr);
+        textureImage = VK_NULL_HANDLE;
+    }
+    if (textureSampler != VK_NULL_HANDLE) {
+        vkDestroySampler(dev.vk_GetDevice(), textureSampler, nullptr);
+        textureSampler = VK_NULL_HANDLE;
+    }
+    if (textureImageMemory != VK_NULL_HANDLE) {
+        vkFreeMemory(dev.vk_GetDevice(), textureImageMemory, nullptr);
+        textureImageMemory = VK_NULL_HANDLE;
+    }
 }
 
-void Engine::Texture2D::vk_CreateTexture(const std::string& filepath) {
-    filename = filepath;
+void Engine::Texture2D::CreateTexture(const std::string& filepath, VkFormat format) {
     vk_CreateTextureImage(filepath);
-    vk_CreateTextureImageView(VK_IMAGE_VIEW_TYPE_2D, 1);
-    vk_CreateTextureSampler(false);
+    vk_CreateTextureImageView(format);
+    vk_CreateTextureSampler();
+    vk_WriteToDescriptorSet();
 }
 
-void Engine::Texture2D::vk_CreateCubeMap(const std::vector<std::string>& filepath)
-{
-    vk_CreateCubeMapImage(filepath);
-    vk_CreateTextureImageView(VK_IMAGE_VIEW_TYPE_CUBE, 6);
-    vk_CreateTextureSampler(true);
+void Engine::Texture2D::CreateTexture(const uint32_t width, const uint32_t height,
+                                         const VkFormat format, const VkImageUsageFlags usage) {
+    vk_CreateTextureImage(width, height, format, usage);
+    vk_CreateTextureImageView(format);
+    vk_CreateTextureSampler();
+    vk_WriteToDescriptorSet();
 }
 
-void Engine::Texture2D::vk_TransitionImageLayout(
+void Engine::Texture2D::vk_WriteToDescriptorSet() {
+    descriptorPool = Engine::DescriptorPool::Builder(dev)
+            .setMaxSets(1)
+            .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+            .build();
+
+    descriptorSetLayout = Engine::DescriptorSetLayout::Builder(dev)
+            .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build();
+
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = textureImageView;
+    imageInfo.sampler = textureSampler;
+
+    DescriptorWriter writer(*descriptorSetLayout, *descriptorPool);
+    writer.writeImage(0, &imageInfo);
+    writer.build(descriptorSet);
+}
+
+VkDescriptorImageInfo Engine::Texture2D::GetDescriptorSetInfo() const {
+    VkDescriptorImageInfo imageInfo{};
+    imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+    imageInfo.imageView = GetTextureImageView();
+    imageInfo.sampler = GetTextureSampler();
+    return imageInfo;
+}
+
+void Engine::Texture2D::TransitionImageLayout(
     VkImage image,
     VkFormat format,
     VkImageLayout oldLayout,
-    VkImageLayout newLayout,
-    uint32_t layerCount)
+    VkImageLayout newLayout)
 {
     VkCommandBuffer commandBuffer = dev.vk_BeginSingleTimeCommands();
 
@@ -43,7 +85,7 @@ void Engine::Texture2D::vk_TransitionImageLayout(
     barrier.subresourceRange.baseMipLevel = 0;
     barrier.subresourceRange.levelCount = 1;
     barrier.subresourceRange.baseArrayLayer = 0;
-    barrier.subresourceRange.layerCount = layerCount;
+    barrier.subresourceRange.layerCount = 1;
 
     VkPipelineStageFlags sourceStage;
     VkPipelineStageFlags destinationStage;
@@ -118,13 +160,12 @@ void Engine::Texture2D::vk_TransitionImageLayout(
     dev.vk_EndSingleTimeCommands(commandBuffer);
 }
 
-void Engine::Texture2D::vk_CreateImage(uint32_t width, uint32_t height, VkFormat format,
+void Engine::Texture2D::CreateImage(uint32_t width, uint32_t height, VkFormat format,
     VkImageTiling tiling,
     VkImageUsageFlags usage,
     VkMemoryPropertyFlags properties,
     VkImage& image,
-    VkDeviceMemory& imageMemory,
-    uint32_t layerCount) {
+    VkDeviceMemory& imageMemory) {
 
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -133,14 +174,13 @@ void Engine::Texture2D::vk_CreateImage(uint32_t width, uint32_t height, VkFormat
     imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = layerCount;
+    imageInfo.arrayLayers = 1;
     imageInfo.format = format;
     imageInfo.tiling = tiling;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage;
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-    imageInfo.flags = (layerCount == 6) ? VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT : 0;
 
     if (vkCreateImage(dev.vk_GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
@@ -162,11 +202,24 @@ void Engine::Texture2D::vk_CreateImage(uint32_t width, uint32_t height, VkFormat
 }
 
 
-void Engine::Texture2D::vk_CreateTextureImageView(VkImageViewType type, uint32_t layerCount) {
-    textureImageView = vk_CreateImageView(textureImage, VK_FORMAT_R8G8B8A8_SRGB, type, layerCount);
+void Engine::Texture2D::vk_CreateTextureImageView(VkFormat format) {
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = textureImage;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = format;
+    viewInfo.subresourceRange.aspectMask = (format == VK_FORMAT_D32_SFLOAT) ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(dev.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create texture image view!");
+    }
 }
 
-void Engine::Texture2D::vk_CreateTextureSampler(bool isCubemap) {
+void Engine::Texture2D::vk_CreateTextureSampler() {
     VkPhysicalDeviceProperties properties{};
     vkGetPhysicalDeviceProperties(dev.vk_GetPhysicalDevice(), &properties);
 
@@ -174,9 +227,9 @@ void Engine::Texture2D::vk_CreateTextureSampler(bool isCubemap) {
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
     samplerInfo.magFilter = VK_FILTER_LINEAR;
     samplerInfo.minFilter = VK_FILTER_LINEAR;
-    samplerInfo.addressModeU = isCubemap ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeV = isCubemap ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    samplerInfo.addressModeW = isCubemap ? VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE : VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     samplerInfo.anisotropyEnable = VK_TRUE;
     samplerInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
     samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
@@ -190,27 +243,7 @@ void Engine::Texture2D::vk_CreateTextureSampler(bool isCubemap) {
     }
 }
 
-VkImageView Engine::Texture2D::vk_CreateImageView(VkImage image, VkFormat format, VkImageViewType type, uint32_t layerCount) {
-    VkImageViewCreateInfo viewInfo{};
-    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = image;
-    viewInfo.viewType = type;
-    viewInfo.format = format;
-    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    viewInfo.subresourceRange.baseMipLevel = 0;
-    viewInfo.subresourceRange.levelCount = 1;
-    viewInfo.subresourceRange.baseArrayLayer = 0;
-    viewInfo.subresourceRange.layerCount = layerCount;
-
-    VkImageView imageView;
-    if (vkCreateImageView(dev.vk_GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture image view!");
-    }
-
-    return imageView;
-}
-
-void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height, uint32_t layerCount) {
+void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const {
     VkCommandBuffer commandBuffer = dev.vk_BeginSingleTimeCommands();
 
     VkBufferImageCopy region{};
@@ -220,7 +253,7 @@ void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uin
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.mipLevel = 0;
     region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = layerCount;
+    region.imageSubresource.layerCount = 1;
     region.imageOffset = {0, 0, 0};
     region.imageExtent = {
         width,
@@ -233,78 +266,39 @@ void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uin
     dev.vk_EndSingleTimeCommands(commandBuffer);
 }
 
-void Engine::Texture2D::vk_CreateCubeMapImage(const std::vector<std::string>& cubeMapFiles) {
-    int texWidth, texHeight, texChannels;
+void Engine::Texture2D::vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = 1;
+    imageInfo.arrayLayers = 1;
+    imageInfo.format = format;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+    imageInfo.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    stbi_uc* textureData[6];
-    for (int i = 0; i < cubeMapFiles.size(); i++) {
-        textureData[i] = stbi_load(cubeMapFiles[i].c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
-        std::cout << "Loading : " << cubeMapFiles[i] << std::endl;
-        if (!textureData[i]) {
-            throw std::runtime_error("failed to load texture image!");
-        }
-        //Poor mans hack lol
-        stbi__vertical_flip(textureData[i], texWidth, texHeight, 4);
+    if (vkCreateImage(dev.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create color attachment image!");
     }
 
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(dev.vk_GetDevice(), textureImage, &memRequirements);
 
-    const VkDeviceSize imageSize = texWidth * texHeight * 4 * 6; //4 since I always load my textures with an alpha channel, and multiply it by 6 because the image must have 6 layers.
-    const VkDeviceSize layerSize = imageSize / 6; //This is just the size of each layer.
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = dev.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    for(auto & i : textureData) {
-        if (!i) {
-            throw std::runtime_error("failed to load texture image!");
-        }
+    if (vkAllocateMemory(dev.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate color attachment memory!");
     }
 
-    Buffer stagingBuffer{
-        dev,
-        imageSize,
-        1,
-        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
-    };
-
-    stagingBuffer.map();
-    for (int i = 0; i < 6; i++) {
-        stagingBuffer.vk_WriteToBuffer((void*)textureData[i], layerSize, i * layerSize);
-        stbi_image_free(textureData[i]);
-    }
-
-    vk_CreateImage(
-        texWidth,
-        texHeight,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_TILING_OPTIMAL,
-        VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-        VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-        textureImage,
-        textureImageMemory,
-        6);
-
-    vk_TransitionImageLayout(textureImage, VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        6);
-
-    vk_CopyBufferToImage(stagingBuffer.vk_GetBuffer(),
-        textureImage,
-        static_cast<uint32_t>(texWidth),
-        static_cast<uint32_t>(texHeight),
-        6);
-
-    vk_TransitionImageLayout(textureImage,
-        VK_FORMAT_R8G8B8A8_SRGB,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        6);
-
-    stagingBuffer.unmap();
-}
-
-
-std::shared_ptr<Engine::Texture2D> Engine::Texture2D::create(Device& dev) {
-    return std::make_shared<Engine::Texture2D>(dev);
+    vkBindImageMemory(dev.vk_GetDevice(), textureImage, textureImageMemory, 0);
 }
 
 void Engine::Texture2D::vk_CreateTextureImage(const std::string& filepath) {
@@ -329,7 +323,7 @@ void Engine::Texture2D::vk_CreateTextureImage(const std::string& filepath) {
 
     stbi_image_free(pixels);
 
-    vk_CreateImage(
+    CreateImage(
         texWidth,
         texHeight,
         VK_FORMAT_R8G8B8A8_SRGB,
@@ -337,26 +331,22 @@ void Engine::Texture2D::vk_CreateTextureImage(const std::string& filepath) {
         VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
         VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
         textureImage,
-        textureImageMemory,
-        1);
+        textureImageMemory);
 
-    vk_TransitionImageLayout(textureImage,
+    TransitionImageLayout(textureImage,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_UNDEFINED,
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1);
+        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
     vk_CopyBufferToImage(stagingBuffer.vk_GetBuffer(),
         textureImage,
         static_cast<uint32_t>(texWidth),
-        static_cast<uint32_t>(texHeight),
-        1);
+        static_cast<uint32_t>(texHeight));
 
-    vk_TransitionImageLayout(textureImage,
+    TransitionImageLayout(textureImage,
         VK_FORMAT_R8G8B8A8_SRGB,
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-        1);
+        VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     stagingBuffer.unmap();
 }

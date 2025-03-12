@@ -5,11 +5,11 @@ namespace Engine {
     OffscreenRenderer::OffscreenRenderer(Device& device) : device(device), renderpass(device, {800,600}) {}
     OffscreenRenderer::~OffscreenRenderer() = default;
 
-    VkDescriptorImageInfo OffscreenRenderer::GetDepthInfo(RenderPassType type) const {
+    VkDescriptorImageInfo OffscreenRenderer::GetImageInfo(RenderPassType type, VkImageLayout layout) const {
         VkDescriptorImageInfo info = {};
         info.imageView = renderpass.GetRenderTarget(type);
         info.sampler = renderpass.GetRenderSampler(type);
-        info.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+        info.imageLayout = layout;
         return info;
     }
 
@@ -20,15 +20,17 @@ namespace Engine {
 
         // Scene RenderPass
         renderpass.CreateRenderPass(RenderPassType::GRID);
-        renderpass.CreateFramebuffer(RenderPassType::GRID);
 
         // Scene RenderPass
-        renderpass.CreateRenderPass(RenderPassType::SCENE);
-        renderpass.CreateFramebuffer(RenderPassType::SCENE);
+        renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
+
+        // Post-processing RenderPass
+        renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
 
         // Depth RenderPass
         renderpass.CreateRenderPass(RenderPassType::SHADOW);
-        renderpass.CreateFramebuffer(RenderPassType::SHADOW);
+
+        renderpass.CreateRenderPass(RenderPassType::FINAL);
 
         // Add here other render passes
         // ....
@@ -46,17 +48,95 @@ namespace Engine {
 
         // Scene RenderPass
         renderpass.CreateRenderPass(RenderPassType::GRID);
-        renderpass.CreateFramebuffer(RenderPassType::GRID);
 
-        renderpass.CreateRenderPass(RenderPassType::SCENE);
-        renderpass.CreateFramebuffer(RenderPassType::SCENE);
+        renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
+
+        renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
 
         // Depth RenderPass
         renderpass.CreateRenderPass(RenderPassType::SHADOW);
-        renderpass.CreateFramebuffer(RenderPassType::SHADOW);
+
+        // Final RenderPass
+        renderpass.CreateRenderPass(RenderPassType::FINAL);
 
         // Add here other render passes (if there are any)
         // ....
+    }
+
+    void OffscreenRenderer::TransitionImages(VkCommandBuffer commandBuffer, RenderPassType src, RenderPassType dst) {
+        struct TransitionInfo {
+            VkImage image;
+            VkImageLayout oldLayout;
+            VkImageLayout newLayout;
+            VkImageAspectFlags aspectMask;
+            VkPipelineStageFlags srcStage;
+            VkPipelineStageFlags dstStage;
+            VkAccessFlags srcAccessMask;
+            VkAccessFlags dstAccessMask;
+        };
+
+        std::vector<TransitionInfo> transitions;
+
+        if (src == RenderPassType::GEOMETRY && dst == RenderPassType::POST_PROCESSING) {
+            transitions.push_back({
+                renderpass.GetImage(src),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,   // Color pass writes to the image
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,   // Post-processing reads from it
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT
+            });
+        }
+
+        if (src == RenderPassType::POST_PROCESSING && dst == RenderPassType::FINAL) {
+            transitions.push_back({
+                renderpass.GetImage(src),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT
+            });
+        }
+
+
+        // Apply all transitions
+        std::vector<VkImageMemoryBarrier> barriers;
+        for (const auto& transition : transitions) {
+            VkImageMemoryBarrier barrier{};
+            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+            barrier.oldLayout = transition.oldLayout;
+            barrier.newLayout = transition.newLayout;
+            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+            barrier.image = transition.image;
+            barrier.subresourceRange.aspectMask = transition.aspectMask;
+            barrier.subresourceRange.baseMipLevel = 0;
+            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.baseArrayLayer = 0;
+            barrier.subresourceRange.layerCount = 1;
+            barrier.srcAccessMask = transition.srcAccessMask;
+            barrier.dstAccessMask = transition.dstAccessMask;
+
+            barriers.push_back(barrier);
+        }
+
+        if (!barriers.empty()) {
+            vkCmdPipelineBarrier(
+                commandBuffer,
+                transitions.front().srcStage, // Using first transition's srcStage (assumes all have same stages)
+                transitions.front().dstStage, // Using first transition's dstStage
+                0,
+                0, nullptr,
+                0, nullptr,
+                static_cast<uint32_t>(barriers.size()), barriers.data()
+            );
+        }
+
     }
 
     void OffscreenRenderer::BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type) {
@@ -84,7 +164,7 @@ namespace Engine {
 
         }
         vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-    
+
         VkViewport viewport = {};
         viewport.x = 0.0f;
         viewport.y = 0.0f;
@@ -110,7 +190,7 @@ namespace Engine {
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
         }
     }
-    
+
     void OffscreenRenderer::EndRenderPass(VkCommandBuffer commandBuffer) {
         vkCmdEndRenderPass(commandBuffer);
     }
