@@ -47,7 +47,7 @@ namespace ECS {
 
         camera = Engine::Camera{};
 
-        currentTime = std::chrono::high_resolution_clock::now();
+        currentTime = std::chrono::steady_clock::now();
     }
 
     // Create a new entity in the scene using the shared registry
@@ -67,8 +67,8 @@ namespace ECS {
 
     // Update all entities or components in the scene (e.g., per frame)
     void Scene::OnUpdate() {
-        auto newTime = std::chrono::high_resolution_clock::now();
-        frameTime = std::chrono::duration<float, std::chrono::seconds::period>(newTime - currentTime).count();
+        auto newTime = std::chrono::steady_clock::now();
+        frameTime = std::chrono::duration<float>(newTime - currentTime).count();
         currentTime = newTime;
 
         UniformData ubo{};

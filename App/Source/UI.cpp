@@ -175,23 +175,6 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
         ImGui::EndMenuBar();
     }
 
-    if (ImGui::Begin("Texture viewer")) {
-        ImGui::PushID("translateIcon"); // Unique ID for translate icon
-        translateIcon->Display();
-        ImGui::PopID();
-
-        ImGui::SameLine();
-        ImGui::PushID("rotateIcon"); // Unique ID for rotate icon
-        rotateIcon->Display();
-        ImGui::PopID();
-
-        ImGui::SameLine();
-        ImGui::PushID("scaleIcon"); // Unique ID for scale icon
-        scaleIcon->Display();
-        ImGui::PopID();
-
-        ImGui::End();
-    }
     //Scene Hierarchy
     if (ImGui::Begin("Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
         // If RMB is pressed, open context menu
@@ -247,12 +230,25 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
             if (ImGui::MenuItem("Create light")) {
                 if (const auto entity = scene.CreateEntity()) {
                     std::cout << "Entity created successfully." << std::endl;
+
+                    // Add the light component
                     entity->AddComponent<ECS::Light>();
+                    std::cout << "Light component added." << std::endl;
+
+                    // Set the name of the entity
+                    entity->SetName("Directional light");
+                    std::cout << "Name set to: " << entity->GetName() << std::endl;  // Debug to verify the name is set
+
+                    nameBuffers[entity->GetHandle()] = entity->GetName();
+
+                    // Check if the Light component was added successfully
                     if (entity->HasComponent<ECS::Light>()) {
                         std::cout << "Light component added successfully." << std::endl;
                     } else {
                         std::cout << "Failed to add Light component." << std::endl;
                     }
+
+                    // Select the newly created entity
                     SetSelectedEntity(entity->GetHandle());
                 } else {
                     std::cout << "Failed to create entity." << std::endl;
@@ -394,7 +390,7 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                     nfdresult_t result = NFD_OpenDialog("gltf", nullptr, &outPath);
 
                     if (result == NFD_OKAY) {
-                        // Load texture
+                        // Load mesh
                         if (!mesh->mesh) {
                             std::cout << "Loading mesh" << std::endl;
                             auto loadedMesh = Engine::Model3D::create(device);
@@ -409,7 +405,45 @@ void Editor::UI::OnUpdate(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
                         std::cout << "Error: " << NFD_GetError() << std::endl;
                     }
                 }
+
+                // Display Material Info
+                if (mesh->mesh) {
+                    auto& material = mesh->mesh->GetMaterial();
+                    ImGui::Separator();
+                    ImGui::Text("Material Preview");
+
+                    ImVec2 thumbnailSize(64, 64);  // Thumbnail size (adjust as needed)
+
+                    // Albedo Texture
+                    ImGui::Text("Albedo");
+                    ImGui::SameLine(100);
+                    if (material.albedoTexture) {
+                        ImGui::Image((ImTextureID)material.albedoTexture->GetDescriptorSet(), thumbnailSize);
+                    } else {
+                        ImGui::Text("None");
+                    }
+
+                    // Normal Map
+                    ImGui::Text("Normal");
+                    ImGui::SameLine(100);
+                    if (material.normalTexture) {
+                        ImGui::Image((ImTextureID)material.normalTexture->GetDescriptorSet(), thumbnailSize);
+                    } else {
+                        ImGui::Text("None");
+                    }
+
+                    // MetallicRoughness Map
+                    ImGui::Text("MetallicRoughness");
+                    ImGui::SameLine(100);
+                    if (material.metallicRoughnessTexture) {
+                        ImGui::Image((ImTextureID)material.metallicRoughnessTexture->GetDescriptorSet(), thumbnailSize);
+                    } else {
+                        ImGui::Text("None");
+                    }
+
+                }
             }
+
 
             ImGui::Separator();
 

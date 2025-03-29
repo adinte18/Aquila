@@ -22,6 +22,7 @@
 #include <glm/gtx/hash.hpp>
 
 #include <memory>
+#include <mutex>
 #include <ECS/Scene.h>
 #include <vector>
 
@@ -86,6 +87,8 @@ namespace Engine {
         std::vector<Primitive> primitives{};
         std::vector<std::shared_ptr<Texture2D>> images;
 
+        Material material{};
+
         std::string path;
 
     public:
@@ -106,7 +109,11 @@ namespace Engine {
         void draw(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, VkPipelineLayout pipelineLayout) const;
         void draw(VkCommandBuffer commandBuffer);
 
+        void LoadTextureAsync(const std::string& uri, std::vector<std::shared_ptr<Engine::Texture2D>>& images, size_t imageIndex, std::mutex& imageMutex);
+
+
         [[nodiscard]] std::string GetPath() const { return path; }
+        [[nodiscard]] const Material& GetMaterial() const { return material; }
     };
 }
 

@@ -16,7 +16,7 @@ namespace Editor {
             : iconTexture(texture), iconSize(size) {}
 
         // Display the icon using ImGui
-        [[nodiscard]] bool Display() const {
+        bool Display() const {
             if (iconTexture && iconTexture->HasImageView()) {
                 ImTextureID textureID = reinterpret_cast<ImTextureID>(iconTexture->GetDescriptorSet());
                 return ImGui::ImageButton("",textureID, iconSize);

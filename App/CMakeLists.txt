@@ -24,7 +24,6 @@ set(IMGUI_SOURCES
 set(NFD_SOURCES
         ${EXTERNAL_DIR}/nativefiledialog/src/nfd_common.c
         ${EXTERNAL_DIR}/nativefiledialog/src/nfd_win.cpp
-        Include/Icon.h  # If you're on Windows
         # For other platforms (Linux/macOS)
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_gtk.c  # For Linux
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_cocoa.m # For macOS

@@ -13,6 +13,21 @@ Engine::Model3D::Model3D(Device &device) : device{device}, vertexCount(0), index
 
 Engine::Model3D::~Model3D() = default;
 
+void Engine::Model3D::LoadTextureAsync(const std::string& uri, std::vector<std::shared_ptr<Texture2D>>& images, size_t index, std::mutex& imageMutex) {
+    std::cout << "LoadTextureAsync called for index " << index << " (images.size() = " << images.size() << ")" << std::endl;
+
+    if (index >= images.size()) {
+        std::cerr << "Index out of range: " << index << " (images.size() = " << images.size() << ")" << std::endl;
+        return;
+    }
+
+    std::shared_ptr<Texture2D> texture = Texture2D::create(device);
+    texture->CreateTexture(uri);
+
+    std::lock_guard<std::mutex> lock(imageMutex);
+    images[index] = texture;
+}
+
 
 void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool) {
     tinygltf::Model model;
@@ -20,22 +35,34 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
     std::string err, warn;
 
     bool loaded = loader.LoadASCIIFromFile(&model, &err, &warn, filepath);
-
     if (!loaded) {
         throw std::runtime_error(err);
     }
 
-    images.reserve(model.images.size());
+    // Ensure images vector has enough space for all textures
+    images.resize(model.images.size());
+    std::cout << "Images vector resized to: " << images.size() << std::endl;
 
     std::filesystem::path filePath(filepath);
     std::string directoryPath = filePath.parent_path().string();
     path = directoryPath;
-    for (auto& image : model.images) {
-        std::string uri = directoryPath + "/" + image.uri;
-        auto texture = Texture2D::create(device);
-        texture->CreateTexture(uri);
-        images.push_back(texture);
+
+    std::mutex imageMutex;
+    std::vector<std::thread> threads;
+
+    for (size_t i = 0; i < model.images.size(); ++i) {
+        std::cout << "Starting to load texture " << i << " of " << model.images.size() << std::endl;
+        std::string uri = directoryPath + "/" + model.images[i].uri;
+        threads.push_back(std::thread([this, uri, i, &imageMutex]() {
+            LoadTextureAsync(uri, std::ref(images), i, std::ref(imageMutex));
+        }));
     }
+
+    for (auto& thread : threads) {
+        thread.join();
+    }
+
+    threads.clear();
 
     vertices.clear();
     indices.clear();
@@ -162,6 +189,8 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                         material.metallicRoughnessTexture = defaultTex;
                     }
 
+                    this->material = material;
+
                     VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
                     VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
                     VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
@@ -220,6 +249,7 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
     material.albedoTexture = defaultTex;
     material.normalTexture = defaultTex;
     material.metallicRoughnessTexture = defaultTex;
+    this->material = material;
 
     VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
     VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();

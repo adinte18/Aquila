@@ -38,7 +38,7 @@ namespace Engine {
                 return *this;
             }
 
-            [[nodiscard]] std::shared_ptr<Texture2D> Builder::build() const {
+            [[nodiscard]] std::shared_ptr<Texture2D> build() const {
                 auto texture = std::make_shared<Texture2D>(device);
                 if (!filepath.empty()) {
                     texture->CreateTexture(filepath, format);
@@ -72,7 +72,7 @@ namespace Engine {
         [[nodiscard]] VkSampler GetTextureSampler() const { return textureSampler; }
         [[nodiscard]] VkDeviceMemory GetTextureImageMemory() const { return textureImageMemory; }
         [[nodiscard]] VkDescriptorImageInfo GetDescriptorSetInfo() const;
-        [[nodiscard]] VkDescriptorSet Engine::Texture2D::GetDescriptorSet() const { return descriptorSet; }
+        [[nodiscard]] VkDescriptorSet GetDescriptorSet() const { return descriptorSet; }
 
 
         [[nodiscard]] bool HasImage() const { return textureImage != VK_NULL_HANDLE; }
