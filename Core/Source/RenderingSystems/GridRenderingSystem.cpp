@@ -7,6 +7,7 @@
 
 #include <utility>
 #include "Components.h"
+#include "SceneContext.h"
 
 struct PushConstantData
 {
@@ -21,7 +22,7 @@ RenderingSystem::GridRenderingSystem::GridRenderingSystem(Engine::Device &device
     model->CreateQuad(1000.f);
 }
 
-void RenderingSystem::GridRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
+void RenderingSystem::GridRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::SceneContext& scene) const {
     pipeline->bind(commandBuffer);
 
     PushConstantData push{};
@@ -36,9 +37,16 @@ void RenderingSystem::GridRenderingSystem::Render(VkCommandBuffer commandBuffer,
         &push);
 
     model->bind(commandBuffer);
-    model->draw(commandBuffer, scene.sceneDescriptorSet, pipelineLayout);
+    model->draw(commandBuffer, scene.GetSceneDescriptorSet(), pipelineLayout);
 }
 
+void RenderingSystem::GridRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+    if (pipeline) {
+        pipeline.reset();
+    }
+
+    CreatePipeline(renderPass);
+}
 
 void RenderingSystem::GridRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");

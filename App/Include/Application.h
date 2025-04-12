@@ -9,7 +9,6 @@ namespace Editor {
     public:
         Application() {
             editorContext = std::make_unique<EditorLayer>();
-            editorContext->OnStart(); // Initialize resources
         }
 
         ~Application() {
@@ -21,8 +20,7 @@ namespace Editor {
 
 
         void Run() {
-            while (!editorContext->window->shouldClose()) {
-                editorContext->OnEvent(); // Handles input and window events
+            while (!editorContext->GetWindow().ShouldClose()) {
                 editorContext->OnUpdate(); // Updates the application state and render
             }
         }

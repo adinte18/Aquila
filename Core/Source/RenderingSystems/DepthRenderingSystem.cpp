@@ -1,6 +1,5 @@
 #include <utility>
 #include "RenderingSystems/DepthRenderingSystem.h"
-#include "Components.h"
 
 struct PushConstantData
 {
@@ -14,16 +13,16 @@ RenderingSystem::DepthRenderingSystem::DepthRenderingSystem(Engine::Device &devi
     CreatePipeline(renderPass);
 }
 
-void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
+void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::SceneContext& sceneContext) const {
     pipeline->bind(commandBuffer);
 
-    scene.GetRegistry().view<ECS::Light>().each([&scene, this, &commandBuffer](ECS::Light& light) {
+    sceneContext.GetScene().GetRegistry().view<ECS::Light>().each([&sceneContext, this, &commandBuffer](ECS::Light& light) {
         if (light.type == ECS::Light::LightType::Directional) {
 
             light.UpdateMatrices();
 
-            scene.GetRegistry().view<ECS::Transform, ECS::Mesh>()
-                .each([&scene, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
+            sceneContext.GetScene().GetRegistry().view<ECS::Transform, ECS::Mesh>()
+                .each([&sceneContext, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
 
                 if (mesh.mesh) {
                     PushConstantData push{};
@@ -38,12 +37,21 @@ void RenderingSystem::DepthRenderingSystem::Render(VkCommandBuffer commandBuffer
                         &push);
 
                     mesh.mesh->bind(commandBuffer);
-                    mesh.mesh->draw(commandBuffer, scene.sceneDescriptorSet, pipelineLayout);
+                    mesh.mesh->draw(commandBuffer, sceneContext.GetSceneDescriptorSet(), pipelineLayout);
                 }
             });
         }
     });
 }
+
+void RenderingSystem::DepthRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+    if (pipeline) {
+        pipeline.reset();
+    }
+
+    CreatePipeline(renderPass);
+}
+
 
 void RenderingSystem::DepthRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");

@@ -2,6 +2,8 @@
 
 #include "RenderingSystems/SceneRenderingSystem.h"
 
+#include <Engine/Model.h>
+
 #include "Components.h"
 
 struct PushConstantData
@@ -16,11 +18,11 @@ RenderingSystem::SceneRenderingSystem::SceneRenderingSystem(Engine::Device &devi
     CreatePipeline(renderPass);
 }
 
-void RenderingSystem::SceneRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::Scene& scene) {
+void RenderingSystem::SceneRenderingSystem::Render(VkCommandBuffer commandBuffer, ECS::SceneContext& sceneContext) {
     pipeline->bind(commandBuffer);
 
-    scene.GetRegistry().view<ECS::Transform, ECS::Mesh>()
-        .each([&scene, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
+    sceneContext.GetScene().GetRegistry().view<ECS::Transform, ECS::Mesh>()
+        .each([&sceneContext, this, &commandBuffer](ECS::Transform& transform, ECS::Mesh& mesh) {
 
         if (mesh.mesh) {
             PushConstantData push{};
@@ -35,7 +37,7 @@ void RenderingSystem::SceneRenderingSystem::Render(VkCommandBuffer commandBuffer
                 &push);
 
             mesh.mesh->bind(commandBuffer);
-            mesh.mesh->draw(commandBuffer, scene.sceneDescriptorSet, pipelineLayout);
+            mesh.mesh->draw(commandBuffer, sceneContext.GetSceneDescriptorSet(), pipelineLayout);
         }
     });
 }
@@ -52,8 +54,16 @@ void RenderingSystem::SceneRenderingSystem::CreatePipeline(VkRenderPass renderPa
             std::string(SHADERS_PATH) + "/shader_vert.spv",
             std::string(SHADERS_PATH) + "/shader_frag.spv",
             pipelineConfig);
-
 }
+
+void RenderingSystem::SceneRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+    if (pipeline) {
+        pipeline.reset();
+    }
+
+    CreatePipeline(renderPass);
+}
+
 
 void RenderingSystem::SceneRenderingSystem::CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts) {
     VkPushConstantRange pushConstantRange{};

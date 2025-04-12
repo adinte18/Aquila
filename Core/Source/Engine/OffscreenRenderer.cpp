@@ -2,62 +2,99 @@
 #include <array>
 
 namespace Engine {
-    OffscreenRenderer::OffscreenRenderer(Device& device) : device(device), renderpass(device, {800,600}) {}
-    OffscreenRenderer::~OffscreenRenderer() = default;
+    OffscreenRenderer::OffscreenRenderer(Device& device) : m_Device(device), m_Renderpass(device, {800,600}) {
+        CreateCommandBuffers();
+        Initialize(800, 600);
+    }
+    OffscreenRenderer::~OffscreenRenderer() {
+        FreeCommandBuffers();
+    }
 
     VkDescriptorImageInfo OffscreenRenderer::GetImageInfo(RenderPassType type, VkImageLayout layout) const {
         VkDescriptorImageInfo info = {};
-        info.imageView = renderpass.GetRenderTarget(type);
-        info.sampler = renderpass.GetRenderSampler(type);
+        info.imageView = m_Renderpass.GetRenderTarget(type);
+        info.sampler = m_Renderpass.GetRenderSampler(type);
         info.imageLayout = layout;
         return info;
     }
 
+    void OffscreenRenderer::CreateCommandBuffers() {
+        m_CommandBuffers.resize(3); // 3 frames in flight - triple buffering
+
+        VkCommandBufferAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        allocInfo.commandPool = m_Device.vk_GetCommandPool();
+        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
+
+        if (vkAllocateCommandBuffers(m_Device.vk_GetDevice(), &allocInfo, m_CommandBuffers.data()) !=
+            VK_SUCCESS) {
+            throw std::runtime_error("failed to allocate command buffers!");
+        }
+    }
+
+    VkCommandBuffer OffscreenRenderer::GetCurrentCommandBuffer() {
+        return m_CommandBuffers[m_CurrentFrameID];
+    }
+
+    void OffscreenRenderer::FreeCommandBuffers() {
+        vkFreeCommandBuffers(
+            m_Device.vk_GetDevice(),
+            m_Device.vk_GetCommandPool(),
+            static_cast<uint32_t>(m_CommandBuffers.size()),
+            m_CommandBuffers.data());
+        m_CommandBuffers.clear();
+    }
+
     void OffscreenRenderer::Initialize(uint32_t width, uint32_t height) {
-        extent = { width, height };
+        m_Extent = { width, height };
 
-        renderpass.CreateRenderTarget(device, width, height);
+        m_Renderpass.CreateRenderTarget(m_Device, width, height);
+
+        // Cubemap RenderPass
+        m_Renderpass.CreateRenderPass(RenderPassType::ENV_TO_CUBEMAP);
+
+        m_Renderpass.CreateRenderPass(RenderPassType::IBL);
 
         // Scene RenderPass
-        renderpass.CreateRenderPass(RenderPassType::GRID);
-
-        // Scene RenderPass
-        renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
+        m_Renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
 
         // Post-processing RenderPass
-        renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
+        m_Renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
 
         // Depth RenderPass
-        renderpass.CreateRenderPass(RenderPassType::SHADOW);
+        m_Renderpass.CreateRenderPass(RenderPassType::SHADOW);
 
-        renderpass.CreateRenderPass(RenderPassType::FINAL);
+        // Final RenderPass
+        m_Renderpass.CreateRenderPass(RenderPassType::FINAL);
 
         // Add here other render passes
         // ....
     }
 
     void OffscreenRenderer::Resize(VkExtent2D newExtent) {
-        vkDeviceWaitIdle(device.vk_GetDevice());
+        vkDeviceWaitIdle(m_Device.vk_GetDevice());
 
-        renderpass.DestroyAll();
+        m_Renderpass.DestroyAll();
 
-        extent = newExtent;
-        renderpass.SetExtent(extent);
+        m_Extent = newExtent;
+        m_Renderpass.SetExtent(m_Extent);
 
-        renderpass.CreateRenderTarget(device, extent.width, extent.height);
+        m_Renderpass.CreateRenderTarget(m_Device, m_Extent.width, m_Extent.height);
 
-        // Scene RenderPass
-        renderpass.CreateRenderPass(RenderPassType::GRID);
+        m_Renderpass.CreateRenderPass(RenderPassType::ENV_TO_CUBEMAP);
 
-        renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
+        m_Renderpass.CreateRenderPass(RenderPassType::IBL);
 
-        renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
+        m_Renderpass.CreateRenderPass(RenderPassType::GEOMETRY);
+
+        m_Renderpass.CreateRenderPass(RenderPassType::POST_PROCESSING);
 
         // Depth RenderPass
-        renderpass.CreateRenderPass(RenderPassType::SHADOW);
+        m_Renderpass.CreateRenderPass(RenderPassType::SHADOW);
 
         // Final RenderPass
-        renderpass.CreateRenderPass(RenderPassType::FINAL);
+        m_Renderpass.CreateRenderPass(RenderPassType::FINAL);
 
         // Add here other render passes (if there are any)
         // ....
@@ -73,36 +110,56 @@ namespace Engine {
             VkPipelineStageFlags dstStage;
             VkAccessFlags srcAccessMask;
             VkAccessFlags dstAccessMask;
+            uint32_t mipLevels;
+            uint32_t layerCount;
         };
 
         std::vector<TransitionInfo> transitions;
 
-        if (src == RenderPassType::GEOMETRY && dst == RenderPassType::POST_PROCESSING) {
+        if (src == RenderPassType::ENV_TO_CUBEMAP && dst == RenderPassType::IBL) {
             transitions.push_back({
-                renderpass.GetImage(src),
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,   // Color pass writes to the image
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,   // Post-processing reads from it
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_SHADER_READ_BIT
-            });
-        }
-
-        if (src == RenderPassType::POST_PROCESSING && dst == RenderPassType::FINAL) {
-            transitions.push_back({
-                renderpass.GetImage(src),
+                m_Renderpass.GetImage(src),
                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
                 VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
                 VK_IMAGE_ASPECT_COLOR_BIT,
                 VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
                 VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
                 VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_SHADER_READ_BIT
+                VK_ACCESS_SHADER_READ_BIT,
+                1, // mipLevels
+                6  // layerCount for cubemap
             });
         }
 
+        if (src == RenderPassType::GEOMETRY && dst == RenderPassType::POST_PROCESSING) {
+            transitions.push_back({
+                m_Renderpass.GetImage(src),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                1,
+                1
+            });
+        }
+
+        if (src == RenderPassType::POST_PROCESSING && dst == RenderPassType::FINAL) {
+            transitions.push_back({
+                m_Renderpass.GetImage(src),
+                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                VK_IMAGE_ASPECT_COLOR_BIT,
+                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+                VK_ACCESS_SHADER_READ_BIT,
+                1,
+                1
+            });
+        }
 
         // Apply all transitions
         std::vector<VkImageMemoryBarrier> barriers;
@@ -116,9 +173,9 @@ namespace Engine {
             barrier.image = transition.image;
             barrier.subresourceRange.aspectMask = transition.aspectMask;
             barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = 1;
+            barrier.subresourceRange.levelCount = transition.mipLevels;
             barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = 1;
+            barrier.subresourceRange.layerCount = transition.layerCount;
             barrier.srcAccessMask = transition.srcAccessMask;
             barrier.dstAccessMask = transition.dstAccessMask;
 
@@ -128,27 +185,77 @@ namespace Engine {
         if (!barriers.empty()) {
             vkCmdPipelineBarrier(
                 commandBuffer,
-                transitions.front().srcStage, // Using first transition's srcStage (assumes all have same stages)
-                transitions.front().dstStage, // Using first transition's dstStage
+                transitions.front().srcStage,
+                transitions.front().dstStage,
                 0,
                 0, nullptr,
                 0, nullptr,
                 static_cast<uint32_t>(barriers.size()), barriers.data()
             );
         }
+    }
 
+    void OffscreenRenderer::BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type, int cubemapFace) {
+        VkRenderPassBeginInfo renderPassInfo{};
+        renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        renderPassInfo.renderPass = m_Renderpass.GetRenderPass(type);
+
+        renderPassInfo.framebuffer = (type == RenderPassType::ENV_TO_CUBEMAP) ? m_Renderpass.GetCubemapFramebuffer(cubemapFace) : m_Renderpass.GetIrradianceFramebuffer(cubemapFace);
+
+        renderPassInfo.renderArea.offset = {0, 0};
+        if (type == RenderPassType::ENV_TO_CUBEMAP) {
+            renderPassInfo.renderArea.extent = {1024, 1024};
+        }
+        else renderPassInfo.renderArea.extent = {64, 64};
+
+        std::array<VkClearValue, 2> clearValues{};
+        clearValues[0].color = {0.2f, 0.2f, 0.2f, 1.0f};
+        clearValues[1].depthStencil = {1.0f, 0};
+        renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
+        renderPassInfo.pClearValues = clearValues.data();
+
+        vkCmdBeginRenderPass(commandBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+        if (type == RenderPassType::ENV_TO_CUBEMAP) {
+            VkViewport viewport = {};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = 1024;
+            viewport.height = 1024;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{{0, 0}, {1024, 1024}};
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        }
+        else {
+            VkViewport viewport = {};
+            viewport.x = 0.0f;
+            viewport.y = 0.0f;
+            viewport.width = 64;
+            viewport.height = 64;
+            viewport.minDepth = 0.0f;
+            viewport.maxDepth = 1.0f;
+
+            VkRect2D scissor{{0, 0}, {64, 64}};
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+            vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
+            vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
+        }
     }
 
     void OffscreenRenderer::BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type) {
         VkRenderPassBeginInfo renderPassInfo{};
         renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        renderPassInfo.renderPass = renderpass.GetRenderPass(type);
-        renderPassInfo.framebuffer = renderpass.GetFramebuffer(type);
+        renderPassInfo.renderPass = m_Renderpass.GetRenderPass(type);
+        renderPassInfo.framebuffer = m_Renderpass.GetFramebuffer(type);
         renderPassInfo.renderArea.offset = {0, 0};
         if (type == RenderPassType::SHADOW) {
             renderPassInfo.renderArea.extent = {8192, 8192};
         } else {
-            renderPassInfo.renderArea.extent = extent;
+            renderPassInfo.renderArea.extent = m_Extent;
         }
         if (type == RenderPassType::SHADOW) {
             std::array<VkClearValue, 1> clearValues{};
@@ -172,8 +279,8 @@ namespace Engine {
             viewport.width = 8192.0f;
             viewport.height = 8192.0f;
         } else {
-            viewport.width = static_cast<float>(extent.width);
-            viewport.height = static_cast<float>(extent.height);
+            viewport.width = static_cast<float>(m_Extent.width);
+            viewport.height = static_cast<float>(m_Extent.height);
         }
         viewport.minDepth = 0.0f;
         viewport.maxDepth = 1.0f;
@@ -184,7 +291,7 @@ namespace Engine {
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
         }
         else {
-            VkRect2D scissor{{0, 0}, extent};
+            VkRect2D scissor{{0, 0}, m_Extent};
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
             vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
             vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
@@ -195,7 +302,73 @@ namespace Engine {
         vkCmdEndRenderPass(commandBuffer);
     }
 
+    VkCommandBuffer OffscreenRenderer::BeginFrame() {
+        assert(!m_FrameStarted && "Frame already started!");
+        m_FrameStarted = true;
 
+        auto commandBuffer = GetCurrentCommandBuffer();
+
+        VkCommandBufferBeginInfo beginInfo{};
+        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+            throw std::runtime_error("failed to begin recording command buffer!");
+        }
+
+        return commandBuffer;
+    }
+
+    void OffscreenRenderer::EndFrame() {
+        assert(m_FrameStarted && "Can't end a frame that wasn't started!");
+
+        auto commandBuffer = GetCurrentCommandBuffer();
+
+        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
+            throw std::runtime_error("failed to record command buffer!");
+        }
+
+        // Create a semaphore for synchronization (to signal GPU that it's done with the frame)
+        VkSemaphore signalSemaphore;
+        VkSemaphoreCreateInfo semaphoreCreateInfo = {};
+        semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(m_Device.vk_GetDevice(), &semaphoreCreateInfo, nullptr, &signalSemaphore) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create semaphore!");
+        }
+
+        // Create a fence for waiting (create it unsignaled)
+        VkFence fence;
+        VkFenceCreateInfo fenceCreateInfo = {};
+        fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fenceCreateInfo.flags = 0;  // Don't use the SIGNALED_BIT, so the fence starts unsignaled
+
+        if (vkCreateFence(m_Device.vk_GetDevice(), &fenceCreateInfo, nullptr, &fence) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create fence!");
+        }
+
+        // Set up the submission info
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &commandBuffer;
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = &signalSemaphore;  // Use the created semaphore
+
+        // Submit the command buffer for execution (offscreen rendering)
+        if (vkQueueSubmit(m_Device.vk_GetGraphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
+            throw std::runtime_error("failed to submit command buffer!");
+        }
+
+        // Wait for the fence to signal that the GPU has completed the command buffer execution
+        vkWaitForFences(m_Device.vk_GetDevice(), 1, &fence, VK_TRUE, UINT64_MAX);
+
+        // Clean up the fence and semaphore after use
+        vkDestroyFence(m_Device.vk_GetDevice(), fence, nullptr);
+        vkDestroySemaphore(m_Device.vk_GetDevice(), signalSemaphore, nullptr);
+
+        m_FrameStarted = false;
+        m_CurrentFrameID = (m_CurrentFrameID + 1) % 3;
+    }
 }
 
 

@@ -35,15 +35,15 @@ void Engine::Window::vk_CreateWindowSurface(VkInstance instance, VkSurfaceKHR *s
     }
 }
 
-void Engine::Window::pollEvents() {
+void Engine::Window::PollEvents() {
     glfwPollEvents();
 }
 
-void Engine::Window::cleanup() {
+void Engine::Window::CleanUp() {
 
 }
 
-bool Engine::Window::shouldClose() const {
+bool Engine::Window::ShouldClose() const {
     return glfwWindowShouldClose(window);
 }
 

@@ -28,63 +28,41 @@ namespace ECS {
         alignas(16) glm::vec3 cameraPos{0.f};
     };
 
+    struct MaterialData {
+        alignas(16) glm::vec3 albedoColor {1.0f};
+        alignas(4) float metallic = 0.0f;
+        alignas(4) float roughness = 0.5f;
+        alignas(16) glm::vec3 emissionColor {0.0f};
+        alignas(4) float emissiveIntensity = 1.0f;
+        alignas(4) float aoIntensity = 1.0f;
+        alignas(8) glm::vec2 tiling {1.0f};
+        alignas(8) glm::vec2 offset {0.0f};
+        alignas(4) int invertNormalMap = 0;
+    };
+
     class Scene {
     public:
-        explicit Scene(Engine::Device &device, Engine::OffscreenRenderer &offscreenRenderer);
+        Scene();
         ~Scene() = default;
 
-        [[nodiscard]] VkDescriptorSet GetSceneDescriptorSet() const { return sceneDescriptorSet; }
-
-        [[nodiscard]] Engine::DescriptorPool& GetMaterialDescriptorPool() const { return *materialDescriptorPool; }
-        [[nodiscard]] Engine::DescriptorPool& GetSceneDescriptorPool() const { return *sceneDescriptorPool; }
-
-        [[nodiscard]] Engine::DescriptorSetLayout& GetSceneDescriptorSetLayout() const { return *sceneDescriptorSetLayout; }
-        [[nodiscard]] Engine::DescriptorSetLayout& GetMaterialDescriptorSetLayout() const { return *materialDescriptorSetLayout; }
-
-        std::vector<Entity> queuedForDestruction{};
-
-        VkDescriptorSet sceneView{};
-        VkDescriptorSet sceneDescriptorSet{};
-
-        VkSampler depthSampler{};
-        VkImageView depthImageView{};
-
-        // Create a new entity in the scene using the shared registry
         std::shared_ptr<Entity> CreateEntity();
-
-        // Destroy an entity in the scene
-        void DestroyEntity(const Entity &entity);
-
-        // Clear all entities from the scene
+        void DestroyEntity(const Entity& entity);
         void Clear();
 
-        // Update all entities or components in the scene (e.g., per frame)
-        void OnUpdate();
-
-        // Access the registry directly if needed
-        entt::registry& GetRegistry();
-
-        Engine::Camera& GetActiveCamera() { return camera; }
-        [[nodiscard]] float GetFrameTime() const { return frameTime; }
+        [[nodiscard]] entt::registry& GetRegistry();
+        [[nodiscard]] Engine::Camera& GetCamera();
+        [[nodiscard]] Engine::Camera& GetActiveCamera();
+        [[nodiscard]] std::vector<Entity>& GetEntitesToDelete();
+        void QueueForDestruction(entt::entity entity);
+        void ClearQueue();
 
     private:
-        Engine::Camera camera;
-
-        std::shared_ptr<Engine::DescriptorSetLayout> sceneDescriptorSetLayout;
-        std::shared_ptr<Engine::DescriptorPool> sceneDescriptorPool;
-
-        std::shared_ptr<Engine::DescriptorSetLayout> materialDescriptorSetLayout;
-        std::shared_ptr<Engine::DescriptorPool> materialDescriptorPool;
-
-        Engine::Buffer sceneBuffer;
-
-        Engine::Device *device;
-        entt::registry registry;
-        Engine::OffscreenRenderer * renderer;
-        float frameTime{0.f};
-        std::chrono::time_point<std::chrono::steady_clock> currentTime{};
+        Engine::Camera m_Camera;
+        entt::registry m_Registry;
+        std::vector<Entity> m_QueuedForDestruction{};
     };
 }
+
 
 
 #endif

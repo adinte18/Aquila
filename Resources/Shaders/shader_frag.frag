@@ -3,22 +3,18 @@
 layout(location = 0) in vec3 fragColor;
 layout(location = 1) in vec3 fragPosWorld;
 layout(location = 2) in vec3 fragNormalWorld;
+layout(location = 3) in vec3 fragTangentWorld;
 layout(location = 4) in vec2 fragTexCoord;
-layout(location = 5) in vec4 fragPosLightSpace; // Light space position for shadow mapping
+layout(location = 5) in vec4 fragPosLightSpace;
+layout(location = 6) in mat3 TBN;
 
 layout(location = 0) out vec4 outColor;
-
-layout(set = 1, binding = 0) uniform sampler2D albedo;
-layout(set = 1, binding = 1) uniform sampler2D normal;
-layout(set = 1, binding = 2) uniform sampler2D metallic;
-
-layout(set = 0, binding = 1) uniform sampler2D shadowMap; // Shadow map texture
 
 struct uboLight {
     int type;
     vec3 color;
     float intensity;
-    vec3 direction; // Direction of light (for directional lights)
+    vec3 direction;
 };
 
 layout(std140, set = 0, binding = 0) uniform UniformData {
@@ -26,26 +22,71 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
     mat4 cameraView;
     mat4 inverseView;
     uboLight light;
-    mat4 lightSpaceMatrix; // Light's space matrix for shadow mapping
+    mat4 lightSpaceMatrix;
 } ubo;
 
-// Function to calculate shadow (depth comparison in light's space)
+layout(set = 0, binding = 1) uniform sampler2D shadowMap;
+layout(set = 0, binding = 2) uniform samplerCube irradianceMap;
+
+layout(set = 1, binding = 0) uniform sampler2D albedo;
+layout(set = 1, binding = 1) uniform sampler2D normalMap;
+layout(set = 1, binding = 2) uniform sampler2D metallicRoughness;
+layout(set = 1, binding = 3) uniform sampler2D emissive;
+layout(set = 1, binding = 4) uniform sampler2D ao;
+
+layout(set = 1, binding = 6) uniform MaterialProperties {
+    vec3 albedoColor;
+    float metallic;
+    float roughness;
+    vec3 emissionColor;
+    float emissiveIntensity;
+    float aoIntensity;
+    vec2 tiling;
+    vec2 offset;
+    int invertNormalMap;
+} material;
+
+const float PI = 3.14159265359;
+
+float DistributionGGX(vec3 N, vec3 H, float roughness) {
+    float a = roughness * roughness;
+    float a2 = a * a;
+    float NdotH = max(dot(N, H), 0.0);
+    float NdotH2 = NdotH * NdotH;
+    float denom = (NdotH2 * (a2 - 1.0) + 1.0);
+    return a2 / (PI * denom * denom);
+}
+
+float GeometrySchlickGGX(float NdotV, float roughness) {
+    float r = (roughness + 1.0);
+    float k = (r * r) / 8.0;
+    return NdotV / (NdotV * (1.0 - k) + k);
+}
+
+float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
+    float NdotV = max(dot(N, V), 0.0);
+    float NdotL = max(dot(N, L), 0.0);
+    return GeometrySchlickGGX(NdotV, roughness) * GeometrySchlickGGX(NdotL, roughness);
+}
+
+vec3 FresnelSchlick(float cosTheta, vec3 F0) {
+    return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
+}
+
 float calculateShadow(vec4 fragPosLightSpace) {
-    vec3 ProjCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
-    vec2 UVCoords = ProjCoords.xy * 0.5 + 0.5;
-    float z = ProjCoords.z;
+    vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
+    vec2 UVCoords = projCoords.xy * 0.5 + 0.5;
+    float z = projCoords.z;
 
     if (UVCoords.x < 0.0 || UVCoords.x > 1.0 || UVCoords.y < 0.0 || UVCoords.y > 1.0)
-    return 1.0; // oob, assume fully lit
+    return 1.0;
 
-    float bias = max(0.002 * (1.0 - dot(normalize(fragNormalWorld), normalize(-ubo.light.direction))), 0.0005);
-
-    // PCF 5x5 filtering
+    float bias = max(0.005, 0.02 * (1.0 - dot(normalize(fragNormalWorld), normalize(-ubo.light.direction))));
     float shadow = 0.0;
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
 
-    for(int x = -2; x <= 2; x++) {
-        for(int y = -2; y <= 2; y++) {
+    for (int x = -3; x <= 3; x++) {
+        for (int y = -3; y <= 3; y++) {
             float pcfDepth = texture(shadowMap, UVCoords + vec2(x, y) * texelSize).r;
             shadow += (pcfDepth + bias > z) ? 1.0 : 0.0;
         }
@@ -53,39 +94,50 @@ float calculateShadow(vec4 fragPosLightSpace) {
     return shadow / 25.0;
 }
 
-
 void main() {
-    vec4 albedoColor = texture(albedo, fragTexCoord);
-    vec4 normalMap = texture(normal, fragTexCoord);
-    vec4 metallicMap = texture(metallic, fragTexCoord);
+    vec3 irradiance = texture(irradianceMap, fragNormalWorld).rgb;
 
-    // Set default color to albedo
-    vec3 finalColor = albedoColor.rgb;
+    vec3 albedoColor = texture(albedo, fragTexCoord).rgb * material.albedoColor;
+    float metallic = texture(metallicRoughness, fragTexCoord).b * material.metallic;
+    float roughness = texture(metallicRoughness, fragTexCoord).g * material.roughness;
+    vec3 emissive = texture(emissive, fragTexCoord).rgb * material.emissionColor * material.emissiveIntensity;
+    float ao = texture(ao, fragTexCoord).r * material.aoIntensity;
 
-    // Material properties
-    vec3 diffuseColor;
-    vec3 specularColor;
+    vec3 N = fragNormalWorld;
 
-    // normal vector
-    vec3 normal = normalize(fragNormalWorld);
+    if (material.invertNormalMap == 1) N = -N;
 
-    // lighting based on the light type
-    if (ubo.light.type == 0) { // Directional light
-       vec3 lightDir = normalize(-ubo.light.direction); // Ensure direction is correct
-       float diff = max(dot(normal, lightDir), 0.0);
-       vec3 diffuse = diff * ubo.light.intensity * ubo.light.color;
+    vec3 L = normalize(-ubo.light.direction);
+    vec3 V = normalize(vec3(ubo.inverseView[3]) - fragPosWorld);
+    vec3 H = normalize(V + L);
 
-       // Specular shading (Phong reflection model)
-       vec3 viewDir = normalize(vec3(ubo.inverseView[3]) - fragPosWorld);
-       vec3 reflectDir = reflect(-lightDir, normal);
-       float spec = pow(max(dot(viewDir, reflectDir), 0.0), 64);
-       vec3 specular = spec * ubo.light.color * ubo.light.intensity;
+    // Cook-Torrance BRDF calculations
+    vec3 F0 = mix(vec3(0.04), albedoColor, metallic);
+    float NDF = DistributionGGX(N, H, roughness);
+    float G = GeometrySmith(N, V, L, roughness);
+    vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
 
-       float shadow = calculateShadow(fragPosLightSpace);
+    vec3 numerator = NDF * G * F;
+    float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
+    vec3 specular = numerator / denominator;
 
-       vec3 ambient = vec3(0.1) * ubo.light.color; // Soft global ambient light
-       finalColor *= ambient + (diffuse + specular) * shadow;
-    }
+    vec3 kD = vec3(1.0) - F;
+    kD *= 1.0 - metallic;
 
-    outColor = vec4(finalColor, 1.0); // Output the final shaded color
+    // Shadow calculation
+    float shadow = calculateShadow(fragPosLightSpace);
+
+    // Diffuse light from irradiance (ambient lighting)
+    vec3 diffuseIrradiance = irradiance * albedoColor * (1.0 - metallic);
+
+    // Final lighting computation
+    vec3 Lo = (kD * albedoColor / PI + specular) * ubo.light.color * ubo.light.intensity * max(dot(N, L), 0.0) * shadow;
+
+    // Ambient light with irradiance added to the ambient component
+    vec3 ambient = (vec3(0.15) * albedoColor * ao) + albedoColor * 0.1 + diffuseIrradiance;
+
+    // Final color: ambient + direct lighting + emissive light
+    vec3 finalColor = ambient + Lo + emissive;
+
+    outColor = vec4(finalColor, 1.0);
 }

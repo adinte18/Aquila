@@ -15,7 +15,7 @@ namespace RenderingSystem {
         CompositeRenderingSystem& operator=(const CompositeRenderingSystem&) = delete;
 
         void Render(VkCommandBuffer commandBuffer, VkDescriptorSet &descriptorSet);
-
+        void RecreatePipeline(VkRenderPass renderPass);
     private:
         Engine::Device& device;
 

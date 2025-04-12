@@ -2,14 +2,56 @@
 #define COMPONENTS_H
 
 #include <memory>
-#include "Engine/Model.h"
-#include<glm/glm.hpp>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include "Common.h"
+
+// Forward declarations
+namespace Engine {
+    class Model3D;
+    class Texture2D;
+}
 
 namespace ECS {
     struct Mesh {
         std::shared_ptr<Engine::Model3D> mesh{};
+    };
+
+    struct PBRMaterial {
+        // PBR Textures
+        std::shared_ptr<Engine::Texture2D> albedoTexture;
+        std::shared_ptr<Engine::Texture2D> normalTexture;
+        std::shared_ptr<Engine::Texture2D> metallicRoughnessTexture;
+        std::shared_ptr<Engine::Texture2D> emissiveTexture;
+        std::shared_ptr<Engine::Texture2D> aoTexture;
+        std::shared_ptr<Engine::Texture2D> displacementTexture;
+
+        // Texture file paths
+        std::string albedoTexturePath;
+        std::string normalTexturePath;
+        std::string metallicRoughnessTexturePath;
+        std::string emissiveTexturePath;
+        std::string aoTexturePath;
+        std::string displacementTexturePath;
+
+        // PBR Material Properties
+        glm::vec3 albedoColor {1.0f, 1.0f, 1.0f};         // Default white
+        float metallic = 0.0f;                                  // Default non-metal
+        float roughness = 0.5f;                                 // Default mid-roughness
+        glm::vec3 emissionColor {0.0f, 0.0f, 0.0f};       // No emission by default
+        float emissiveIntensity = 1.0f;                         // Default intensity
+        float aoIntensity = 1.0f;                               // Ambient occlusion intensity
+
+        int invertNormalMap = 0;                           // Invert normal map flag
+
+        // UV Transform (Tiling & Offset)
+        glm::vec2 tiling {1.0f, 1.0f};  // Default tiling
+        glm::vec2 offset {0.0f, 0.0f};  // Default offset
+
+        VkDescriptorSet descriptorSet;
+
+        bool dirty;
     };
 
     struct Light {
@@ -45,7 +87,7 @@ namespace ECS {
         }
 
         void UpdateMatrices() {
-            //Day/Night simulation
+            // Day/Night simulation
             float angle = glfwGetTime() * 0.5f;
             float radius = 10.0f;
 
@@ -72,8 +114,6 @@ namespace ECS {
             assert(!isnan_mat4(lightSpaceMatrix) && "Light space matrix contains NaN values");
         }
     };
-
-
 
     struct Transform {
         glm::vec3 position{glm::vec3{0.f}};

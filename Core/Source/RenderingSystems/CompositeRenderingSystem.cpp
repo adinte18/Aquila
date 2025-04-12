@@ -21,6 +21,15 @@ void RenderingSystem::CompositeRenderingSystem::Render(VkCommandBuffer commandBu
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
+void RenderingSystem::CompositeRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+    if (pipeline) {
+        pipeline.reset();
+    }
+
+    CreatePipeline(renderPass);
+}
+
+
 void RenderingSystem::CompositeRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
 
@@ -30,8 +39,8 @@ void RenderingSystem::CompositeRenderingSystem::CreatePipeline(VkRenderPass rend
     pipelineConfig.pipelineLayout = pipelineLayout;
     pipeline = std::make_unique<Engine::Pipeline>(
             device,
-            std::string(SHADERS_PATH) + "/fx_vert.spv",
-            std::string(SHADERS_PATH) + "/fx_frag.spv",
+            std::string(SHADERS_PATH) + "/final_vert.spv",
+            std::string(SHADERS_PATH) + "/final_frag.spv",
             pipelineConfig);
 
 }

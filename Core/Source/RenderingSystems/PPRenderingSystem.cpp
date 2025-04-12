@@ -36,6 +36,14 @@ void RenderingSystem::PPRenderingSystem::CreatePipeline(VkRenderPass renderPass)
 
 }
 
+void RenderingSystem::PPRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+    if (pipeline) {
+        pipeline.reset();
+    }
+
+    CreatePipeline(renderPass);
+}
+
 void RenderingSystem::PPRenderingSystem::CreatePipelineLayout(VkDescriptorSetLayout layout) {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

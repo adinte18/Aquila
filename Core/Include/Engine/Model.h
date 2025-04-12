@@ -19,6 +19,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
+#include <Components.h>
 #include <glm/gtx/hash.hpp>
 
 #include <memory>
@@ -27,12 +28,7 @@
 #include <vector>
 
 #include "Descriptor.h"
-#include "Engine/ObjectManager.h"
 #include "Engine/Primitives.h"
-
-namespace ECS {
-    class Scene; // Forward declare the Scene class
-}
 
 namespace std {
     template <typename T, typename... Rest>
@@ -44,7 +40,7 @@ namespace std {
 
     template<>
     struct hash<Vertex> {
-        size_t operator()(Vertex const &vertex) const {
+        size_t operator()(Vertex const &vertex) const noexcept {
             size_t seed = 0;
             hashCombine(seed, vertex.pos, vertex.color, vertex.normals, vertex.texcoord);
             return seed;
@@ -55,19 +51,12 @@ namespace std {
 namespace Engine {
     class Model3D
     {
-        struct Material {
-            std::shared_ptr<Texture2D> albedoTexture;
-            std::shared_ptr<Texture2D> normalTexture;
-            std::shared_ptr<Texture2D> metallicRoughnessTexture;
-            VkDescriptorSet descriptorSet;
-        };
-
         struct Primitive {
             uint32_t firstIndex;
             uint32_t firstVertex;
             uint32_t indexCount;
             uint32_t vertexCount;
-            Material material;
+            ECS::PBRMaterial material;
         };
 
     private:
@@ -82,21 +71,24 @@ namespace Engine {
         std::unique_ptr<Buffer> indexBuffer;
         uint32_t indexCount;
 
-        std::vector<Vertex> vertices{};
-        std::vector<uint32_t> indices{};
         std::vector<Primitive> primitives{};
         std::vector<std::shared_ptr<Texture2D>> images;
 
-        Material material{};
+        ECS::PBRMaterial pbrMaterial{};
+        Buffer materialBuffer;
 
         std::string path;
 
     public:
+        void vk_UpdateVertexBuffer(std::vector<Vertex> &vertices);
+
         void Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool);
         void CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout &materialSetLayout, Engine::DescriptorPool &
                              descriptorPool);
 
         void CreateQuad(float size);
+        void CreateCube();
+
 
         explicit Model3D(Device &device);
         ~Model3D();
@@ -111,9 +103,12 @@ namespace Engine {
 
         void LoadTextureAsync(const std::string& uri, std::vector<std::shared_ptr<Engine::Texture2D>>& images, size_t imageIndex, std::mutex& imageMutex);
 
-
         [[nodiscard]] std::string GetPath() const { return path; }
-        [[nodiscard]] const Material& GetMaterial() const { return material; }
+        [[nodiscard]] const ECS::PBRMaterial& GetMaterial() const { return pbrMaterial; }
+        [[nodiscard]] Buffer* GetMaterialBuffer() { return &materialBuffer; }
+
+        std::vector<Vertex> vertices{};
+        std::vector<uint32_t> indices{};
     };
 }
 

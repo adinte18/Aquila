@@ -8,7 +8,7 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
     std::vector<Vertex> vertices;
     float halfSize = size / 2.0f;
 
-    // Define the positions
+    // Define the positions of the 8 vertices of the cube
     glm::vec3 positions[8] = {
         {-halfSize, -halfSize, -halfSize}, // 0
         { halfSize, -halfSize, -halfSize}, // 1
@@ -20,51 +20,62 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
         {-halfSize,  halfSize,  halfSize}  // 7
     };
 
-    // Indices for triangles and face normals
+    // Define texcoords for each face of the cube
+    glm::vec2 texcoords[6][6] = {
+        // Front (z+)
+        {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
+        // Back (z-)
+        {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
+        // Left (x-)
+        {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
+        // Right (x+)
+        {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
+        // Top (y+)
+        {{0, 1}, {0, 0}, {1, 0}, {1, 0}, {1, 1}, {0, 1}},
+        // Bottom (y-)
+        {{0, 1}, {1, 1}, {1, 0}, {1, 0}, {0, 0}, {0, 1}}
+    };
+
+    // Define the faces (indices and normals)
     struct Face {
         int indices[6];
         glm::vec3 normal;
-        glm::vec3 tangent;
-        glm::vec2 texcoords[6]; // Define specific texture coords for each vertex
+        glm::vec3 tangent;  // Added tangent
     };
 
     Face faces[6] = {
-        // Front face (z+)
-        {{4, 5, 6, 6, 7, 4}, {0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
-        // Back face (z-)
-        {{0, 1, 2, 2, 3, 0}, {0.0f, 0.0f, -1.0f}, {1.0f, 0.0f, 0.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
-        // Left face (x-)
-        {{0, 4, 7, 7, 3, 0}, {-1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
-        // Right face (x+)
-        {{1, 5, 6, 6, 2, 1}, {1.0f, 0.0f, 0.0f}, {0.0f, 0.0f, 1.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
-        // Top face (y+)
-        {{3, 7, 6, 6, 2, 3}, {0.0f, 1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}},
-        // Bottom face (y-)
-        {{0, 4, 5, 5, 1, 0}, {0.0f, -1.0f, 0.0f}, {1.0f, 0.0f, 0.0f},
-         {{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}}}
+        // Front (z+)
+        {{4, 5, 6, 6, 7, 4}, {0, 0, 1}, {1, 0, 0}}, // Tangent aligned with X axis
+        // Back (z-)
+        {{0, 1, 2, 2, 3, 0}, {0, 0, -1}, {-1, 0, 0}}, // Tangent aligned with -X axis
+        // Left (x-)
+        {{0, 4, 7, 7, 3, 0}, {-1, 0, 0}, {0, 0, 1}}, // Tangent aligned with Z axis
+        // Right (x+)
+        {{1, 5, 6, 6, 2, 1}, {1, 0, 0}, {0, 0, -1}}, // Tangent aligned with -Z axis
+        // Top (y+)
+        {{3, 7, 6, 6, 2, 3}, {0, 1, 0}, {1, 0, 0}}, // Tangent aligned with X axis
+        // Bottom (y-)
+        {{0, 4, 5, 5, 1, 0}, {0, -1, 0}, {-1, 0, 0}} // Tangent aligned with -X axis
     };
 
-    // Populate vertices for each face
+    // Populate the vertices for each face
     for (const auto& face : faces) {
         for (int i = 0; i < 6; ++i) {
             Vertex vertex;
             int idx = face.indices[i];
             vertex.pos = positions[idx];
             vertex.normals = face.normal;
-            vertex.tangent = face.tangent;
-            vertex.texcoord = face.texcoords[i]; // Use face-specific texcoords
-            vertex.color = {1.0f, 1.0f, 1.0f}; // Set a default white color, modify as needed
+            vertex.texcoord = texcoords[&face - faces][i]; // Use texcoords specific to each face
+            vertex.color = {1.0f, 1.0f, 1.0f}; // Default white color
+            vertex.tangent = face.tangent; // Set the tangent
+            // Push vertex to the vertices vector
             vertices.push_back(vertex);
         }
     }
 
     return vertices;
 }
+
 
 
     std::vector<Vertex> Primitives::CreateSphere(float radius, int latitudeSegments, int longitudeSegments) {
@@ -97,9 +108,6 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
                     static_cast<float>(lon) / longitudeSegments,  // u
                     static_cast<float>(lat) / latitudeSegments    // v
                 );
-
-                // Tangent (calculated in the direction of longitude)
-                vertex.tangent = glm::normalize(glm::vec3(-sinPhi, 0.0f, cosPhi));
 
                 // Color (for debugging purposes, optional)
                 vertex.color = glm::vec3(1.0f); // Set to white by default

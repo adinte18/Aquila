@@ -6,7 +6,7 @@
 #define SCENERENDERINGSYSTEM_H
 #include <Engine/Device.h>
 #include <Engine/Pipeline.h>
-#include "Scene.h"
+#include <ECS/SceneContext.h>
 
 
 namespace RenderingSystem {
@@ -18,7 +18,9 @@ namespace RenderingSystem {
         SceneRenderingSystem(const SceneRenderingSystem&) = delete;
         SceneRenderingSystem& operator=(const SceneRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, ECS::Scene& scene);
+        void Render(VkCommandBuffer commandBuffer, ECS::SceneContext& scene);
+        void RecreatePipeline(VkRenderPass renderPass);
+
 
     private:
         Engine::Device& device;

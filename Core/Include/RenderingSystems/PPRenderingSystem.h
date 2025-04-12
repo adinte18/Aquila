@@ -15,6 +15,7 @@ namespace RenderingSystem {
         PPRenderingSystem& operator=(const PPRenderingSystem&) = delete;
 
         void Render(VkCommandBuffer commandBuffer, VkDescriptorSet &descriptorSet);
+        void RecreatePipeline(VkRenderPass renderPass);
 
     private:
         Engine::Device& device;

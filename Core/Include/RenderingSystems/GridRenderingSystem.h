@@ -9,7 +9,7 @@
 
 #include "Engine/Device.h"
 #include "Engine/Pipeline.h"
-#include "Scene.h"
+#include "SceneContext.h"
 
 
 namespace RenderingSystem {
@@ -21,7 +21,8 @@ namespace RenderingSystem {
         GridRenderingSystem(const GridRenderingSystem&) = delete;
         GridRenderingSystem& operator=(const GridRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, ECS::Scene& scene);
+        void Render(VkCommandBuffer commandBuffer, ECS::SceneContext& scene) const;
+        void RecreatePipeline(VkRenderPass renderPass);
 
     private:
         Engine::Device& device;

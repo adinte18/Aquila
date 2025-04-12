@@ -30,7 +30,7 @@ namespace Engine{
         [[nodiscard]] bool WindowResized() const { return framebufferResized; }
         void vk_ResetResizedFlag() { framebufferResized = false; }
 
-        [[nodiscard]] bool shouldClose() const;
+        [[nodiscard]] bool ShouldClose() const;
 
         void vk_CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const;
         [[nodiscard]] VkExtent2D getExtent() const {
@@ -39,9 +39,9 @@ namespace Engine{
 
         [[nodiscard]] GLFWwindow *glfw_GetWindow() const {return window;}
 
-        void pollEvents();
+        void PollEvents();
 
-        void cleanup();
+        void CleanUp();
     };
 }
 

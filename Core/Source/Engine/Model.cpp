@@ -1,15 +1,24 @@
 
-#include <cstring>
-
 #define TINYGLTF_IMPLEMENTATION
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #include "Engine/Descriptor.h"
 #include "Engine/Model.h"
 
 #include "Components.h"
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
 #include "External/tiny_gltf.h"
 
-Engine::Model3D::Model3D(Device &device) : device{device}, vertexCount(0), indexCount(0) {}
+Engine::Model3D::Model3D(Device &device)
+    : device{device},
+    vertexCount(0),
+    indexCount(0),
+    materialBuffer{device,
+        sizeof(ECS::MaterialData),
+        1,
+        VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT} {}
 
 Engine::Model3D::~Model3D() = default;
 
@@ -29,19 +38,14 @@ void Engine::Model3D::LoadTextureAsync(const std::string& uri, std::vector<std::
 }
 
 
-void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout,Engine::DescriptorPool& descriptorPool) {
-    tinygltf::Model model;
-    tinygltf::TinyGLTF loader;
-    std::string err, warn;
+void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout, Engine::DescriptorPool& descriptorPool) {
+    Assimp::Importer importer;
+    const aiScene* scene = importer.ReadFile(filepath,
+        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_ConvertToLeftHanded);
 
-    bool loaded = loader.LoadASCIIFromFile(&model, &err, &warn, filepath);
-    if (!loaded) {
-        throw std::runtime_error(err);
+    if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+        throw std::runtime_error("Assimp failed to load model: " + std::string(importer.GetErrorString()));
     }
-
-    // Ensure images vector has enough space for all textures
-    images.resize(model.images.size());
-    std::cout << "Images vector resized to: " << images.size() << std::endl;
 
     std::filesystem::path filePath(filepath);
     std::string directoryPath = filePath.parent_path().string();
@@ -49,192 +53,199 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
 
     std::mutex imageMutex;
     std::vector<std::thread> threads;
-
-    for (size_t i = 0; i < model.images.size(); ++i) {
-        std::cout << "Starting to load texture " << i << " of " << model.images.size() << std::endl;
-        std::string uri = directoryPath + "/" + model.images[i].uri;
-        threads.push_back(std::thread([this, uri, i, &imageMutex]() {
-            LoadTextureAsync(uri, std::ref(images), i, std::ref(imageMutex));
-        }));
-    }
-
-    for (auto& thread : threads) {
-        thread.join();
-    }
-
-    threads.clear();
+    std::unordered_map<std::string, std::shared_ptr<Engine::Texture2D>> textureCache;
 
     vertices.clear();
     indices.clear();
 
-    for (auto& scene : model.scenes) {
-        for(size_t i = 0; i < scene.nodes.size(); i++) {
-            auto& node = model.nodes[scene.nodes[i]];
-            uint32_t vertexOffset = 0;
-            uint32_t indexOffset = 0;
-            if (node.mesh < model.meshes.size()) {
-                for (auto& primitive : model.meshes[node.mesh].primitives) {
-                    uint32_t vertexCount = 0;
-                    uint32_t indexCount = 0;
+    std::function<void(aiNode*, const aiScene*)> ProcessNode;
+    ProcessNode = [&](aiNode* node, const aiScene* scene) {
+        for (unsigned int i = 0; i < node->mNumMeshes; i++) {
+            aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];
 
-                    const float *positionBuffer = nullptr;
-                    const float *normalsBuffer = nullptr;
-                    const float *texCoordsBuffer = nullptr;
-                    const float *tangentsBuffer = nullptr;
+            uint32_t vertexOffset = vertices.size();
+            uint32_t indexOffset = indices.size();
 
-                    if (primitive.attributes.find("POSITION") != primitive.attributes.end()) {
-                        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("POSITION")->second];
-                        const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-                        positionBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
-                        vertexCount = accessor.count;
-                    }
+            for (unsigned int j = 0; j < mesh->mNumVertices; j++) {
+                Vertex vertex{};
+                vertex.pos = glm::vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.0f);
+                vertex.normals = glm::normalize(mesh->HasNormals() ? glm::vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z) : glm::vec3(0.0f));
+                vertex.texcoord = mesh->HasTextureCoords(0) ? glm::vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y) : glm::vec2(0.0f);
+                vertex.tangent = mesh->HasTangentsAndBitangents() ? glm::normalize(glm::vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z)) : glm::vec3(0.0f);
+                vertices.push_back(vertex);
+            }
 
-                    if (primitive.attributes.find("NORMAL") != primitive.attributes.end()) {
-                        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("NORMAL")->second];
-                        const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-                        normalsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
-                    }
-
-                    if (primitive.attributes.find("TEXCOORD_0") != primitive.attributes.end()) {
-                        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("TEXCOORD_0")->second];
-                        const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-                        texCoordsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
-                    }
-
-                    if (primitive.attributes.find("TANGENT") != primitive.attributes.end()) {
-                        const tinygltf::Accessor& accessor = model.accessors[primitive.attributes.find("TANGENT")->second];
-                        const tinygltf::BufferView& view = model.bufferViews[accessor.bufferView];
-                        tangentsBuffer = reinterpret_cast<const float*>(&(model.buffers[view.buffer].data[accessor.byteOffset + view.byteOffset]));
-                    }
-
-                    for (size_t v = 0; v < vertexCount; v++) {
-                        Vertex vertex{};
-                        vertex.pos = glm::vec4(glm::make_vec3(&positionBuffer[v * 3]), 1.0f);
-                        vertex.color = glm::vec3(1.0);
-                        vertex.normals = glm::normalize(
-                                glm::vec3(normalsBuffer ? glm::make_vec3(&normalsBuffer[v * 3]) : glm::vec3(0.0f)));
-                        vertex.tangent = glm::vec4(
-                                tangentsBuffer ? glm::make_vec4(&tangentsBuffer[v * 4]) : glm::vec4(0.0f));;
-                        vertex.texcoord = texCoordsBuffer ? glm::make_vec2(&texCoordsBuffer[v * 2]) : glm::vec2(0.0f);
-                        vertices.push_back(vertex);
-                    }
-
-                    const tinygltf::Accessor& accessor = model.accessors[primitive.indices];
-                    const tinygltf::BufferView& bufferView = model.bufferViews[accessor.bufferView];
-                    const tinygltf::Buffer& buffer = model.buffers[bufferView.buffer];
-
-                    indexCount += static_cast<uint32_t>(accessor.count);
-
-                    switch (accessor.componentType) {
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_INT: {
-                            const uint32_t* buf = reinterpret_cast<const uint32_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
-                            for (size_t index = 0; index < accessor.count; index++) {
-                                indices.push_back(buf[index]);
-                            }
-                            break;
-                    }
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_SHORT: {
-                            const uint16_t* buf = reinterpret_cast<const uint16_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
-                            for (size_t index = 0; index < accessor.count; index++) {
-                                indices.push_back(buf[index]);
-                            }
-                            break;
-                    }
-                    case TINYGLTF_PARAMETER_TYPE_UNSIGNED_BYTE: {
-                            const uint8_t* buf = reinterpret_cast<const uint8_t*>(&buffer.data[accessor.byteOffset + bufferView.byteOffset]);
-                            for (size_t index = 0; index < accessor.count; index++) {
-                                indices.push_back(buf[index]);
-                            }
-                            break;
-                    }
-                    default:
-                        std::cerr << "Index component type " << accessor.componentType << " not supported!" << std::endl;
-                        return;
-                    }
-
-                    auto defaultTex = Engine::Texture2D::create(device);
-                    defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
-
-                    Material material{};
-
-                    if (primitive.material != -1) {
-                        tinygltf::Material &primitiveMaterial = model.materials[primitive.material];
-
-                        if (primitiveMaterial.pbrMetallicRoughness.baseColorTexture.index != -1) {
-                            uint32_t textureIndex = primitiveMaterial.pbrMetallicRoughness.baseColorTexture.index;
-                            uint32_t imageIndex = model.textures[textureIndex].source;
-                            material.albedoTexture = images[imageIndex];
-                        } else {
-                            material.albedoTexture = defaultTex;
-                        }
-
-                        if (primitiveMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index != -1) {
-                            uint32_t textureIndex = primitiveMaterial.pbrMetallicRoughness.metallicRoughnessTexture.index;
-                            uint32_t imageIndex = model.textures[textureIndex].source;
-                            material.metallicRoughnessTexture = images[imageIndex];
-                        } else {
-                            material.metallicRoughnessTexture = defaultTex;
-                        }
-
-                        if (primitiveMaterial.normalTexture.index != -1) {
-                            uint32_t textureIndex = primitiveMaterial.normalTexture.index;
-                            uint32_t imageIndex = model.textures[textureIndex].source;
-                            material.normalTexture = images[imageIndex];
-                        } else {
-                            material.normalTexture = defaultTex;
-                        }
-                    } else {
-                        material.albedoTexture = defaultTex;
-                        material.normalTexture = defaultTex;
-                        material.metallicRoughnessTexture = defaultTex;
-                    }
-
-                    this->material = material;
-
-                    VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
-                    VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
-                    VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
-
-                    DescriptorWriter writer(materialSetLayout, descriptorPool);
-                    writer.writeImage(0, &albedoImageInfo);
-                    writer.writeImage(1, &normalImageInfo);
-                    writer.writeImage(2, &metallicRoughnessImageInfo);
-                    writer.build(material.descriptorSet);
-
-                    Primitive prim{};
-                    prim.firstVertex = vertexOffset;
-                    prim.vertexCount = vertexCount;
-                    prim.indexCount = indexCount;
-                    prim.firstIndex = indexOffset;
-                    prim.material = material;
-                    primitives.push_back(prim);
-
-                    vertexOffset += vertexCount;
-                    indexOffset += indexCount;
+            for (unsigned int j = 0; j < mesh->mNumFaces; j++) {
+                aiFace face = mesh->mFaces[j];
+                for (unsigned int k = 0; k < face.mNumIndices; k++) {
+                    indices.push_back(face.mIndices[k] + vertexOffset);
                 }
             }
+
+            auto defaultTex = Engine::Texture2D::create(device);
+            defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
+
+            ECS::PBRMaterial material{};
+            if (mesh->mMaterialIndex >= 0) {
+                aiMaterial* mat = scene->mMaterials[mesh->mMaterialIndex];
+
+                auto LoadTexture = [&](aiTextureType type, Texture2D::TextureType fallbackType) -> std::shared_ptr<Engine::Texture2D> {
+                    if (mat->GetTextureCount(type) == 0) {
+                        auto tex = Engine::Texture2D::create(device);
+                        tex->UseFallbackTextures(fallbackType);
+                        return tex;
+                    }
+
+                    aiString texPath;
+                    if (mat->GetTexture(type, 0, &texPath) != AI_SUCCESS) {
+                        auto tex = Engine::Texture2D::create(device);
+                        tex->UseFallbackTextures(fallbackType);
+                        return tex;
+                    }
+
+                    std::string fullPath = directoryPath + "/" + texPath.C_Str();
+                    std::cout << "Attempting to load texture: " << fullPath << std::endl; // Debugging log
+
+                    if (textureCache.find(fullPath) != textureCache.end()) {
+                        return textureCache[fullPath];
+                    }
+
+                    auto tex = Engine::Texture2D::create(device);
+
+                    // Spawn thread to load texture
+                    threads.push_back(std::thread([&, fullPath, tex]() {
+                        std::lock_guard<std::mutex> lock(imageMutex);
+                        tex->CreateTexture(fullPath);
+                    }));
+
+                    for (auto& thread : threads) {
+                        thread.join();
+                    }
+                    threads.clear();
+
+                    return tex;
+                };
+
+
+                material.albedoTexture = LoadTexture(aiTextureType_DIFFUSE, Texture2D::TextureType::Albedo);
+                material.metallicRoughnessTexture = LoadTexture(aiTextureType_METALNESS, Texture2D::TextureType::MetallicRoughness);
+                material.normalTexture = LoadTexture(aiTextureType_NORMALS, Texture2D::TextureType::Normal);
+                material.emissiveTexture = LoadTexture(aiTextureType_EMISSIVE, Texture2D::TextureType::Emissive);
+                material.aoTexture = LoadTexture(aiTextureType_AMBIENT_OCCLUSION, Texture2D::TextureType::AO);
+
+                aiColor4D color;
+                if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_DIFFUSE, &color)) {
+                    material.albedoColor = glm::vec3(color.r, color.g, color.b);
+                } else {
+                    material.albedoColor = glm::vec3(1.0f);
+                }
+
+                float metallic = 0.0f, roughness = 0.5f;
+                aiGetMaterialFloat(mat, AI_MATKEY_METALLIC_FACTOR, &metallic);
+                aiGetMaterialFloat(mat, AI_MATKEY_ROUGHNESS_FACTOR, &roughness);
+                material.metallic = metallic;
+                material.roughness = roughness;
+
+                if (AI_SUCCESS == aiGetMaterialColor(mat, AI_MATKEY_COLOR_EMISSIVE, &color)) {
+                    material.emissionColor = glm::vec3(color.r, color.g, color.b);
+                    material.emissiveIntensity = color.a;
+                } else {
+                    material.emissionColor = glm::vec3(0.0f);
+                    material.emissiveIntensity = 1.0f;
+                }
+
+                material.aoIntensity = 1.0f;
+            } else {
+                material.albedoTexture = defaultTex;
+                material.normalTexture = defaultTex;
+                material.metallicRoughnessTexture = defaultTex;
+                material.emissiveTexture = defaultTex;
+                material.aoTexture = defaultTex;
+                material.albedoColor = glm::vec3(1.0f);
+                material.metallic = 0.0f;
+                material.roughness = 0.5f;
+                material.emissionColor = glm::vec3(0.0f);
+                material.emissiveIntensity = 1.0f;
+                material.aoIntensity = 1.0f;
+            }
+
+            materialBuffer.map();
+            this->pbrMaterial = material;
+
+            VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
+            VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
+            VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
+            VkDescriptorImageInfo emissiveImageInfo = material.emissiveTexture->GetDescriptorSetInfo();
+            VkDescriptorImageInfo aoImageInfo = material.aoTexture->GetDescriptorSetInfo();
+            VkDescriptorBufferInfo materialBufferInfo = materialBuffer.vk_DescriptorInfo();
+
+            DescriptorWriter writer(materialSetLayout, descriptorPool);
+            writer.writeImage(0, &albedoImageInfo);
+            writer.writeImage(1, &metallicRoughnessImageInfo);
+            writer.writeImage(2, &normalImageInfo);
+            writer.writeImage(3, &emissiveImageInfo);
+            writer.writeImage(4, &aoImageInfo);
+            writer.writeBuffer(6, &materialBufferInfo);
+            writer.build(material.descriptorSet);
+
+            Primitive prim{};
+            prim.firstVertex = vertexOffset;
+            prim.vertexCount = mesh->mNumVertices;
+            prim.indexCount = mesh->mNumFaces * 3;
+            prim.firstIndex = indexOffset;
+            prim.material = material;
+            primitives.push_back(prim);
         }
+
+        for (unsigned int i = 0; i < node->mNumChildren; i++) {
+            ProcessNode(node->mChildren[i], scene);
+        }
+    };
+
+    ProcessNode(scene->mRootNode, scene);
+
+    for (auto& thread : threads) {
+        thread.join();
     }
 
     vk_CreateVertexBuffers(vertices);
     vk_CreateIndexBuffer(indices);
 }
 
+void Engine::Model3D::CreateCube() {
+    vertices.clear();
+    indices.clear();
+    vertices = Primitives::CreateCube(1.0f);
+    indices.resize(vertices.size());
+    for (uint32_t i = 0; i < vertices.size(); ++i) {
+        indices[i] = i;
+    }
+    vk_CreateVertexBuffers(vertices);
+    vk_CreateIndexBuffer(indices);
+
+    Primitive prim{};
+    prim.firstVertex = 0;
+    prim.vertexCount = static_cast<uint32_t>(vertices.size());
+    prim.indexCount = static_cast<uint32_t>(indices.size());
+    prim.firstIndex = 0;
+    primitives.push_back(prim);
+}
+
 void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size, Engine::DescriptorSetLayout& materialSetLayout, Engine::DescriptorPool& descriptorPool) {
     vertices.clear();
     indices.clear();
 
+    // Generate primitive geometry
     if (type == Primitives::PrimitiveType::Cube) {
         vertices = Primitives::CreateCube(size);
-        for (uint32_t i = 0; i < vertices.size(); ++i) {
-            indices.push_back(i);
-        }
     }
     else if (type == Primitives::PrimitiveType::Sphere) {
         vertices = Primitives::CreateSphere(size, 36, 18);
-        for (uint32_t i = 0; i < vertices.size(); ++i) {
-            indices.push_back(i);
-        }
+    }
+
+    // Generate index buffer
+    for (uint32_t i = 0; i < vertices.size(); ++i) {
+        indices.push_back(i);
     }
 
     vk_CreateVertexBuffers(vertices);
@@ -244,24 +255,58 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
     auto defaultTex = Engine::Texture2D::create(device);
     defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
 
-    // Create a material and descriptor set for the primitive
-    Material material{};
-    material.albedoTexture = defaultTex;
-    material.normalTexture = defaultTex;
-    material.metallicRoughnessTexture = defaultTex;
-    this->material = material;
+    auto defaultNormalTex = Engine::Texture2D::create(device);
+    defaultNormalTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_normal.png");
 
+    auto defaultMetallicRoughnessTex = Engine::Texture2D::create(device);
+    defaultMetallicRoughnessTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_orm.png");
+
+    auto defaultAoTex = Engine::Texture2D::create(device);
+    defaultAoTex->UseFallbackTextures(Texture2D::TextureType::AO);
+
+    auto defaultEmissionTex = Texture2D::create(device);
+    defaultEmissionTex->UseFallbackTextures(Texture2D::TextureType::Emissive);
+
+    // Create material
+    ECS::PBRMaterial material{};
+    material.albedoTexture = defaultTex;
+    material.normalTexture = defaultNormalTex;
+    material.metallicRoughnessTexture = defaultMetallicRoughnessTex;
+    material.aoTexture = defaultAoTex;
+    material.emissiveTexture = defaultEmissionTex;
+
+    // Set default material properties
+    material.albedoColor = glm::vec3(1.0f);
+    material.metallic = 0.0f;
+    material.roughness = 1.0f;
+    material.emissionColor = glm::vec3(0.0f);
+    material.emissiveIntensity = 0.0f;
+    material.aoIntensity = 1.0f;
+    material.tiling = glm::vec2(1.0f);
+    material.offset = glm::vec2(0.0f);
+
+    materialBuffer.map();
+
+    // Create descriptor set and write all texture bindings
     VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
     VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
     VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
+    VkDescriptorImageInfo aoImageInfo = material.aoTexture->GetDescriptorSetInfo();
+    VkDescriptorImageInfo emissiveImageInfo = material.emissiveTexture->GetDescriptorSetInfo();
+    VkDescriptorBufferInfo materialBufferInfo = materialBuffer.vk_DescriptorInfo();
 
     DescriptorWriter writer(materialSetLayout, descriptorPool);
     writer.writeImage(0, &albedoImageInfo);
     writer.writeImage(1, &normalImageInfo);
     writer.writeImage(2, &metallicRoughnessImageInfo);
+    writer.writeImage(3, &aoImageInfo);
+    writer.writeImage(4, &emissiveImageInfo);
+    writer.writeBuffer(6, &materialBufferInfo);
     writer.build(material.descriptorSet);
 
-    // Create a primitive and link it to the material
+    this->pbrMaterial = material;
+
+    // Create primitive and assign material
     Primitive prim{};
     prim.firstVertex = 0;
     prim.vertexCount = static_cast<uint32_t>(vertices.size());
@@ -270,6 +315,7 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
     prim.material = material;
     primitives.push_back(prim);
 }
+
 
 void Engine::Model3D::CreateQuad(float size) {
     vertices.clear();
@@ -335,6 +381,34 @@ void Engine::Model3D::vk_CreateVertexBuffers(const std::vector<Vertex> &vertices
         vertexBuffer->vk_GetBuffer(),
         bufferSize);
 }
+
+void Engine::Model3D::vk_UpdateVertexBuffer(std::vector<Vertex>& vertices) {
+    if (!vertexBuffer) {
+        throw std::runtime_error("Cannot update vertex buffer: Buffer not created!");
+    }
+
+    VkDeviceSize bufferSize = sizeof(vertices[0]) * vertices.size();
+    uint32_t vertexSize = sizeof(vertices[0]);
+
+    // Create a temporary staging buffer (CPU accessible)
+    Buffer stagingBuffer{
+        device,
+        vertexSize,
+        static_cast<uint32_t>(vertices.size()),
+        VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT
+    };
+
+    // Map memory and copy updated vertex data
+    stagingBuffer.map();
+    stagingBuffer.vk_WriteToBuffer((void*)vertices.data());
+
+    // Copy updated data from staging buffer to GPU vertex buffer
+    device.vk_CopyBuffer(stagingBuffer.vk_GetBuffer(),
+        vertexBuffer->vk_GetBuffer(),
+        bufferSize);
+}
+
 
 void Engine::Model3D::vk_CreateIndexBuffer(const std::vector<uint32_t> &indices) {
     indexCount = static_cast<uint32_t>(indices.size());

@@ -13,3 +13,18 @@
 [submodule "Core/Include/External/ImGuizmo"]
 	path = Core/Include/External/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "Core/Include/External/assimp"]
+	path = Core/Include/External/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "Core/Include/External/shaderc"]
+	path = Core/Include/External/shaderc
+	url = https://github.com/google/shaderc.git
+[submodule "Core/Include/External/glslang"]
+	path = Core/Include/External/glslang
+	url = https://github.com/KhronosGroup/glslang.git
+[submodule "Core/Include/External/SPIRV-Tools"]
+	path = Core/Include/External/SPIRV-Tools
+	url = https://github.com/KhronosGroup/SPIRV-Tools.git
+[submodule "Core/Include/External/SPIRV-Headers"]
+	path = Core/Include/External/SPIRV-Headers
+	url = https://github.com/KhronosGroup/SPIRV-Headers.git
