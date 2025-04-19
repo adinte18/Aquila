@@ -35,6 +35,11 @@ namespace Engine {
                 return *this;
             }
 
+            Builder& setSamples(VkSampleCountFlagBits samples) {
+                this->samples = samples;
+                return *this;
+            }
+
             Builder& setFilepath(const std::string& filepath) {
                 this->filepath = filepath;
                 return *this;
@@ -54,7 +59,7 @@ namespace Engine {
                     if (useCubemap) {
                         texture->CreateCubeMap(width, height, format, usage);
                     } else {
-                        texture->CreateTexture(width, height, format, usage);
+                        texture->CreateTexture(width, height, format, usage, samples);
                     }
                 }
                 return texture;
@@ -67,6 +72,7 @@ namespace Engine {
             uint32_t height = 512;
             VkFormat format = VK_FORMAT_R8G8B8A8_SRGB;
             VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+            VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
             std::string filepath;
         };
 
@@ -89,11 +95,12 @@ namespace Engine {
         void CreateHDRTexture(const std::string& filepath, VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT);
 
         void CreateCubeMap(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
+        void CreateMipMappedCubemap(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
 
         // LDR textures
         void CreateTexture(const std::string& filepath, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM);
         void CreateTexture(uint32_t width, uint32_t height, VkFormat format = VK_FORMAT_R8G8B8A8_UNORM,
-                           VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+                           VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
         void UseFallbackTextures(TextureType type);
 
         // Getters
@@ -103,7 +110,7 @@ namespace Engine {
         [[nodiscard]] VkDeviceMemory GetTextureImageMemory() const { return textureImageMemory; }
         [[nodiscard]] VkDescriptorImageInfo GetDescriptorSetInfo() const;
         [[nodiscard]] VkDescriptorSet GetDescriptorSet() const { return descriptorSet; }
-
+        [[nodiscard]] uint32_t GetMipLevels() const { return m_MipLevels; }
 
         [[nodiscard]] bool HasImage() const { return textureImage != VK_NULL_HANDLE; }
         [[nodiscard]] bool HasImageView() const { return textureImageView != VK_NULL_HANDLE; }
@@ -124,19 +131,19 @@ namespace Engine {
                          VkImage& image, VkDeviceMemory& imageMemory);
 
 
-        Texture2D(Device& device) : dev(device) {
+        Texture2D(Device& device) : m_Device(device) {
             textureImage = VK_NULL_HANDLE;
             textureSampler = VK_NULL_HANDLE;
             textureImageView = VK_NULL_HANDLE;
             textureImageMemory = VK_NULL_HANDLE;
 
-            descriptorPool = Engine::DescriptorPool::Builder(dev)
+            descriptorPool = Engine::DescriptorPool::Builder(m_Device)
                 .setMaxSets(1)
                 .setPoolFlags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
                 .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
                 .build();
 
-            descriptorSetLayout = Engine::DescriptorSetLayout::Builder(dev)
+            descriptorSetLayout = Engine::DescriptorSetLayout::Builder(m_Device)
                     .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
                     .build();
 
@@ -150,8 +157,8 @@ namespace Engine {
 
 
     private:
-
-        Device& dev;
+        uint32_t m_MipLevels;
+        Device& m_Device;
         VkImage textureImage{};
         VkSampler textureSampler{};
         VkImageView textureImageView{};
@@ -176,7 +183,7 @@ namespace Engine {
 
         // LDR textures
         void vk_CreateTextureImage(const std::string& filepath);
-        void vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage);
+        void vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples);
         void vk_CreateTextureImageView(VkFormat format);
         void vk_CreateTextureSampler();
         void vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const;

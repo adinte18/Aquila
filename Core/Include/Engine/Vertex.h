@@ -22,7 +22,8 @@ struct Vertex {
         return  pos == other.pos
         && color == other.color
         && normals == other.normals
-        && texcoord == other.texcoord;
+        && texcoord == other.texcoord
+        && tangent == other.tangent;
     }
 
     static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {

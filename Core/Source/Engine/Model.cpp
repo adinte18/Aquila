@@ -41,7 +41,7 @@ void Engine::Model3D::LoadTextureAsync(const std::string& uri, std::vector<std::
 void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLayout& materialSetLayout, Engine::DescriptorPool& descriptorPool) {
     Assimp::Importer importer;
     const aiScene* scene = importer.ReadFile(filepath,
-        aiProcess_Triangulate | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_ConvertToLeftHanded);
+        aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_ConvertToLeftHanded);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
         throw std::runtime_error("Assimp failed to load model: " + std::string(importer.GetErrorString()));
@@ -51,8 +51,6 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
     std::string directoryPath = filePath.parent_path().string();
     path = directoryPath;
 
-    std::mutex imageMutex;
-    std::vector<std::thread> threads;
     std::unordered_map<std::string, std::shared_ptr<Engine::Texture2D>> textureCache;
 
     vertices.clear();
@@ -103,28 +101,24 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
                         return tex;
                     }
 
-                    std::string fullPath = directoryPath + "/" + texPath.C_Str();
-                    std::cout << "Attempting to load texture: " << fullPath << std::endl; // Debugging log
+                    // stripping any Assimp-specific suffixes like "*0"
+                    std::string rawPath = texPath.C_Str();
+                    std::cout << "Raw texture path from Assimp: " << rawPath << std::endl;
+                    std::string cleanPath = rawPath.substr(0, rawPath.find_first_of('*'));
+                    std::string fullPath = directoryPath + "/" + cleanPath;
+
+                    std::cout << "Loading texture: " << fullPath << std::endl;
 
                     if (textureCache.find(fullPath) != textureCache.end()) {
                         return textureCache[fullPath];
                     }
 
                     auto tex = Engine::Texture2D::create(device);
-
-                    // Spawn thread to load texture
-                    threads.push_back(std::thread([&, fullPath, tex]() {
-                        std::lock_guard<std::mutex> lock(imageMutex);
-                        tex->CreateTexture(fullPath);
-                    }));
-
-                    for (auto& thread : threads) {
-                        thread.join();
-                    }
-                    threads.clear();
-
+                    tex->CreateTexture(fullPath);
+                    textureCache[fullPath] = tex;
                     return tex;
                 };
+
 
 
                 material.albedoTexture = LoadTexture(aiTextureType_DIFFUSE, Texture2D::TextureType::Albedo);
@@ -181,8 +175,8 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
 
             DescriptorWriter writer(materialSetLayout, descriptorPool);
             writer.writeImage(0, &albedoImageInfo);
-            writer.writeImage(1, &metallicRoughnessImageInfo);
-            writer.writeImage(2, &normalImageInfo);
+            writer.writeImage(1, &normalImageInfo);
+            writer.writeImage(2, &metallicRoughnessImageInfo);
             writer.writeImage(3, &emissiveImageInfo);
             writer.writeImage(4, &aoImageInfo);
             writer.writeBuffer(6, &materialBufferInfo);
@@ -203,10 +197,6 @@ void Engine::Model3D::Load(const std::string& filepath, Engine::DescriptorSetLay
     };
 
     ProcessNode(scene->mRootNode, scene);
-
-    for (auto& thread : threads) {
-        thread.join();
-    }
 
     vk_CreateVertexBuffers(vertices);
     vk_CreateIndexBuffer(indices);
@@ -240,7 +230,7 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
         vertices = Primitives::CreateCube(size);
     }
     else if (type == Primitives::PrimitiveType::Sphere) {
-        vertices = Primitives::CreateSphere(size, 36, 18);
+        vertices = Primitives::CreateSphere(size, 64, 32);
     }
 
     // Generate index buffer
@@ -253,13 +243,13 @@ void Engine::Model3D::CreatePrimitive(Primitives::PrimitiveType type, float size
 
     // Create a default texture
     auto defaultTex = Engine::Texture2D::create(device);
-    defaultTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_albedo.png");
+    defaultTex->UseFallbackTextures(Texture2D::TextureType::Albedo);
 
     auto defaultNormalTex = Engine::Texture2D::create(device);
-    defaultNormalTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_normal.png");
+    defaultNormalTex->UseFallbackTextures(Texture2D::TextureType::Normal);
 
     auto defaultMetallicRoughnessTex = Engine::Texture2D::create(device);
-    defaultMetallicRoughnessTex->CreateTexture(std::string(TEXTURES_PATH) + "/TemplateGrid_orm.png");
+    defaultMetallicRoughnessTex->UseFallbackTextures(Texture2D::TextureType::MetallicRoughness);
 
     auto defaultAoTex = Engine::Texture2D::create(device);
     defaultAoTex->UseFallbackTextures(Texture2D::TextureType::AO);

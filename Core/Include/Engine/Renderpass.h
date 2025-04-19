@@ -1,90 +1,73 @@
-#ifndef RENDERPASS_H
-#define RENDERPASS_H
+//
+// Created by alexa on 15/04/2025.
+//
 
-#include <unordered_map>
-#include "Engine/Device.h"
+#ifndef RENDERPASS_BASE_H
+#define RENDERPASS_BASE_H
+
 #include "Engine/Rendertarget.h"
-#include "Engine/Descriptor.h"
 
-namespace Engine {
+class Renderpass {
+public:
+    Renderpass(Engine::Device& device, const VkExtent2D& extent) : m_Device(device), m_Extent(extent) {
+        // allocate space for 1 image
+        m_DescriptorPool = Engine::DescriptorPool::Builder(m_Device)
+        .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
+        .setMaxSets(1)
+        .build();
 
-    enum class RenderPassType {
-        G_BUFFER,
-        GEOMETRY,
-        SHADOW,          
-        SSAO,            
-        POST_PROCESSING,
-        GRID,
-        FINAL,
-        ENV_TO_CUBEMAP,
-        IBL
-    };
-    
-    class Renderpass {
-        public:
-            Renderpass(Device &device, VkExtent2D extent): device(device), extent(extent) {};
-            ~Renderpass() {
-                DestroyAll();
-            }
+        // define what are we binding - here 1 image (pass result)
+        m_DescriptorSetLayout = Engine::DescriptorSetLayout::Builder(m_Device)
+        .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+        .build();
 
-            void CreateRenderPass(RenderPassType type);
+        // allocate descriptor set
+        m_DescriptorPool->allocateDescriptor(m_DescriptorSetLayout->getDescriptorSetLayout(), m_DescriptorSet);
+    }
 
-            void CreateFramebuffer(RenderPassType type);
-            void CreateFramebuffer(RenderPassType type, int cascades);
+    virtual ~Renderpass() = 0;
 
-            void CreateRenderTarget(Device& device, uint32_t width, uint32_t height);
+    [[nodiscard]] std::unique_ptr<Engine::DescriptorSetLayout>& GetDescriptorSetLayout() { return m_DescriptorSetLayout; }
+    [[nodiscard]] std::unique_ptr<Engine::DescriptorPool>&      GetDescriptorPool()      {return m_DescriptorPool; }
 
-            void WriteImageToDescriptor(RenderPassType type);
-            [[nodiscard]] VkRenderPass      GetRenderPass(RenderPassType type) const;
-            [[nodiscard]] VkFramebuffer     GetFramebuffer(RenderPassType type) const;
-            [[nodiscard]] VkFramebuffer     GetCubemapFramebuffer(int faceIndex) const;
-            [[nodiscard]] VkFramebuffer GetIrradianceFramebuffer(int faceIndex) const;
+    [[nodiscard]] VkImageView               GetRenderTargetColorImage() const { return colorAttachment->GetTextureImageView(); }
+    [[nodiscard]] VkImageView               GetRenderTargetDepthImage() const { return depthAttachment->GetTextureImageView(); }
+    [[nodiscard]] VkRenderPass              GetRenderPass()             const { return m_RenderPass; }
+    [[nodiscard]] VkDescriptorSet&          GetDescriptorSet()                { return m_DescriptorSet; }
+    [[nodiscard]] VkDescriptorImageInfo     GetImageInfo(VkImageLayout) const;
+    [[nodiscard]] std::array<VkClearValue, 2> GetClearValues()          const { return m_ClearValues; }
+    [[nodiscard]] VkExtent2D                GetExtent()                 const { return m_Extent; }
+    [[nodiscard]] VkImage                   GetFinalImage()             const { return colorAttachment->GetTextureImage(); }
 
-            [[nodiscard]] VkImage           GetImage(RenderPassType type) const;
-            [[nodiscard]] VkImageView       GetRenderTarget(RenderPassType type) const;
-            [[nodiscard]] VkSampler         GetRenderSampler(RenderPassType type) const;
-            [[nodiscard]] VkDescriptorSet&  GetDescriptorSet(RenderPassType);
-            [[nodiscard]] std::unique_ptr<DescriptorPool>& GetDescriptorPool(RenderPassType);
-            [[nodiscard]] std::unique_ptr<DescriptorSetLayout>& GetDescriptorLayout(RenderPassType);
 
-            void WriteDepthImageToDescriptor(RenderPassType type, DescriptorSetLayout &sceneSetLayout, DescriptorPool &descriptorPool);
+protected:
+    // Create render target
+    virtual bool CreateRenderTarget() = 0;
+    // Create render pass
+    virtual bool CreateRenderPass() = 0;
+    // Create framebuffer
+    virtual bool CreateFramebuffer() = 0;
 
-            void UpdateExtent(const VkExtent2D extent) {
-                this->extent = extent;
-            }
+    virtual void CreateClearValues() = 0;
 
-            void DestroyAll();
+    void WriteToDescriptorSet();
 
-            void SetExtent(VkExtent2D extent);
+    // Members
+    Engine::Device& m_Device;
+    std::shared_ptr<Engine::Texture2D> colorAttachment;
+    std::shared_ptr<Engine::Texture2D> depthAttachment;
 
-        private:
-            Device& device;
-            VkExtent2D extent;
-        
-            std::unordered_map<RenderPassType, VkRenderPass> renderPasses;
-            std::unordered_map<RenderPassType, VkFramebuffer> framebuffers;
-            std::array<VkFramebuffer, 6> cubemapFaceFramebuffers;
-            std::array<VkFramebuffer, 6> irradianceFaceFramebuffers;
-            std::unordered_map<RenderPassType, std::shared_ptr<RenderTarget>> renderTargets;
-            std::unordered_map<RenderPassType, VkDescriptorSet> imageToViewport;
-            std::unordered_map<RenderPassType, std::unique_ptr<DescriptorPool>> descriptorPools;
-            std::unordered_map<RenderPassType, std::unique_ptr<DescriptorSetLayout>> descriptorSetLayouts;
+    // Descriptor sets to write images to. They will be sampled in the shader (shadow, post-processing, etc.)
+    VkDescriptorSet m_DescriptorSet{};
+    std::unique_ptr<Engine::DescriptorPool> m_DescriptorPool{};
+    std::unique_ptr<Engine::DescriptorSetLayout> m_DescriptorSetLayout{};
 
-            std::unique_ptr<DescriptorPool> descriptorPool;
-            std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
-
-            void CreateGBufferPass();
-            void CreateShadowPass();
-            void CreateSSAOPass();
-            void CreatePostProcessingPass();
-            void CreateCubemapPass();
-            void CreateGridPass();
-            void CreateIBLPass();
-            void CreateGeometryPass();
-
-            void CreateFinalPass();
-    };
-        
+    // Vulkan stuff
+    VkRenderPass m_RenderPass{};
+    VkExtent2D m_Extent{};
+    std::array<VkClearValue, 2> m_ClearValues{};
 };
 
-#endif //RENDERPASS_H
+
+
+#endif //RENDERPASS_BASE_H

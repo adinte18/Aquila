@@ -1,14 +1,14 @@
 #include <utility>
-#include "RenderingSystems/CompositeRenderingSystem.h"
+#include "RenderingSystems/BRDFLutRenderingSystem.h"
 #include "Components.h"
 
-RenderingSystem::CompositeRenderingSystem::CompositeRenderingSystem(Engine::Device &device, VkRenderPass renderPass,
+RenderingSystem::BRDFLutRenderingSystem::BRDFLutRenderingSystem(Engine::Device &device, VkRenderPass renderPass,
                                                             VkDescriptorSetLayout layout): device(device) {
     CreatePipelineLayout(layout);
     CreatePipeline(renderPass);
 }
 
-void RenderingSystem::CompositeRenderingSystem::Render(VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet) {
+void RenderingSystem::BRDFLutRenderingSystem::Render(VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet) {
     pipeline->bind(commandBuffer);
 
     if (descriptorSet == VK_NULL_HANDLE) {
@@ -21,7 +21,7 @@ void RenderingSystem::CompositeRenderingSystem::Render(VkCommandBuffer commandBu
     vkCmdDraw(commandBuffer, 3, 1, 0, 0);
 }
 
-void RenderingSystem::CompositeRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+void RenderingSystem::BRDFLutRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
     if (pipeline) {
         pipeline.reset();
     }
@@ -30,23 +30,22 @@ void RenderingSystem::CompositeRenderingSystem::RecreatePipeline(VkRenderPass re
 }
 
 
-void RenderingSystem::CompositeRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
+void RenderingSystem::BRDFLutRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
     assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
 
     Engine::PipelineConfigInfo pipelineConfig{};
     Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
     pipelineConfig.renderPass = renderPass;
     pipelineConfig.pipelineLayout = pipelineLayout;
-    pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
     pipeline = std::make_unique<Engine::Pipeline>(
             device,
-            std::string(SHADERS_PATH) + "/final_vert.spv",
-            std::string(SHADERS_PATH) + "/final_frag.spv",
+            std::string(SHADERS_PATH) + "/brdflut_vert.spv",
+            std::string(SHADERS_PATH) + "/brdflut_frag.spv",
             pipelineConfig);
 
 }
 
-void RenderingSystem::CompositeRenderingSystem::CreatePipelineLayout(VkDescriptorSetLayout layout) {
+void RenderingSystem::BRDFLutRenderingSystem::CreatePipelineLayout(VkDescriptorSetLayout layout) {
     VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
     pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
     pipelineLayoutInfo.setLayoutCount = 1;

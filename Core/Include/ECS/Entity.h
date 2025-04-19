@@ -14,6 +14,7 @@ namespace ECS {
     public:
         Entity(entt::registry& registry, entt::entity handle)
             : registry(registry), entityHandle(handle) {
+
             name = "Entity" + std::to_string(static_cast<uint32_t>(handle));
         }
 

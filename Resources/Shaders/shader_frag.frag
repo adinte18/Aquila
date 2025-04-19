@@ -27,6 +27,8 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
 
 layout(set = 0, binding = 1) uniform sampler2D shadowMap;
 layout(set = 0, binding = 2) uniform samplerCube irradianceMap;
+layout(set = 0, binding = 3) uniform samplerCube prefilterMap;
+layout(set = 0, binding = 4) uniform sampler2D brdfLUT;
 
 layout(set = 1, binding = 0) uniform sampler2D albedo;
 layout(set = 1, binding = 1) uniform sampler2D normalMap;
@@ -72,6 +74,10 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 vec3 FresnelSchlick(float cosTheta, vec3 F0) {
     return F0 + (1.0 - F0) * pow(1.0 - cosTheta, 5.0);
 }
+vec3 FresnelSchlickRoughness(float cosTheta, vec3 F0, float roughness)
+{
+    return F0 + (max(vec3(1.0 - roughness), F0) - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+}
 
 float calculateShadow(vec4 fragPosLightSpace) {
     vec3 projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;
@@ -95,49 +101,67 @@ float calculateShadow(vec4 fragPosLightSpace) {
 }
 
 void main() {
-    vec3 irradiance = texture(irradianceMap, fragNormalWorld).rgb;
+    vec3 localNormal = texture(normalMap, fragTexCoord).xyz * 2.0 - 1.0;
 
-    vec3 albedoColor = texture(albedo, fragTexCoord).rgb * material.albedoColor;
-    float metallic = texture(metallicRoughness, fragTexCoord).b * material.metallic;
-    float roughness = texture(metallicRoughness, fragTexCoord).g * material.roughness;
-    vec3 emissive = texture(emissive, fragTexCoord).rgb * material.emissionColor * material.emissiveIntensity;
-    float ao = texture(ao, fragTexCoord).r * material.aoIntensity;
+    if (material.invertNormalMap == 1) {
+        localNormal = -localNormal;
+    }
 
-    vec3 N = fragNormalWorld;
-
-    if (material.invertNormalMap == 1) N = -N;
-
+    vec3 N = normalize(TBN * localNormal);
     vec3 L = normalize(-ubo.light.direction);
     vec3 V = normalize(vec3(ubo.inverseView[3]) - fragPosWorld);
     vec3 H = normalize(V + L);
+    vec3 R = reflect(-V, N);
 
-    // Cook-Torrance BRDF calculations
+    vec3 irradiance = texture(irradianceMap, fragNormalWorld).rgb;
+
+    // Shadow calculation
+    float shadow = calculateShadow(fragPosLightSpace);
+
+    vec3 albedoColor = pow(texture(albedo, fragTexCoord).rgb, vec3(2.2)) * material.albedoColor;
+    float metallic = texture(metallicRoughness, fragTexCoord).b * material.metallic;
+    float roughness = texture(metallicRoughness, fragTexCoord).g * material.roughness;
+    vec3 emissive = texture(emissive, fragTexCoord).rgb;
+    float ao = texture(ao, fragTexCoord).r;
+
+    // Fresnel
     vec3 F0 = mix(vec3(0.04), albedoColor, metallic);
+
+    const float MAX_REFLECTION_LOD = 8.0;
+    vec3 prefilteredColor = textureLod(prefilterMap, R,  roughness * MAX_REFLECTION_LOD).rgb;
+
+    // Cook-Torrance BRDF
     float NDF = DistributionGGX(N, H, roughness);
     float G = GeometrySmith(N, V, L, roughness);
-    vec3 F = FresnelSchlick(max(dot(H, V), 0.0), F0);
+    vec3 F = FresnelSchlickRoughness(max(dot(N,V), 0.0), F0, roughness);
 
     vec3 numerator = NDF * G * F;
     float denominator = 4.0 * max(dot(N, V), 0.0) * max(dot(N, L), 0.0) + 0.0001;
     vec3 specular = numerator / denominator;
 
+    vec3 kS = F;
+
     vec3 kD = vec3(1.0) - F;
     kD *= 1.0 - metallic;
 
-    // Shadow calculation
-    float shadow = calculateShadow(fragPosLightSpace);
+    float NdotL = max(dot(N, L), 0.0);
+    vec3 Lo = (kD * albedoColor / PI + specular) * ubo.light.color * ubo.light.intensity * NdotL * shadow;
 
     // Diffuse light from irradiance (ambient lighting)
-    vec3 diffuseIrradiance = irradiance * albedoColor * (1.0 - metallic);
+    vec3 diffuseIrradiance = irradiance * albedoColor;
 
-    // Final lighting computation
-    vec3 Lo = (kD * albedoColor / PI + specular) * ubo.light.color * ubo.light.intensity * max(dot(N, L), 0.0) * shadow;
+    // Specular
+    vec2 brdf  = texture(brdfLUT, vec2(max(dot(N, V), 0.0), roughness)).rg;
+    vec3 specularIBL = prefilteredColor * (F * brdf.x + brdf.y);
 
-    // Ambient light with irradiance added to the ambient component
-    vec3 ambient = (vec3(0.15) * albedoColor * ao) + albedoColor * 0.1 + diffuseIrradiance;
+    vec3 ambient = (kD * diffuseIrradiance + specularIBL) * ao;
+    vec3 color = (ambient + Lo);
 
-    // Final color: ambient + direct lighting + emissive light
-    vec3 finalColor = ambient + Lo + emissive;
+    // HDR tonemapping (Reinhard tone mapping)
+    color = color / (color + vec3(1.0));
 
-    outColor = vec4(finalColor, 1.0);
+    // Gamma correction (sRGB to linear space)
+    color = pow(color, vec3(1.0 / 2.2));
+
+    outColor = vec4(color , 1.0);
 }

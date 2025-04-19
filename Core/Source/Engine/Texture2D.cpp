@@ -6,25 +6,25 @@
 
 void Engine::Texture2D::DestroyAll() {
     if (textureImageView != VK_NULL_HANDLE) {
-        vkDestroyImageView(dev.vk_GetDevice(), textureImageView, nullptr);
+        vkDestroyImageView(m_Device.vk_GetDevice(), textureImageView, nullptr);
         textureImageView = VK_NULL_HANDLE;
     }
     if (textureImage != VK_NULL_HANDLE) {
-        vkDestroyImage(dev.vk_GetDevice(), textureImage, nullptr);
+        vkDestroyImage(m_Device.vk_GetDevice(), textureImage, nullptr);
         textureImage = VK_NULL_HANDLE;
     }
     if (textureSampler != VK_NULL_HANDLE) {
-        vkDestroySampler(dev.vk_GetDevice(), textureSampler, nullptr);
+        vkDestroySampler(m_Device.vk_GetDevice(), textureSampler, nullptr);
         textureSampler = VK_NULL_HANDLE;
     }
     if (textureImageMemory != VK_NULL_HANDLE) {
-        vkFreeMemory(dev.vk_GetDevice(), textureImageMemory, nullptr);
+        vkFreeMemory(m_Device.vk_GetDevice(), textureImageMemory, nullptr);
         textureImageMemory = VK_NULL_HANDLE;
     }
 }
 
 void Engine::Texture2D::Destroy() {
-    VkDevice device = dev.vk_GetDevice();
+    VkDevice device = m_Device.vk_GetDevice();
     if (textureSampler != VK_NULL_HANDLE) {
         vkDestroySampler(device, textureSampler, nullptr);
         textureSampler = VK_NULL_HANDLE;
@@ -71,6 +71,80 @@ void Engine::Texture2D::CreateCubeMap(uint32_t width, uint32_t height, VkFormat 
     vk_WriteToDescriptorSet();
 }
 
+void Engine::Texture2D::CreateMipMappedCubemap(uint32_t width, uint32_t height, VkFormat format,
+    VkImageUsageFlags usage) {
+    m_MipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+
+    VkImageCreateInfo imageInfo{};
+    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+    imageInfo.imageType = VK_IMAGE_TYPE_2D;
+    imageInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    imageInfo.extent.width = width;
+    imageInfo.extent.height = height;
+    imageInfo.extent.depth = 1;
+    imageInfo.mipLevels = m_MipLevels;
+    imageInfo.arrayLayers = 6;
+    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+    imageInfo.usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
+    imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+    if (vkCreateImage(m_Device.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create cubemap image!");
+    }
+
+    VkMemoryRequirements memRequirements;
+    vkGetImageMemoryRequirements(m_Device.vk_GetDevice(), textureImage, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to allocate cubemap memory!");
+    }
+
+    vkBindImageMemory(m_Device.vk_GetDevice(), textureImage, textureImageMemory, 0);
+
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = textureImage;
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+    viewInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = m_MipLevels;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 6;
+
+    if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create cubemap image view!");
+    }
+
+    VkSamplerCreateInfo samplerInfo{};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+    samplerInfo.minLod = 0.0f;
+    samplerInfo.maxLod = static_cast<float>(m_MipLevels);
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+
+    if (vkCreateSampler(m_Device.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+        throw std::runtime_error("Failed to create cubemap sampler!");
+    }
+
+    vk_WriteToDescriptorSet();
+
+    std::cout << "Created mip-mapped cubemap" << std::endl;
+}
+
 
 void Engine::Texture2D::CreateTexture(const std::string& filepath, VkFormat format) {
     vk_CreateTextureImage(filepath);
@@ -80,12 +154,120 @@ void Engine::Texture2D::CreateTexture(const std::string& filepath, VkFormat form
 }
 
 void Engine::Texture2D::CreateTexture(const uint32_t width, const uint32_t height,
-                                         const VkFormat format, const VkImageUsageFlags usage) {
-    vk_CreateTextureImage(width, height, format, usage);
+                                         const VkFormat format, const VkImageUsageFlags usage, const VkSampleCountFlagBits samples) {
+    vk_CreateTextureImage(width, height, format, usage, samples);
     vk_CreateTextureImageView(format);
     vk_CreateTextureSampler();
     vk_WriteToDescriptorSet();
 }
+
+// void Engine::Texture2D::GenerateMipmaps(
+//     VkCommandBuffer commandBuffer,
+//     VkImage image,
+//     int32_t texWidth,
+//     int32_t texHeight,
+//     uint32_t arrayLayers)
+// {
+//     uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+//
+//     for (uint32_t layer = 0; layer < arrayLayers; ++layer) {
+//         int32_t mipWidth = texWidth;
+//         int32_t mipHeight = texHeight;
+//
+//         for (uint32_t i = 1; i < mipLevels; ++i) {
+//             // Transition mip level i to DST_OPTIMAL
+//             VkImageMemoryBarrier barrier{};
+//             barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//             barrier.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+//             barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+//             barrier.srcAccessMask = 0;
+//             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+//             barrier.image = image;
+//             barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//             barrier.subresourceRange.baseMipLevel = i;
+//             barrier.subresourceRange.levelCount = 1;
+//             barrier.subresourceRange.baseArrayLayer = layer;
+//             barrier.subresourceRange.layerCount = 1;
+//
+//             vkCmdPipelineBarrier(
+//                 commandBuffer,
+//                 VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+//                 0, 0, nullptr, 0, nullptr, 1, &barrier);
+//
+//             // Set up blit
+//             VkImageBlit blit{};
+//             blit.srcOffsets[0] = {0, 0, 0};
+//             blit.srcOffsets[1] = {mipWidth, mipHeight, 1};
+//             blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//             blit.srcSubresource.mipLevel = i - 1;
+//             blit.srcSubresource.baseArrayLayer = layer;
+//             blit.srcSubresource.layerCount = 1;
+//
+//             int32_t nextWidth = mipWidth > 1 ? mipWidth / 2 : 1;
+//             int32_t nextHeight = mipHeight > 1 ? mipHeight / 2 : 1;
+//
+//             blit.dstOffsets[0] = {0, 0, 0};
+//             blit.dstOffsets[1] = {nextWidth, nextHeight, 1};
+//             blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//             blit.dstSubresource.mipLevel = i;
+//             blit.dstSubresource.baseArrayLayer = layer;
+//             blit.dstSubresource.layerCount = 1;
+//
+//             // Blit from mip i-1 to mip i
+//             vkCmdBlitImage(
+//                 commandBuffer,
+//                 image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+//                 image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+//                 1, &blit,
+//                 VK_FILTER_LINEAR);
+//
+//             VkImageMemoryBarrier postBlitBarrier{};
+//             postBlitBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//             postBlitBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+//             postBlitBarrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+//             postBlitBarrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+//             postBlitBarrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+//             postBlitBarrier.image = image;
+//             postBlitBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//             postBlitBarrier.subresourceRange.baseMipLevel = i;
+//             postBlitBarrier.subresourceRange.levelCount = 1;
+//             postBlitBarrier.subresourceRange.baseArrayLayer = layer;
+//             postBlitBarrier.subresourceRange.layerCount = 1;
+//
+//             vkCmdPipelineBarrier(
+//                 commandBuffer,
+//                 VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT,
+//                 0, 0, nullptr, 0, nullptr, 1, &postBlitBarrier);
+//
+//             mipWidth = nextWidth;
+//             mipHeight = nextHeight;
+//         }
+//     }
+//
+//     VkImageMemoryBarrier finalBarrier{};
+//     finalBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+//     finalBarrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+//     finalBarrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+//     finalBarrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
+//     finalBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+//     finalBarrier.image = image;
+//     finalBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+//     finalBarrier.subresourceRange.baseMipLevel = 0;
+//     finalBarrier.subresourceRange.levelCount = mipLevels;
+//     finalBarrier.subresourceRange.baseArrayLayer = 0;
+//     finalBarrier.subresourceRange.layerCount = arrayLayers;
+//
+//     vkCmdPipelineBarrier(
+//         commandBuffer,
+//         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+//         0, 0, nullptr, 0, nullptr, 1, &finalBarrier);
+//
+//     std::cout << "Mipmaps generated.\n";
+// }
+
+
+
+
 
 void Engine::Texture2D::vk_WriteToDescriptorSet() {
     VkDescriptorImageInfo imageInfo{};
@@ -113,7 +295,7 @@ void Engine::Texture2D::TransitionImageLayout(
     VkImageLayout newLayout,
     uint32_t layers)
 {
-    VkCommandBuffer commandBuffer = dev.vk_BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = m_Device.vk_BeginSingleTimeCommands();
 
     VkImageMemoryBarrier barrier{};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -198,7 +380,7 @@ void Engine::Texture2D::TransitionImageLayout(
         1, &barrier
     );
 
-    dev.vk_EndSingleTimeCommands(commandBuffer);
+    m_Device.vk_EndSingleTimeCommands(commandBuffer);
 }
 
 void Engine::Texture2D::vk_CreateCubemapImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
@@ -210,7 +392,7 @@ void Engine::Texture2D::vk_CreateCubemapImage(uint32_t width, uint32_t height, V
     imageInfo.extent.height = height;
     imageInfo.extent.depth = 1;
     imageInfo.mipLevels = 1;
-    imageInfo.arrayLayers = 6; // 6 faces of the cube
+    imageInfo.arrayLayers = 6;
     imageInfo.format = format;
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -218,23 +400,23 @@ void Engine::Texture2D::vk_CreateCubemapImage(uint32_t width, uint32_t height, V
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(dev.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
+    if (vkCreateImage(m_Device.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create cubemap image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(dev.vk_GetDevice(), textureImage, &memRequirements);
+    vkGetImageMemoryRequirements(m_Device.vk_GetDevice(), textureImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = dev.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    if (vkAllocateMemory(dev.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate cubemap memory!");
     }
 
-    vkBindImageMemory(dev.vk_GetDevice(), textureImage, textureImageMemory, 0);
+    vkBindImageMemory(m_Device.vk_GetDevice(), textureImage, textureImageMemory, 0);
 
     TransitionImageLayout(textureImage, VK_FORMAT_R32G32B32A32_SFLOAT,
                       VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
@@ -253,13 +435,13 @@ void Engine::Texture2D::vk_CreateCubemapImageView(VkFormat format) {
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 6;
 
-    if (vkCreateImageView(dev.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
+    if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create cubemap image view!");
     }
 }
 void Engine::Texture2D::vk_CreateCubemapSampler() {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(dev.vk_GetPhysicalDevice(), &properties);
+    vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -276,7 +458,7 @@ void Engine::Texture2D::vk_CreateCubemapSampler() {
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(dev.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_Device.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create cubemap sampler!");
     }
 }
@@ -304,23 +486,23 @@ void Engine::Texture2D::CreateImage(uint32_t width, uint32_t height, VkFormat fo
     imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(dev.vk_GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
+    if (vkCreateImage(m_Device.vk_GetDevice(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
         throw std::runtime_error("failed to create image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(dev.vk_GetDevice(), image, &memRequirements);
+    vkGetImageMemoryRequirements(m_Device.vk_GetDevice(), image, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = dev.vk_FindMemoryType(memRequirements.memoryTypeBits, properties);
+    allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, properties);
 
-    if (vkAllocateMemory(dev.vk_GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate image memory!");
     }
 
-    vkBindImageMemory(dev.vk_GetDevice(), image, imageMemory, 0);
+    vkBindImageMemory(m_Device.vk_GetDevice(), image, imageMemory, 0);
 }
 
 
@@ -336,14 +518,14 @@ void Engine::Texture2D::vk_CreateTextureImageView(VkFormat format) {
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(dev.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
+    if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture image view!");
     }
 }
 
 void Engine::Texture2D::vk_CreateTextureSampler() {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(dev.vk_GetPhysicalDevice(), &properties);
+    vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -360,13 +542,13 @@ void Engine::Texture2D::vk_CreateTextureSampler() {
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(dev.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_Device.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create texture sampler!");
     }
 }
 
 void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const {
-    VkCommandBuffer commandBuffer = dev.vk_BeginSingleTimeCommands();
+    VkCommandBuffer commandBuffer = m_Device.vk_BeginSingleTimeCommands();
 
     VkBufferImageCopy region{};
     region.bufferOffset = 0;
@@ -385,7 +567,7 @@ void Engine::Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uin
 
     vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-    dev.vk_EndSingleTimeCommands(commandBuffer);
+    m_Device.vk_EndSingleTimeCommands(commandBuffer);
 }
 
 void Engine::Texture2D::vk_CreateSolidColorCubemap(glm::vec4 color) {
@@ -400,7 +582,7 @@ void Engine::Texture2D::vk_CreateSolidColorCubemap(glm::vec4 color) {
     VkDeviceSize imageSize = sizeof(pixelData) * 6;
 
     Buffer stagingBuffer{
-        dev,
+        m_Device,
         imageSize,
         1,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -443,7 +625,7 @@ void Engine::Texture2D::vk_CreateSolidColorTexture(glm::vec4 color) {
     VkDeviceSize imageSize = sizeof(pixelData);
 
     Buffer stagingBuffer{
-        dev,
+        m_Device,
         imageSize,
         1,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -503,7 +685,7 @@ void Engine::Texture2D::UseFallbackTextures(TextureType type) {
 }
 
 
-void Engine::Texture2D::vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
+void Engine::Texture2D::vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples) {
     VkImageCreateInfo imageInfo{};
     imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -516,26 +698,26 @@ void Engine::Texture2D::vk_CreateTextureImage(uint32_t width, uint32_t height, V
     imageInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
     imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
     imageInfo.usage = usage | VK_IMAGE_USAGE_SAMPLED_BIT;
-    imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+    imageInfo.samples = samples;
     imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if (vkCreateImage(dev.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
+    if (vkCreateImage(m_Device.vk_GetDevice(), &imageInfo, nullptr, &textureImage) != VK_SUCCESS) {
         throw std::runtime_error("Failed to create color attachment image!");
     }
 
     VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(dev.vk_GetDevice(), textureImage, &memRequirements);
+    vkGetImageMemoryRequirements(m_Device.vk_GetDevice(), textureImage, &memRequirements);
 
     VkMemoryAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
     allocInfo.allocationSize = memRequirements.size;
-    allocInfo.memoryTypeIndex = dev.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    if (vkAllocateMemory(dev.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
+    if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
         throw std::runtime_error("Failed to allocate color attachment memory!");
     }
 
-    vkBindImageMemory(dev.vk_GetDevice(), textureImage, textureImageMemory, 0);
+    vkBindImageMemory(m_Device.vk_GetDevice(), textureImage, textureImageMemory, 0);
 }
 
 void Engine::Texture2D::vk_CreateHDRTextureImage(const std::string& filepath) {
@@ -565,7 +747,7 @@ void Engine::Texture2D::vk_CreateHDRTextureImage(const std::string& filepath) {
     VkDeviceSize imageSize = texWidth * texHeight * 4 * sizeof(float);
 
     Buffer stagingBuffer{
-        dev,
+        m_Device,
         imageSize,
         1,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -618,14 +800,14 @@ void Engine::Texture2D::vk_CreateHDRTextureImageView(VkFormat format) {
     viewInfo.subresourceRange.baseArrayLayer = 0;
     viewInfo.subresourceRange.layerCount = 1;
 
-    if (vkCreateImageView(dev.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
+    if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
         throw std::runtime_error("failed to create HDR texture image view!");
     }
 }
 
 void Engine::Texture2D::vk_CreateHDRTextureSampler() {
     VkPhysicalDeviceProperties properties{};
-    vkGetPhysicalDeviceProperties(dev.vk_GetPhysicalDevice(), &properties);
+    vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
 
     VkSamplerCreateInfo samplerInfo{};
     samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -642,7 +824,7 @@ void Engine::Texture2D::vk_CreateHDRTextureSampler() {
     samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
     samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-    if (vkCreateSampler(dev.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
+    if (vkCreateSampler(m_Device.vk_GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
         throw std::runtime_error("failed to create HDR texture sampler!");
     }
 }
@@ -657,7 +839,7 @@ void Engine::Texture2D::vk_CreateTextureImage(const std::string& filepath) {
     }
 
     Buffer stagingBuffer{
-        dev,
+        m_Device,
         imageSize,
         1,
         VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

@@ -52,7 +52,7 @@ void main() {
     T = normalize(T - dot(T, N) * N);
 
     vec3 B = cross(N, T);
-    TBN = transpose(mat3(T, B, N));
+    TBN = mat3(T, B, N);
 
     gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;
 }

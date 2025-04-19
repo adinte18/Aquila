@@ -32,27 +32,33 @@ file(GLOB_RECURSE ENGINE_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/Engine/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/ECS/*.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/Source/RenderingSystems/*.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source/Renderpasses/*.cpp
+)
+
+file(GLOB_RECURSE ENGINE_HEADERS
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/Engine/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/RenderingSystems/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/Renderpasses/*.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/*.h
 )
 
 # Create the Core library
-add_library(Core STATIC ${ENGINE_SOURCES}
-        Include/ECS/SceneContext.h
-        Include/RenderingSystems/EnvToCubemapRenderingSystem.h
-        Include/RenderingSystems/CubemapRenderingSystem.h
-        Include/RenderingSystems/IrradianceRenderingSystem.h
-)
+add_library(Core STATIC ${ENGINE_SOURCES} ${ENGINE_HEADERS})
 
 # Include directories for the project
 target_include_directories(Core PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/Include/
-        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS/Components
-        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS
         ${Vulkan_INCLUDE_DIRS}
         ${GLM_INCLUDE_DIRS}
-        ${CMAKE_SOURCE_DIR}/Core/Include
-        ${CMAKE_SOURCE_DIR}/Core/Include/External/glfw/include
-        ${CMAKE_SOURCE_DIR}/Core/Include/External/assimp/include
-        ${CMAKE_SOURCE_DIR}/Core/Include/External/SPIRV-Headers/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/ECS/Components
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/Engine
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/RenderingSystems
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/Renderpasses
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/External/glfw/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/External/assimp/include
+        ${CMAKE_CURRENT_SOURCE_DIR}/Include/External/SPIRV-Headers/include
 )
 
 # Define paths for shaders and textures

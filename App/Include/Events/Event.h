@@ -1,64 +1,57 @@
-//
-// Created by alexa on 06/04/2025.
-//
-
 #ifndef EVENT_H
 #define EVENT_H
 
 #include <string>
+#include <unordered_map>
 #include <utility>
+#include <variant>
+#include <functional>
 
-enum class ACTION_TYPE {
-    ADD_COMPONENT,
-    REMOVE_COMPONENT,
-    ADD_ENTITY,
-    REMOVE_ENTITY,
-    // add more if needed
-};
-
+// Base Event class
 class Event {
 public:
     virtual ~Event() = default;
-
-    virtual const char* GetEventType() const = 0;
-
     bool handled = false;
 };
 
-class AddEntityEvent : public Event {
-public:
-    AddEntityEvent() = default;
-
-    [[nodiscard]] const char* GetEventType() const override {
-        return "AddEntityEvent";
-    }
+enum class UICommand : uint16_t {
+    LoadTexture,
+    AddSphere,
+    AddCube,
+    AddEntity,
+    RemoveEntity,
+    AddComponent,
+    RemoveComponent,
+    AddEnvMap,
+    AddLight,
+    AddMesh,
 };
 
-class RemoveEntityEvent : public Event {
-public:
-    explicit RemoveEntityEvent(int entityID) : entityID(entityID) {}
-
-    [[nodiscard]] const char* GetEventType() const override {
-        return "RemoveEntityEvent";
-    }
-
-    int entityID;
+enum class UIEventResult : uint16_t {
+    Success,
+    Failure
 };
 
-class AddEnvMapEvent : public Event {
-public:
-    explicit AddEnvMapEvent(const std::string& texturePath) : texturePath(texturePath) {}
+using CommandParam = std::variant<
+    int,
+    float,
+    bool,
+    std::string,
+    std::shared_ptr<Engine::Texture2D>,
+    std::shared_ptr<ECS::Entity>
+>;
 
-    [[nodiscard]] const std::string& GetTexturePath() const {
-        return texturePath;
-    }
+using EventCallback = std::function<void(UIEventResult, CommandParam)>;
 
-    [[nodiscard]] const char* GetEventType() const override {
-        return "AddEnvMapEvent";
-    }
-private:
-    std::string texturePath;
+struct UICommandEvent : Event {
+    UICommand m_Command;  // Command type
+    std::unordered_map<std::string_view, CommandParam> m_Params;
+    EventCallback m_Callback;
+
+    explicit UICommandEvent(const UICommand cmd, std::unordered_map<std::string_view, CommandParam> args = {}, EventCallback cb = nullptr)
+        : m_Command(cmd), m_Params(std::move(args)), m_Callback(std::move(cb)) {}
+
+    static const char* GetName() { return "UICommandEvent"; }
 };
 
-
-#endif //EVENT_H
+#endif // EVENT_H

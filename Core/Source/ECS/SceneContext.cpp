@@ -19,6 +19,8 @@ ECS::SceneContext::SceneContext(Engine::Device &device, Scene &scene)
                         .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS) // ubo
                         .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) //shadow map
                         .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) // env map
+                        .addBinding(3, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) // prefilter map
+                        .addBinding(4, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) // brdf LUT
                         .build();
 
         sceneBuffer.map();
@@ -58,8 +60,6 @@ ECS::SceneContext::SceneContext(Engine::Device &device, Scene &scene)
 }
 
 void ECS::SceneContext::UpdateGPUData() {
-    auto newTime = std::chrono::steady_clock::now();
-
     UniformData ubo{};
     ubo.projection = m_Scene.GetActiveCamera().GetProjection();
     ubo.view = m_Scene.GetActiveCamera().GetView();

@@ -1,13 +1,14 @@
 #include "UIManagement/UI.h"
 
+#include <imgui_internal.h>
 #include <Scene.h>
-#include <Engine/Framebuffer.h>
 #include <Engine/Model.h>
 #include <nativefiledialog/src/nfd_common.h>
-#include <icons_font_awesome.h>
+#include <lucide.h>
 
 #include "Components.h"
 #include "SceneContext.h"
+#include "Events/EventBus.h"
 
 void SetHazelImGuiTheme()
 {
@@ -34,9 +35,9 @@ void SetHazelImGuiTheme()
     colors[ImGuiCol_FrameBgActive]      = ImVec4(0.30f, 0.30f, 0.30f, 1.0f); // Slightly brighter
 
     // Buttons
-    colors[ImGuiCol_Button]             = ImVec4(0.25f, 0.25f, 0.25f, 1.0f); // Slightly brighter
-    colors[ImGuiCol_ButtonHovered]      = ImVec4(0.35f, 0.35f, 0.35f, 1.0f); // Slightly brighter
-    colors[ImGuiCol_ButtonActive]       = ImVec4(0.40f, 0.40f, 0.40f, 1.0f); // Slightly brighter
+    colors[ImGuiCol_Button]             = ImVec4(0.0f, 0.0f, 0.0f, 1.0f); // Slightly brighter
+    colors[ImGuiCol_ButtonHovered]      = ImVec4(0.0f, 0.6f, 0.6f, 1.0f); // Slightly brighter
+    colors[ImGuiCol_ButtonActive]       = ImVec4(0.0f, 0.5f, 0.5f, 1.0f); // Slightly brighter
 
     // Scrollbar
     colors[ImGuiCol_ScrollbarBg]        = ImVec4(0.12f, 0.12f, 0.12f, 1.0f); // Slightly brighter
@@ -76,23 +77,24 @@ void SetHazelImGuiTheme()
 }
 
 
-void Editor::UIManager::InitializeImGui() {
+void Editor::UIManager::InitializeImGui() const {
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    float baseFontSize = 20.0f;
-    float iconFontSize = baseFontSize * 2.0f / 3.0f;
+    float baseFontSize = 16.0f;
 
-    static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_FA, 0 };
+    static constexpr ImWchar icons_ranges[] = { ICON_MIN_LC, ICON_MAX_16_LC, 0 };
     ImFontConfig icons_config;
     icons_config.MergeMode = true;
     icons_config.PixelSnapH = true;
-    icons_config.GlyphMinAdvanceX = iconFontSize;
-    io.Fonts->AddFontFromFileTTF(R"(C:\Windows\Fonts\arial.ttf)", 14.0f);
-    io.Fonts->AddFontFromFileTTF(R"(C:\Programming\Aquila\App\Include\fontawesome-webfont.ttf)", iconFontSize, &icons_config, icons_ranges);
+    icons_config.GlyphMinAdvanceX = baseFontSize;
+    icons_config.GlyphOffset.y = 3.5f;
+
+    io.Fonts->AddFontFromFileTTF(R"(C:\Users\alexa\AppData\Local\Microsoft\Windows\Fonts\FiraSans-Regular.ttf)", 16.0f);
+    io.Fonts->AddFontFromFileTTF(R"(C:\Programming\Aquila\App\Include\lucide.ttf)", baseFontSize, &icons_config, icons_ranges);
 
     SetHazelImGuiTheme();
     ImGui::GetStyle().Alpha = 1.0f;
@@ -146,171 +148,8 @@ void Editor::UIManager::OnStart() {
     InitializeImGui();
 }
 
-// void Editor::UIManager::Render(VkCommandBuffer commandBuffer) {
-//     ImGui_ImplVulkan_NewFrame();
-//     ImGui_ImplGlfw_NewFrame();
-//     ImGui::NewFrame();
-//     ImGuizmo::BeginFrame();
-//
-//     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-//
-//     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
-//     const ImGuiViewport* viewport = ImGui::GetMainViewport();
-//     ImGui::SetNextWindowPos(viewport->WorkPos);
-//     ImGui::SetNextWindowSize(viewport->WorkSize);
-//     ImGui::SetNextWindowViewport(viewport->ID);
-//     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-//     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-//     window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-//     window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-//
-//     if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-//         window_flags |= ImGuiWindowFlags_NoBackground;
-//     ImGui::PopStyleVar(2);
-//
-//     // Map to store the name buffer for each entity, keyed by entity ID
-//     static std::unordered_map<entt::entity, std::string> nameBuffers;
-//
-//     ImGui::Begin("DockSpace Demo", nullptr, window_flags);
-//
-//     ImGuiIO& io = ImGui::GetIO();
-//     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-//     {
-//         ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-//         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-//     }
-//
-//
-//     if (ImGui::Begin("Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
-//         // If RMB is pressed, open context menu
-//         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-//             ImGui::OpenPopup("ViewportContextMenu");
-//         }
-//
-//         // Render the context menu if it has been opened
-//         if (ImGui::BeginPopup("ViewportContextMenu")) {
-//             if (ImGui::MenuItem("Create empty entity")) {
-//                 const auto entity = scene.CreateEntity();
-//                 entity->AddComponent<ECS::Transform>();
-//                 SetSelectedEntity(entity->GetHandle());
-//             }
-//             ImGui::Separator();
-//
-//             if (ImGui::BeginMenu("Primitives")) {
-//
-//                 if (ImGui::MenuItem("Create cube")) {
-//                     auto entity = scene.CreateEntity();
-//                     entity->AddComponent<ECS::Transform>();
-//                     entity->AddComponent<ECS::PBRMaterial>();
-//
-//                     auto model = Engine::Model3D::create(device);
-//                     model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
-//                         1.0f,
-//                         scene.GetMaterialDescriptorSetLayout(),
-//                         scene.GetMaterialDescriptorPool());
-//
-//                     entity->AddComponent<ECS::Mesh>();
-//                     entity->GetComponent<ECS::Mesh>().mesh = model;
-//                     entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-//
-//                     SetSelectedEntity(entity->GetHandle());
-//                 }
-//
-//
-//                 if (ImGui::MenuItem("Create sphere")) {
-//                     const auto entity = scene.CreateEntity();
-//                     entity->AddComponent<ECS::Transform>();
-//                     entity->AddComponent<ECS::PBRMaterial>();
-//
-//                     const auto model = Engine::Model3D::create(device);
-//                     model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
-//                         1.0f,
-//                         scene.GetMaterialDescriptorSetLayout(),
-//                         scene.GetMaterialDescriptorPool());
-//                     entity->AddComponent<ECS::Mesh>();
-//                     entity->GetComponent<ECS::Mesh>().mesh = model;
-//                     entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-//
-//                     SetSelectedEntity(entity->GetHandle());
-//                 }
-//
-//                 ImGui::EndMenu();
-//             }
-//
-//             if (ImGui::MenuItem("Create light")) {
-//                 if (const auto entity = scene.CreateEntity()) {
-//                     std::cout << "Entity created successfully." << std::endl;
-//
-//                     // Add the light component
-//                     entity->AddComponent<ECS::Light>();
-//                     std::cout << "Light component added." << std::endl;
-//
-//                     // Set the name of the entity
-//                     entity->SetName("Directional light");
-//                     std::cout << "Name set to: " << entity->GetName() << std::endl;  // Debug to verify the name is set
-//
-//                     nameBuffers[entity->GetHandle()] = entity->GetName();
-//
-//                     // Check if the Light component was added successfully
-//                     if (entity->HasComponent<ECS::Light>()) {
-//                         std::cout << "Light component added successfully." << std::endl;
-//                     } else {
-//                         std::cout << "Failed to add Light component." << std::endl;
-//                     }
-//
-//                     // Select the newly created entity
-//                     SetSelectedEntity(entity->GetHandle());
-//                 } else {
-//                     std::cout << "Failed to create entity." << std::endl;
-//                 }
-//             }
-//
-//             ImGui::Separator();
-//
-//
-//             if (ImGui::MenuItem("Close")) {
-//                 ImGui::CloseCurrentPopup();  // Close the context menu
-//             }
-//             ImGui::EndPopup();  // Close the popup
-//         }
-//
-//         // Iterate over all entities in the scene, and display them in the hierarchy.
-//         // If clicked, select the entity and show its properties
-//
-//         // Iterate over all entities in the scene
-//         for (auto entity : scene.GetRegistry().view<entt::entity>()) {
-//             ImGui::PushID(static_cast<int>(entity));
-//
-//             const bool isSelected = (selectedEntity == entity);
-//             ECS::Entity ent = {scene.GetRegistry(), entity};
-//
-//             // Check if the entity's name is in nameBuffers, and display it if present
-//             std::string displayName = ent.GetName(); // Default to entity's stored name
-//             if (nameBuffers.find(entity) != nameBuffers.end()) {
-//                 displayName = nameBuffers[entity];  // Use updated name if edited
-//             }
-//
-//             if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-//                 SetSelectedEntity(entity);  // Update the selected entity when clicked
-//             }
-//
-//             ImGui::PopID();
-//         }
-//         // Separator between hierarchy and properties panel
-//         ImGui::Separator();
-//
-//         ImGui::End();
-//     }
-//
-//
-//     ImGui::End();
-//     ImGui::End();
-//     ImGui::Render();
-//     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-// }
 
-
-void Editor::UIManager::OnEnd() {
+void Editor::UIManager::OnEnd() const {
     std::cout << "Destroying ImGui context" << std::endl;
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -318,7 +157,7 @@ void Editor::UIManager::OnEnd() {
     ImGui::DestroyContext();
 }
 
-void Editor::UIManager::UpdateDescriptorSets(ECS::SceneContext& sceneContext) {
+void Editor::UIManager::UpdateDescriptorSets(const ECS::SceneContext& sceneContext) const {
     Engine::DescriptorWriter writer(sceneContext.GetMaterialDescriptorSetLayout(), sceneContext.GetMaterialDescriptorPool());
 
     auto& registry = m_Registry;
@@ -406,20 +245,25 @@ void Editor::UIManager::GetFinalImage(VkDescriptorSet finalImage) {
 }
 
 void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, ECS::SceneContext& sceneContext, float deltaTime) {
+    ImGuiIO& io = ImGui::GetIO();
+
+
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
     ImGuizmo::BeginFrame();
-
     static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
+
     ImGui::SetNextWindowPos(viewport->WorkPos);
     ImGui::SetNextWindowSize(viewport->WorkSize);
     ImGui::SetNextWindowViewport(viewport->ID);
+
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
     window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
     window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
@@ -432,21 +276,10 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, ECS::SceneContex
 
     ImGui::Begin("DockSpace Demo", nullptr, window_flags);
 
-    ImGuiIO& io = ImGui::GetIO();
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
-
-    if (ImGui::Begin("Testing window")) {
-
-        if (ImGui::Button("Add entity")) {
-            AddEntityEvent addEntityEvent;
-            m_Dispatcher.Dispatch(addEntityEvent);
-        }
-
-        ImGui::End();
+        m_DockspaceId = ImGui::GetID("MyDockSpace");
+        ImGui::DockSpace(m_DockspaceId, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
     if (ImGui::BeginMenuBar())
@@ -465,22 +298,19 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, ECS::SceneContex
                 if (result == NFD_OKAY) {
                     std::cout << "Selected file: " << outPath << std::endl;
 
-                    // Load model
-                    std::shared_ptr<Engine::Model3D> model = Engine::Model3D::create(m_Device);
-                    model->Load(outPath, sceneContext.GetMaterialDescriptorSetLayout(), sceneContext.GetMaterialDescriptorPool());
+                    EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                        if (result == UIEventResult::Success) {
+                            std::cout << "Mesh loaded successfully." << std::endl;
+                        } else {
+                            std::cout << "Failed to load mesh." << std::endl;
+                        }
+                    };
 
-
-                    // Create entity
-                    const auto entity = sceneContext.GetScene().CreateEntity();
-                    entity->AddComponent<ECS::Mesh>();
-                    entity->AddComponent<ECS::Transform>();
-                    entity->AddComponent<ECS::PBRMaterial>();
-
-                    // If valid model, assign to entity
-                    if (model != nullptr) {
-                        entity->GetComponent<ECS::Mesh>().mesh = model;
-                        entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-                    }
+                    EventBus::Get().Dispatch(UICommandEvent(
+                        UICommand::AddMesh,
+                        {{"path", std::string(outPath)}},
+                        callback
+                    ));
 
                     NFDi_Free(outPath);
                 } else if (result == NFD_CANCEL) {
@@ -504,9 +334,8 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, ECS::SceneContex
 
         ImGui::EndMenuBar();
     }
-
     //Scene Hierarchy
-    if (ImGui::Begin("Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
+    if (ImGui::Begin(ICON_LC_LAYERS_2 " Scene hierarchy", nullptr, ImGuiWindowFlags_NoScrollbar)) {
         // If RMB is pressed, open context menu
         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
             ImGui::OpenPopup("ViewportContextMenu");
@@ -515,422 +344,469 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, ECS::SceneContex
         // Render the context menu if it has been opened
         if (ImGui::BeginPopup("ViewportContextMenu")) {
             if (ImGui::MenuItem("Create empty entity")) {
-                const auto entity = sceneContext.GetScene().CreateEntity();
-                entity->AddComponent<ECS::Transform>();
-                SetSelectedEntity(entity->GetHandle());
+                EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                    if (result == UIEventResult::Success) {
+                        const auto entity = std::get<std::shared_ptr<ECS::Entity>>(payload);
+                        SetSelectedEntity(entity->GetHandle());
+                        std::cout << "Entity created successfully with ID: " << static_cast<int>(entity->GetHandle()) << std::endl;
+                    } else {
+                        std::cout << "Failed to create entity." << std::endl;
+                    }
+                };
+
+                EventBus::Get().Dispatch(UICommandEvent(UICommand::AddEntity, {}, callback));
             }
-            ImGui::Separator();
 
             if (ImGui::BeginMenu("Primitives")) {
 
                 if (ImGui::MenuItem("Create cube")) {
-                    auto entity = sceneContext.GetScene().CreateEntity();
-                    entity->AddComponent<ECS::Transform>();
-                    entity->AddComponent<ECS::PBRMaterial>();
+                    EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                        if (result == UIEventResult::Success) {
+                            const auto entity = std::get<std::shared_ptr<ECS::Entity>>(payload);
+                            nameBuffers[entity->GetHandle()] = entity->GetName();
+                            entity->SetName(std::string(ICON_LC_BOX + entity->GetName()));
+                            SetSelectedEntity(entity->GetHandle());
+                        } else {
+                            std::cout << "Failed to create entity." << std::endl;
+                        }
+                    };
 
-                    auto model = Engine::Model3D::create(m_Device);
-                    model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
-                        1.0f,
-                        sceneContext.GetMaterialDescriptorSetLayout(),
-                        sceneContext.GetMaterialDescriptorPool());
-
-                    entity->AddComponent<ECS::Mesh>();
-                    entity->GetComponent<ECS::Mesh>().mesh = model;
-                    entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-
-                    SetSelectedEntity(entity->GetHandle());
+                    EventBus::Get().Dispatch(UICommandEvent(UICommand::AddCube, {}, callback));
                 }
 
 
                 if (ImGui::MenuItem("Create sphere")) {
-                    const auto entity = sceneContext.GetScene().CreateEntity();
-                    entity->AddComponent<ECS::Transform>();
-                    entity->AddComponent<ECS::PBRMaterial>();
+                    EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                        if (result == UIEventResult::Success) {
+                            const auto entity = std::get<std::shared_ptr<ECS::Entity>>(payload);
+                            nameBuffers[entity->GetHandle()] = entity->GetName();
+                            SetSelectedEntity(entity->GetHandle());
+                        } else {
+                            std::cout << "Failed to create entity." << std::endl;
+                        }
+                    };
 
-                    const auto model = Engine::Model3D::create(m_Device);
-                    model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
-                        1.0f,
-                        sceneContext.GetMaterialDescriptorSetLayout(),
-                        sceneContext.GetMaterialDescriptorPool());
-                    entity->AddComponent<ECS::Mesh>();
-                    entity->GetComponent<ECS::Mesh>().mesh = model;
-                    entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-
-                    SetSelectedEntity(entity->GetHandle());
+                    EventBus::Get().Dispatch(UICommandEvent(UICommand::AddSphere, {}, callback));
                 }
 
                 ImGui::EndMenu();
             }
 
             if (ImGui::MenuItem("Create light")) {
-                if (const auto entity = sceneContext.GetScene().CreateEntity()) {
-                    std::cout << "Entity created successfully." << std::endl;
-
-                    // Add the light component
-                    entity->AddComponent<ECS::Light>();
-                    std::cout << "Light component added." << std::endl;
-
-                    // Set the name of the entity
-                    entity->SetName("Directional light");
-                    std::cout << "Name set to: " << entity->GetName() << std::endl;  // Debug to verify the name is set
-
-                    nameBuffers[entity->GetHandle()] = entity->GetName();
-
-                    // Check if the Light component was added successfully
-                    if (entity->HasComponent<ECS::Light>()) {
-                        std::cout << "Light component added successfully." << std::endl;
+                EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                    if (result == UIEventResult::Success) {
+                        const auto entity = std::get<std::shared_ptr<ECS::Entity>>(payload);
+                        nameBuffers[entity->GetHandle()] = entity->GetName();
+                        SetSelectedEntity(entity->GetHandle());
                     } else {
-                        std::cout << "Failed to add Light component." << std::endl;
+                        std::cout << "Failed to create entity." << std::endl;
                     }
+                };
 
-                    // Select the newly created entity
-                    SetSelectedEntity(entity->GetHandle());
-                } else {
-                    std::cout << "Failed to create entity." << std::endl;
-                }
+                EventBus::Get().Dispatch(UICommandEvent(UICommand::AddLight, {}, callback));
             }
 
             ImGui::Separator();
 
 
             if (ImGui::MenuItem("Close")) {
-                ImGui::CloseCurrentPopup();  // Close the context menu
+                ImGui::CloseCurrentPopup();
             }
-            ImGui::EndPopup();  // Close the popup
+            ImGui::EndPopup();
         }
 
-        // Iterate over all entities in the scene, and display them in the hierarchy.
-        // If clicked, select the entity and show its properties
-
-        // Iterate over all entities in the scene
         for (auto entity : m_Registry.view<entt::entity>()) {
             ImGui::PushID(static_cast<int>(entity));
 
             const bool isSelected = (selectedEntity == entity);
             ECS::Entity ent = {m_Registry, entity};
 
-            // Check if the entity's name is in nameBuffers, and display it if present
-            std::string displayName = ent.GetName(); // Default to entity's stored name
+            std::string displayName = ent.GetName();
             if (nameBuffers.find(entity) != nameBuffers.end()) {
-                displayName = nameBuffers[entity];  // Use updated name if edited
+                displayName = nameBuffers[entity];
             }
 
             if (ImGui::Selectable(displayName.c_str(), isSelected)) {
-                SetSelectedEntity(entity);  // Update the selected entity when clicked
+                SetSelectedEntity(entity);
             }
 
             ImGui::PopID();
         }
-        // Separator between hierarchy and properties panel
-        ImGui::Separator();
-
-        ImGui::End();
     }
-
-if (ImGui::Begin("Environment map")) {
-
-    if (ImGui::Button("Load environment map")) {
-        nfdchar_t *outPath = nullptr;
-        nfdresult_t result = NFD_OpenDialog( "hdr", nullptr, &outPath );
-        if (result == NFD_OKAY) {
-            std::cout << "Selected file: " << outPath << std::endl;
-
-            AddEnvMapEvent addEnvMapEvent{outPath};
-            m_Dispatcher.Dispatch(addEnvMapEvent);
-
-
-            NFDi_Free(outPath);
-        } else if (result == NFD_CANCEL) {
-            std::cout << "User cancelled." << std::endl;
-        } else {
-            std::cout << "Error: " << NFD_GetError() << std::endl;
-        }
-    }
-
     ImGui::End();
-}
 
-if (ImGui::Begin("Properties")) {
-    if (ImGui::Button("Reload shaders")) {
-        m_ReloadShaders = true;
-    }
+    if (ImGui::Begin(ICON_LC_FOLDER_OPEN " Content browser")) {
 
-    if (GetSelectedEntity() != entt::null && m_Registry.valid(GetSelectedEntity())) {
-        ECS::Entity ent = {m_Registry, GetSelectedEntity()};
-        entt::entity entityID = GetSelectedEntity();
-
-        // Name Section
-        if (nameBuffers.find(entityID) == nameBuffers.end()) {
-            nameBuffers[entityID] = ent.GetName();
-        }
-
-        ImGui::Text("Name");
-        ImGui::SameLine();
-        std::string& nameBuffer = nameBuffers[entityID];
-        char tempBuffer[128] = {0};
-        nameBuffer.copy(tempBuffer, sizeof(tempBuffer) - 1);
-
-        if (ImGui::InputText("##", tempBuffer, sizeof(tempBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
-            nameBuffer = tempBuffer;
-            ent.SetName(nameBuffer);
-            std::cout << "Current entity name: " << ent.GetName() << std::endl;
-        }
-
-        // Add Component Button
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_PLUS)) {
-            ImGui::OpenPopup("AddComponentPopup");
-        }
-
-        ImGui::Separator();
-
-        if (ImGui::BeginPopup("AddComponentPopup")) {
-            if (ImGui::MenuItem("Mesh") && !ent.HasComponent<ECS::Mesh>()) {
-                ent.AddComponent<ECS::Mesh>();
-            }
-            if (ImGui::MenuItem("Transform") && !ent.HasComponent<ECS::Transform>()) {
-                ent.AddComponent<ECS::Transform>();
-            }
-            if (!ent.HasComponent<ECS::Light>() && !ent.HasComponent<ECS::Mesh>()) {
-                if (ImGui::MenuItem("Light")) {
-                    ent.AddComponent<ECS::Light>();
+        if (currentDirectory != ASSET_PATH) {
+            if (ImGui::Button("<-")) {
+                std::filesystem::path parent = currentDirectory.parent_path();
+                if (parent.string().find(ASSET_PATH) == 0) {
+                    currentDirectory = parent;
                 }
             }
-            ImGui::EndPopup();
         }
 
-        // Transform Component
-        if (auto* transform = m_Registry.try_get<ECS::Transform>(GetSelectedEntity())) {
-            if (ImGui::CollapsingHeader("Transform", ImGuiTreeNodeFlags_DefaultOpen)) {
-                auto DrawVector3Control = [](const char* label, glm::vec3& values, float resetValue = 0.0f) {
-                    ImGui::PushID(label);
-                    ImGui::Columns(2);
-                    ImGui::SetColumnWidth(0, 100);
-                    ImGui::Text(label);
-                    ImGui::NextColumn();
+        static float padding = 0.0f;
+        static float thumbnailSize = 200.0f;
+        float cellSize = thumbnailSize + padding;
 
-                    float buttonWidth = 20.0f;
-                    float inputWidth = 70.0f;
+        float panelWidth = ImGui::GetContentRegionAvail().x;
+        int columnCount = (int)(panelWidth / cellSize);
+        if (columnCount < 1)
+            columnCount = 1;
 
-                    const char* labels[] = { "X", "Y", "Z" };
-                    ImVec4 colors[] = {
-                        { 0.8f, 0.1f, 0.1f, 1.0f },
-                        { 0.1f, 0.8f, 0.1f, 1.0f },
-                        { 0.1f, 0.1f, 0.8f, 1.0f }
-                    };
+        ImGui::Columns(columnCount, 0, false);
 
-                    for (int i = 0; i < 3; i++) {
-                        ImGui::PushStyleColor(ImGuiCol_Button, colors[i]);
-                        if (ImGui::Button(labels[i], ImVec2(buttonWidth, 20))) values[i] = resetValue;
-                        ImGui::PopStyleColor();
-                        ImGui::SameLine();
-                        ImGui::SetNextItemWidth(inputWidth);
-                        ImGui::DragFloat(("##" + std::string(labels[i])).c_str(), &values[i], 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
-                        if (i < 2) ImGui::SameLine();
+        for (auto& directoryEntry : std::filesystem::directory_iterator(currentDirectory))
+        {
+            const auto& path = directoryEntry.path();
+            std::string filenameString = path.filename().string();
+
+            std::string fullID = path.string();
+            ImGui::PushID(fullID.c_str());
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+
+            auto icon = directoryEntry.is_directory() ? ICON_LC_FOLDER : ICON_LC_FILE;
+            ImGui::Text(icon);
+
+            if (ImGui::BeginDragDropSource())
+            {
+                const std::filesystem::path& relativePath(path);
+                const wchar_t* itemPath = relativePath.c_str();
+                ImGui::SetDragDropPayload("CONTENT_BROWSER_ITEM", itemPath, (wcslen(itemPath) + 1) * sizeof(wchar_t));
+                ImGui::EndDragDropSource();
+            }
+            ImGui::PopStyleColor();
+
+            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+            {
+                if (directoryEntry.is_directory())
+                    currentDirectory /= path.filename();
+
+            }
+            ImGui::TextWrapped(filenameString.c_str());
+
+            ImGui::NextColumn();
+
+            ImGui::PopID();
+        }
+
+        ImGui::Columns(1);
+
+        // ImGui::SliderFloat("Thumbnail Size", &thumbnailSize, 16, 512);
+        // ImGui::SliderFloat("Padding", &padding, 0, 32);
+    }
+    ImGui::End();
+
+    if (ImGui::Begin(ICON_LC_LEAF " Environment map")) {
+
+        if (ImGui::Button("Load environment map")) {
+            nfdchar_t *outPath = nullptr;
+            nfdresult_t result = NFD_OpenDialog("hdr", nullptr, &outPath);
+            if (result == NFD_OKAY) {
+                std::cout << "Selected file: " << outPath << std::endl;
+
+                EventCallback callback = [](const UIEventResult result, const CommandParam &payload) {
+                    if (result == UIEventResult::Success) {
+                        std::cout << "Environment map loaded successfully." << std::endl;
+                    } else {
+                        std::cout << "Failed to load environment map." << std::endl;
                     }
-
-                    ImGui::Columns(1);
-                    ImGui::PopID();
                 };
 
-                DrawVector3Control("Position", transform->position);
-                glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform->rotation));
-                DrawVector3Control("Rotation", eulerRotation);
-                transform->rotation = glm::quat(glm::radians(eulerRotation));
-                DrawVector3Control("Scale", transform->scale, 1.0f);
+                EventBus::Get().Dispatch(UICommandEvent(
+                    UICommand::AddEnvMap,
+                    {{"path", std::string(outPath)}},
+                    callback
+                ));
+
+                NFDi_Free(outPath);
+            } else if (result == NFD_CANCEL) {
+                std::cout << "User cancelled." << std::endl;
+            } else {
+                std::cout << "Error: " << NFD_GetError() << std::endl;
             }
-        }
-
-        // Mesh Component
-        if (auto* mesh = m_Registry.try_get<ECS::Mesh>(GetSelectedEntity())) {
-            if (ImGui::CollapsingHeader("Mesh", ImGuiTreeNodeFlags_DefaultOpen)) {
-                std::string meshName = mesh->mesh ? mesh->mesh->GetPath() : "Primitive";
-                ImGui::Text("Current mesh: %s", meshName.c_str());
-
-                if (ImGui::Button("Load Model")) {
-                    nfdchar_t *outPath = nullptr;
-                    nfdresult_t result = NFD_OpenDialog( "gltf", nullptr, &outPath );
-
-                    if (result == NFD_OKAY) {
-                        std::cout << "Selected file: " << outPath << std::endl;
-
-                        // Load model
-                        std::shared_ptr<Engine::Model3D> model = Engine::Model3D::create(m_Device);
-                        model->Load(outPath, sceneContext.GetMaterialDescriptorSetLayout(), sceneContext.GetMaterialDescriptorPool());
-
-                        // Create entity
-                        const auto entity = sceneContext.GetScene().CreateEntity();
-                        entity->AddComponent<ECS::Mesh>();
-                        entity->AddComponent<ECS::Transform>();
-                        entity->AddComponent<ECS::PBRMaterial>();
-
-                        // If valid model, assign to entity
-                        if (model != nullptr) {
-                            entity->GetComponent<ECS::Mesh>().mesh = model;
-                            entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-                        }
-
-                        NFDi_Free(outPath);
-                    } else if (result == NFD_CANCEL) {
-                        std::cout << "User cancelled." << std::endl;
-                    } else {
-                        std::cout << "Error: " << NFD_GetError() << std::endl;
-                    }
-                }
-            }
-        }
-
-        // Material Component
-if (auto* material = m_Registry.try_get<ECS::PBRMaterial>(GetSelectedEntity())) {
-    if (ImGui::CollapsingHeader("Material", ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Text("Material Properties");
-
-        ImGui::ColorEdit3("Albedo Color", reinterpret_cast<float*>(&material->albedoColor));
-
-        if (material->albedoTexture) {
-            ImGui::Text("Albedo Texture: ");
-            ImGui::Image((ImTextureID)material->albedoTexture->GetDescriptorSet(), ImVec2(100, 100));  // Display the texture
-        } else {
-            ImGui::Text("No Albedo Texture");
-        }
-        if (ImGui::Button("Change Albedo Texture")) {
-            // Open the file dialog
-            nfdchar_t* outPath = nullptr;
-            if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
-                std::string filepath = outPath;
-                material->albedoTexture->MarkForDestruction();
-                material->albedoTexturePath = filepath;
-                material->dirty = true;
-            }
-            free(outPath);
-        }
-
-        // Display and edit the metallic factor
-        ImGui::SliderFloat("Metallic", &material->metallic, 0.0f, 1.0f);
-
-        // Display the metallic-roughness texture and allow changing it
-        if (material->metallicRoughnessTexture) {
-            ImGui::Text("Metallic Roughness Texture: ");
-            ImGui::Image((ImTextureID)material->metallicRoughnessTexture->GetDescriptorSet(), ImVec2(100, 100));
-        } else {
-            ImGui::Text("No Metallic Roughness Texture");
-        }
-        if (ImGui::Button("Change Metallic Roughness Texture")) {
-            // Open the file dialog
-            nfdchar_t* outPath = nullptr;
-            if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
-                std::string filepath = outPath;
-                material->metallicRoughnessTexture->MarkForDestruction();
-                material->metallicRoughnessTexturePath = filepath;
-                material->dirty = true;
-            }
-            free(outPath);  // Free the path memory
-        }
-
-        // Display and edit the roughness factor
-        ImGui::SliderFloat("Roughness", &material->roughness, 0.0f, 1.0f);
-
-        // Display the normal map and allow changing it
-        if (material->normalTexture) {
-            ImGui::Text("Normal Texture: ");
-            ImGui::Image((ImTextureID)material->normalTexture->GetDescriptorSet(), ImVec2(100, 100));
-        } else {
-            ImGui::Text("No Normal Texture");
-        }
-
-        if (ImGui::Button("Change Normal Texture")) {
-            // Open the file dialog
-            nfdchar_t* outPath = nullptr;
-            if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
-                std::string filepath = outPath;
-                material->normalTexture->MarkForDestruction();
-                material->normalTexturePath = filepath;
-                material->dirty = true;
-            }
-            free(outPath);  // Free the path memory
-        }
-
-        ImGui::SameLine();
-        ImGui::Checkbox("Invert Normal", reinterpret_cast<bool*>(&material->invertNormalMap));
-
-        // Display and edit the emission color
-        ImGui::ColorEdit3("Emission Color", reinterpret_cast<float*>(&material->emissionColor));
-
-        // Display the emissive texture and allow changing it
-        if (material->emissiveTexture) {
-            ImGui::Text("Emissive Texture: ");
-            ImGui::Image((ImTextureID)material->emissiveTexture->GetDescriptorSet(), ImVec2(100, 100));
-        } else {
-            ImGui::Text("No Emissive Texture");
-        }
-        if (ImGui::Button("Change Emissive Texture")) {
-            // Open the file dialog
-            nfdchar_t* outPath = nullptr;
-            if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
-                std::string filepath = outPath;
-                material->emissiveTexture->MarkForDestruction();
-                material->emissiveTexturePath = filepath;
-                material->dirty = true;
-            }
-            free(outPath);  // Free the path memory
-        }
-
-        // Display and edit the AO (ambient occlusion) factor
-        ImGui::SliderFloat("AO Intensity", &material->aoIntensity, 0.0f, 1.0f);
-
-        // Display the AO texture and allow changing it
-        if (material->aoTexture) {
-            ImGui::Text("AO Texture: ");
-            ImGui::Image((ImTextureID)material->aoTexture->GetDescriptorSet(), ImVec2(100, 100));
-        } else {
-            ImGui::Text("No AO Texture");
-        }
-        if (ImGui::Button("Change AO Texture")) {
-            // Open the file dialog
-            nfdchar_t* outPath = nullptr;
-            if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
-                std::string filepath = outPath;
-                material->aoTexture->MarkForDestruction();
-                material->aoTexturePath = filepath;
-                material->dirty = true;
-            }
-            free(outPath);  // Free the path memory
-        }
-
-        // Display the emissive intensity slider
-        ImGui::SliderFloat("Emissive Intensity", &material->emissiveIntensity, 0.0f, 10.0f);
-    }
-}
-
-
-        // Light Component
-        if (auto* light = m_Registry.try_get<ECS::Light>(GetSelectedEntity())) {
-            if (ImGui::CollapsingHeader("Light", ImGuiTreeNodeFlags_DefaultOpen)) {
-                ImGui::Text("Light Type");
-                ImGui::Combo("##LightType", reinterpret_cast<int*>(&light->type), "Directional\0Point\0Spot\0\0");
-
-                ImGui::Text("Color");
-                ImGui::ColorEdit3("##ColorPicker", reinterpret_cast<float*>(&light->color));
-
-                ImGui::Text("Position");
-                ImGui::DragFloat3("##Position", reinterpret_cast<float*>(&light->position), 0.1f);
-
-                ImGui::Text("Intensity");
-                ImGui::SliderFloat("##Intensity", &light->intensity, 0.0f, 10.0f);
-            }
-        }
-
-        // Delete Entity
-        ImGui::Separator();
-        if (ImGui::Button("Delete Entity")) {
-            ECS::Entity entityToDelete = {m_Registry, GetSelectedEntity()};
-            sceneContext.GetScene().QueueForDestruction(entityToDelete.GetHandle());
-            SetSelectedEntity(entt::null);
         }
     }
     ImGui::End();
-}
 
+
+    ImGui::Begin(ICON_LC_SLIDERS_HORIZONTAL " Properties");
+    {
+        if (GetSelectedEntity() != entt::null && m_Registry.valid(GetSelectedEntity())) {
+            ECS::Entity ent = {m_Registry, GetSelectedEntity()};
+            entt::entity entityID = GetSelectedEntity();
+
+            if (nameBuffers.find(entityID) == nameBuffers.end()) {
+                nameBuffers[entityID] = ent.GetName();
+            }
+
+            ImGui::Text("Name");
+            ImGui::SameLine();
+            std::string& nameBuffer = nameBuffers[entityID];
+            char tempBuffer[128] = {0};
+            nameBuffer.copy(tempBuffer, sizeof(tempBuffer) - 1);
+
+            if (ImGui::InputText("##", tempBuffer, sizeof(tempBuffer), ImGuiInputTextFlags_EnterReturnsTrue)) {
+                nameBuffer = tempBuffer;
+                ent.SetName(nameBuffer);
+                std::cout << "Current entity name: " << ent.GetName() << std::endl;
+            }
+
+            // Add Component Button
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_LC_PLUS)) {
+                ImGui::OpenPopup("AddComponentPopup");
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_LC_TRASH_2)) {
+                // Create a shared pointer to the entity
+                std::shared_ptr<ECS::Entity> entityToDelete = std::make_shared<ECS::Entity>(m_Registry, GetSelectedEntity());
+
+                entt::entity entityHandle = entityToDelete->GetHandle();
+
+                if (m_Registry.valid(entityHandle)) {
+                    nameBuffers.erase(entityHandle);
+
+                    SetSelectedEntity(entt::null);
+
+                    EventBus::Get().Dispatch(UICommandEvent(
+                        UICommand::RemoveEntity,
+                        {{"entity", entityToDelete}},
+                        nullptr
+                    ));
+                }
+            }
+
+            ImGui::Separator();
+
+            if (ImGui::BeginPopup("AddComponentPopup")) {
+                if (ImGui::MenuItem("Mesh") && !ent.HasComponent<ECS::Mesh>()) {
+                    ent.AddComponent<ECS::Mesh>();
+                }
+                if (ImGui::MenuItem("Transform") && !ent.HasComponent<ECS::Transform>()) {
+                    ent.AddComponent<ECS::Transform>();
+                }
+                if (!ent.HasComponent<ECS::Light>() && !ent.HasComponent<ECS::Mesh>()) {
+                    if (ImGui::MenuItem("Light")) {
+                        ent.AddComponent<ECS::Light>();
+                    }
+                }
+                ImGui::EndPopup();
+            }
+
+            // Transform Component
+            if (auto* transform = m_Registry.try_get<ECS::Transform>(GetSelectedEntity())) {
+                if (ImGui::CollapsingHeader(ICON_LC_MOVE_3D " TRANSFORM", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    auto DrawVector3Control = [](const char* label, glm::vec3& values, float resetValue = 0.0f) {
+                        ImGui::PushID(label);
+                        ImGui::Columns(2);
+                        ImGui::SetColumnWidth(0, 100);
+                        ImGui::Text(label);
+                        ImGui::NextColumn();
+
+                        const char* labels[] = { "X", "Y", "Z" };
+                        ImVec4 colors[] = {
+                            { 0.8f, 0.1f, 0.1f, 1.0f },
+                            { 0.1f, 0.8f, 0.1f, 1.0f },
+                            { 0.1f, 0.1f, 0.8f, 1.0f }
+                        };
+
+                        for (int i = 0; i < 3; i++) {
+                            constexpr float inputWidth = 70.0f;
+                            ImGui::PushStyleColor(ImGuiCol_Button, colors[i]);
+                            if (constexpr float buttonWidth = 20.0f; ImGui::Button(labels[i], ImVec2(buttonWidth, 20))) values[i] = resetValue;
+                            ImGui::PopStyleColor();
+                            ImGui::SameLine();
+                            ImGui::SetNextItemWidth(inputWidth);
+                            ImGui::DragFloat(("##" + std::string(labels[i])).c_str(), &values[i], 0.1f, -FLT_MAX, FLT_MAX, "%.2f");
+                            if (i < 2) ImGui::SameLine();
+                        }
+
+                        ImGui::Columns(1);
+                        ImGui::PopID();
+                    };
+
+                    DrawVector3Control("Position", transform->position);
+                    glm::vec3 eulerRotation = glm::degrees(glm::eulerAngles(transform->rotation));
+                    DrawVector3Control("Rotation", eulerRotation);
+                    transform->rotation = glm::quat(glm::radians(eulerRotation));
+                    DrawVector3Control("Scale", transform->scale, 1.0f);
+                }
+            }
+
+            // Mesh Component
+            if (auto* mesh = m_Registry.try_get<ECS::Mesh>(GetSelectedEntity())) {
+                if (ImGui::CollapsingHeader(ICON_LC_BOX " MESH", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    std::string meshName = mesh->mesh ? mesh->mesh->GetPath() : "Primitive";
+                    ImGui::Text("Current mesh: %s", meshName.c_str());
+
+                    if (ImGui::Button("Load Model")) {
+                        nfdchar_t *outPath = nullptr;
+                        nfdresult_t result = NFD_OpenDialog( "gltf", nullptr, &outPath );
+
+                        if (result == NFD_OKAY) {
+                            std::cout << "Selected file: " << outPath << std::endl;
+
+                            EventBus::Get().Dispatch(UICommandEvent(
+                                UICommand::AddMesh,
+                                {{"path", std::string(outPath)}},
+                                nullptr
+                            ));
+
+                            NFDi_Free(outPath);
+                        } else if (result == NFD_CANCEL) {
+                            std::cout << "User cancelled." << std::endl;
+                        } else {
+                            std::cout << "Error: " << NFD_GetError() << std::endl;
+                        }
+                    }
+                }
+            }
+
+            // Material Component
+        if (auto* material = m_Registry.try_get<ECS::PBRMaterial>(GetSelectedEntity())) {
+            if (ImGui::CollapsingHeader(ICON_LC_BRUSH " MATERIAL", ImGuiTreeNodeFlags_DefaultOpen)) {
+                ImGui::Text("Material Properties");
+
+                ImGui::ColorEdit3("Albedo Color", reinterpret_cast<float*>(&material->albedoColor));
+
+                if (material->albedoTexture) {
+                    ImGui::Text("Albedo Texture: ");
+                    ImGui::Image(reinterpret_cast<ImTextureID>(material->albedoTexture->GetDescriptorSet()), ImVec2(100, 100));  // Display the texture
+                } else {
+                    ImGui::Text("No Albedo Texture");
+                }
+                if (ImGui::Button("Change Albedo Texture")) {
+                    // Open the file dialog
+                    nfdchar_t* outPath = nullptr;
+                    if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
+                        std::string filepath = outPath;
+                        material->albedoTexture->MarkForDestruction();
+                        material->albedoTexturePath = filepath;
+                        material->dirty = true;
+                    }
+                    free(outPath);
+                }
+
+                // Display and edit the metallic factor
+                ImGui::SliderFloat("Metallic", &material->metallic, 0.0f, 1.0f);
+
+                // Display the metallic-roughness texture and allow changing it
+                if (material->metallicRoughnessTexture) {
+                    ImGui::Text("Metallic Roughness Texture: ");
+                    ImGui::Image(reinterpret_cast<ImTextureID>(material->metallicRoughnessTexture->GetDescriptorSet()), ImVec2(100, 100));
+                } else {
+                    ImGui::Text("No Metallic Roughness Texture");
+                }
+                if (ImGui::Button("Change Metallic Roughness Texture")) {
+                    // Open the file dialog
+                    nfdchar_t* outPath = nullptr;
+                    if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
+                        std::string filepath = outPath;
+                        material->metallicRoughnessTexture->MarkForDestruction();
+                        material->metallicRoughnessTexturePath = filepath;
+                        material->dirty = true;
+                    }
+                    free(outPath);  // Free the path memory
+                }
+
+                // Display and edit the roughness factor
+                ImGui::SliderFloat("Roughness", &material->roughness, 0.0f, 1.0f);
+
+                // Display the normal map and allow changing it
+                if (material->normalTexture) {
+                    ImGui::Text("Normal Texture: ");
+                    ImGui::Image(reinterpret_cast<ImTextureID>(material->normalTexture->GetDescriptorSet()), ImVec2(100, 100));
+                } else {
+                    ImGui::Text("No Normal Texture");
+                }
+
+                if (ImGui::Button("Change Normal Texture")) {
+                    // Open the file dialog
+                    nfdchar_t* outPath = nullptr;
+                    if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
+                        std::string filepath = outPath;
+                        material->normalTexture->MarkForDestruction();
+                        material->normalTexturePath = filepath;
+                        material->dirty = true;
+                    }
+                    free(outPath);  // Free the path memory
+                }
+
+                ImGui::SameLine();
+                ImGui::Checkbox("Invert Normal", reinterpret_cast<bool*>(&material->invertNormalMap));
+
+                // Display and edit the emission color
+                ImGui::ColorEdit3("Emission Color", reinterpret_cast<float*>(&material->emissionColor));
+
+                // Display the emissive texture and allow changing it
+                if (material->emissiveTexture) {
+                    ImGui::Text("Emissive Texture: ");
+                    ImGui::Image(reinterpret_cast<ImTextureID>(material->emissiveTexture->GetDescriptorSet()), ImVec2(100, 100));
+                } else {
+                    ImGui::Text("No Emissive Texture");
+                }
+                if (ImGui::Button("Change Emissive Texture")) {
+                    // Open the file dialog
+                    nfdchar_t* outPath = nullptr;
+                    if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
+                        std::string filepath = outPath;
+                        material->emissiveTexture->MarkForDestruction();
+                        material->emissiveTexturePath = filepath;
+                        material->dirty = true;
+                    }
+                    free(outPath);  // Free the path memory
+                }
+
+                // Display and edit the AO (ambient occlusion) factor
+                ImGui::SliderFloat("AO Intensity", &material->aoIntensity, 0.0f, 1.0f);
+
+                // Display the AO texture and allow changing it
+                if (material->aoTexture) {
+                    ImGui::Text("AO Texture: ");
+                    ImGui::Image(reinterpret_cast<ImTextureID>(material->aoTexture->GetDescriptorSet()), ImVec2(100, 100));
+                } else {
+                    ImGui::Text("No AO Texture");
+                }
+                if (ImGui::Button("Change AO Texture")) {
+                    // Open the file dialog
+                    nfdchar_t* outPath = nullptr;
+                    if (NFD_OpenDialog("png,jpg,tga", nullptr, &outPath) == NFD_OKAY) {
+                        std::string filepath = outPath;
+                        material->aoTexture->MarkForDestruction();
+                        material->aoTexturePath = filepath;
+                        material->dirty = true;
+                    }
+                    free(outPath);  // Free the path memory
+                }
+
+                // Display the emissive intensity slider
+                ImGui::SliderFloat("Emissive Intensity", &material->emissiveIntensity, 0.0f, 10.0f);
+            }
+        }
+
+
+            // Light Component
+            if (auto* light = m_Registry.try_get<ECS::Light>(GetSelectedEntity())) {
+                if (ImGui::CollapsingHeader(ICON_LC_SUN " LIGHT", ImGuiTreeNodeFlags_DefaultOpen)) {
+                    ImGui::Text("Light Type");
+                    ImGui::Combo("##LightType", reinterpret_cast<int*>(&light->type), "Directional\0Point\0Spot\0\0");
+
+                    ImGui::Text("Color");
+                    ImGui::ColorEdit3("##ColorPicker", reinterpret_cast<float*>(&light->color));
+
+                    ImGui::Text("Position");
+                    ImGui::DragFloat3("##Position", reinterpret_cast<float*>(&light->position), 0.1f);
+
+                    ImGui::Text("Intensity");
+                    ImGui::SliderFloat("##Intensity", &light->intensity, 0.0f, 10.0f);
+                }
+            }
+        }
+    }
+    ImGui::End();
 
     //Viewport
     //TODO: Refactor this, not really working as intended right now
@@ -1006,19 +882,19 @@ if (auto* material = m_Registry.try_get<ECS::PBRMaterial>(GetSelectedEntity())) 
         // Set the cursor position to the center
         ImGui::SetCursorPos(ImVec2(startX, startY));
 
-        if (ImGui::Button(ICON_FA_ARROWS)) {
+        if (ImGui::Button(ICON_LC_MOVE_3D)) {
             m_CurrentOperation = ImGuizmo::OPERATION::TRANSLATE;
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(startX + buttonSize.x + spacing);
 
-        if (ImGui::Button(ICON_FA_EXPAND)) {
+        if (ImGui::Button(ICON_LC_SCALE_3D)) {
             m_CurrentOperation = ImGuizmo::OPERATION::SCALE;
         }
         ImGui::SameLine();
         ImGui::SetCursorPosX(startX + (buttonSize.x + spacing) * 2);
 
-        if (ImGui::Button(ICON_FA_REPEAT)) {
+        if (ImGui::Button(ICON_LC_ROTATE_3D)) {
             m_CurrentOperation = ImGuizmo::OPERATION::ROTATE;
         }
 
@@ -1028,13 +904,13 @@ if (auto* material = m_Registry.try_get<ECS::PBRMaterial>(GetSelectedEntity())) 
 
         // Render scene to viewport
         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-        int newWidth = static_cast<int>(viewportSize.x);
-        int newHeight = static_cast<int>(viewportSize.y);
+        float newWidth = viewportSize.x;
+        float newHeight = viewportSize.y;
 
-        if (newWidth != lastViewportSize.x || newHeight != lastViewportSize.y) {
+        if (newWidth != m_LastViewportSize.x || newHeight != m_LastViewportSize.y) {
             m_ViewportResized = true;
             m_ViewportExtent = { static_cast<uint32_t>(viewportSize.x), static_cast<uint32_t>(viewportSize.y) };
-            lastViewportSize = viewportSize;
+            m_LastViewportSize = viewportSize;
         }
 
         auto textureId = reinterpret_cast<ImTextureID>(m_FinalImage);
@@ -1069,12 +945,13 @@ if (auto* material = m_Registry.try_get<ECS::PBRMaterial>(GetSelectedEntity())) 
                 }
             }
         }
-
-        ImGui::End();
     }
+    ImGui::End();
+
     ImGui::PopStyleVar();
 
     ImGui::End();
     ImGui::Render();
     ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
+    ImGui::EndFrame();
 }

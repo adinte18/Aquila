@@ -40,7 +40,7 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
     struct Face {
         int indices[6];
         glm::vec3 normal;
-        glm::vec3 tangent;  // Added tangent
+        glm::vec3 tangent;
     };
 
     Face faces[6] = {

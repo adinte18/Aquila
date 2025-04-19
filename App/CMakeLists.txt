@@ -24,6 +24,9 @@ set(IMGUI_SOURCES
 set(NFD_SOURCES
         ${EXTERNAL_DIR}/nativefiledialog/src/nfd_common.c
         ${EXTERNAL_DIR}/nativefiledialog/src/nfd_win.cpp
+        Include/Events/EventRegistry.h
+        Include/Events/EventBus.h
+        Include/lucide.h
         # For other platforms (Linux/macOS)
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_gtk.c  # For Linux
         # ${EXTERNAL_DIR}/nativefiledialog/src/nfd_cocoa.m # For macOS
@@ -51,6 +54,8 @@ add_dependencies(App validate_shaders)
 
 set(ICONS_PATH "${CMAKE_SOURCE_DIR}/Resources/Icons")
 add_compile_definitions(ICONS_PATH="${ICONS_PATH}")
+set(ASSET_PATH "${CMAKE_SOURCE_DIR}/Assets")
+add_compile_definitions(ASSET_PATH="${ASSET_PATH}")
 
 # Link against Core (assuming Core is another target in your project)
 target_link_libraries(App PRIVATE Core)

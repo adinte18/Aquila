@@ -13,11 +13,13 @@ set(VALIDATE_COMMANDS)
 set(SHADERS_PATH "${CMAKE_SOURCE_DIR}/Resources/Shaders")
 set(TEXTURES_PATH "${CMAKE_SOURCE_DIR}/Resources/Textures")
 set(ICONS_PATH "${CMAKE_SOURCE_DIR}/Resources/Icons")
+set(ASSET_PATH "${CMAKE_SOURCE_DIR}/Assets")
 
 target_compile_definitions(App PRIVATE 
     SHADERS_PATH="${SHADERS_PATH}" 
     TEXTURES_PATH="${TEXTURES_PATH}"
     ICONS_PATH="${ICONS_PATH}"
+    ASSET_PATH="${ASSET_PATH}"
 )
 
 foreach(SHADER_FILE ${SHADER_FILES})

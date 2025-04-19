@@ -8,6 +8,7 @@
 #include <Engine/OffscreenRenderer.h>
 #include <glm/glm.hpp>
 #include <chrono>
+#include <queue>
 
 #include "Engine/Camera.h"
 
@@ -50,7 +51,6 @@ namespace ECS {
         void Clear();
 
         [[nodiscard]] entt::registry& GetRegistry();
-        [[nodiscard]] Engine::Camera& GetCamera();
         [[nodiscard]] Engine::Camera& GetActiveCamera();
         [[nodiscard]] std::vector<Entity>& GetEntitesToDelete();
         void QueueForDestruction(entt::entity entity);
@@ -60,6 +60,7 @@ namespace ECS {
         Engine::Camera m_Camera;
         entt::registry m_Registry;
         std::vector<Entity> m_QueuedForDestruction{};
+        std::queue<entt::entity> recycledEntityIDs;
     };
 }
 
