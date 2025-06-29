@@ -19,7 +19,7 @@ VkImageView Engine::OnscreenRenderer::vk_GetCurrentImageView() const {
 
 VkCommandBuffer Engine::OnscreenRenderer::vk_BeginFrame()
 {
-    assert(!frameStarted && "Can't call vk_BeginFrame while already in progress");
+    AQUILA_CORE_ASSERT(!frameStarted && "Can't call vk_BeginFrame while already in progress");
     auto result = swapChain->vk_GetNextImage(&currentImageID);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -47,7 +47,7 @@ VkCommandBuffer Engine::OnscreenRenderer::vk_BeginFrame()
 
 void Engine::OnscreenRenderer::vk_EndFrame()
 {
-    assert(frameStarted && "Can't call vk_EndFrame while frame is not in progress");
+    AQUILA_CORE_ASSERT(frameStarted && "Can't call vk_EndFrame while frame is not in progress");
     auto commandBuffer = vk_GetCurrentCommandBuffer();
 
     if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
@@ -56,8 +56,8 @@ void Engine::OnscreenRenderer::vk_EndFrame()
 
     auto result = swapChain->vk_SubmitCommandBuffers(&commandBuffer, &currentImageID);
 
-    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.WindowResized()) {
-        window.vk_ResetResizedFlag();
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.IsWindowResized()) {
+        window.ResetResizedFlag();
         vk_RecreateSwapChain();
     }
 
@@ -77,9 +77,9 @@ VkExtent2D Engine::OnscreenRenderer::vk_GetSwapChainExtent() const
 
 void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
 {
-    assert(frameStarted
+    AQUILA_CORE_ASSERT(frameStarted
         && "Can't call vk_BeginSwapChainRenderPass if frame is not in progress");
-    assert(commandBuffer == vk_GetCurrentCommandBuffer()
+    AQUILA_CORE_ASSERT(commandBuffer == vk_GetCurrentCommandBuffer()
         && "Can't begin render pass on command buffer from a different frame");
 
     VkRenderPass pass =  swapChain->getRenderPass();
@@ -115,9 +115,9 @@ void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer comma
 
 void Engine::OnscreenRenderer::vk_EndSwapChainRenderPass(VkCommandBuffer commandBuffer)
 {
-    assert(frameStarted
+    AQUILA_CORE_ASSERT(frameStarted
     && "Can't call vk_EndSwapChainRenderPass if frame is not in progress");
-    assert(commandBuffer == vk_GetCurrentCommandBuffer()
+    AQUILA_CORE_ASSERT(commandBuffer == vk_GetCurrentCommandBuffer()
         && "Can't end render pass on command buffer from a different frame");
     vkCmdEndRenderPass(commandBuffer);
 }
@@ -149,9 +149,9 @@ void Engine::OnscreenRenderer::vk_FreeCommandBuffers()
 
 void Engine::OnscreenRenderer::vk_RecreateSwapChain() {
     std::cout << "Trying to recreate swap chain" << std::endl;
-    auto extent = window.getExtent();
+    auto extent = window.GetExtent();
     while (extent.width == 0 || extent.height == 0) {
-        extent = window.getExtent();
+        extent = window.GetExtent();
         glfwWaitEvents();
     }
 
@@ -161,7 +161,7 @@ void Engine::OnscreenRenderer::vk_RecreateSwapChain() {
         swapChain = std::make_unique<Swapchain>(device, extent);
     }
     else {
-        std::shared_ptr<Swapchain> oldSC = std::move(swapChain);
+        Ref<Swapchain> oldSC = std::move(swapChain);
         swapChain = std::make_unique<Swapchain>(device, extent, oldSC);
 
         if(!oldSC->vk_CompareSCFormats(*swapChain)) {

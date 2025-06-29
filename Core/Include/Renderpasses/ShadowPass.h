@@ -10,8 +10,8 @@
 namespace Engine{
     class ShadowPass : public Renderpass {
     public:
-        ShadowPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        ShadowPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~ShadowPass() override {
             if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.vk_GetDevice(), m_Framebuffer, nullptr);
@@ -22,8 +22,8 @@ namespace Engine{
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<ShadowPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<ShadowPass>(device, extent);
+        static Ref<ShadowPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<ShadowPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

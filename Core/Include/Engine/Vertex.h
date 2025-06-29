@@ -26,7 +26,7 @@ struct Vertex {
         && tangent == other.tangent;
     }
 
-    static std::vector<VkVertexInputBindingDescription> getBindingDescriptions() {
+    static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions() {
         std::vector<VkVertexInputBindingDescription> bindingDescriptions(1);
         bindingDescriptions[0].binding = 0;
         bindingDescriptions[0].stride = sizeof(Vertex);
@@ -34,7 +34,7 @@ struct Vertex {
         return bindingDescriptions;
     }
 
-    static std::vector<VkVertexInputAttributeDescription> getAttributeDescriptions() {
+    static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
         std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
 
         attributeDescriptions.push_back({0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos)});

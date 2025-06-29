@@ -8,22 +8,19 @@ namespace Engine {
 
     RenderManager::RenderManager(Device& device, Window& window)
         : m_Device(device), m_Window(window) {
-    }
-
-    void RenderManager::Initialize() {
         m_OnScreenRenderer = std::make_unique<OnscreenRenderer>(m_Window, m_Device);
         m_OffScreenRenderer = std::make_unique<OffscreenRenderer>(m_Device);
     }
 
-    std::unique_ptr<OnscreenRenderer>& RenderManager::GetOnScreenRenderer() {
+    Unique<OnscreenRenderer>& RenderManager::GetOnScreenRenderer() {
         return m_OnScreenRenderer;
     }
 
-    std::unique_ptr<OffscreenRenderer>& RenderManager::GetOffscreenRenderer() {
+    Unique<OffscreenRenderer>& RenderManager::GetOffscreenRenderer() {
         return m_OffScreenRenderer;
     }
 
-    void RenderManager::UpdateRenderPasses() {
-
+    VkRenderPass RenderManager::GetImGuiRenderPass() const{
+        return m_OnScreenRenderer->vk_GetCurrentRenderPass();
     }
 } // Engine

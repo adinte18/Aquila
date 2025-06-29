@@ -1,13 +1,7 @@
 #ifndef VK_DESCRIPTOR_H
 #define VK_DESCRIPTOR_H
 
-#include "Common.h"
-
 #include "Engine/Device.h"
-
-#include <memory>
-#include <unordered_map>
-#include <vector>
 
 namespace Engine
 {
@@ -22,7 +16,7 @@ namespace Engine
           VkDescriptorType descriptorType,
           VkShaderStageFlags stageFlags,
           uint32_t count = 1);
-      std::unique_ptr<DescriptorSetLayout> build() const;
+      Unique<DescriptorSetLayout> build() const;
 
      private:
       Device &device;
@@ -35,7 +29,7 @@ namespace Engine
     DescriptorSetLayout(const DescriptorSetLayout &) = delete;
     DescriptorSetLayout &operator=(const DescriptorSetLayout &) = delete;
 
-    [[nodiscard]] VkDescriptorSetLayout getDescriptorSetLayout() const { return descriptorSetLayout; }
+    [[nodiscard]] VkDescriptorSetLayout GetDescriptorSetLayout() const { return descriptorSetLayout; }
 
    private:
     Device &device;
@@ -54,7 +48,7 @@ namespace Engine
       Builder &addPoolSize(VkDescriptorType descriptorType, uint32_t count);
       Builder &setPoolFlags(VkDescriptorPoolCreateFlags flags);
       Builder &setMaxSets(uint32_t count);
-      std::unique_ptr<DescriptorPool> build() const;
+      Unique<DescriptorPool> build() const;
 
      private:
       Device &device;

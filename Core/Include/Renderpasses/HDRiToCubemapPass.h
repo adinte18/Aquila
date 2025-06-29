@@ -5,14 +5,15 @@
 #ifndef HDRITOCUBEMAPPASS_H
 #define HDRITOCUBEMAPPASS_H
 
+#include "Engine/Descriptor.h"
 #include "Engine/Renderpass.h"
 
 
 namespace Engine {
     class HDRiToCubemapPass : public Renderpass {
     public:
-        HDRiToCubemapPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        HDRiToCubemapPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~HDRiToCubemapPass() override {
             for (const auto& framebuffer : m_Framebuffers) {
@@ -33,8 +34,8 @@ namespace Engine {
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<HDRiToCubemapPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<HDRiToCubemapPass>(device, extent);
+        static Ref<HDRiToCubemapPass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<HDRiToCubemapPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

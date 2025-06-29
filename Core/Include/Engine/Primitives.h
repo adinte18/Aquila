@@ -5,10 +5,9 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-#include <stdexcept>
 #include <glm/glm.hpp>
 #include <vector>
-#include "Common.h"
+#include "AquilaCore.h"
 #include "Vertex.h"
 
 namespace Engine {

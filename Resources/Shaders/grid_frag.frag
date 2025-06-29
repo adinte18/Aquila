@@ -22,7 +22,6 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
     uboLight light;
     mat4 lightView;
     mat4 lightProjection;
-    vec3 cameraPos;
 } ubo;
 
 const float gGridSize = 100.0;
@@ -48,6 +47,8 @@ float max2(vec2 v) {
 }
 
 void main() {
+    vec3 cameraPos = ubo.inverseView[3].xyz;
+
     vec2 dvx = vec2(dFdx(fragPosWorld.x), dFdy(fragPosWorld.x));
     vec2 dvy = vec2(dFdx(fragPosWorld.z), dFdy(fragPosWorld.z));
 
@@ -90,7 +91,7 @@ void main() {
         }
     }
 
-    float distance = length(fragPosWorld.xz - ubo.cameraPos.xz);
+    float distance = length(fragPosWorld.xz - cameraPos.xz);
     float OpacityFalloff = 1.0 - satf(distance / gGridSize);
     Color.a *= OpacityFalloff;
 

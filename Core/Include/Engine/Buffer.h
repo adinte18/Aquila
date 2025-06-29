@@ -5,7 +5,7 @@
 
 #include <cstdint>
 
-#include "Common.h"
+#include "AquilaCore.h"
 #include "Engine/Device.h"
 
 namespace Engine

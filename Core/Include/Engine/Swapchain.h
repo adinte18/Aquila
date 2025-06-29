@@ -17,7 +17,7 @@ namespace Engine{
         static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
         Swapchain(Device &device, VkExtent2D extent);
-        Swapchain(Device &device, VkExtent2D extent, std::shared_ptr<Swapchain> oldSC);
+        Swapchain(Device &device, VkExtent2D extent, Ref<Swapchain> oldSC);
 
         ~Swapchain();
 
@@ -66,7 +66,7 @@ namespace Engine{
         VkExtent2D windowExtent;
 
         VkSwapchainKHR swapChain;
-        std::shared_ptr<Swapchain> oldSC;
+        Ref<Swapchain> oldSC;
 
         std::vector<VkSemaphore> imageAvailableSemaphores;
         std::vector<VkSemaphore> renderFinishedSemaphores;

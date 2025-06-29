@@ -9,23 +9,23 @@
 #include <ECS/SceneContext.h>
 
 
-namespace RenderingSystem {
+namespace Engine {
     class SceneRenderingSystem {
     public:
-        SceneRenderingSystem(Engine::Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
+        SceneRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
         ~SceneRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
 
         SceneRenderingSystem(const SceneRenderingSystem&) = delete;
         SceneRenderingSystem& operator=(const SceneRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, ECS::SceneContext& scene);
+        void Render(VkCommandBuffer commandBuffer, SceneContext& scene);
         void RecreatePipeline(VkRenderPass renderPass);
 
 
     private:
-        Engine::Device& device;
+        Device& device;
 
-        std::unique_ptr<Engine::Pipeline> pipeline;
+        Unique<Pipeline> pipeline;
         VkPipelineLayout pipelineLayout;
 
 

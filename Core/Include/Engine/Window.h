@@ -13,31 +13,34 @@
 namespace Engine{
     class Window {
     private:
-        static void vk_FBResizedCallback(GLFWwindow *window, int width, int height);
+        static void FramebufferResizedCallback(GLFWwindow *window, int width, int height);
 
-        int width;
-        int height;
-        bool framebufferResized = false;
+        int m_Width;
+        int m_Height;
+        bool m_FramebufferResized = false;
 
-        std::string windowName;
-        GLFWwindow *window;
+        std::string m_WindowName;
+        GLFWwindow *m_Window;
 
     public:
-        Window(int width, int height, std::string title);
-
+        Window(int width, int height, const std::string& title);
         ~Window();
 
-        [[nodiscard]] bool WindowResized() const { return framebufferResized; }
-        void vk_ResetResizedFlag() { framebufferResized = false; }
-
+        [[nodiscard]] bool IsWindowResized() const { return m_FramebufferResized; }
         [[nodiscard]] bool ShouldClose() const;
 
-        void vk_CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const;
-        [[nodiscard]] VkExtent2D getExtent() const {
-            return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+        void ResetResizedFlag() { m_FramebufferResized = false; }
+        void CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const;
+
+        [[nodiscard]] VkExtent2D GetExtent() const {
+            return {static_cast<uint32_t>(m_Width), static_cast<uint32_t>(m_Height)};
         }
 
-        [[nodiscard]] GLFWwindow *glfw_GetWindow() const {return window;}
+        void SetInputMode(int inputMode) const;
+        void GetCursorPosition(double& xpos, double& ypos) const;
+        void SetCursorPosition(double xpos, double ypos) const;
+
+        [[nodiscard]] GLFWwindow *GetWindow() const {return m_Window;}
 
         void PollEvents();
 

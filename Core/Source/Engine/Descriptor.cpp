@@ -3,8 +3,7 @@
 //
 
 #include "Engine/Descriptor.h"
-
-#include <cassert>
+#include "Asserts.h"
 #include <stdexcept>
 
 
@@ -17,7 +16,7 @@ DescriptorSetLayout::Builder &DescriptorSetLayout::Builder::addBinding(
     VkDescriptorType descriptorType,
     VkShaderStageFlags stageFlags,
     uint32_t count) {
-  assert(bindings.count(binding) == 0 && "Binding already in use");
+  AQUILA_CORE_ASSERT(bindings.count(binding) == 0 && "Binding already in use");
   VkDescriptorSetLayoutBinding layoutBinding{};
   layoutBinding.binding = binding;
   layoutBinding.descriptorType = descriptorType;
@@ -27,7 +26,7 @@ DescriptorSetLayout::Builder &DescriptorSetLayout::Builder::addBinding(
   return *this;
 }
 
-std::unique_ptr<DescriptorSetLayout> DescriptorSetLayout::Builder::build() const {
+Unique<DescriptorSetLayout> DescriptorSetLayout::Builder::build() const {
   return std::make_unique<DescriptorSetLayout>(device, bindings);
 }
 
@@ -77,7 +76,7 @@ DescriptorPool::Builder &DescriptorPool::Builder::setMaxSets(uint32_t count) {
   return *this;
 }
 
-std::unique_ptr<DescriptorPool> DescriptorPool::Builder::build() const {
+Unique<DescriptorPool> DescriptorPool::Builder::build() const {
   return std::make_unique<DescriptorPool>(device, maxSets, poolFlags, poolSizes);
 }
 
@@ -141,11 +140,11 @@ DescriptorWriter::DescriptorWriter(DescriptorSetLayout &setLayout, DescriptorPoo
 
 DescriptorWriter &DescriptorWriter::writeBuffer(
     uint32_t binding, VkDescriptorBufferInfo *bufferInfo) {
-  assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
+  AQUILA_CORE_ASSERT(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
   auto &bindingDescription = setLayout.bindings[binding];
 
-  assert(
+  AQUILA_CORE_ASSERT(
       bindingDescription.descriptorCount == 1 &&
       "Binding single descriptor info, but binding expects multiple");
 
@@ -162,11 +161,11 @@ DescriptorWriter &DescriptorWriter::writeBuffer(
 
 DescriptorWriter &DescriptorWriter::writeImage(
     uint32_t binding, VkDescriptorImageInfo *imageInfo) {
-  assert(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
+  AQUILA_CORE_ASSERT(setLayout.bindings.count(binding) == 1 && "Layout does not contain specified binding");
 
   auto &bindingDescription = setLayout.bindings[binding];
 
-  assert(
+  AQUILA_CORE_ASSERT(
       bindingDescription.descriptorCount == 1 &&
       "Binding single descriptor info, but binding expects multiple");
 
@@ -182,7 +181,7 @@ DescriptorWriter &DescriptorWriter::writeImage(
 }
 
 bool DescriptorWriter::build(VkDescriptorSet &set) {
-  bool success = pool.allocateDescriptor(setLayout.getDescriptorSetLayout(), set);
+  bool success = pool.allocateDescriptor(setLayout.GetDescriptorSetLayout(), set);
   if (!success) {
     return false;
   }

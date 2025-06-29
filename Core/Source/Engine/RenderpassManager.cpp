@@ -139,7 +139,7 @@ namespace Engine {
         }
     }
 
-    std::unique_ptr<DescriptorPool>& RenderpassManager::GetDescriptorPool(RenderPassType type) {
+    Unique<DescriptorPool>& RenderpassManager::GetDescriptorPool(RenderPassType type) {
         auto it = descriptorPools.find(type);
         if (it != descriptorPools.end()) {
             return it->second;
@@ -148,7 +148,7 @@ namespace Engine {
         }
     }
 
-    std::unique_ptr<DescriptorSetLayout>& RenderpassManager::GetDescriptorLayout(RenderPassType type) {
+    Unique<DescriptorSetLayout>& RenderpassManager::GetDescriptorLayout(RenderPassType type) {
         auto it = descriptorSetLayouts.find(type);
         if (it != descriptorSetLayouts.end()) {
             return it->second;

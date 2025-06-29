@@ -10,10 +10,10 @@
 #include <ECS/SceneContext.h>
 
 
-namespace RenderingSystem {
+namespace Engine {
     class CubemapRenderingSystem {
     public:
-        CubemapRenderingSystem(Engine::Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
+        CubemapRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
         ~CubemapRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
 
         CubemapRenderingSystem(const CubemapRenderingSystem&) = delete;
@@ -24,11 +24,11 @@ namespace RenderingSystem {
 
 
     private:
-        Engine::Device& device;
+        Device& device;
 
-        std::unique_ptr<Engine::Pipeline> pipeline;
+        Unique<Pipeline> pipeline;
         VkPipelineLayout pipelineLayout;
-        std::shared_ptr<Engine::Model3D> model;
+        Ref<Mesh> model;
 
 
         void CreatePipeline(VkRenderPass renderPass);

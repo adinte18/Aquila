@@ -20,54 +20,54 @@ std::vector<char> Shader::ReadFile(const std::string& filename) {
 
     return buffer;
 }
-
-std::vector<std::uint32_t> Shader::CompileShaderGlslang(EShLanguage shaderType, const std::string& filename) {
-    glslang::InitializeProcess();
-
-    glslang::TShader shader(shaderType);
-
-    const std::vector<char>& shaderCode = Shader::ReadFile(filename);
-    const char* str = shaderCode.data();
-    shader.setStrings(&str, 1);
-
-    shader.setEnvInput(glslang::EShSource::EShSourceGlsl,
-                       shaderType,
-                       glslang::EShClient::EShClientVulkan,
-                       glslang::EshTargetClientVersion::EShTargetVulkan_1_4);
-
-    shader.setEnvClient(glslang::EShClient::EShClientVulkan,
-                        glslang::EshTargetClientVersion::EShTargetVulkan_1_4);
-
-    shader.setEnvTarget(glslang::EShTargetLanguage::EshTargetSpv,
-                        glslang::EShTargetLanguageVersion::EShTargetSpv_1_0);
-
-    auto includer = glslang::TShader::ForbidIncluder{};
-    const TBuiltInResource* resources = GetDefaultResources();
-
-    glslang::TProgram program;
-    program.addShader(&shader);
-
-    if (!shader.parse(resources,
-                      100,
-                      false,
-                      EShMsgDefault))
-    {
-        std::cerr << "Shader preprocessing failed: " << shader.getInfoLog() << std::endl;
-        glslang::FinalizeProcess();
-        throw std::runtime_error("Shader preprocessing failed.");
-    }
-
-    if (!program.link(EShMessages::EShMsgDefault)) {
-        throw std::runtime_error("Failed to link shader program.");
-    }
-
-    std::vector<std::uint32_t> spirv;
-    glslang::GlslangToSpv(*program.getIntermediate(shaderType), spirv);
-    glslang::FinalizeProcess();
-
-    return spirv;
-}
-
+//
+// std::vector<std::uint32_t> Shader::CompileShaderGlslang(EShLanguage shaderType, const std::string& filename) {
+//     glslang::InitializeProcess();
+//
+//     glslang::TShader shader(shaderType);
+//
+//     const std::vector<char>& shaderCode = Shader::ReadFile(filename);
+//     const char* str = shaderCode.data();
+//     shader.setStrings(&str, 1);
+//
+//     shader.setEnvInput(glslang::EShSource::EShSourceGlsl,
+//                        shaderType,
+//                        glslang::EShClient::EShClientVulkan,
+//                        glslang::EshTargetClientVersion::EShTargetVulkan_1_4);
+//
+//     shader.setEnvClient(glslang::EShClient::EShClientVulkan,
+//                         glslang::EshTargetClientVersion::EShTargetVulkan_1_4);
+//
+//     shader.setEnvTarget(glslang::EShTargetLanguage::EshTargetSpv,
+//                         glslang::EShTargetLanguageVersion::EShTargetSpv_1_0);
+//
+//     auto includer = glslang::TShader::ForbidIncluder{};
+//     const TBuiltInResource* resources = GetDefaultResources();
+//
+//     glslang::TProgram program;
+//     program.addShader(&shader);
+//
+//     if (!shader.parse(resources,
+//                       100,
+//                       false,
+//                       EShMsgDefault))
+//     {
+//         std::cerr << "Shader preprocessing failed: " << shader.getInfoLog() << std::endl;
+//         glslang::FinalizeProcess();
+//         throw std::runtime_error("Shader preprocessing failed.");
+//     }
+//
+//     if (!program.link(EShMessages::EShMsgDefault)) {
+//         throw std::runtime_error("Failed to link shader program.");
+//     }
+//
+//     std::vector<std::uint32_t> spirv;
+//     glslang::GlslangToSpv(*program.getIntermediate(shaderType), spirv);
+//     glslang::FinalizeProcess();
+//
+//     return spirv;
+// }
+//
 
 VkShaderModule Shader::CreateShaderModule(const std::vector<uint32_t>& spirv, VkDevice device) {
     VkShaderModuleCreateInfo createInfo{};

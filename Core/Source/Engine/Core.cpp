@@ -1,13 +1,23 @@
 #include "Engine/Core.h"
 
-#include <iostream>
-
 namespace Engine {
+    
+    void Core::OnStart(){
+        // Initialize window
+        m_Window = std::make_unique<Engine::Window>(800, 600, "Aquila Editor");
+        m_Device = std::make_unique<Engine::Device>(*m_Window);
 
-	void PrintHelloWorld()
-	{
-		std::cout << "Hello World!\n";
-		std::cin.get();
-	}
+        AQUILA_OUT("[CORE] Initialized");
+    }
 
+    void Core::OnUpdate(){
+        m_Clock->Tick();
+        m_DeltaTime = m_Clock->GetDeltaTime();
+
+        m_Window->PollEvents();
+    }
+
+    void Core::OnEnd(){
+        m_Window->CleanUp();
+    }
 }

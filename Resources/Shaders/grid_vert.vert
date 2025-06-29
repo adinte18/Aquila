@@ -26,7 +26,6 @@ layout(std140, set = 0, binding = 0) uniform UniformData {
     uboLight light;
     mat4 lightView;
     mat4 lightProjection;
-    vec3 cameraPosition;
 } ubo;
 
 layout(push_constant) uniform Push {
@@ -38,7 +37,7 @@ void main() {
     // Compute world position normally
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
 
-    positionWorld.xz += ubo.cameraPosition.xz;
+    positionWorld.xz += ubo.inverseView[3].xz;
 
     // Transform into clip space
     gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;

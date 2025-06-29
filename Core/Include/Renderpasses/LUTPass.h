@@ -7,8 +7,8 @@ namespace Engine {
 
     class LUTPass : public Renderpass {
     public:
-        LUTPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        LUTPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~LUTPass() override {
             if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.vk_GetDevice(), m_Framebuffer, nullptr);
@@ -19,8 +19,8 @@ namespace Engine {
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<LUTPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<LUTPass>(device, extent);
+        static Ref<LUTPass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<LUTPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

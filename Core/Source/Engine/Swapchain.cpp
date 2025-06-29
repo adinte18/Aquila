@@ -204,7 +204,7 @@ Engine::Swapchain::Swapchain(Device &device, VkExtent2D extent)
     SwapchainInit();
 }
 
-Engine::Swapchain::Swapchain(Device &device, VkExtent2D extent, std::shared_ptr<Swapchain> previous)
+Engine::Swapchain::Swapchain(Device &device, VkExtent2D extent, Ref<Swapchain> previous)
     : device{device}, windowExtent{extent}, oldSC{std::move(previous)} {
     SwapchainInit();
 

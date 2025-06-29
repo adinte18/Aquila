@@ -10,8 +10,8 @@
 namespace Engine {
     class GeometryPass : public Renderpass {
     public:
-        GeometryPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        GeometryPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~GeometryPass() override {
             if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.vk_GetDevice(), m_Framebuffer, nullptr);
@@ -22,8 +22,8 @@ namespace Engine {
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<GeometryPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<GeometryPass>(device, extent);
+        static Ref<GeometryPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<GeometryPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

@@ -1,8 +1,0 @@
-"C:\Programming\CLion 2024.2.2\bin\cmake\win\x64\bin\cmake.exe" -DCMAKE_BUILD_TYPE=Debug -G "NMake Makefiles" -S C:\Programming\Aquila -B C:\Programming\Aquila\cmake-build-debug-visual-studio
--- Including Win32 support
--- Could NOT find Doxygen (missing: DOXYGEN_EXECUTABLE) 
--- Documentation generation requires Doxygen 1.9.8 or later
--- Building in Debug mode with DEBUG
--- Configuring done (0.1s)
--- Generating done (0.1s)
--- Build files have been written to: C:/Programming/Aquila/cmake-build-debug-visual-studio

@@ -101,13 +101,20 @@ float calculateShadow(vec4 fragPosLightSpace) {
 }
 
 void main() {
-    vec3 localNormal = texture(normalMap, fragTexCoord).xyz * 2.0 - 1.0;
+    vec3 texNormal = texture(normalMap, fragTexCoord).xyz;
+
+    // dummy normal = 0.5, 0.5, 1.0, 1.0
+    bool isDummyNormal = all(lessThan(abs(texNormal - vec3(0.5, 0.5, 1.0)), vec3(0.01)));
+
+    vec3 localNormal = isDummyNormal
+    ? normalize(fragNormalWorld)                  // Use geometry normal
+    : normalize(TBN * (texNormal * 2.0 - 1.0));   // Convert and transform from tangent space
 
     if (material.invertNormalMap == 1) {
         localNormal = -localNormal;
     }
 
-    vec3 N = normalize(TBN * localNormal);
+    vec3 N = normalize(localNormal);
     vec3 L = normalize(-ubo.light.direction);
     vec3 V = normalize(vec3(ubo.inverseView[3]) - fragPosWorld);
     vec3 H = normalize(V + L);

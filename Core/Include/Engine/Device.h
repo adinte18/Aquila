@@ -1,7 +1,7 @@
 #ifndef VK_APP_Device_H
 #define VK_APP_Device_H
 
-#include "Common.h"
+#include "AquilaCore.h"
 
 #include "Engine/Window.h"
 

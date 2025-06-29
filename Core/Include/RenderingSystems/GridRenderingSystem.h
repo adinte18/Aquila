@@ -5,30 +5,30 @@
 #ifndef GRIDRENDERINGSYSTEM_H
 #define GRIDRENDERINGSYSTEM_H
 
-#include <Engine/Model.h>
+#include "Engine/Mesh.h"
 
 #include "Engine/Device.h"
 #include "Engine/Pipeline.h"
-#include "SceneContext.h"
+#include "ECS/SceneContext.h"
 
 
-namespace RenderingSystem {
+namespace Engine {
     class GridRenderingSystem {
     public:
-        GridRenderingSystem(Engine::Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
+        GridRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
         ~GridRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
 
         GridRenderingSystem(const GridRenderingSystem&) = delete;
         GridRenderingSystem& operator=(const GridRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, ECS::SceneContext& scene) const;
+        void Render(VkCommandBuffer commandBuffer, SceneContext& scene) const;
         void RecreatePipeline(VkRenderPass renderPass);
 
     private:
-        Engine::Device& device;
-        std::shared_ptr<Engine::Model3D> model = Engine::Model3D::create(device);
+        Device& device;
+        // Ref<Mesh> model = Mesh::create(device);
 
-        std::unique_ptr<Engine::Pipeline> pipeline;
+        Unique<Pipeline> pipeline;
         VkPipelineLayout pipelineLayout;
 
 

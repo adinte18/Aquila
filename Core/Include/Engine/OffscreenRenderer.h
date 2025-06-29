@@ -5,11 +5,12 @@
 #ifndef OFFSCREENRENDERER_H
 #define OFFSCREENRENDERER_H
 
-#include <array>
+#include "Engine/Device.h"
+#include "Engine/RenderpassManager.h"
+#include "Scene/Scene.h"
 
-#include <Engine/Device.h>
-#include <Engine/RenderpassManager.h>
-
+#include "Asserts.h"
+#include "Descriptor.h"
 #include "Renderpasses/CompositePass.h"
 #include "Renderpasses/GeometryPass.h"
 #include "Renderpasses/HDRiToCubemapPass.h"
@@ -17,6 +18,8 @@
 #include "Renderpasses/IrradianceSamplingPass.h"
 #include "Renderpasses/LUTPass.h"
 #include "Renderpasses/ShadowPass.h"
+#include "Renderpasses/PreethamSkyPass.h"
+
 
 template<class>
 inline constexpr bool always_false = false;
@@ -33,22 +36,28 @@ namespace Engine {
 
         void Initialize(uint32_t width, uint32_t height);
         void Resize(VkExtent2D newExtent);
+        void InvalidatePasses();
 
         void TransitionImages(VkCommandBuffer commandBuffer, RenderPassType src, RenderPassType dst);
-
-        void BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type);
-        void BeginRenderPass(VkCommandBuffer commandBuffer, RenderPassType type, int cubemapFace);
-        void EndRenderPass(VkCommandBuffer commandBuffer);
 
         VkCommandBuffer BeginFrame();
         void EndFrame();
 
+        void PrepareSceneData(Ref<AquilaScene>& scene);
+        void Render(VkCommandBuffer cmd, Ref<AquilaScene>& scene);
+        void SendDescriptorsToGPU();
+
         [[nodiscard]] float GetAspectRatio() const { return static_cast<float>(m_Extent.width) / static_cast<float>(m_Extent.height); }
-        [[nodiscard]] VkDescriptorImageInfo GetImageInfo(RenderPassType type, VkImageLayout layout) const;
-        [[nodiscard]] VkRenderPass GetRenderPass(RenderPassType type) const { return m_RenderpassManager.GetRenderPass(type); }
+        [[nodiscard]] DescriptorSetLayout& GetSharedDescriptorSetLayout() const { return *m_SharedDescriptorSetLayout; }
+        [[nodiscard]] bool Resized() const {return m_Resized;}
 
         template <typename T>
-        [[nodiscard]] std::shared_ptr<T> GetPassObject() const {
+        auto GetImageInfoForPass(VkImageLayout layout) {
+            return GetPassObject<T>()->GetImageInfo(layout);
+        }
+
+        template <typename T>
+        [[nodiscard]] Ref<T> GetPassObject() const {
             if constexpr (std::is_same_v<T, HDRiToCubemapPass>) {
                 return m_HdriPass;
             } else if constexpr (std::is_same_v<T, GeometryPass>) {
@@ -63,14 +72,16 @@ namespace Engine {
                 return m_HDRPrefilterPass;
             } else if constexpr (std::is_same_v<T, LUTPass>) {
                 return m_BRDFLutPass;
+            } else if constexpr (std::is_same_v<T, PreethamSkyPass>) {
+                return m_PreethamSkyPass;
             }
             else {
-                static_assert(always_false<T>, "Unsupported render pass type.");
+                AQUILA_STATIC_ASSERT(always_false<T>, "Unsupported render pass type.");
                 return nullptr;
             }
         }
         template <typename T>
-        [[nodiscard]] std::unique_ptr<DescriptorSetLayout>& GetPassLayout() const {
+        [[nodiscard]] Ref<DescriptorSetLayout>& GetPassLayout() const {
             if constexpr (std::is_same_v<T, HDRiToCubemapPass>) {
                 return m_HdriPass->GetDescriptorSetLayout();
             } else if constexpr (std::is_same_v<T, GeometryPass>) {
@@ -85,18 +96,21 @@ namespace Engine {
                 return m_BRDFLutPass->GetDescriptorSetLayout();
             } else if constexpr (std::is_same_v<T, HDRPrefilterPass>) {
                 return m_HDRPrefilterPass->GetDescriptorSetLayout();
-            } else {
-                static_assert(always_false<T>, "Unsupported render pass type.");
+            } else if constexpr (std::is_same_v<T, PreethamSkyPass>) {
+                return m_PreethamSkyPass->GetDescriptorSetLayout();
+            }
+            else {
+                AQUILA_STATIC_ASSERT(always_false<T>, "Unsupported render pass type.");
             }
         }
 
         template<typename T>
-        void BeginRenderPass(VkCommandBuffer cmd, const std::shared_ptr<T>& pass, int cubemapFace = -1, uint32_t mipExtent = UINT32_MAX) {
+        void BeginRenderPass(VkCommandBuffer cmd, const Ref<T>& pass, int cubemapFace = -1, uint32_t mipExtent = UINT32_MAX) {
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = pass->GetRenderPass();
 
-            if constexpr (std::is_same_v<T, HDRiToCubemapPass> || std::is_same_v<T, IrradianceSamplingPass> || std::is_same_v<T, HDRPrefilterPass>) {
+            if constexpr (std::is_same_v<T, HDRiToCubemapPass> || std::is_same_v<T, IrradianceSamplingPass> || std::is_same_v<T, HDRPrefilterPass> || std::is_same_v<T, PreethamSkyPass>) {
                 renderPassInfo.framebuffer = pass->GetFramebuffer(cubemapFace);
             } else {
                 renderPassInfo.framebuffer = pass->GetFramebuffer();
@@ -138,24 +152,28 @@ namespace Engine {
             vkCmdSetViewport(cmd, 0, 1, &viewport);
             vkCmdSetScissor(cmd, 0, 1, &scissor);
         }
+        void EndRenderPass(VkCommandBuffer commandBuffer);
 
-
-        [[nodiscard]] VkDescriptorSet& GetRenderPassDescriptorSet(RenderPassType type) {return m_RenderpassManager.GetDescriptorSet(type); }
-        [[nodiscard]] std::unique_ptr<DescriptorPool>& GetRenderPassDescriptorPool(RenderPassType type) {return m_RenderpassManager.GetDescriptorPool(type); }
-        [[nodiscard]] std::unique_ptr<DescriptorSetLayout>& GetRenderPassDescriptorLayout(RenderPassType type) {return m_RenderpassManager.GetDescriptorLayout(type); }
-    private:
+        private:
         Device& m_Device;
         VkExtent2D m_Extent{};
         RenderpassManager m_RenderpassManager;
         std::vector<VkCommandBuffer> m_CommandBuffers;
 
-        std::shared_ptr<HDRiToCubemapPass> m_HdriPass;
-        std::shared_ptr<GeometryPass> m_GeometryPass;
-        std::shared_ptr<IrradianceSamplingPass> m_IrradianceSamplingPass;
-        std::shared_ptr<ShadowPass> m_ShadowPass;
-        std::shared_ptr<CompositePass> m_CompositePass;
-        std::shared_ptr<HDRPrefilterPass> m_HDRPrefilterPass;
-        std::shared_ptr<LUTPass> m_BRDFLutPass;
+        bool m_Resized{false};
+
+        Ref<HDRiToCubemapPass> m_HdriPass;
+        Ref<GeometryPass> m_GeometryPass;
+        Ref<IrradianceSamplingPass> m_IrradianceSamplingPass;
+        Ref<ShadowPass> m_ShadowPass;
+        Ref<CompositePass> m_CompositePass;
+        Ref<HDRPrefilterPass> m_HDRPrefilterPass;
+        Ref<LUTPass> m_BRDFLutPass;
+        Ref<PreethamSkyPass> m_PreethamSkyPass;
+
+        Ref<Engine::DescriptorSetLayout> m_SharedDescriptorSetLayout{};
+        bool m_HDRUpdated{false};
+
 
         uint32_t m_CurrentImageID{0};
         bool m_FrameStarted{false};

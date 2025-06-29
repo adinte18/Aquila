@@ -1,8 +1,14 @@
 # Directories
 .vs/
+.vscode/
+.cache/
+.idea/
 Binaries/
-cmake-build-debug-visual-studio
-Resources/Models/Porsche
+cmake-build-debug-visual-studio/
+build/
+Resources/Models/
+Resources/EnvMaps/
+Assets/
 
 # Files
 *.vcxproj

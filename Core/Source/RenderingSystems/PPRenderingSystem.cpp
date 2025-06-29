@@ -1,55 +1,59 @@
 #include <utility>
 #include "RenderingSystems/PPRenderingSystem.h"
-#include "Components.h"
+#include "ECS/Components/Components.h"
 
-RenderingSystem::PPRenderingSystem::PPRenderingSystem(Engine::Device &device, VkRenderPass renderPass,
-                                                            VkDescriptorSetLayout layout): device(device) {
-    CreatePipelineLayout(layout);
-    CreatePipeline(renderPass);
-}
+namespace Engine {
 
-void RenderingSystem::PPRenderingSystem::Render(VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet) {
-    pipeline->bind(commandBuffer);
-
-    if (descriptorSet == VK_NULL_HANDLE) {
-        throw std::runtime_error("Post-processing descriptor set is NULL!");
+    PPRenderingSystem::PPRenderingSystem(Engine::Device &device, VkRenderPass renderPass,
+                                                                VkDescriptorSetLayout layout): device(device) {
+        CreatePipelineLayout(layout);
+        CreatePipeline(renderPass);
     }
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
-                            0, 1, &descriptorSet, 0, nullptr);
+    void PPRenderingSystem::Render(VkCommandBuffer commandBuffer, VkDescriptorSet& descriptorSet) {
+        pipeline->Bind(commandBuffer);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
-}
+        if (descriptorSet == VK_NULL_HANDLE) {
+            throw std::runtime_error("Post-processing descriptor set is NULL!");
+        }
 
-void RenderingSystem::PPRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
-    assert(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
+        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipelineLayout,
+                                0, 1, &descriptorSet, 0, nullptr);
 
-    Engine::PipelineConfigInfo pipelineConfig{};
-    Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
-    pipelineConfig.renderPass = renderPass;
-    pipelineConfig.pipelineLayout = pipelineLayout;
-    pipeline = std::make_unique<Engine::Pipeline>(
-            device,
-            std::string(SHADERS_PATH) + "/fx_vert.spv",
-            std::string(SHADERS_PATH) + "/fx_frag.spv",
-            pipelineConfig);
-
-}
-
-void RenderingSystem::PPRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
-    if (pipeline) {
-        pipeline.reset();
+        vkCmdDraw(commandBuffer, 3, 1, 0, 0);
     }
 
-    CreatePipeline(renderPass);
-}
+    void PPRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
+        AQUILA_CORE_ASSERT(pipelineLayout != nullptr && "Cannot create pipeline before pipeline layout");
 
-void RenderingSystem::PPRenderingSystem::CreatePipelineLayout(VkDescriptorSetLayout layout) {
-    VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
-    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipelineLayoutInfo.setLayoutCount = 1;
-    pipelineLayoutInfo.pSetLayouts = &layout;
-    if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout!");
+        Engine::PipelineConfigInfo pipelineConfig{};
+        Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
+        pipelineConfig.renderPass = renderPass;
+        pipelineConfig.pipelineLayout = pipelineLayout;
+        pipeline = std::make_unique<Engine::Pipeline>(
+                device,
+                std::string(SHADERS_PATH) + "/fx_vert.spv",
+                std::string(SHADERS_PATH) + "/fx_frag.spv",
+                pipelineConfig);
+
     }
+
+    void PPRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
+        if (pipeline) {
+            pipeline.reset();
+        }
+
+        CreatePipeline(renderPass);
+    }
+
+    void PPRenderingSystem::CreatePipelineLayout(VkDescriptorSetLayout layout) {
+        VkPipelineLayoutCreateInfo pipelineLayoutInfo{};
+        pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipelineLayoutInfo.setLayoutCount = 1;
+        pipelineLayoutInfo.pSetLayouts = &layout;
+        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        }
+    }
+
 }

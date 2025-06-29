@@ -6,10 +6,10 @@
 #include <ECS/SceneContext.h>
 
 
-namespace RenderingSystem {
+namespace Engine {
     class PrefilterRenderingSystem {
     public:
-        PrefilterRenderingSystem(Engine::Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
+        PrefilterRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
         ~PrefilterRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
 
         PrefilterRenderingSystem(const PrefilterRenderingSystem&) = delete;
@@ -20,11 +20,11 @@ namespace RenderingSystem {
 
 
     private:
-        Engine::Device& device;
+        Device& device;
 
-        std::unique_ptr<Engine::Pipeline> pipeline;
+        Unique<Pipeline> pipeline;
         VkPipelineLayout pipelineLayout;
-        std::shared_ptr<Engine::Model3D> model;
+        Ref<Mesh> model;
 
 
         void CreatePipeline(VkRenderPass renderPass);

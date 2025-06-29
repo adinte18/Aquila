@@ -10,8 +10,8 @@
 namespace Engine {
     class HDRPrefilterPass : public Renderpass {
     public:
-        HDRPrefilterPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        HDRPrefilterPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~HDRPrefilterPass() override {
             for (const auto& framebuffer : m_Framebuffers) {
@@ -32,8 +32,8 @@ namespace Engine {
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<HDRPrefilterPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<HDRPrefilterPass>(device, extent);
+        static Ref<HDRPrefilterPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<HDRPrefilterPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

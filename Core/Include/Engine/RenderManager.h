@@ -5,7 +5,6 @@
 #ifndef RENDERMANAGER_H
 #define RENDERMANAGER_H
 
-#include <memory>
 #include "Engine/OffscreenRenderer.h"
 #include "Engine/OnscreenRenderer.h"
 
@@ -20,17 +19,17 @@ public:
     RenderManager& operator=(const RenderManager&) = delete;
     RenderManager(RenderManager&&) = delete;
 
-    void Initialize();
+    Unique<OnscreenRenderer>& GetOnScreenRenderer();
+    Unique<OffscreenRenderer>& GetOffscreenRenderer();
 
-    std::unique_ptr<OnscreenRenderer>& GetOnScreenRenderer();
-    std::unique_ptr<OffscreenRenderer>& GetOffscreenRenderer();
+    VkRenderPass GetImGuiRenderPass() const;
 
     void UpdateRenderPasses();
 
 private:
     // current renderers
-    std::unique_ptr<OnscreenRenderer> m_OnScreenRenderer;
-    std::unique_ptr<OffscreenRenderer> m_OffScreenRenderer;
+    Unique<OnscreenRenderer> m_OnScreenRenderer;
+    Unique<OffscreenRenderer> m_OffScreenRenderer;
 
     // references to the device and window
     Device& m_Device;

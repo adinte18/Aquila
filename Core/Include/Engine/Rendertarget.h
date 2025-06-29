@@ -1,12 +1,14 @@
-#pragma once
+#ifndef RENDERTARGET_H
+#define RENDERTARGET_H
+
 #include "Texture2D.h"
 #include "Engine/Device.h"
 
 namespace Engine {
     class RenderTarget {
     public:
-        std::shared_ptr<Texture2D> colorTexture{};  // Shared pointer to color texture
-        std::shared_ptr<Texture2D> depthTexture{};  // Shared pointer to depth texture
+        Ref<Texture2D> colorTexture{};  // Shared pointer to color texture
+        Ref<Texture2D> depthTexture{};  // Shared pointer to depth texture
 
         enum class AttachmentType {
             COLOR,
@@ -36,12 +38,12 @@ namespace Engine {
             }
         }
 
-        static std::shared_ptr<Texture2D> CreateColorTexture(Device& device,
+        static Ref<Texture2D> CreateColorTexture(Device& device,
                                                               TargetType target,
                                                               uint32_t width, uint32_t height,
                                                               VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT)
         {
-            std::shared_ptr<Texture2D> texture;
+            Ref<Texture2D> texture;
             if (target == TargetType::CUBEMAP) {
                 texture = Texture2D::Builder(device)
                     .setSize(width, height)
@@ -60,11 +62,11 @@ namespace Engine {
             return texture;
         }
 
-        static std::shared_ptr<Texture2D> CreateDepthTexture(Device& device,
+        static Ref<Texture2D> CreateDepthTexture(Device& device,
                                                               uint32_t width, uint32_t height,
                                                               VkFormat format, VkImageUsageFlags usage)
         {
-            std::shared_ptr<Texture2D> texture = Texture2D::create(device);
+            Ref<Texture2D> texture;
             texture = Texture2D::Builder(device)
                 .setSize(width, height)
                 .setFormat(format)
@@ -78,3 +80,5 @@ namespace Engine {
         TargetType target;
     };
 } // namespace Engine
+
+#endif

@@ -5,30 +5,23 @@
 #ifndef RENDERPASS_BASE_H
 #define RENDERPASS_BASE_H
 
+#include <array>
+#include "DescriptorAllocator.h"
 #include "Engine/Rendertarget.h"
 
 class Renderpass {
 public:
-    Renderpass(Engine::Device& device, const VkExtent2D& extent) : m_Device(device), m_Extent(extent) {
-        // allocate space for 1 image
-        m_DescriptorPool = Engine::DescriptorPool::Builder(m_Device)
-        .addPoolSize(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1)
-        .setMaxSets(1)
-        .build();
-
-        // define what are we binding - here 1 image (pass result)
-        m_DescriptorSetLayout = Engine::DescriptorSetLayout::Builder(m_Device)
-        .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
-        .build();
-
-        // allocate descriptor set
-        m_DescriptorPool->allocateDescriptor(m_DescriptorSetLayout->getDescriptorSetLayout(), m_DescriptorSet);
+    Renderpass(Engine::Device& device, const VkExtent2D& extent, const Ref<Engine::DescriptorSetLayout>& descriptorSetLayout)
+    : m_Device(device), m_Extent(extent),
+      m_DescriptorSetLayout(descriptorSetLayout)
+    {
+        Engine::DescriptorAllocator::Allocate(descriptorSetLayout->GetDescriptorSetLayout(),  m_DescriptorSet);
     }
+
 
     virtual ~Renderpass() = 0;
 
-    [[nodiscard]] std::unique_ptr<Engine::DescriptorSetLayout>& GetDescriptorSetLayout() { return m_DescriptorSetLayout; }
-    [[nodiscard]] std::unique_ptr<Engine::DescriptorPool>&      GetDescriptorPool()      {return m_DescriptorPool; }
+    [[nodiscard]] Ref<Engine::DescriptorSetLayout>& GetDescriptorSetLayout() { return m_DescriptorSetLayout; }
 
     [[nodiscard]] VkImageView               GetRenderTargetColorImage() const { return colorAttachment->GetTextureImageView(); }
     [[nodiscard]] VkImageView               GetRenderTargetDepthImage() const { return depthAttachment->GetTextureImageView(); }
@@ -54,13 +47,12 @@ protected:
 
     // Members
     Engine::Device& m_Device;
-    std::shared_ptr<Engine::Texture2D> colorAttachment;
-    std::shared_ptr<Engine::Texture2D> depthAttachment;
+    Ref<Engine::Texture2D> colorAttachment;
+    Ref<Engine::Texture2D> depthAttachment;
 
     // Descriptor sets to write images to. They will be sampled in the shader (shadow, post-processing, etc.)
     VkDescriptorSet m_DescriptorSet{};
-    std::unique_ptr<Engine::DescriptorPool> m_DescriptorPool{};
-    std::unique_ptr<Engine::DescriptorSetLayout> m_DescriptorSetLayout{};
+    Ref<Engine::DescriptorSetLayout> m_DescriptorSetLayout{};
 
     // Vulkan stuff
     VkRenderPass m_RenderPass{};

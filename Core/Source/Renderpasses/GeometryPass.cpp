@@ -1,4 +1,5 @@
 #include "Renderpasses/GeometryPass.h"
+#include "vulkan/vulkan_core.h"
 
 bool Engine::GeometryPass::CreateRenderTarget() {
     colorAttachment = RenderTarget::CreateColorTexture(m_Device, RenderTarget::TargetType::TEXTURE_2D, m_Extent.width, m_Extent.height, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
@@ -49,7 +50,7 @@ bool Engine::GeometryPass::CreateRenderPass() {
         colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
         colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
         colorAttachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
         VkAttachmentDescription depthAttachment = {};
         depthAttachment.format = VK_FORMAT_D32_SFLOAT;

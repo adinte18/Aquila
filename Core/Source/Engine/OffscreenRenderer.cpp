@@ -1,4 +1,5 @@
-#include <Engine/OffscreenRenderer.h>
+#include "ECS/Scene.h"
+#include "Engine/OffscreenRenderer.h"
 
 namespace Engine {
     OffscreenRenderer::OffscreenRenderer(Device& device) : m_Device(device), m_RenderpassManager(device, {800,600}) {
@@ -40,29 +41,48 @@ namespace Engine {
     void OffscreenRenderer::Initialize(uint32_t width, uint32_t height) {
         m_Extent = { width, height };
 
-        if ((m_HdriPass = HDRiToCubemapPass::Initialize(m_Device, {1024, 1024})))
+        m_SharedDescriptorSetLayout = Engine::DescriptorSetLayout::Builder(m_Device)
+            .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .build();
+
+        if ((m_HdriPass = HDRiToCubemapPass::Initialize(m_Device, {1024, 1024},m_SharedDescriptorSetLayout)))
             std::cout << "HDRi conversion pass initialized" << std::endl;
-        if((m_IrradianceSamplingPass = IrradianceSamplingPass::Initialize(m_Device, {64, 64})))
+
+        if ((m_PreethamSkyPass = PreethamSkyPass::Initialize(m_Device, {1024, 1024}, m_SharedDescriptorSetLayout)))
+            std::cout << "Preetham procedural sky pass initialized" << std::endl;
+
+        if ((m_IrradianceSamplingPass = IrradianceSamplingPass::Initialize(m_Device, {64, 64},  m_SharedDescriptorSetLayout)))
             std::cout << "Irradiance sampling pass initialized" << std::endl;
-        if ((m_HDRPrefilterPass = HDRPrefilterPass::Initialize(m_Device, {128, 128})))
+
+        if ((m_HDRPrefilterPass = HDRPrefilterPass::Initialize(m_Device, {128, 128}, m_SharedDescriptorSetLayout)))
             std::cout << "HDR Prefilter pass initialized" << std::endl;
-        if ((m_BRDFLutPass = LUTPass::Initialize(m_Device, {512, 512})))
+
+        if ((m_BRDFLutPass = LUTPass::Initialize(m_Device, {512, 512}, m_SharedDescriptorSetLayout)))
             std::cout << "2D BRDF LUT pass initialized" << std::endl;
-        if ((m_GeometryPass = GeometryPass::Initialize(m_Device, m_Extent)))
+
+        if ((m_GeometryPass = GeometryPass::Initialize(m_Device, m_Extent, m_SharedDescriptorSetLayout)))
             std::cout << "Geometry pass initialized" << std::endl;
-        if ((m_ShadowPass = ShadowPass::Initialize(m_Device, {8192, 8192})))
+
+        if ((m_ShadowPass = ShadowPass::Initialize(m_Device, {8192, 8192}, m_SharedDescriptorSetLayout)))
             std::cout << "Shadow pass initialized" << std::endl;
-        if ((m_CompositePass = CompositePass::Initialize(m_Device, m_Extent)))
+
+        if ((m_CompositePass = CompositePass::Initialize(m_Device, m_Extent, m_SharedDescriptorSetLayout)))
             std::cout << "Composite pass initialized" << std::endl;
     }
 
     void OffscreenRenderer::Resize(VkExtent2D newExtent) {
         vkDeviceWaitIdle(m_Device.vk_GetDevice());
         m_Extent = newExtent;
-        m_GeometryPass->Invalidate(m_Extent);
-        m_CompositePass->Invalidate(m_Extent);
+        m_Resized = true;
     }
 
+    void OffscreenRenderer::InvalidatePasses(){
+        m_GeometryPass->Invalidate(m_Extent);
+        m_CompositePass->Invalidate(m_Extent);
+        m_Resized = false;
+    }
+
+    // TODO : this is so ugly, this needs to be reworked, or maybe even deleted, its not really used 
     void OffscreenRenderer::TransitionImages(VkCommandBuffer commandBuffer, RenderPassType src, RenderPassType dst) {
         struct TransitionInfo {
             VkImage image;
@@ -163,8 +183,35 @@ namespace Engine {
         vkCmdEndRenderPass(commandBuffer);
     }
 
+    void OffscreenRenderer::PrepareSceneData(Ref<AquilaScene>& scene){
+
+    }
+
+    void OffscreenRenderer::Render(VkCommandBuffer cmd, Ref<AquilaScene>& scene){
+        auto commandBuffer = BeginFrame();
+
+        SendDescriptorsToGPU();
+
+
+
+        EndFrame();
+    }
+
+    void OffscreenRenderer::SendDescriptorsToGPU(){
+
+        // may (or may not) update every frame
+        auto shadowInfo = GetImageInfoForPass<Engine::ShadowPass>(VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL);
+
+        if (m_HDRUpdated){
+            auto irradianceInfo = GetImageInfoForPass<Engine::IrradianceSamplingPass>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            auto prefilterInfo = GetImageInfoForPass<Engine::HDRPrefilterPass>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            auto brdfInfo = GetImageInfoForPass<Engine::LUTPass>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+            auto cubeMapInfo = GetImageInfoForPass<Engine::HDRiToCubemapPass>(VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+        }
+    }
+
     VkCommandBuffer OffscreenRenderer::BeginFrame() {
-        assert(!m_FrameStarted && "Frame already started!");
+        AQUILA_CORE_ASSERT(!m_FrameStarted && "Frame already started!");
         m_FrameStarted = true;
 
         auto commandBuffer = GetCurrentCommandBuffer();
@@ -180,7 +227,7 @@ namespace Engine {
     }
 
     void OffscreenRenderer::EndFrame() {
-        assert(m_FrameStarted && "Can't end a frame that wasn't started!");
+        AQUILA_CORE_ASSERT(m_FrameStarted && "Can't end a frame that wasn't started!");
 
         auto commandBuffer = GetCurrentCommandBuffer();
 

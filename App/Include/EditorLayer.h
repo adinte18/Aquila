@@ -1,16 +1,19 @@
 
 #ifndef EDITORLAYER_H
 #define EDITORLAYER_H
-#include <memory>
 
-#include <UIManagement/UI.h>
+#include "Engine/EditorCamera.h"
+#include "UIManagement/UI.h"
 
-#include <Engine/Window.h>
-#include <Engine/Device.h>
-#include <Engine/RenderManager.h>
+#include "Engine/Window.h"
+#include "Engine/Device.h"
+#include "Engine/RenderManager.h"
 
-#include "SceneContext.h"
-#include "Events/EventBus.h"
+#include "Engine/Events/EventRegistry.h"
+
+#include "ECS/Scene.h"
+#include "ECS/SceneContext.h"
+
 #include "RenderingSystems/BRDFLutRenderingSystem.h"
 #include "RenderingSystems/PrefilterRenderingSystem.h"
 #include "RenderingSystems/CompositeRenderingSystem.h"
@@ -21,7 +24,10 @@
 #include "RenderingSystems/CubemapRenderingSystem.h"
 #include "RenderingSystems/PPRenderingSystem.h"
 #include "RenderingSystems/IrradianceRenderingSystem.h"
+#include "RenderingSystems/PreethamSkyRenderingSystem.h"
+#include "RenderingSystems/SceneRenderingSystem_new.h"
 
+#include "Engine/Texture2D.h"
 
 namespace Editor {
 
@@ -44,140 +50,156 @@ namespace Editor {
         void OnUpdate();
         void OnEnd();
 
+        
+
     private:
-        void RegisterHandlers() {
-            EventBus::Get().RegisterHandler<UICommandEvent>([this](const UICommandEvent& e) {
-                switch (e.m_Command) {
-                    case UICommand::AddEnvMap: {
-                        auto& path = std::get<std::string>(e.m_Params.at("path"));
-                        std::cout << "Loading texture from path: " << path << std::endl;
-                        hdrUpdated = true;
-                        m_HDRTexture = Engine::Texture2D::create(*m_Device);
-                        m_HDRTexture->CreateHDRTexture(path);
+        // void RegisterHandlers() {
+        //     EventBus::Get().RegisterHandler<UICommandEvent>([this](const UICommandEvent& e) {
+        //         switch (e.m_Command) {
+        //             case UICommand::AddEnvMap: {
+        //                 auto& path = std::get<std::string>(e.m_Params.at("path"));
+        //                 std::cout << "Loading texture from path: " << path << std::endl;
+        //                 hdrUpdated = true;
+        //                 m_HDRTexture = Engine::Texture2D::Builder(*m_Device)
+        //                                 .setFilepath(path)
+        //                                 .asHDR()
+        //                                 .build();
+        //
+        //                 if (m_HDRTexture->HasImage() && m_HDRTexture->HasImageView()) {
+        //                     e.m_Callback(UIEventResult::Success, m_HDRTexture);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //
+        //                 break;
+        //             }
+        //             case UICommand::AddEntity: {
+        //                 std::cout << "Adding a new entity..." << std::endl;
+        //                 const auto node = m_SceneContext->GetScene().CreateNode();
+        //                 const auto entity = m_Scene->CreateEntity();
+        //                 entity->AddComponent<Engine::Transform>();
+        //                 node->entity = entity;
+        //
+        //                 if (node) {
+        //                     e.m_Callback(UIEventResult::Success, node);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //                 break;
+        //             }
+        //             case UICommand::AddLight: {
+        //                 std::cout << "Adding a new light..." << std::endl;
+        //                 const auto entity = m_Scene->CreateEntity();
+        //                 entity->AddComponent<Engine::Transform>();
+        //                 entity->AddComponent<Engine::Light>();
+        //                 std::cout << "Light component added." << std::endl;
+        //                 entity->SetName("Directional light");
+        //
+        //                 if (entity) {
+        //                     e.m_Callback(UIEventResult::Success, entity);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //
+        //                 break;
+        //             }
+        //             case UICommand::AddSphere : {
+        //                 const auto entity = m_Scene->CreateEntity();
+        //                 entity->AddComponent<Engine::Transform>();
+        //                 entity->AddComponent<Engine::PBRMaterial>();
+        //
+        //                 const auto model = Engine::Model3D::create(*m_Device);
+        //                 model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
+        //                     1.0f,
+        //                     m_SceneContext->GetMaterialDescriptorSetLayout(),
+        //                     m_SceneContext->GetMaterialDescriptorPool());
+        //                 entity->AddComponent<Engine::Mesh>();
+        //                 entity->GetComponent<Engine::Mesh>().mesh = model;
+        //                 entity->GetComponent<Engine::PBRMaterial>() = model->GetMaterial();
+        //
+        //
+        //                 if (entity) {
+        //                     e.m_Callback(UIEventResult::Success, entity);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //                 break;
+        //             }
+        //
+        //             case UICommand::AddMesh : {
+        //                 //TODO : Fix this. this is not working as intended. I should get the currently selected entity and assign the mesh to its mesh component.
+        //                 auto& path = std::get<std::string>(e.m_Params.at("path"));
+        //                 std::cout << "Loading mesh from path: " << path << std::endl;
+        //
+        //                 Ref<Engine::Model3D> model = Engine::Model3D::create(*m_Device);
+        //                 model->Load(path, m_SceneContext->GetMaterialDescriptorSetLayout(), m_SceneContext->GetMaterialDescriptorPool());
+        //
+        //                 const auto entity = m_Scene->CreateEntity();
+        //                 entity->AddComponent<Engine::Mesh>();
+        //                 entity->AddComponent<Engine::Transform>();
+        //                 entity->AddComponent<Engine::PBRMaterial>();
+        //
+        //                 entity->GetComponent<Engine::Mesh>().mesh = model;
+        //                 entity->GetComponent<Engine::PBRMaterial>() = model->GetMaterial();
+        //
+        //                 if (entity) {
+        //                     e.m_Callback(UIEventResult::Success, entity);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //                 break;
+        //             }
+        //
+        //             case UICommand::AddCube : {
+        //                 Ref<Engine::Scene::SceneNode> node;
+        //
+        //                 auto& parentNode = std::get<Ref<Engine::Scene::SceneNode>>(e.m_Params.at("parent"));
+        //                 if (parentNode){
+        //                     node = m_SceneContext->GetScene().CreateNode(parentNode);
+        //                 }
+        //                 const auto entity = m_Scene->CreateEntity();
+        //                 entity->AddComponent<Engine::Transform>();
+        //                 entity->AddComponent<Engine::PBRMaterial>();
+        //
+        //                 const auto model = Engine::Model3D::create(*m_Device);
+        //                 model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
+        //                     1.0f,
+        //                     m_SceneContext->GetMaterialDescriptorSetLayout(),
+        //                     m_SceneContext->GetMaterialDescriptorPool());
+        //                 entity->AddComponent<Engine::Mesh>();
+        //                 entity->GetComponent<Engine::Mesh>().mesh = model;
+        //                 entity->GetComponent<Engine::PBRMaterial>() = model->GetMaterial();
+        //
+        //                 node->entity = entity;
+        //
+        //                 if (node) {
+        //                     e.m_Callback(UIEventResult::Success, node);
+        //                 }
+        //                 else {
+        //                     e.m_Callback(UIEventResult::Failure, {});
+        //                 }
+        //                 break;
+        //             }
+        //
+        //             case UICommand::RemoveEntity : {
+        //                 auto& entity = std::get<Ref<Engine::Entity>>(e.m_Params.at("entity"));
+        //                 m_Scene->QueueForDestruction(entity->GetHandle());
+        //                 break;
+        //             }
+        //
+        //             default:
+        //                 break;
+        //         }
+        //     });
+        // }
 
-                        if (m_HDRTexture->HasImage() && m_HDRTexture->HasImageView()) {
-                            e.m_Callback(UIEventResult::Success, m_HDRTexture);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-
-                        break;
-                    }
-                    case UICommand::AddEntity: {
-                        std::cout << "Adding a new entity..." << std::endl;
-                        const auto entity = m_Scene->CreateEntity();
-                        entity->AddComponent<ECS::Transform>();
-
-                        if (entity) {
-                            e.m_Callback(UIEventResult::Success, entity);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-                        break;
-                    }
-                    case UICommand::AddLight: {
-                        std::cout << "Adding a new light..." << std::endl;
-                        const auto entity = m_Scene->CreateEntity();
-                        entity->AddComponent<ECS::Transform>();
-                        entity->AddComponent<ECS::Light>();
-                        std::cout << "Light component added." << std::endl;
-                        entity->SetName("Directional light");
-
-                        if (entity) {
-                            e.m_Callback(UIEventResult::Success, entity);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-
-                        break;
-                    }
-                    case UICommand::AddSphere : {
-                        const auto entity = m_Scene->CreateEntity();
-                        entity->AddComponent<ECS::Transform>();
-                        entity->AddComponent<ECS::PBRMaterial>();
-
-                        const auto model = Engine::Model3D::create(*m_Device);
-                        model->CreatePrimitive(Engine::Primitives::PrimitiveType::Sphere,
-                            1.0f,
-                            m_SceneContext->GetMaterialDescriptorSetLayout(),
-                            m_SceneContext->GetMaterialDescriptorPool());
-                        entity->AddComponent<ECS::Mesh>();
-                        entity->GetComponent<ECS::Mesh>().mesh = model;
-                        entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-
-
-                        if (entity) {
-                            e.m_Callback(UIEventResult::Success, entity);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-                        break;
-                    }
-
-                    case UICommand::AddMesh : {
-                        auto& path = std::get<std::string>(e.m_Params.at("path"));
-                        std::cout << "Loading texture from path: " << path << std::endl;
-
-                        std::shared_ptr<Engine::Model3D> model = Engine::Model3D::create(*m_Device);
-                        model->Load(path, m_SceneContext->GetMaterialDescriptorSetLayout(), m_SceneContext->GetMaterialDescriptorPool());
-
-                        const auto entity = m_Scene->CreateEntity();
-                        entity->AddComponent<ECS::Mesh>();
-                        entity->AddComponent<ECS::Transform>();
-                        entity->AddComponent<ECS::PBRMaterial>();
-
-                        entity->GetComponent<ECS::Mesh>().mesh = model;
-                        entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-
-                        if (entity) {
-                            e.m_Callback(UIEventResult::Success, entity);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-                        break;
-                    }
-
-                    case UICommand::AddCube : {
-                        const auto entity = m_Scene->CreateEntity();
-                        entity->AddComponent<ECS::Transform>();
-                        entity->AddComponent<ECS::PBRMaterial>();
-
-                        const auto model = Engine::Model3D::create(*m_Device);
-                        model->CreatePrimitive(Engine::Primitives::PrimitiveType::Cube,
-                            1.0f,
-                            m_SceneContext->GetMaterialDescriptorSetLayout(),
-                            m_SceneContext->GetMaterialDescriptorPool());
-                        entity->AddComponent<ECS::Mesh>();
-                        entity->GetComponent<ECS::Mesh>().mesh = model;
-                        entity->GetComponent<ECS::PBRMaterial>() = model->GetMaterial();
-
-
-                        if (entity) {
-                            e.m_Callback(UIEventResult::Success, entity);
-                        }
-                        else {
-                            e.m_Callback(UIEventResult::Failure, {});
-                        }
-                        break;
-                    }
-
-                    case UICommand::RemoveEntity : {
-                        auto& entity = std::get<std::shared_ptr<ECS::Entity>>(e.m_Params.at("entity"));
-                        m_Scene->QueueForDestruction(entity->GetHandle());
-                        break;
-                    }
-
-                    default:
-                        break;
-                }
-            });
-        }
-
+        void SampleIBL(VkCommandBuffer commandBuffer);
+        void InitializeRenderingSystems();
 
         // Time
         float m_FrameTime{0.f};
@@ -185,40 +207,44 @@ namespace Editor {
 
         // testing
         bool hdrUpdated = false;
-        std::shared_ptr<Engine::Texture2D> m_HDRTexture;
+        Ref<Engine::Texture2D> m_HDRTexture;
+
+        // Event registry
+        Unique<Engine::EventRegistry> m_EventRegistry;
 
         // Window and device
-        std::unique_ptr<Engine::Window> m_Window;
-        std::unique_ptr<Engine::Device> m_Device;
+        Unique<Engine::Window> m_Window;
+        Unique<Engine::Device> m_Device;
 
         // Renderer manager (onscreen/offscreen)
-        std::unique_ptr<Engine::RenderManager> m_RenderManager;
+        Unique<Engine::RenderManager> m_RenderManager;
 
         // Rendering systems
-        std::shared_ptr<RenderingSystem::SceneRenderingSystem> sceneRenderingSystem;
-        std::shared_ptr<RenderingSystem::DepthRenderingSystem> shadowRenderingSystem;
-        std::shared_ptr<RenderingSystem::GridRenderingSystem> gridRenderingSystem;
-        std::shared_ptr<RenderingSystem::PPRenderingSystem> postprocessingRenderingSystem;
-        std::shared_ptr<RenderingSystem::CompositeRenderingSystem> compositeRenderingSystem;
-        std::shared_ptr<RenderingSystem::EnvToCubemapRenderingSystem> envToCubemapRenderingSystem;
-        std::shared_ptr<RenderingSystem::CubemapRenderingSystem> cubemapRenderingSystem;
-        std::shared_ptr<RenderingSystem::IrradianceRenderingSystem> irradianceRenderingSystem;
-        std::shared_ptr<RenderingSystem::PrefilterRenderingSystem> prefilterRenderingSystem;
-        std::shared_ptr<RenderingSystem::BRDFLutRenderingSystem> brdfLutRenderingSystem;
+        Ref<Engine::SceneRenderingSystem> m_SceneRenderingSystem;
+        Ref<Engine::DepthRenderingSystem> m_ShadowRenderingSystem;
+        Ref<Engine::GridRenderingSystem> m_GridRenderingSystem;
+        Ref<Engine::PPRenderingSystem> m_PostprocessingRenderingSystem;
+        Ref<Engine::CompositeRenderingSystem> m_CompositeRenderingSystem;
+        Ref<Engine::EnvToCubemapRenderingSystem> m_EnvToCubemapRenderingSystem;
+        Ref<Engine::CubemapRenderingSystem> m_CubemapRenderingSystem;
+        Ref<Engine::IrradianceRenderingSystem> m_IrradianceRenderingSystem;
+        Ref<Engine::PrefilterRenderingSystem> m_PrefilterRenderingSystem;
+        Ref<Engine::BRDFLutRenderingSystem> m_BRDFLutRenderingSystem;
+        Ref<Engine::PreethamSkyRenderingSystem> m_PreethamSkyRenderingSystem;
+        
+        Ref<Engine::SceneRenderingSystem_new> m_SceneRendering;
 
         // UI Manager
-        std::unique_ptr<UIManager> m_UI;
+        Unique<UIManager> m_UI;
 
         // Scene
-        std::shared_ptr<ECS::Scene> m_Scene;
+        // Ref<Engine::Scene> m_Scene;
+        Ref<Engine::AquilaScene> m_AqScene;
+        Unique<Engine::EditorCamera> m_EditorCamera;
+
 
         // Scene context
-        std::unique_ptr<ECS::SceneContext> m_SceneContext;
-
-        std::unique_ptr<Engine::DescriptorPool> cubemapDescriptorPool{};
-        std::unique_ptr<Engine::DescriptorSetLayout> cubemapDescriptorSetLayout{};
-        VkDescriptorSet cubemapDescriptorSet;
-
+        Unique<Engine::SceneContext> m_SceneContext;
     };
 }
 

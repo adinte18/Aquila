@@ -7,9 +7,9 @@
 
 #include <string>
 
-#include "External/entt.h"
+#include "entt.h"
 
-namespace ECS {
+namespace Engine {
     class Entity {
     public:
         Entity(entt::registry& registry, entt::entity handle)

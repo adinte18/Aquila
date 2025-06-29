@@ -1,31 +1,33 @@
 #ifndef COMPONENTS_H
 #define COMPONENTS_H
 
+#include "AquilaCore.h"
+#include "GLFW/glfw3.h"
+
 #include <memory>
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include "Common.h"
 
 // Forward declarations
 namespace Engine {
-    class Model3D;
+    class Mesh;
     class Texture2D;
 }
 
-namespace ECS {
-    struct Mesh {
-        std::shared_ptr<Engine::Model3D> mesh{};
+namespace Engine {
+    struct MeshCmp {
+        Ref<Engine::Mesh> mesh{};
     };
 
     struct PBRMaterial {
         // PBR Textures
-        std::shared_ptr<Engine::Texture2D> albedoTexture;
-        std::shared_ptr<Engine::Texture2D> normalTexture;
-        std::shared_ptr<Engine::Texture2D> metallicRoughnessTexture;
-        std::shared_ptr<Engine::Texture2D> emissiveTexture;
-        std::shared_ptr<Engine::Texture2D> aoTexture;
-        std::shared_ptr<Engine::Texture2D> displacementTexture;
+        Ref<Engine::Texture2D> albedoTexture;
+        Ref<Engine::Texture2D> normalTexture;
+        Ref<Engine::Texture2D> metallicRoughnessTexture;
+        Ref<Engine::Texture2D> emissiveTexture;
+        Ref<Engine::Texture2D> aoTexture;
+        Ref<Engine::Texture2D> displacementTexture;
 
         // Texture file paths
         std::string albedoTexturePath;
@@ -109,9 +111,9 @@ namespace ECS {
                 return false;
             };
 
-            assert(!isnan_mat4(view) && "View matrix contains NaN values");
-            assert(!isnan_mat4(projection) && "Projection matrix contains NaN values");
-            assert(!isnan_mat4(lightSpaceMatrix) && "Light space matrix contains NaN values");
+            AQUILA_CORE_ASSERT(!isnan_mat4(view) && "View matrix contains NaN values");
+            AQUILA_CORE_ASSERT(!isnan_mat4(projection) && "Projection matrix contains NaN values");
+            AQUILA_CORE_ASSERT(!isnan_mat4(lightSpaceMatrix) && "Light space matrix contains NaN values");
         }
     };
 

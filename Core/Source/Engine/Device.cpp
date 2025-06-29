@@ -1,16 +1,19 @@
 #include <cstring>
 #include "Engine/Device.h"
+#include "Engine/DescriptorAllocator.h"
 
 Engine::Device::Device(Window &window) : window{window} {
     vk_CreateInstance();
     vk_SetupDebugMessenger();
-    window.vk_CreateWindowSurface(vkInstance, &surface);
+    window.CreateWindowSurface(vkInstance, &surface);
     vk_PickPhysicalDevice();
     vk_CreateLogicalDevice();
     vk_CreateComandPool();
 }
 
 Engine::Device::~Device() {
+    DescriptorAllocator::Cleanup(); // release global pool
+
     vkDestroyCommandPool(device, commandPool, nullptr);
     vkDestroyDevice(device, nullptr);
 

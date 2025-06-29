@@ -5,8 +5,6 @@
 #ifndef RENDERER_H
 #define RENDERER_H
 
-#include <cassert>
-
 #include <Engine/Window.h>
 #include <Engine/Device.h>
 #include <Engine/Swapchain.h>
@@ -30,7 +28,7 @@ namespace Engine {
 
         [[nodiscard]]
         VkCommandBuffer vk_GetCurrentCommandBuffer() const {
-            assert(frameStarted && "Cannot get command buffer when frame not in progress");
+            AQUILA_CORE_ASSERT(frameStarted && "Cannot get command buffer when frame not in progress");
             return commandBuffers[currentFrameID];
         }
 
@@ -49,13 +47,13 @@ namespace Engine {
 
         [[nodiscard]]
         int vk_GetFrameID() const {
-            assert(frameStarted && "Cannot get frame index when frame not in progress");
+            AQUILA_CORE_ASSERT(frameStarted && "Cannot get frame index when frame not in progress");
             return currentFrameID;
         }
     private:
         Window& window;
         Device& device;
-        std::unique_ptr<Swapchain> swapChain;
+        Unique<Swapchain> swapChain;
         std::vector<VkCommandBuffer> commandBuffers;
 
         uint32_t currentImageID{0};

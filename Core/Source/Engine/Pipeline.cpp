@@ -1,27 +1,29 @@
 #include "Engine/Pipeline.h"
+#include "Engine/Vertex.h"
 
 #include <stdexcept>
 
+
 Engine::Pipeline::Pipeline(Engine::Device &device,
-                             const std::string &vertFilepath,
-                             const std::string &fragFilepath,
-                             const Engine::PipelineConfigInfo &configInfo)
-                             : device(device) {
+                           const std::string &vertFilepath,
+                           const std::string &fragFilepath,
+                           const Engine::PipelineConfigInfo &configInfo)
+                             : m_Device(device) {
     vk_CreateGraphicsPipeline(vertFilepath, fragFilepath, configInfo);
 }
 
 Engine::Pipeline::~Pipeline() {
-    vkDestroyShaderModule(device.vk_GetDevice(), vertShaderModule, nullptr);
-    vkDestroyShaderModule(device.vk_GetDevice(), fragShaderModule, nullptr);
-    vkDestroyPipeline(device.vk_GetDevice(), graphicsPipeline, nullptr);
+    vkDestroyShaderModule(m_Device.vk_GetDevice(), m_VertexShaderModule, nullptr);
+    vkDestroyShaderModule(m_Device.vk_GetDevice(), m_FragmentShaderModule, nullptr);
+    vkDestroyPipeline(m_Device.vk_GetDevice(), m_GraphicsPipeline, nullptr);
 }
 
-VkPipeline Engine::Pipeline::GetPipeline() {
-    return graphicsPipeline;
+VkPipeline Engine::Pipeline::GetPipeline() const {
+    return m_GraphicsPipeline;
 }
 
-void Engine::Pipeline::bind(VkCommandBuffer commandBuffer) {
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, graphicsPipeline);
+void Engine::Pipeline::Bind(VkCommandBuffer commandBuffer) const {
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_GraphicsPipeline);
 }
 
 void Engine::Pipeline::vk_DefaultPipelineConfig(
@@ -94,8 +96,8 @@ void Engine::Pipeline::vk_DefaultPipelineConfig(
     configInfo.dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(configInfo.dynamicStateEnables.size());
     configInfo.dynamicStateCreateInfo.flags = 0;
 
-    configInfo.bindingDescriptions = Vertex::getBindingDescriptions();
-    configInfo.attributeDescriptions = Vertex::getAttributeDescriptions();
+    configInfo.bindingDescriptions = Vertex::GetBindingDescriptions();
+    configInfo.attributeDescriptions = Vertex::GetAttributeDescriptions();
 }
 
 
@@ -105,21 +107,21 @@ void Engine::Pipeline::vk_CreateGraphicsPipeline(const std::string &vertFilepath
     auto vertShaderCode = Shader::ReadFile(vertFilepath);
     auto fragShaderCode = Shader::ReadFile(fragFilepath);
 
-    vertShaderModule = Shader::CreateShaderModule(vertShaderCode, device.vk_GetDevice());
-    fragShaderModule = Shader::CreateShaderModule(fragShaderCode, device.vk_GetDevice());
+    m_VertexShaderModule = Shader::CreateShaderModule(vertShaderCode, m_Device.vk_GetDevice());
+    m_FragmentShaderModule = Shader::CreateShaderModule(fragShaderCode, m_Device.vk_GetDevice());
 
     //Vertex shader
     VkPipelineShaderStageCreateInfo vertShaderStageInfo{};
     vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vertShaderStageInfo.module = vertShaderModule;
+    vertShaderStageInfo.module = m_VertexShaderModule;
     vertShaderStageInfo.pName = "main";
 
     //Fragment shader
     VkPipelineShaderStageCreateInfo fragShaderStageInfo{};
     fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    fragShaderStageInfo.module = fragShaderModule;
+    fragShaderStageInfo.module = m_FragmentShaderModule;
     fragShaderStageInfo.pName = "main";
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
@@ -227,7 +229,7 @@ void Engine::Pipeline::vk_CreateGraphicsPipeline(const std::string &vertFilepath
     pipelineInfo.basePipelineIndex = -1;
     pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-    if (vkCreateGraphicsPipelines(device.vk_GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &graphicsPipeline) !=
+    if (vkCreateGraphicsPipelines(m_Device.vk_GetDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &m_GraphicsPipeline) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline!");
     }

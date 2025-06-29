@@ -7,7 +7,6 @@
 
 #include "Engine/Device.h"
 #include "Shader.h"
-#include "Vertex.h"
 
 namespace Engine{
     struct PipelineConfigInfo {
@@ -40,12 +39,12 @@ namespace Engine{
                     const std::string &fragFilepath,
                     const PipelineConfigInfo &configInfo);
         ~Pipeline();
-        VkPipeline GetPipeline();
+        [[nodiscard]] VkPipeline GetPipeline() const;
 
         Pipeline(const Pipeline&) = delete;
         Pipeline& operator=(const Pipeline&) = delete;
 
-        void bind(VkCommandBuffer commandBuffer);
+        void Bind(VkCommandBuffer commandBuffer) const;
 
         static void vk_DefaultPipelineConfig(PipelineConfigInfo& configInfo);
 
@@ -54,10 +53,10 @@ namespace Engine{
                                     const std::string &fragFilepath,
                                     const PipelineConfigInfo &configInfo);
 
-        Device &device;
-        VkPipeline graphicsPipeline;
-        VkShaderModule vertShaderModule;
-        VkShaderModule fragShaderModule;
+        Device &m_Device;
+        VkPipeline m_GraphicsPipeline;
+        VkShaderModule m_VertexShaderModule;
+        VkShaderModule m_FragmentShaderModule;
     };
 }
 

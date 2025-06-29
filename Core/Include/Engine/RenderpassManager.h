@@ -1,6 +1,7 @@
 #ifndef RENDERPASS_H
 #define RENDERPASS_H
 
+#include <array>
 #include <unordered_map>
 #include "Engine/Device.h"
 #include "Engine/Rendertarget.h"
@@ -43,8 +44,8 @@ namespace Engine {
             [[nodiscard]] VkImageView       GetRenderTarget(RenderPassType type) const;
             [[nodiscard]] VkSampler         GetRenderSampler(RenderPassType type) const;
             [[nodiscard]] VkDescriptorSet&  GetDescriptorSet(RenderPassType);
-            [[nodiscard]] std::unique_ptr<DescriptorPool>& GetDescriptorPool(RenderPassType);
-            [[nodiscard]] std::unique_ptr<DescriptorSetLayout>& GetDescriptorLayout(RenderPassType);
+            [[nodiscard]] Unique<DescriptorPool>& GetDescriptorPool(RenderPassType);
+            [[nodiscard]] Unique<DescriptorSetLayout>& GetDescriptorLayout(RenderPassType);
 
             void WriteDepthImageToDescriptor(RenderPassType type, DescriptorSetLayout &sceneSetLayout, DescriptorPool &descriptorPool);
 
@@ -65,13 +66,13 @@ namespace Engine {
             std::unordered_map<RenderPassType, VkFramebuffer> framebuffers;
             std::array<VkFramebuffer, 6> cubemapFaceFramebuffers;
             std::array<VkFramebuffer, 6> irradianceFaceFramebuffers;
-            std::unordered_map<RenderPassType, std::shared_ptr<RenderTarget>> renderTargets;
+            std::unordered_map<RenderPassType, Ref<RenderTarget>> renderTargets;
             std::unordered_map<RenderPassType, VkDescriptorSet> imageToViewport;
-            std::unordered_map<RenderPassType, std::unique_ptr<DescriptorPool>> descriptorPools;
-            std::unordered_map<RenderPassType, std::unique_ptr<DescriptorSetLayout>> descriptorSetLayouts;
+            std::unordered_map<RenderPassType, Unique<DescriptorPool>> descriptorPools;
+            std::unordered_map<RenderPassType, Unique<DescriptorSetLayout>> descriptorSetLayouts;
 
-            std::unique_ptr<DescriptorPool> descriptorPool;
-            std::unique_ptr<DescriptorSetLayout> descriptorSetLayout;
+            Unique<DescriptorPool> descriptorPool;
+            Unique<DescriptorSetLayout> descriptorSetLayout;
 
             void CreateGBufferPass();
             void CreateShadowPass();

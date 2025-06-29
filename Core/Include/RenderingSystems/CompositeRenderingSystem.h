@@ -2,13 +2,13 @@
 #define CompositeRenderingSystem_H
 #include "Engine/Device.h"
 #include "Engine/Pipeline.h"
-#include "Scene.h"
+#include "ECS/Scene.h"
 
 
-namespace RenderingSystem {
+namespace Engine {
     class CompositeRenderingSystem {
     public:
-        CompositeRenderingSystem(Engine::Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
+        CompositeRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
         ~CompositeRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
 
         CompositeRenderingSystem(const CompositeRenderingSystem&) = delete;
@@ -17,9 +17,9 @@ namespace RenderingSystem {
         void Render(VkCommandBuffer commandBuffer, VkDescriptorSet &descriptorSet);
         void RecreatePipeline(VkRenderPass renderPass);
     private:
-        Engine::Device& device;
+        Device& device;
 
-        std::unique_ptr<Engine::Pipeline> pipeline;
+        Unique<Pipeline> pipeline;
         VkPipelineLayout pipelineLayout;
 
 

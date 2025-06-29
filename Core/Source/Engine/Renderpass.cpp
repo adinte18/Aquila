@@ -32,7 +32,7 @@ void Renderpass::WriteToDescriptorSet() {
         descriptorInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;  // For depth
     }
 
-    Engine::DescriptorWriter writer(*m_DescriptorSetLayout, *m_DescriptorPool);
+    Engine::DescriptorWriter writer(*m_DescriptorSetLayout, *Engine::DescriptorAllocator::GetSharedPool());
     writer.writeImage(0, &descriptorInfo);
     writer.overwrite(m_DescriptorSet);
 }

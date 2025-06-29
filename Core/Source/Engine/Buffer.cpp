@@ -4,11 +4,10 @@
  * Initially based off VulkanBuffer by Sascha Willems -
  * https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanBuffer.h
  */
-#include "Common.h"
+#include "AquilaCore.h"
 
 #include "Engine/Buffer.h"
 
-#include <cassert>
 #include <cstring>
 
 namespace Engine {
@@ -62,7 +61,7 @@ Buffer::~Buffer() {
  * @return VkResult of the buffer mapping call
  */
 VkResult Buffer::map(VkDeviceSize size, VkDeviceSize offset) {
-  assert(m_Buffer && m_Memory && "Called map on buffer before create");
+  AQUILA_CORE_ASSERT(m_Buffer && m_Memory && "Called map on buffer before create");
   return vkMapMemory(m_Device.vk_GetDevice(), m_Memory, offset, size, 0, &m_Mapped);
 }
 
@@ -88,7 +87,7 @@ void Buffer::unmap() {
  *
  */
 void Buffer::vk_WriteToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
-  assert(m_Mapped && "Cannot copy to unmapped buffer");
+  AQUILA_CORE_ASSERT(m_Mapped && "Cannot copy to unmapped buffer");
 
   if (size == VK_WHOLE_SIZE) {
     memcpy(m_Mapped, data, m_BufferSize);

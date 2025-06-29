@@ -10,8 +10,8 @@
 namespace Engine {
     class IrradianceSamplingPass : public Renderpass {
     public:
-        IrradianceSamplingPass(Device& device, const VkExtent2D& extent)
-            : Renderpass(device, extent){}
+        IrradianceSamplingPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
+            : Renderpass(device, extent, descriptorSetLayout){}
 
         ~IrradianceSamplingPass() override {
             for (const auto& framebuffer : m_Framebuffers) {
@@ -32,8 +32,8 @@ namespace Engine {
             if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
         }
 
-        static std::shared_ptr<IrradianceSamplingPass> Initialize(Device& device, VkExtent2D extent) {
-            auto pass = std::make_shared<IrradianceSamplingPass>(device, extent);
+        static Ref<IrradianceSamplingPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
+            auto pass = std::make_shared<IrradianceSamplingPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

@@ -1,9 +1,11 @@
 #include "Engine/Window.h"
+
+#include <iostream>
 #include <stdexcept>
 #include <utility>
 
-Engine::Window::Window(const int width, const int height, std::string title)
-: width{width}, height{height}, windowName{std::move(title)} {
+Engine::Window::Window(const int width, const int height, const std::string& title)
+: m_Width{width}, m_Height{height}, m_WindowName{title} {
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
@@ -12,25 +14,39 @@ Engine::Window::Window(const int width, const int height, std::string title)
     GLFWmonitor* primaryMonitor = glfwGetPrimaryMonitor();
     const GLFWvidmode* mode = glfwGetVideoMode(primaryMonitor);
 
-    window = glfwCreateWindow(mode->width, mode->height, "Aquila", nullptr, nullptr);
+    m_Window = glfwCreateWindow(mode->width, mode->height, "Aquila", nullptr, nullptr);
 
-    glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, vk_FBResizedCallback);
-    glfwMaximizeWindow(window);
+    glfwSetInputMode(m_Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+    glfwSetWindowUserPointer(m_Window, this);
+    glfwSetFramebufferSizeCallback(m_Window, FramebufferResizedCallback);
+    glfwMaximizeWindow(m_Window);
 
-    if (window == nullptr) {
+    if (m_Window == nullptr) {
         throw std::runtime_error("Failed to create GLFW window");
     }
 }
 
+void Engine::Window::SetInputMode(int inputMode) const {
+    if (m_Window) {
+        glfwSetInputMode(m_Window, GLFW_CURSOR, inputMode);
+    }
+}
+
+void Engine::Window::GetCursorPosition(double& xpos, double& ypos) const {
+    glfwGetCursorPos(m_Window, &xpos, &ypos);
+}
+
+void Engine::Window::SetCursorPosition(double xpos, double ypos) const {
+    glfwSetCursorPos(m_Window, xpos, ypos);
+}
+
 Engine::Window::~Window() {
-    glfwDestroyWindow(window);
+    glfwDestroyWindow(m_Window);
     glfwTerminate();
 }
 
-void Engine::Window::vk_CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const {
-    if (glfwCreateWindowSurface(instance, window, nullptr, surface) != VK_SUCCESS) {
+void Engine::Window::CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const {
+    if (glfwCreateWindowSurface(instance, m_Window, nullptr, surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
 }
@@ -44,13 +60,13 @@ void Engine::Window::CleanUp() {
 }
 
 bool Engine::Window::ShouldClose() const {
-    return glfwWindowShouldClose(window);
+    return glfwWindowShouldClose(m_Window);
 }
 
-void Engine::Window::vk_FBResizedCallback(GLFWwindow *window, int width, int height) {
-    auto vkWindow = reinterpret_cast<Window*>(glfwGetWindowUserPointer(window));
-    vkWindow->framebufferResized = true;
-    vkWindow->width = width;
-    vkWindow->height = height;
+void Engine::Window::FramebufferResizedCallback(GLFWwindow *window, int width, int height) {
+    const auto vkWindow = static_cast<Window*>(glfwGetWindowUserPointer(window));
+    vkWindow->m_FramebufferResized = true;
+    vkWindow->m_Width = width;
+    vkWindow->m_Height = height;
 }
 
