@@ -12,9 +12,21 @@ namespace Editor::UIManagement {
                     });
                 }
                 if (ImGui::MenuItem(ICON_LC_FOLDER_OPEN " Open scene...", "Ctrl+O")) { 
-                    Engine::EventBus::Get().Dispatch(UICommandEvent{
-                        UICommand::OpenScene
-                    });
+                    nfdchar_t* outPath = nullptr;
+                    nfdresult_t result = NFD_OpenDialog("json", nullptr, &outPath);
+                    if (result == NFD_OKAY) {
+                        std::string path = outPath;
+                        std::cout << "Selected scene file: " << path << std::endl; 
+                        Engine::EventBus::Get().Dispatch(UICommandEvent{
+                            UICommand::OpenScene,
+                            {{"path", path}}
+                        });
+                        NFDi_Free(outPath);
+                    } else if (result == NFD_CANCEL) {
+                        std::cout << "User cancelled scene open dialog." << std::endl;
+                    } else {
+                        std::cerr << "Error opening scene file: " << NFD_GetError() << std::endl;
+                    }
                 }
                 if (ImGui::MenuItem(ICON_LC_SAVE_ALL " Save scene...", "Ctrl+S")) { 
                     Engine::EventBus::Get().Dispatch(UICommandEvent{

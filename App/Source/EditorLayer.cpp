@@ -14,8 +14,11 @@ void Editor::EditorLayer::OnStart() {
 
     // Initialize scene
     // m_Scene = std::make_shared<Engine::Scene>();
-    m_AqScene = std::make_shared<Engine::AquilaScene>("Scene");
-    m_AqScene->OnStart();
+
+    m_SceneManager = std::make_shared<Engine::SceneManager>();
+    m_SceneManager->EnqueueScene("Default Scene", std::make_unique<Engine::AquilaScene>("Default Scene"));
+    m_SceneManager->RequestSceneChange("Default Scene");
+    m_SceneManager->ProcessSceneChange();
 
     m_EditorCamera = std::make_unique<Engine::EditorCamera>();
     m_EditorCamera->SetPerspectiveProjection(40.f, 1.778f, 0.1f, 100.f);
@@ -23,7 +26,7 @@ void Editor::EditorLayer::OnStart() {
     m_EditorCamera->SetViewYXZ(m_EditorCamera->GetPosition(), m_EditorCamera->GetRotation());
     
     // if scene exists -> register events
-    if (m_AqScene) m_EventRegistry->RegisterHandlers(m_Device.get(), m_AqScene, m_RenderManager->GetOffscreenRenderer().get());
+    if (m_SceneManager->GetActiveScene() != nullptr) m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager, m_RenderManager->GetOffscreenRenderer().get());
 
     // m_SceneContext = std::make_unique<Engine::SceneContext>(*m_Device, *m_Scene);
 
@@ -62,11 +65,18 @@ void Editor::EditorLayer::OnUpdate() {
     m_FrameTime = std::chrono::duration<float>(newTime - m_CurrentTime).count();
     m_CurrentTime = newTime;
 
+
+
     // Poll events
     m_Window->PollEvents();
 
     if (m_RenderManager->GetOffscreenRenderer()->Resized()){
         m_RenderManager->GetOffscreenRenderer()->InvalidatePasses();
+    }
+
+    if (m_SceneManager->HasPendingSceneChange()) {
+        m_SceneManager->ProcessSceneChange();
+        m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager, m_RenderManager->GetOffscreenRenderer().get());
     }
 
     // Render offscreen - Scene
@@ -77,7 +87,7 @@ void Editor::EditorLayer::OnUpdate() {
             // setup rendering context
             Engine::SceneRenderingSystem_new::RenderContext context{};
             context.commandBuffer = commandBuffer;
-            context.scene = m_AqScene.get();
+            context.scene = m_SceneManager->GetActiveScene();
             context.camera = m_EditorCamera.get();
 
             
@@ -156,7 +166,7 @@ void Editor::EditorLayer::OnUpdate() {
         m_RenderManager->GetOnScreenRenderer()->vk_BeginSwapChainRenderPass(commandBuffer);
 
             // Render UI
-            m_UI->OnUpdate(commandBuffer, m_FrameTime, m_AqScene.get());
+            m_UI->OnUpdate(commandBuffer, m_FrameTime, m_SceneManager->GetActiveScene());
 
         // End render pass
         m_RenderManager->GetOnScreenRenderer()->vk_EndSwapChainRenderPass(commandBuffer);

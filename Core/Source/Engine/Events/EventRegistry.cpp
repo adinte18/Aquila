@@ -1,9 +1,13 @@
 #include "Engine/Events/EventRegistry.h"
 #include "Engine/Events/Event.h"
+#include "Scene/SceneManager.h"
 
 namespace Engine {
-    void EventRegistry::RegisterHandlers(Device* device, Ref<AquilaScene>& scene, OffscreenRenderer* renderer){
-        Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, &scene](const QueryEvent& event){
+    void EventRegistry::RegisterHandlers(Device* device, Ref<SceneManager>& sceneManager, OffscreenRenderer* renderer){
+        Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, &sceneManager](const QueryEvent& event){
+            auto scene = sceneManager->GetActiveScene();
+            if (!scene) return;
+            
             switch(event.m_Command){
 
                 case QueryCommand::EntityHasParent: {
@@ -21,7 +25,7 @@ namespace Engine {
 
                     auto view = scene->GetRegistry().view<SceneNodeComponent>();
                     for (auto entity : view) {
-                        entities.push_back(AqEntity{entity, scene.get()});
+                        entities.push_back(AqEntity{entity, scene});
                     }
 
                     event.m_Callback(UIEventResult::Success, entities);
@@ -47,7 +51,7 @@ namespace Engine {
                         if (isDescendant(entity, e)) continue;  // exclude descendants
                         if (isAncestor(entity, e)) continue;    // exclude ancestors
 
-                        attachableEntities.emplace_back(Engine::AqEntity{ e, scene.get() });
+                        attachableEntities.emplace_back(Engine::AqEntity{ e, scene });
                     }
 
                     if (event.m_Callback)
@@ -108,7 +112,8 @@ namespace Engine {
 
 
 
-        Engine::EventBus::Get().RegisterHandler<UICommandEvent>([device, &scene, renderer](const UICommandEvent& event){
+        Engine::EventBus::Get().RegisterHandler<UICommandEvent>([device, &sceneManager, renderer](const UICommandEvent& event){
+            auto scene = sceneManager->GetActiveScene();
             switch (event.m_Command) {
                 case UICommand::ViewportResized: {
                     uint32_t width = std::get<int>(event.m_Params.at("Width"));
@@ -120,10 +125,9 @@ namespace Engine {
                 }
 
                 case UICommand::NewScene : {
-                    // TODO : implement scene manager stuff
-
-                    // scene = std::make_shared<AquilaScene>("Test");
-                    // scene->OnStart();
+                    std::cout << "Creating new scene..." << std::endl;
+                    sceneManager->EnqueueScene("NewScene", std::make_unique<AquilaScene>("NewScene"));
+                    sceneManager->RequestSceneChange("NewScene");
                     break;
                 }
 
@@ -136,6 +140,14 @@ namespace Engine {
                 }
 
                 case UICommand::OpenScene: {
+                    auto& path = std::get<std::string>(event.m_Params.at("path"));
+                    if (path.empty()) break;
+                
+                    sceneManager->EnqueueScene("OpenedScene", std::make_unique<AquilaScene>("OpenedScene"));
+                    sceneManager->RequestSceneChange("OpenedScene");
+
+                    // todo : deserialization should happen after the request is processed
+
                     break;
                 }
 
@@ -189,7 +201,7 @@ namespace Engine {
                     if (!node.Children.empty()) 
                         scene->GetSceneGraph()->RemoveAllChildren(scene->GetRegistry(), node.Entity);
 
-                    Engine::AqEntity{node.Entity, scene.get()}.Kill();
+                    Engine::AqEntity{node.Entity, scene}.Kill();
 
                     break;
                 }

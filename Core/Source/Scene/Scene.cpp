@@ -11,28 +11,61 @@ namespace Engine {
 
     AquilaScene::~AquilaScene() = default;
 
+    
+    /**
+     * @brief Retrieves the entt registry associated with the scene.
+     * 
+     * @return entt::registry& The entt registry for the scene, which contains all entities and their components.
+     */
     entt::registry& AquilaScene::GetRegistry() {
         return m_EntityManager->GetRegistry();
     }
 
+    /**
+     * @brief Retrieves the EntityManager associated with the scene.
+     * 
+     * @return EntityManager* Pointer to the EntityManager that manages entities in the scene.
+     */
     EntityManager* AquilaScene::GetEntityManager(){
         return m_EntityManager.get();
     }
 
+    /**
+     * @brief Retrieves the SceneGraph associated with the scene.
+     * 
+     * @return SceneGraph* Pointer to the SceneGraph that manages the hierarchy and relationships of entities in the scene.
+     */
     SceneGraph* AquilaScene::GetSceneGraph(){
         return m_SceneGraph.get();
     }
 
+    /**
+     * @brief Retrieves the name of the scene.
+     * 
+     * @return const std::string& The name of the scene.
+     */
     const std::string& AquilaScene::GetSceneName(){
         return m_SceneName;
     }
 
+    /**
+     * @brief Initializes the scene by creating an EntityManager and a SceneGraph.
+     * 
+     * This function is called when the scene starts, setting up the necessary components
+     * for managing entities and their relationships within the scene.
+     */
     void AquilaScene::OnStart() {
         m_EntityManager = std::make_unique<EntityManager>(this);
         m_SceneGraph = std::make_unique<SceneGraph>();
         m_SceneGraph->Construct(m_EntityManager->GetRegistry());
     }
 
+    /**
+     * @brief Destroys the scene, cleaning up the EntityManager and SceneGraph.
+     * 
+     * This function is called when the scene is no longer needed, ensuring that all resources
+     * associated with the scene are properly released.
+     */
     bool AquilaScene::Deserialize(const std::string& filepath) {
         std::ifstream file(filepath);
         if (!file.is_open()) {
@@ -92,6 +125,15 @@ namespace Engine {
         return true;
     }
 
+    /**
+     * @brief Serializes the scene to a JSON file.
+     * 
+     * This function writes the current state of the scene, including entities and their components,
+     * to a JSON file specified by the filepath.
+     * 
+     * @param filepath The path to the file where the scene will be serialized.
+     * @return true if serialization was successful, false otherwise.
+     */
     bool AquilaScene::Serialize(const std::string& filepath){
         nlohmann::ordered_json sceneJson;
 

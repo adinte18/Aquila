@@ -18,6 +18,14 @@ namespace Editor::UIManagement {
                 }
             }
         });
+
+        // ensure the asset path exists
+        if (fs::exists(ASSET_PATH)) {
+            s_CurrentPath = ASSET_PATH;
+        } else {
+            fs::create_directory(ASSET_PATH);
+            s_CurrentPath = ASSET_PATH;
+        }
     }
 
     void ContentElement::DrawFolderTree(const fs::path& basePath, fs::path& selectedPath) {

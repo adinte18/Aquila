@@ -8,8 +8,11 @@
 #include "Engine/Window.h"
 #include "Engine/Device.h"
 #include "Engine/RenderManager.h"
-
+#include "Engine/Texture2D.h"
 #include "Engine/Events/EventRegistry.h"
+
+#include "Scene/Scene.h"
+#include "Scene/SceneManager.h"
 
 #include "ECS/Scene.h"
 #include "ECS/SceneContext.h"
@@ -27,7 +30,6 @@
 #include "RenderingSystems/PreethamSkyRenderingSystem.h"
 #include "RenderingSystems/SceneRenderingSystem_new.h"
 
-#include "Engine/Texture2D.h"
 
 namespace Editor {
 
@@ -239,7 +241,7 @@ namespace Editor {
 
         // Scene
         // Ref<Engine::Scene> m_Scene;
-        Ref<Engine::AquilaScene> m_AqScene;
+        Ref<Engine::SceneManager> m_SceneManager;
         Unique<Engine::EditorCamera> m_EditorCamera;
 
 
