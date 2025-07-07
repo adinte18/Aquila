@@ -46,9 +46,13 @@ namespace Editor {
 
         static inline float BaseFontSize = 16.0f;
 
-        // Font files (change to your preferred paths)
-        static inline const char* MainFontPath = R"(C:/Windows/Fonts/segoeui.ttf)";
-        static inline const char* IconsFontPath = R"(C:\Programming\Aquila\App\Include\lucide.ttf)";
+        #if defined(AQUILA_PLATFORM_WINDOWS)
+            static inline const char* MainFontPath = R"(C:/Windows/Fonts/segoeui.ttf)";
+            static inline const char* IconsFontPath = R"(C:\Programming\Aquila\App\Include\lucide.ttf)";
+        #elif defined(AQUILA_PLATFORM_LINUX)
+            static inline const char* MainFontPath = R"(/home/adinte/Desktop/Aquila/Aquila/Resources/Engine Ressources/Roboto-VariableFont_wdth,wght.ttf)";
+            static inline const char* IconsFontPath = R"(/home/adinte/Desktop/Aquila/Aquila/App/Include/lucide.ttf)";
+        #endif
 
         static inline constexpr ImWchar IconsRanges[3] = { ICON_MIN_LC, ICON_MAX_16_LC, 0 };
     };

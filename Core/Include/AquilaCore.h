@@ -28,6 +28,8 @@
 #include <mutex>
 #include <typeindex>
 #include <fstream>
+#include <inttypes.h>
+#include <optional>
 
 // Aquila core utilities
 #include "Defines.h"
@@ -99,9 +101,16 @@ struct UUID {
         uint16_t data4;
         uint64_t data5;
 
-        std::sscanf(str.c_str(),
-                    "%8x-%4hx-%4hx-%4hx-%12llx",
-                    &data1, &data2, &data3, &data4, &data5);
+
+        #if defined(AQUILA_PLATFORM_WINDOWS)
+            std::sscanf(str.c_str(),
+                        "%8x-%4hx-%4hx-%4hx-%12llx",
+                        &data1, &data2, &data3, &data4, &data5);
+        #elif defined(AQUILA_PLATFORM_LINUX)
+            std::sscanf(str.c_str(),
+                        "%8x-%4hx-%4hx-%4hx-%12" SCNx64,
+                        &data1, &data2, &data3, &data4, &data5);
+        #endif
 
         uuid.high = (static_cast<uint64_t>(data1) << 32)
                 | (static_cast<uint64_t>(data2) << 16)

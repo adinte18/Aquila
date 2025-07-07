@@ -76,7 +76,12 @@ namespace Editor::UIManagement {
                 fs::path currentPath(m_CurrentlyHoveredPath);
                 std::string currentName = currentPath.filename().string();
 
-                strncpy_s(m_RenameBuffer.data(), m_RenameBuffer.size(), currentName.c_str(), _TRUNCATE);
+                #ifdef AQUILA_PLATFORM_WINDOWS
+                    strncpy_s(m_RenameBuffer.data(), m_RenameBuffer.size(), currentName.c_str(), _TRUNCATE);
+                #elif defined(AQUILA_PLATFORM_LINUX)
+                    std::strncpy(m_RenameBuffer.data(), currentName.c_str(), m_RenameBuffer.size() - 1);
+                    m_RenameBuffer[m_RenameBuffer.size() - 1] = '\0';  // Null-terminate to avoid overflow
+                #endif
 
                 m_OpenRenamePopup = true;
             }

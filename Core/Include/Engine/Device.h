@@ -5,11 +5,6 @@
 
 #include "Engine/Window.h"
 
-#include <vector>
-#include <optional>
-#include <iostream>
-#include <set>
-
 namespace Engine {
     struct VkSwapChainSupportDetails {
         VkSurfaceCapabilitiesKHR capabilities;

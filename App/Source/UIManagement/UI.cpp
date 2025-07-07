@@ -73,7 +73,13 @@ ImVec4 Editor::UIManager::HEXAtoIV4(const char* hex, float alpha) const {
 
     if (hex[0] == '#') hex++;
 
-	sscanf_s(hex, "%02x%02x%02x", &r, &g, &b);
+    #ifdef AQUILA_PLATFORM_WINDOWS
+	    sscanf_s(hex, "%02x%02x%02x", &r, &g, &b);
+    #elif defined(AQUILA_PLATFORM_LINUX)
+        sscanf(hex, "%02x%02x%02x", &r, &g, &b);
+    #endif
+
+
     return ImVec4(r / 255.0f, g / 255.0f, b / 255.0f, alpha);
 }
 

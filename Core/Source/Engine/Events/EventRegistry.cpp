@@ -119,11 +119,13 @@ namespace Engine {
                     break;
                 }
 
-                // case UICommand::NewScene : {
-                //     scene = std::make_shared<AquilaScene>("Test");
-                //     scene->OnStart();
-                //     break;
-                // }
+                case UICommand::NewScene : {
+                    // TODO : implement scene manager stuff
+
+                    // scene = std::make_shared<AquilaScene>("Test");
+                    // scene->OnStart();
+                    break;
+                }
 
                 case UICommand::SaveScene: {
                     

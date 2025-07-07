@@ -174,8 +174,14 @@ namespace Editor::UIManagement {
     void PropertiesElement::DrawComponent_Metadata(entt::registry& registry, entt::entity entity) {
         auto& meta = registry.get<MetadataComponent>(entity);
         char buffer[256];
-        strncpy_s(buffer, meta.Name.c_str(), sizeof(buffer));
-        
+
+        #ifdef AQUILA_PLATFORM_WINDOWS
+            strncpy_s(buffer, meta.Name.c_str(), sizeof(buffer));
+        #elif defined(AQUILA_PLATFORM_LINUX)
+            strncpy(buffer, meta.Name.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0'; // ensure null-termination
+        #endif
+            
         if (ImGui::CollapsingHeader(ICON_LC_FILE_CODE_2 " METADATA", ImGuiTreeNodeFlags_DefaultOpen)) {
             ImGui::Text("Name");
             ImGui::SameLine();

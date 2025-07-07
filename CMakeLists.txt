@@ -3,7 +3,24 @@ project(Aquila)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# ===== Platform Detection =====
+message(STATUS "Platform: ${CMAKE_SYSTEM_NAME}")
+
+if(WIN32)
+    set(PLATFORM_DEFINE -DAQUILA_PLATFORM_WINDOWS)
+elseif(UNIX AND NOT APPLE)
+    set(PLATFORM_DEFINE -DAQUILA_PLATFORM_LINUX)
+elseif(APPLE)
+    set(PLATFORM_DEFINE -DAQUILA_PLATFORM_MACOS)
+else()
+    message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}")
+endif()
+
+add_compile_definitions(${PLATFORM_DEFINE})
+
+# =============================
 add_subdirectory(Core)
 add_subdirectory(App)
 
@@ -38,6 +55,5 @@ foreach(SHADER_FILE ${SHADER_FILES})
 
     list(APPEND VALIDATE_COMMANDS ${OUTPUT_FILE})
 endforeach()
-
 
 add_custom_target(validate_shaders ALL DEPENDS ${VALIDATE_COMMANDS})

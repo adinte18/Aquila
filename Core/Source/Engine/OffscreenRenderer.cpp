@@ -1,4 +1,3 @@
-#include "ECS/Scene.h"
 #include "Engine/OffscreenRenderer.h"
 
 namespace Engine {
@@ -71,6 +70,12 @@ namespace Engine {
     }
 
     void OffscreenRenderer::Resize(VkExtent2D newExtent) {
+    
+        // x11/wayland linux fix - throws  out of memory 
+        if (newExtent.width == 0 || newExtent.height == 0) {
+            return;
+        }
+
         vkDeviceWaitIdle(m_Device.vk_GetDevice());
         m_Extent = newExtent;
         m_Resized = true;

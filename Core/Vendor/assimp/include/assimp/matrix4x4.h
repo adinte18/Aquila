@@ -150,7 +150,7 @@ public:
      *  The check is performed against a not so small epsilon.
      */
     inline bool IsIdentity(const TReal
-            epsilon = AI_CONFIG_CHECK_IDENTITY_MATRIX_EPSILON_DEFAULT) const;
+            epsilon = 10e-3f) const;
 
     // -------------------------------------------------------------------
     /** @brief Decompose a trafo matrix into its original components

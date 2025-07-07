@@ -9,7 +9,6 @@
 #include <glm/vec4.hpp>
 
 #include "Descriptor.h"
-#include "DescriptorAllocator.h"
 #include "Engine/Device.h"
 
 namespace Engine {
