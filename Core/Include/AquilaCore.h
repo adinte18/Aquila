@@ -30,6 +30,7 @@
 #include <fstream>
 #include <inttypes.h>
 #include <optional>
+#include <set>
 
 // Aquila core utilities
 #include "Defines.h"

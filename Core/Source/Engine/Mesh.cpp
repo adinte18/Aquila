@@ -93,7 +93,7 @@ namespace Engine {
             VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
         );
 
-        m_Device.vk_CopyBuffer(stagingBuffer.vk_GetBuffer(),
+        m_Device.CopyBuffer(stagingBuffer.vk_GetBuffer(),
             m_VertexBuffer->vk_GetBuffer(),
             bufferSize);
     }
@@ -118,7 +118,7 @@ namespace Engine {
         stagingBuffer.map();
         stagingBuffer.vk_WriteToBuffer(vertices.data());
 
-        m_Device.vk_CopyBuffer(stagingBuffer.vk_GetBuffer(),
+        m_Device.CopyBuffer(stagingBuffer.vk_GetBuffer(),
             m_VertexBuffer->vk_GetBuffer(),
             bufferSize);
     }
@@ -152,7 +152,7 @@ namespace Engine {
         );
 
         //Move data from staging buffer to index buffer
-        m_Device.vk_CopyBuffer(stagingBuffer.vk_GetBuffer(), m_IndexBuffer->vk_GetBuffer(), bufferSize);
+        m_Device.CopyBuffer(stagingBuffer.vk_GetBuffer(), m_IndexBuffer->vk_GetBuffer(), bufferSize);
     }
 
     void Mesh::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet) {

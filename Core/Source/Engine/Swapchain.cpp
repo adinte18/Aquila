@@ -6,22 +6,22 @@
 #include <utility>
 
 void Engine::Swapchain::vk_CreateSwapChain() {
-    VkSwapChainSupportDetails swapChainSupport = device.vk_GetSwapChainSupport();
+    VkSwapChainSupportDetails swapChainSupport = device.GetSwapChainSupport();
 
-    VkSurfaceFormatKHR surfaceFormat = vk_ChooseSwapSurfaceFormat(swapChainSupport.formats);
-    VkPresentModeKHR presentMode = vk_ChooseSwapPresentMode(swapChainSupport.presentModes);
-    VkExtent2D extent = vk_ChooseSwapExtent(swapChainSupport.capabilities);
+    VkSurfaceFormatKHR surfaceFormat = vk_ChooseSwapSurfaceFormat(swapChainSupport.m_Formats);
+    VkPresentModeKHR presentMode = vk_ChooseSwapPresentMode(swapChainSupport.m_PresentModes);
+    VkExtent2D extent = vk_ChooseSwapExtent(swapChainSupport.m_SurfaceCapabilities);
 
-    uint32_t imageCount = swapChainSupport.capabilities.minImageCount + 1;
+    uint32_t imageCount = swapChainSupport.m_SurfaceCapabilities.minImageCount + 1;
 
-    if (swapChainSupport.capabilities.maxImageCount > 0 &&
-        imageCount > swapChainSupport.capabilities.maxImageCount) {
-        imageCount = swapChainSupport.capabilities.maxImageCount;
+    if (swapChainSupport.m_SurfaceCapabilities.maxImageCount > 0 &&
+        imageCount > swapChainSupport.m_SurfaceCapabilities.maxImageCount) {
+        imageCount = swapChainSupport.m_SurfaceCapabilities.maxImageCount;
     }
 
     VkSwapchainCreateInfoKHR createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    createInfo.surface = device.vk_GetSurface();
+    createInfo.surface = device.GetSurface();
 
     createInfo.minImageCount = imageCount;
     createInfo.imageFormat = surfaceFormat.format;
@@ -30,10 +30,10 @@ void Engine::Swapchain::vk_CreateSwapChain() {
     createInfo.imageArrayLayers = 1;
     createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
-    VkQueueFamilyIndices indices = device.vk_FindPhysicalQF();
-    uint32_t queueFamilyIndices[] = {indices.graphicsFamily.value(), indices.presentFamily.value()};
+    VkQueueFamilyIndices indices = device.FindPhysicalQF();
+    uint32_t queueFamilyIndices[] = {indices.m_GraphicsFamily.value(), indices.m_PresentFamily.value()};
 
-    if (indices.graphicsFamily != indices.presentFamily) {
+    if (indices.m_GraphicsFamily != indices.m_PresentFamily) {
         createInfo.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
         createInfo.queueFamilyIndexCount = 2;
         createInfo.pQueueFamilyIndices = queueFamilyIndices;
@@ -41,7 +41,7 @@ void Engine::Swapchain::vk_CreateSwapChain() {
         createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
     }
 
-    createInfo.preTransform = swapChainSupport.capabilities.currentTransform;
+    createInfo.preTransform = swapChainSupport.m_SurfaceCapabilities.currentTransform;
     createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
 
     createInfo.presentMode = presentMode;
@@ -333,7 +333,7 @@ VkResult Engine::Swapchain::vk_SubmitCommandBuffers(const VkCommandBuffer *buffe
     submitInfo.pSignalSemaphores = signalSemaphores;
 
     vkResetFences(device.vk_GetDevice(), 1, &inFlightFences[currentFrame]);
-    if (vkQueueSubmit(device.vk_GetGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
+    if (vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
         VK_SUCCESS) {
         throw std::runtime_error("failed to submit draw command buffer!");
     }
@@ -350,7 +350,7 @@ VkResult Engine::Swapchain::vk_SubmitCommandBuffers(const VkCommandBuffer *buffe
 
     presentInfo.pImageIndices = imageIndex;
 
-    auto result = vkQueuePresentKHR(device.vk_GetPresentQueue(), &presentInfo);
+    auto result = vkQueuePresentKHR(device.GetPresentQueue(), &presentInfo);
 
     currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 
@@ -383,7 +383,7 @@ void Engine::Swapchain::vk_CreateDepthRessources() {
         imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
         imageInfo.flags = 0;
 
-        device.vk_CreateImageWithInfo(
+        device.CreateImageWithInfo(
                 imageInfo,
                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
                 depthImages[i],
@@ -408,7 +408,7 @@ void Engine::Swapchain::vk_CreateDepthRessources() {
 
 VkFormat Engine::Swapchain::vk_FindDepthFormat()
 {
-    return device.vk_FindSupportedFormat(
+    return device.FindSupportedFormat(
             {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT,
                 VK_FORMAT_D24_UNORM_S8_UINT},
             VK_IMAGE_TILING_OPTIMAL,

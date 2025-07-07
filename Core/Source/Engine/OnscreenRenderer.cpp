@@ -128,7 +128,7 @@ void Engine::OnscreenRenderer::vk_CreateCommandBuffers(){
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandPool = device.vk_GetCommandPool();
+    allocInfo.commandPool = device.GetCommandPool();
     allocInfo.commandBufferCount = static_cast<uint32_t>(commandBuffers.size());
 
     if (vkAllocateCommandBuffers(device.vk_GetDevice(), &allocInfo, commandBuffers.data()) !=
@@ -141,7 +141,7 @@ void Engine::OnscreenRenderer::vk_FreeCommandBuffers()
 {
     vkFreeCommandBuffers(
         device.vk_GetDevice(),
-        device.vk_GetCommandPool(),
+        device.GetCommandPool(),
         static_cast<uint32_t>(commandBuffers.size()),
         commandBuffers.data());
     commandBuffers.clear();

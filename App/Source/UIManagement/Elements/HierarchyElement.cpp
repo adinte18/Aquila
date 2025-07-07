@@ -133,7 +133,7 @@ namespace Editor::UIManagement {
                 QueryCommand::EntityHasParent,
                 { {"entity", UIManager::s_SelectedEntity} },
                 [&hasParent](UIEventResult result, CommandParam payload) {
-                    if (result == UIEventResult::Success) {
+                    if (result == UIEventResult::Failure) {
                         hasParent = true;
                     }
                 }

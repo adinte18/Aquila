@@ -42,7 +42,7 @@ Buffer::Buffer(
       m_MemoryPropertyFlags{memoryPropertyFlags} {
   m_AlignmentSize = vk_GetAlignment(instanceSize, minOffsetAlignment);
   m_BufferSize = m_AlignmentSize * instanceCount;
-  device.vk_CreateBuffer(m_BufferSize, usageFlags, memoryPropertyFlags, m_Buffer, m_Memory);
+  device.CreateBuffer(m_BufferSize, usageFlags, memoryPropertyFlags, m_Buffer, m_Memory);
 }
 
 Buffer::~Buffer() {

@@ -15,7 +15,7 @@ namespace Engine {
         VkCommandBufferAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
         allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandPool = m_Device.vk_GetCommandPool();
+        allocInfo.commandPool = m_Device.GetCommandPool();
         allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
 
         if (vkAllocateCommandBuffers(m_Device.vk_GetDevice(), &allocInfo, m_CommandBuffers.data()) !=
@@ -31,7 +31,7 @@ namespace Engine {
     void OffscreenRenderer::FreeCommandBuffers() {
         vkFreeCommandBuffers(
             m_Device.vk_GetDevice(),
-            m_Device.vk_GetCommandPool(),
+            m_Device.GetCommandPool(),
             static_cast<uint32_t>(m_CommandBuffers.size()),
             m_CommandBuffers.data());
         m_CommandBuffers.clear();
@@ -268,7 +268,7 @@ namespace Engine {
         submitInfo.pSignalSemaphores = &signalSemaphore;  // Use the created semaphore
 
         // Submit the command buffer for execution (offscreen rendering)
-        if (vkQueueSubmit(m_Device.vk_GetGraphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
+        if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &submitInfo, fence) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit command buffer!");
         }
 

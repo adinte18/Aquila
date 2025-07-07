@@ -135,10 +135,10 @@ void Editor::UIManager::InitializeImGui() const {
     // Setup Platform/Renderer backends
     ImGui_ImplGlfw_InitForVulkan(m_Window.GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = m_Device.vk_GetInstance();
-    init_info.PhysicalDevice = m_Device.vk_GetPhysicalDevice();
+    init_info.Instance = m_Device.GetInstance();
+    init_info.PhysicalDevice = m_Device.GetPhysicalDevice();
     init_info.Device = m_Device.vk_GetDevice();
-    init_info.Queue = m_Device.vk_GetGraphicsQueue();
+    init_info.Queue = m_Device.GetGraphicsQueue();
     init_info.DescriptorPool = m_UiDescriptorPool;
     init_info.RenderPass = m_RenderPass;
     init_info.Subpass = 0;

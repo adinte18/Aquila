@@ -87,18 +87,18 @@ namespace Engine {
     void Texture2D::CreateCubeMap(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
         vk_CreateCubemapImage(width, height, format, usage);
         vk_CreateCubemapImageView(format);
-        vk_CreateCubemapSampler(); // maybe i dont need this, i wont sample it for IBL i guess
+        vk_CreateCubemapSampler();
         vk_WriteToDescriptorSet();
     }
 
     void Texture2D::GenerateMipmap(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels){
             VkFormatProperties formatProperties;
-        vkGetPhysicalDeviceFormatProperties(m_Device.vk_GetPhysicalDevice(), imageFormat, &formatProperties);
+        vkGetPhysicalDeviceFormatProperties(m_Device.GetPhysicalDevice(), imageFormat, &formatProperties);
         if (!(formatProperties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
             throw std::runtime_error("Texture image format does not support linear blitting!");
         }
 
-        VkCommandBuffer commandBuffer = m_Device.vk_BeginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -173,7 +173,7 @@ namespace Engine {
             0, nullptr,
             1, &barrier);
 
-        m_Device.vk_EndSingleTimeCommands(commandBuffer);
+        m_Device.EndSingleTimeCommands(commandBuffer);
     }
 
     void Texture2D::CreateMipMappedCubemap(uint32_t width, uint32_t height, VkFormat format,
@@ -205,7 +205,7 @@ namespace Engine {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocInfo.memoryTypeIndex = m_Device.FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate cubemap memory!");
@@ -293,7 +293,7 @@ namespace Engine {
         VkImageLayout newLayout,
         uint32_t layers)
     {
-        VkCommandBuffer commandBuffer = m_Device.vk_BeginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
 
         VkImageMemoryBarrier barrier{};
         barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -378,7 +378,7 @@ namespace Engine {
             1, &barrier
         );
 
-        m_Device.vk_EndSingleTimeCommands(commandBuffer);
+        m_Device.EndSingleTimeCommands(commandBuffer);
     }
 
     void Texture2D::vk_CreateCubemapImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
@@ -408,7 +408,7 @@ namespace Engine {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocInfo.memoryTypeIndex = m_Device.FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate cubemap memory!");
@@ -439,7 +439,7 @@ namespace Engine {
     }
     void Texture2D::vk_CreateCubemapSampler() {
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
+        vkGetPhysicalDeviceProperties(m_Device.GetPhysicalDevice(), &properties);
 
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -496,7 +496,7 @@ namespace Engine {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, properties);
+        allocInfo.memoryTypeIndex = m_Device.FindMemoryType(memRequirements.memoryTypeBits, properties);
 
         if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &imageMemory) != VK_SUCCESS) {
             throw std::runtime_error("failed to allocate image memory!");
@@ -525,7 +525,7 @@ namespace Engine {
 
     void Texture2D::vk_CreateTextureSampler() {
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
+        vkGetPhysicalDeviceProperties(m_Device.GetPhysicalDevice(), &properties);
 
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -548,7 +548,7 @@ namespace Engine {
     }
 
     void Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const {
-        VkCommandBuffer commandBuffer = m_Device.vk_BeginSingleTimeCommands();
+        VkCommandBuffer commandBuffer = m_Device.BeginSingleTimeCommands();
 
         VkBufferImageCopy region{};
         region.bufferOffset = 0;
@@ -567,7 +567,7 @@ namespace Engine {
 
         vkCmdCopyBufferToImage(commandBuffer, buffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-        m_Device.vk_EndSingleTimeCommands(commandBuffer);
+        m_Device.EndSingleTimeCommands(commandBuffer);
     }
 
     void Texture2D::vk_CreateSolidColorCubemap(glm::vec4 color) {
@@ -711,7 +711,7 @@ namespace Engine {
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = memRequirements.size;
-        allocInfo.memoryTypeIndex = m_Device.vk_FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        allocInfo.memoryTypeIndex = m_Device.FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         if (vkAllocateMemory(m_Device.vk_GetDevice(), &allocInfo, nullptr, &textureImageMemory) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate color attachment memory!");
@@ -804,7 +804,7 @@ namespace Engine {
 
     void Texture2D::vk_CreateHDRTextureSampler() {
         VkPhysicalDeviceProperties properties{};
-        vkGetPhysicalDeviceProperties(m_Device.vk_GetPhysicalDevice(), &properties);
+        vkGetPhysicalDeviceProperties(m_Device.GetPhysicalDevice(), &properties);
 
         VkSamplerCreateInfo samplerInfo{};
         samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
