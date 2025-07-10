@@ -1,6 +1,15 @@
 #include "Engine/Events/EventRegistry.h"
 #include "Engine/Events/Event.h"
+#include "Engine/Events/EventBus.h"
+
+#include "Engine/OffscreenRenderer.h"
+
 #include "Scene/SceneManager.h"
+#include "Scene/SceneGraph.h"
+#include "Scene/Scene.h"
+#include "Scene/Entity.h"
+#include "Scene/EntityManager.h"
+
 
 namespace Engine {
     void EventRegistry::RegisterHandlers(Device* device, Ref<SceneManager>& sceneManager, OffscreenRenderer* renderer){
@@ -125,29 +134,30 @@ namespace Engine {
                 }
 
                 case UICommand::NewScene : {
-                    std::cout << "Creating new scene..." << std::endl;
-                    sceneManager->EnqueueScene("NewScene", std::make_unique<AquilaScene>("NewScene"));
-                    sceneManager->RequestSceneChange("NewScene");
+                    sceneManager->EnqueueScene(std::make_unique<AquilaScene>("New Scene"));
+                    sceneManager->RequestSceneChange();
                     break;
                 }
 
                 case UICommand::SaveScene: {
-                    
                     std::string filename = std::string(ASSET_PATH"/" + scene->GetSceneName() + ".aqscene");
                     scene->Serialize(filename);
-
                     break;
                 }
 
                 case UICommand::OpenScene: {
                     auto& path = std::get<std::string>(event.m_Params.at("path"));
                     if (path.empty()) break;
-                
-                    sceneManager->EnqueueScene("OpenedScene", std::make_unique<AquilaScene>("OpenedScene"));
-                    sceneManager->RequestSceneChange("OpenedScene");
 
-                    // todo : deserialization should happen after the request is processed
+                    std::cout << "Opening scene at : " << path << std::endl;
 
+                    sceneManager->EnqueueScene(std::make_unique<AquilaScene>(),
+                        [path](AquilaScene* scene) {
+                            scene->Deserialize(path); // when the scene is activated, deserialize it
+                        }
+                    );
+
+                    sceneManager->RequestSceneChange();
                     break;
                 }
 
@@ -160,9 +170,10 @@ namespace Engine {
                     break;
                 }
 
-                case UICommand::AddEntity:
+                case UICommand::AddEntity: {
                     scene->GetEntityManager()->AddEntity();
                     break;
+                }
 
                 case UICommand::LoadMesh:{
                     auto& path = std::get<std::string>(event.m_Params.at("path"));

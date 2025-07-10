@@ -1,5 +1,6 @@
 #include "Elements/ContentBrowserElement.h"
 #include "UI.h"
+#include "imgui.h"
 
 namespace Editor::UIManagement {
     namespace fs = std::filesystem;
@@ -328,7 +329,7 @@ namespace Editor::UIManagement {
                     ImGui::BeginGroup();
                     ImGui::PushID(id++);
 
-                    ImGui::BeginChild("Card", ImVec2(cardWidth, cardHeight), true, ImGuiWindowFlags_NoScrollbar);
+                    ImGui::BeginChild("Card", ImVec2(cardWidth, cardHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse);
 
                     ImVec2 cardPos = ImGui::GetCursorScreenPos();
 
@@ -346,10 +347,33 @@ namespace Editor::UIManagement {
                     }
 
                     if (textureID) {
-                        if (ImGui::ImageButton("##Icon", textureID,
-                                            ImVec2(cardWidth - 2 * iconPadding, cardWidth - 2 * iconPadding))) {
+                        bool clicked = ImGui::ImageButton("##Icon", textureID,
+                            ImVec2(cardWidth - 3.5f * iconPadding, cardWidth - 2 * iconPadding));
+
+                        if (clicked) {
                             if (entry.is_directory()) {
                                 s_CurrentPath = entry.path().string();
+                            }
+                            else if (entry.path().extension() == ".aqscene") {
+                                // Single click (already handled above)
+                            }
+                        }
+
+                        if (entry.path().extension() == ".aqscene") {
+                            if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+                                std::string pathStr = entry.path().string();
+                                ImGui::SetDragDropPayload("SCENE_PATH", pathStr.c_str(), pathStr.size() + 1); // null-terminated
+                                ImGui::Text("Drag scene: %s", entry.path().filename().string().c_str());
+                                ImGui::EndDragDropSource();
+                            }
+
+                            // Double-click to open
+                            if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+                                Engine::EventBus::Get().Dispatch(UICommandEvent{
+                                    UICommand::OpenScene,
+                                    {{"path", entry.path().string()}},
+                                    nullptr
+                                });
                             }
                         }
                         
@@ -363,7 +387,14 @@ namespace Editor::UIManagement {
 
                     ImGui::Separator();
 
-                    ImGui::TextWrapped("%s", name.c_str());
+                    std::string displayName = name;
+                    if (!entry.is_directory()) {
+                        displayName = entry.path().stem().string();
+                    }
+
+                    ImGui::PushFont(UIManager::s_Fonts.Font14);
+                    ImGui::TextWrapped("%s", displayName.c_str());
+                    ImGui::PopFont();
 
                     std::string tag = "FILE";
                     if (entry.is_directory())

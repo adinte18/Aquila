@@ -5,12 +5,22 @@ namespace Engine {
     EntityManager::~EntityManager() = default;
 
 
+    /**
+     * @brief Initializes the EntityManager with a given scene.
+     * 
+     * @param scene The scene to be managed by this EntityManager.
+     */
     entt::registry& EntityManager::GetRegistry(){
         AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
 
         return m_Registry;
     }
 
+    /**
+     * @brief Adds a new entity to the scene with a default name.
+     * 
+     * @return AqEntity The newly created entity wrapped in AqEntity.
+     */
     AqEntity EntityManager::AddEntity(){
         AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
 
@@ -31,6 +41,11 @@ namespace Engine {
         return AqEntity(entity, m_Scene);
     }
 
+    /**
+     * @brief Clears all entities from the scene.
+     * 
+     * This function destroys all entities in the registry and clears the registry.
+     */
     void EntityManager::Clear()
     {
         for(auto [entity] : m_Registry.storage<entt::entity>().each())
@@ -44,8 +59,8 @@ namespace Engine {
     /**
      * @brief Get entity by his UUID
      * 
-     * @param uuid 
-     * @return AqEntity 
+     * @param uuid UUID of the entity to find
+     * @return AqEntity Entity with the given UUID 
      */
     AqEntity EntityManager::GetEntityByUUID(UUID uuid){
         AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");

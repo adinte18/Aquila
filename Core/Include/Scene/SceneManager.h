@@ -1,8 +1,8 @@
 #ifndef SCENE_MANAGER_H
 #define SCENE_MANAGER_H
 
-#include <string>
 #include <unordered_map>
+#include "AquilaCore.h"
 #include "Scene/Scene.h"
 
 namespace Engine {
@@ -21,19 +21,21 @@ namespace Engine {
         [[nodiscard]] bool HasScene() const;
         [[nodiscard]] bool HasPendingSceneChange() const;
 
-        void EnqueueScene(const std::string& name, Unique<AquilaScene> scene);
+        void EnqueueScene(Unique<AquilaScene> scene, std::function<void(AquilaScene*)> onActivated = nullptr);
 
-        void RequestSceneChange(const std::string& name);
+        void RequestSceneChange();
         void ProcessSceneChange();
     private:
-        void ChangeScene(const std::string& name);
-        void RemoveScene(const std::string& name);
+        void ChangeScene(const UUID& handle);
+        void RemoveScene(const UUID& handle);
 
         AquilaScene* m_ActiveScene = nullptr;
-        std::unordered_map<std::string, Unique<AquilaScene>> m_Scenes;
+        std::unordered_map<UUID, Unique<AquilaScene>> m_Scenes;
 
-        std::string m_PendingSceneChange;
+        UUID m_PendingSceneChangeHandle;
         bool m_HasPendingSceneChange = false;
+
+        Delegate<void(AquilaScene*)> m_OnSceneActivated = nullptr;
     };
 }
 

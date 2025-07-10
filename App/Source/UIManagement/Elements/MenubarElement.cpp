@@ -13,7 +13,7 @@ namespace Editor::UIManagement {
                 }
                 if (ImGui::MenuItem(ICON_LC_FOLDER_OPEN " Open scene...", "Ctrl+O")) { 
                     nfdchar_t* outPath = nullptr;
-                    nfdresult_t result = NFD_OpenDialog("json", nullptr, &outPath);
+                    nfdresult_t result = NFD_OpenDialog("aqscene", nullptr, &outPath);
                     if (result == NFD_OKAY) {
                         std::string path = outPath;
                         std::cout << "Selected scene file: " << path << std::endl; 

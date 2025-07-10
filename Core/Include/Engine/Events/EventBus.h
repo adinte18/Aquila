@@ -12,7 +12,7 @@ namespace Engine {
     class EventBus {
     public:
         template<typename EventType>
-        using Handler = std::function<void(const EventType&)>;
+        using Handler = Delegate<void(const EventType&)>;
 
         template<typename EventType>
         void RegisterHandler(Handler<EventType> handler) {
@@ -42,8 +42,13 @@ namespace Engine {
             return instance;
         }
 
+        void Clear() {
+            std::lock_guard<std::mutex> lock(mutex);
+            handlers.clear();
+        }
+
     private:
-        std::unordered_map<std::type_index, std::vector<std::function<void(const Event&)>>> handlers;
+        std::unordered_map<std::type_index, std::vector<Delegate<void(const Event&)>>> handlers;
         std::mutex mutex;
     };
 

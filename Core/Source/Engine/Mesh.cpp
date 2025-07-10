@@ -25,8 +25,10 @@ namespace Engine {
         
         m_Vertices.clear();
         m_Indices.clear();
+        m_Primitives.clear();
 
-        std::function<void(aiNode*, const aiScene*)> ProcessNode;
+        Delegate<void(aiNode*, const aiScene*)> ProcessNode; // lambda function to process nodes
+
         ProcessNode = [&](aiNode* node, const aiScene* scene) {
             for (unsigned int i = 0; i < node->mNumMeshes; i++) {
                 aiMesh* mesh = scene->mMeshes[node->mMeshes[i]];

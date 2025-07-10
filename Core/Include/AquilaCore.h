@@ -84,6 +84,10 @@ struct UUID {
         return uuid;
     }
 
+    static UUID Null() {
+        return UUID{0, 0};
+    }
+
     std::string ToString() const {
         std::ostringstream oss;
         oss << std::hex << std::setfill('0')
@@ -128,6 +132,18 @@ struct UUID {
         return high == other.high && low == other.low;
     }
 };
+
+namespace std {
+    template<>
+    struct hash<UUID> {
+        std::size_t operator()(const UUID& uuid) const noexcept {
+            std::size_t h1 = std::hash<uint64_t>{}(uuid.high);
+            std::size_t h2 = std::hash<uint64_t>{}(uuid.low);
+            return h1 ^ (h2 << 1);
+        }
+    };
+}
+
 
 
 #endif //AQUILA_CORE_H

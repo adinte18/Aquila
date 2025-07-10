@@ -65,9 +65,13 @@ namespace Editor::UIManagement {
 
             if (opened)
             {
-                auto childrenCopy = node.Children;
+                auto childrenCopy = node.Children; // need to make a copy to avoid iterator invalidation
                 for (auto child : childrenCopy)
                 {
+                    // checking if the child is valid and has the necessary components
+                    if (!registry.valid(child) || !registry.all_of<MetadataComponent, SceneNodeComponent>(child))
+                        continue;
+
                     DisplayEntityNode(scene, child);
                 }
                 ImGui::TreePop();

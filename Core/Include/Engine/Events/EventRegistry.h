@@ -1,18 +1,19 @@
 #ifndef EVENTREGISTRY_H
 #define EVENTREGISTRY_H
 
-#include "Engine/Events/EventBus.h"
 #include "Engine/Device.h"
 
-#include "Engine/OffscreenRenderer.h"
-#include "Scene/Scene.h"
-#include "Scene/Entity.h"
-#include "Scene/EntityManager.h"
-#include "Scene/SceneGraph.h"
-#include "Scene/SceneManager.h"
-
 namespace Engine{
+    class Device;
+    class OffscreenRenderer;
+    class EventBus;
+    class AquilaScene;
+    class EntityManager;
+    class SceneManager;
+
     class EventRegistry {
+    friend class Event;
+
     public:
         EventRegistry() = delete;
 

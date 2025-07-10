@@ -29,6 +29,21 @@ namespace Editor::UIManagement {
         auto textureId = reinterpret_cast<ImTextureID>(Editor::UIManager::FetchRenderedImage());
         ImGui::Image(textureId, { viewportSize.x, viewportSize.y }, { 0, 1 }, { 1, 0 });
 
+        if (ImGui::BeginDragDropTarget()) {
+            if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_PATH")) {
+                const char* droppedPath = static_cast<const char*>(payload->Data);
+                if (droppedPath) {
+                    Engine::EventBus::Get().Dispatch(UICommandEvent{
+                        UICommand::OpenScene,
+                        {{"path", droppedPath}},
+                        nullptr
+                    });
+                }
+            }
+            ImGui::EndDragDropTarget();
+        }
+
+
         ImGui::End();
     }
 };

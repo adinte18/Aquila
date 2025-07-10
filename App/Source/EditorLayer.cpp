@@ -16,8 +16,8 @@ void Editor::EditorLayer::OnStart() {
     // m_Scene = std::make_shared<Engine::Scene>();
 
     m_SceneManager = std::make_shared<Engine::SceneManager>();
-    m_SceneManager->EnqueueScene("Default Scene", std::make_unique<Engine::AquilaScene>("Default Scene"));
-    m_SceneManager->RequestSceneChange("Default Scene");
+    m_SceneManager->EnqueueScene(std::make_unique<Engine::AquilaScene>("Default Scene"));
+    m_SceneManager->RequestSceneChange();
     m_SceneManager->ProcessSceneChange();
 
     m_EditorCamera = std::make_unique<Engine::EditorCamera>();
@@ -65,8 +65,6 @@ void Editor::EditorLayer::OnUpdate() {
     m_FrameTime = std::chrono::duration<float>(newTime - m_CurrentTime).count();
     m_CurrentTime = newTime;
 
-
-
     // Poll events
     m_Window->PollEvents();
 
@@ -76,6 +74,9 @@ void Editor::EditorLayer::OnUpdate() {
 
     if (m_SceneManager->HasPendingSceneChange()) {
         m_SceneManager->ProcessSceneChange();
+
+        Engine::EventBus::Get().Clear(); // clear previous event handlers before registering new ones
+
         m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager, m_RenderManager->GetOffscreenRenderer().get());
     }
 

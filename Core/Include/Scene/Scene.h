@@ -2,9 +2,8 @@
 #define AQUILA_SCENE_H
 
 #include "AquilaCore.h"
-#include "Engine/EditorCamera.h"
-#include "json.hpp"
 #include "entt.h"
+#include "json.hpp"
 
 namespace Engine {
     class Entity;
@@ -14,7 +13,14 @@ namespace Engine {
     class AquilaScene  {
     public : 
 
+        explicit AquilaScene();
         explicit AquilaScene(const std::string& name);
+
+        AquilaScene(const AquilaScene&) = delete;
+        AquilaScene& operator=(const AquilaScene&) = delete;
+        AquilaScene(AquilaScene&&) = delete;
+        AquilaScene& operator=(AquilaScene&&) = delete;
+        
         virtual ~AquilaScene();
 
         virtual void OnStart();
@@ -28,6 +34,8 @@ namespace Engine {
         SceneGraph* GetSceneGraph();
         const std::string& GetSceneName();
 
+        const UUID GetHandle() const;
+
         bool Serialize(const std::string& filepath);
         bool Deserialize(const std::string& filepath);
         
@@ -37,6 +45,8 @@ namespace Engine {
         Unique<SceneGraph> m_SceneGraph;
  
     private:
+        UUID m_SceneID; // scene handle
+
         friend class Entity;
         friend class EntityManager;
         friend class SceneGraph;
