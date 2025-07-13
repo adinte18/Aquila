@@ -12,8 +12,8 @@
 
 
 namespace Engine {
-    void EventRegistry::RegisterHandlers(Device* device, Ref<SceneManager>& sceneManager, OffscreenRenderer* renderer){
-        Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, &sceneManager](const QueryEvent& event){
+    void EventRegistry::RegisterHandlers(Device* device, SceneManager* sceneManager, OffscreenRenderer* renderer){
+        Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, sceneManager](const QueryEvent& event){
             auto scene = sceneManager->GetActiveScene();
             if (!scene) return;
             
@@ -121,7 +121,7 @@ namespace Engine {
 
 
 
-        Engine::EventBus::Get().RegisterHandler<UICommandEvent>([device, &sceneManager, renderer](const UICommandEvent& event){
+        Engine::EventBus::Get().RegisterHandler<UICommandEvent>([device, sceneManager, renderer](const UICommandEvent& event){
             auto scene = sceneManager->GetActiveScene();
             switch (event.m_Command) {
                 case UICommand::ViewportResized: {

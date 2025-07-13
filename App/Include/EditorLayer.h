@@ -30,13 +30,14 @@
 #include "RenderingSystems/PreethamSkyRenderingSystem.h"
 #include "RenderingSystems/SceneRenderingSystem_new.h"
 
+#include "Engine/Core.h"
 
 namespace Editor {
 
     class EditorLayer {
     public:
-        [[nodiscard]] Engine::Window& GetWindow() const { return *m_Window; }
-        [[nodiscard]] Engine::Device& GetDevice() const { return *m_Device; }
+        [[nodiscard]] Engine::Window& GetWindow() const { return Engine::Core::Get().GetWindow(); }
+        [[nodiscard]] Engine::Device& GetDevice() const { return Engine::Core::Get().GetDevice(); }
         [[nodiscard]] Engine::RenderManager& GetRenderManager() const { return *m_RenderManager; }
         [[nodiscard]] UIManager& GetUIManager() const { return *m_UI; }
 

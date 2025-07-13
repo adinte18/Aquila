@@ -1,11 +1,17 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "Engine/RenderManager.h"
 #include "Engine/Window.h"
 #include "Engine/Device.h"
 
+#include "Engine/Events/EventRegistry.h"
+#include "Engine/Events/EventBus.h"
+
+#include "Scene/SceneManager.h"
 
 namespace Engine {
+
     class Clock {
     public:
         Clock() {
@@ -34,40 +40,66 @@ namespace Engine {
         }
 
     private:
-        std::chrono::steady_clock::time_point m_StartTime;
-        std::chrono::steady_clock::time_point m_LastFrameTime;
-        float m_DeltaTime = 0.0f;
+        std::chrono::steady_clock::time_point   m_StartTime;
+        std::chrono::steady_clock::time_point   m_LastFrameTime;
+        float                                   m_DeltaTime = 0.0f;
     };
 
     class Core {
-        public:
-
-        Core() {
-            OnStart();
+    public:
+        static Core& Get() {
+            static Core instance;
+            return instance;
         }
-
-        ~Core() {
-            OnEnd();
-        }
-
 
         void OnStart();
         void OnUpdate();
         void OnEnd();
 
-        static Device& GetDevice();
-        static Window& GetWindow();
-
-        private: 
+        void InvalidatePasses();
+        void HandleSceneChange();
         
+        float GetDeltaTime();
+
+        Device& GetDevice() const {
+            return *m_Device;
+        }
+
+        Window& GetWindow() const {
+            return *m_Window;
+        }
+
+        Clock& GetClock() const {
+            return *m_Clock;
+        }
+
+        RenderManager& GetRenderManager() const {
+            return *m_RenderManager;
+        }
+
+        SceneManager& GetSceneManager() const {
+            return *m_SceneManager;
+        }
+
+    private:
+        Core(); // defined in cpp
+        ~Core(); // defined in cpp
+
+        Core(const Core&)                   = delete;
+        Core& operator=(const Core&)        = delete;
+
         // Timing
-        Ref<Clock> m_Clock;
-        float m_DeltaTime;
+        std::unique_ptr<Clock>              m_Clock;
+        float                               m_DeltaTime = 0.0f;
 
-        // Init device and window
-        Unique<Window> m_Window;
-        Unique<Device> m_Device;
+        // Systems
+        std::unique_ptr<Window>             m_Window;
+        std::unique_ptr<Device>             m_Device;
+        std::unique_ptr<RenderManager>      m_RenderManager;
+        std::unique_ptr<SceneManager>       m_SceneManager;
+        std::unique_ptr<EventRegistry>      m_EventRegistry;
     };
-}
 
-#endif
+} // namespace Engine
+
+#endif // CORE_H

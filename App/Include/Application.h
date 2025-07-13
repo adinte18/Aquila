@@ -2,6 +2,7 @@
 #define APPLICATION_H
 
 #include "EditorLayer.h"
+#include "Engine/Core.h"
 
 namespace Editor {
     class Application {
@@ -9,6 +10,7 @@ namespace Editor {
 
     public:
         Application() {
+            Engine::Core::Get(); // Initialize the core components (window, device, render manager, etc.)
             editorContext = std::make_unique<EditorLayer>();
         }
 
@@ -21,7 +23,7 @@ namespace Editor {
         Application& operator=(const Application&) = delete;
 
         void Run() {
-            while (!editorContext->GetWindow().ShouldClose()) {
+            while (!Engine::Core::Get().GetWindow().ShouldClose()) {
                 editorContext->OnUpdate();
             }
         }

@@ -4,6 +4,7 @@
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/EntityManager.h"
 #include "Scene/SceneGraph.h"
+#include "Engine/Core.h"
 
 namespace Engine {
     AquilaScene::AquilaScene() {
@@ -74,107 +75,121 @@ namespace Engine {
     * This function is called when the scene is no longer needed, ensuring that all resources
     * associated with the scene are properly released.
     */
-        bool AquilaScene::Deserialize(const std::string& filepath) {
-            std::ifstream file(filepath);
-            if (!file.is_open()) {
-                return false;
-            }
+    bool AquilaScene::Deserialize(const std::string& filepath) {
+        std::ifstream file(filepath);
+        if (!file.is_open()) {
+            return false;
+        }
 
-            nlohmann::ordered_json sceneJson;
-            file >> sceneJson;
-            file.close();
+        nlohmann::ordered_json sceneJson;
+        file >> sceneJson;
+        file.close();
 
-            m_SceneName = sceneJson.value("SceneName", "Untitled Scene");
+        m_SceneName = sceneJson.value("SceneName", "Untitled Scene");
 
-            auto& registry = GetRegistry();
-            registry.clear();
+        auto& registry = GetRegistry();
+        registry.clear();
 
-            if (!sceneJson.contains("Entities"))
-                return false;
+        if (!sceneJson.contains("Entities"))
+            return false;
 
-            const auto& entitiesJson = sceneJson["Entities"];
+        const auto& entitiesJson = sceneJson["Entities"];
 
-            std::unordered_map<std::string, entt::entity> uuidToEntity;
+        std::unordered_map<std::string, entt::entity> uuidToEntity;
 
-            for (auto& [idStr, entityData] : entitiesJson.items()) {
-                entt::entity entity = registry.create();
+        for (auto& [idStr, entityData] : entitiesJson.items()) {
+            entt::entity entity = registry.create();
 
-                if (entityData.contains("MetadataComponent")) {
-                    const auto& meta = entityData["MetadataComponent"];
-                    MetadataComponent metadata;
-                    metadata.Name = meta.value("Name", "");
-                    metadata.ID = UUID::FromString(meta.value("UUID", ""));
-                    metadata.Enabled = meta.value("Enabled", true);
-                    registry.emplace<MetadataComponent>(entity, metadata);
-
-                    uuidToEntity[metadata.ID.ToString()] = entity;
-                }
-            }
-
-            for (auto& [idStr, entityData] : entitiesJson.items()) {
+            if (entityData.contains("MetadataComponent")) {
                 const auto& meta = entityData["MetadataComponent"];
-                std::string uuidStr = meta.value("UUID", "");
-                entt::entity entity = uuidToEntity.at(uuidStr);
+                MetadataComponent metadata;
+                metadata.Name = meta.value("Name", "");
+                metadata.ID = UUID::FromString(meta.value("UUID", ""));
+                metadata.Enabled = meta.value("Enabled", true);
+                registry.emplace<MetadataComponent>(entity, metadata);
 
-                if (entityData.contains("TransformComponent")) {
-                    const auto& transformJson = entityData["TransformComponent"];
-                    glm::vec3 position = glm::vec3(
-                        transformJson["Position"][0],
-                        transformJson["Position"][1],
-                        transformJson["Position"][2]);
+                uuidToEntity[metadata.ID.ToString()] = entity;
+            }
+        }
 
-                    glm::vec3 rotation = glm::vec3(
-                        transformJson["Rotation"][0],
-                        transformJson["Rotation"][1],
-                        transformJson["Rotation"][2]);
+        for (auto& [idStr, entityData] : entitiesJson.items()) {
+            const auto& meta = entityData["MetadataComponent"];
+            std::string uuidStr = meta.value("UUID", "");
+            entt::entity entity = uuidToEntity.at(uuidStr);
 
-                    glm::vec3 scale = glm::vec3(
-                        transformJson["Scale"][0],
-                        transformJson["Scale"][1],
-                        transformJson["Scale"][2]);
+            if (entityData.contains("TransformComponent")) {
+                const auto& transformJson = entityData["TransformComponent"];
+                glm::vec3 position = glm::vec3(
+                    transformJson["Position"][0],
+                    transformJson["Position"][1],
+                    transformJson["Position"][2]);
 
-                    TransformComponent transform;
-                    transform.SetLocalPosition(position);
-                    transform.SetLocalRotation(rotation);
-                    transform.SetLocalScale(scale);
+                glm::vec3 rotation = glm::vec3(
+                    transformJson["Rotation"][0],
+                    transformJson["Rotation"][1],
+                    transformJson["Rotation"][2]);
 
-                    if (!registry.all_of<TransformComponent>(entity)) {
-                        registry.emplace<TransformComponent>(entity, transform);
-                    } else {
-                        registry.replace<TransformComponent>(entity, transform);
-                    }
+                glm::vec3 scale = glm::vec3(
+                    transformJson["Scale"][0],
+                    transformJson["Scale"][1],
+                    transformJson["Scale"][2]);
+
+                TransformComponent transform;
+                transform.SetLocalPosition(position);
+                transform.SetLocalRotation(rotation);
+                transform.SetLocalScale(scale);
+                transform.UpdateWorldMatrix();
+
+                if (!registry.all_of<TransformComponent>(entity)) {
+                    registry.emplace<TransformComponent>(entity, transform);
+                } else {
+                    registry.replace<TransformComponent>(entity, transform);
+                }
+            }
+
+            if (entityData.contains("SceneNodeComponent")) {
+                const auto& nodeJson = entityData["SceneNodeComponent"];
+                SceneNodeComponent node;
+
+                std::string parentUUID = nodeJson.value("Parent", "null");
+                if (parentUUID == "null") {
+                    node.Parent = entt::null;
+                } else {
+                    node.Parent = uuidToEntity.count(parentUUID) ? uuidToEntity.at(parentUUID) : entt::null;
                 }
 
-                if (entityData.contains("SceneNodeComponent")) {
-                    const auto& nodeJson = entityData["SceneNodeComponent"];
-                    SceneNodeComponent node;
-
-                    std::string parentUUID = nodeJson.value("Parent", "null");
-                    if (parentUUID == "null") {
-                        node.Parent = entt::null;
-                    } else {
-                        node.Parent = uuidToEntity.count(parentUUID) ? uuidToEntity.at(parentUUID) : entt::null;
-                    }
-
-                    if (nodeJson.contains("Children")) {
-                        for (const auto& childUUIDJson : nodeJson["Children"]) {
-                            std::string childUUID = childUUIDJson.get<std::string>();
-                            if (uuidToEntity.count(childUUID)) {
-                                node.Children.push_back(uuidToEntity.at(childUUID));
-                            }
+                if (nodeJson.contains("Children")) {
+                    for (const auto& childUUIDJson : nodeJson["Children"]) {
+                        std::string childUUID = childUUIDJson.get<std::string>();
+                        if (uuidToEntity.count(childUUID)) {
+                            node.Children.push_back(uuidToEntity.at(childUUID));
                         }
                     }
+                }
 
-                    if (!registry.all_of<SceneNodeComponent>(entity)) {
-                        registry.emplace<SceneNodeComponent>(entity, node);
-                    } else {
-                        registry.replace<SceneNodeComponent>(entity, node);
-                    }
+                if (!registry.all_of<SceneNodeComponent>(entity)) {
+                    registry.emplace<SceneNodeComponent>(entity, node);
+                } else {
+                    registry.replace<SceneNodeComponent>(entity, node);
                 }
             }
 
-            return true;
+            if (entityData.contains("MeshComponent")) {
+                const auto& meshJson = entityData["MeshComponent"];
+                MeshComponent mesh;
+                mesh.data = std::make_shared<Engine::Mesh>(Engine::Core::Get().GetDevice());
+                mesh.data->Load(meshJson.value("Path", ""));
+                
+                if (!registry.all_of<MeshComponent>(entity)) {
+                    registry.emplace<MeshComponent>(entity, mesh);
+                } else {
+                    registry.replace<MeshComponent>(entity, mesh);
+                }
+            }
         }
+
+        return true;
+    }
 
     /**
     * @brief Serializes the scene to a JSON file.
@@ -224,6 +239,13 @@ namespace Engine {
                 for (auto& child : node.Children) {
                     entityJson["SceneNodeComponent"]["Children"].push_back(registry.get<MetadataComponent>(child).ID.ToString());
                 }
+            }
+
+            if (registry.all_of<MeshComponent>(entity)) {
+                auto& mesh = registry.get<MeshComponent>(entity);
+                entityJson["MeshComponent"] = {
+                    {"Path", mesh.data->GetPath()}
+                };
             }
 
             sceneJson["Entities"][std::to_string(static_cast<int>(entity))] = entityJson;

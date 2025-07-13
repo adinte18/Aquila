@@ -1,8 +1,6 @@
 #include "Engine/Window.h"
 
-#include <iostream>
 #include <stdexcept>
-#include <utility>
 
 Engine::Window::Window(const int width, const int height, const std::string& title)
 : m_Width{width}, m_Height{height}, m_WindowName{title} {

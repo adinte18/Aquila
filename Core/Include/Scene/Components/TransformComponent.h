@@ -26,7 +26,6 @@ public:
     }
 
     void UpdateWorldMatrix(const glm::mat4& parentMatrix = glm::mat4(1.0f)) {
-        std::cout << "Updating world matrix" << std::endl;
         m_WorldMatrix = parentMatrix * GetLocalTransformMatrix();
     }
 

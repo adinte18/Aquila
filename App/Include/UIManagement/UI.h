@@ -74,10 +74,6 @@ namespace Editor {
         };
 
 
-        Engine::Device& m_Device;
-        Engine::Window& m_Window;
-
-        VkRenderPass m_RenderPass;
         VkDescriptorPool m_UiDescriptorPool{};
         static VkDescriptorSet m_FinalImage;
 
@@ -102,8 +98,7 @@ namespace Editor {
         static ImFont* s_CurrentFont;
         static entt::entity s_SelectedEntity;
 
-        UIManager(Engine::Device& device, Engine::Window& window, VkRenderPass renderPass)
-            : m_Device(device), m_Window(window), m_RenderPass(renderPass) {
+        UIManager() {
             OnStart();
         }
 
@@ -118,7 +113,7 @@ namespace Editor {
         static VkDescriptorSet FetchRenderedImage() { return m_FinalImage; }
 
         void OnStart();
-        void OnUpdate(VkCommandBuffer commandBuffer, float deltaTime, Engine::AquilaScene* scene);
+        void OnUpdate(VkCommandBuffer commandBuffer, float deltaTime);
         void OnEnd() const;
     };
 }

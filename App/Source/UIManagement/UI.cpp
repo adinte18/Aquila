@@ -1,4 +1,5 @@
 #include "UIManagement/UI.h"
+#include "Engine/Core.h"
 #include "Scene/Scene.h"
 
 Editor::UIManager::Fonts Editor::UIManager::s_Fonts;
@@ -132,15 +133,17 @@ void Editor::UIManager::InitializeImGui() const {
 
     SetAquilaTheme();
 
+    auto& device = Engine::Core::Get().GetDevice();
+
     // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForVulkan(m_Window.GetWindow(), true);
+    ImGui_ImplGlfw_InitForVulkan(Engine::Core::Get().GetWindow().GetWindow(), true);
     ImGui_ImplVulkan_InitInfo init_info = {};
-    init_info.Instance = m_Device.GetInstance();
-    init_info.PhysicalDevice = m_Device.GetPhysicalDevice();
-    init_info.Device = m_Device.vk_GetDevice();
-    init_info.Queue = m_Device.GetGraphicsQueue();
+    init_info.Instance = device.GetInstance();
+    init_info.PhysicalDevice = Engine::Core::Get().GetDevice().GetPhysicalDevice();
+    init_info.Device = Engine::Core::Get().GetDevice().vk_GetDevice();
+    init_info.Queue = Engine::Core::Get().GetDevice().GetGraphicsQueue();
     init_info.DescriptorPool = m_UiDescriptorPool;
-    init_info.RenderPass = m_RenderPass;
+    init_info.RenderPass = Engine::Core::Get().GetRenderManager().GetImGuiRenderPass();
     init_info.Subpass = 0;
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;
@@ -173,7 +176,7 @@ void Editor::UIManager::OnStart() {
     pool_info.poolSizeCount = std::size(pool_sizes);
     pool_info.pPoolSizes = pool_sizes;
 
-    if (vkCreateDescriptorPool(m_Device.vk_GetDevice(), &pool_info, nullptr, &m_UiDescriptorPool) != VK_SUCCESS) 	{
+    if (vkCreateDescriptorPool(Engine::Core::Get().GetDevice().vk_GetDevice(), &pool_info, nullptr, &m_UiDescriptorPool) != VK_SUCCESS) 	{
         throw std::runtime_error("Cannot create descriptor pool for ImGui");
     }
 
@@ -187,7 +190,7 @@ void Editor::UIManager::OnEnd() const {
     std::cout << "Destroying ImGui context" << std::endl;
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
-    vkDestroyDescriptorPool(m_Device.vk_GetDevice(), m_UiDescriptorPool, nullptr);
+    vkDestroyDescriptorPool(Engine::Core::Get().GetDevice().vk_GetDevice(), m_UiDescriptorPool, nullptr);
     ImGui::DestroyContext();
 }
 
@@ -220,7 +223,7 @@ void Editor::UIManager::SetupDockspace(){
 
 }
 
-void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime, Engine::AquilaScene* scene) {
+void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime) {
     ImGui_ImplVulkan_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
@@ -236,8 +239,8 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 
     //Draw panels
     m_ContentBrowser.Draw(nullptr);
-    m_Hierarchy.Draw(scene);
-    m_Properties.Draw(scene);
+    m_Hierarchy.Draw(Engine::Core::Get().GetSceneManager().GetActiveScene());
+    m_Properties.Draw(Engine::Core::Get().GetSceneManager().GetActiveScene());
     m_Viewport.Draw(nullptr);
 
     if (s_CurrentFont) ImGui::PopFont();
@@ -268,7 +271,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         }
 
 //         if (!material.albedoTexturePath.empty()) {
-//             material.albedoTexture = std::make_shared<Engine::Texture2D>(m_Device);
+//             material.albedoTexture = std::make_shared<Engine::Texture2D>(Engine::Core::Get().GetDevice());
 //             material.albedoTexture->CreateTexture(material.albedoTexturePath);
 
 //             VkDescriptorImageInfo albedoImageInfo = material.albedoTexture->GetDescriptorSetInfo();
@@ -281,7 +284,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         }
 
 //         if (!material.normalTexturePath.empty()) {
-//             material.normalTexture = std::make_shared<Engine::Texture2D>(m_Device);
+//             material.normalTexture = std::make_shared<Engine::Texture2D>(Engine::Core::Get().GetDevice());
 //             material.normalTexture->CreateTexture(material.normalTexturePath);
 
 //             VkDescriptorImageInfo normalImageInfo = material.normalTexture->GetDescriptorSetInfo();
@@ -294,7 +297,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         }
 
 //         if (!material.metallicRoughnessTexturePath.empty()) {
-//             material.metallicRoughnessTexture = std::make_shared<Engine::Texture2D>(m_Device);
+//             material.metallicRoughnessTexture = std::make_shared<Engine::Texture2D>(Engine::Core::Get().GetDevice());
 //             material.metallicRoughnessTexture->CreateTexture(material.metallicRoughnessTexturePath);
 
 //             VkDescriptorImageInfo metallicRoughnessImageInfo = material.metallicRoughnessTexture->GetDescriptorSetInfo();
@@ -307,7 +310,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         }
 
 //         if (!material.aoTexturePath.empty()) {
-//             material.aoTexture = std::make_shared<Engine::Texture2D>(m_Device);
+//             material.aoTexture = std::make_shared<Engine::Texture2D>(Engine::Core::Get().GetDevice());
 //             material.aoTexture->CreateTexture(material.aoTexturePath);
 
 //             VkDescriptorImageInfo aoImageInfo = material.aoTexture->GetDescriptorSetInfo();
@@ -320,7 +323,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         }
 
 //         if (!material.emissiveTexturePath.empty()) {
-//             material.emissiveTexture = std::make_shared<Engine::Texture2D>(m_Device);
+//             material.emissiveTexture = std::make_shared<Engine::Texture2D>(Engine::Core::Get().GetDevice());
 //             material.emissiveTexture->CreateTexture(material.emissiveTexturePath);
 
 //             VkDescriptorImageInfo emissiveImageInfo = material.emissiveTexture->GetDescriptorSetInfo();
@@ -1044,7 +1047,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //         if (camera.GetType() == Engine::Camera::CameraType::Free) {
 //             if (ImGui::IsWindowHovered()) {
 //                 if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-//                     m_Window.SetInputMode(GLFW_CURSOR_DISABLED);
+//                     Engine::Core::Get().GetWindow().SetInputMode(GLFW_CURSOR_DISABLED);
 //                     isDragging = true;
 //                     skipNextMouseDelta = true;
 
@@ -1052,11 +1055,11 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                     ImVec2 winSize = ImGui::GetWindowSize();
 //                     ImVec2 center = ImVec2(winPos.x + winSize.x * 0.5f, winPos.y + winSize.y * 0.5f);
 
-//                     m_Window.SetCursorPosition(center.x, center.y);
+//                     Engine::Core::Get().GetWindow().SetCursorPosition(center.x, center.y);
 //                 }
 
 //                 if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-//                     m_Window.SetInputMode(GLFW_CURSOR_NORMAL);
+//                     Engine::Core::Get().GetWindow().SetInputMode(GLFW_CURSOR_NORMAL);
 //                     isDragging = false;
 //                 }
 
@@ -1066,7 +1069,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                     ImVec2 center = { windowPos.x + windowSize.x * 0.5f, windowPos.y + windowSize.y * 0.5f };
 
 //                     double xpos, ypos;
-//                     m_Window.GetCursorPosition(xpos, ypos);
+//                     Engine::Core::Get().GetWindow().GetCursorPosition(xpos, ypos);
 
 //                     if (!skipNextMouseDelta)
 //                     {
@@ -1082,7 +1085,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                         skipNextMouseDelta = false; // skip this one frame only
 //                     }
 
-//                     m_Window.SetCursorPosition(center.x, center.y);
+//                     Engine::Core::Get().GetWindow().SetCursorPosition(center.x, center.y);
 
 //                     if (ImGui::IsKeyDown(ImGui::GetKeyIndex(ImGuiKey_W))) {
 //                         sceneContext.GetScene().GetActiveCamera().MoveForward(deltaTime);
@@ -1115,7 +1118,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 
 
 //             if (ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-//                 m_Window.SetInputMode(GLFW_CURSOR_DISABLED);
+//                 Engine::Core::Get().GetWindow().SetInputMode(GLFW_CURSOR_DISABLED);
 //                 isDragging = true;
 //                 skipNextMouseDelta = true;
 
@@ -1123,11 +1126,11 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                 ImVec2 winSize = ImGui::GetWindowSize();
 //                 ImVec2 center = ImVec2(winPos.x + winSize.x * 0.5f, winPos.y + winSize.y * 0.5f);
 
-//                 m_Window.SetCursorPosition(center.x, center.y);
+//                 Engine::Core::Get().GetWindow().SetCursorPosition(center.x, center.y);
 //             }
 
 //             if (ImGui::IsMouseReleased(ImGuiMouseButton_Right)) {
-//                 m_Window.SetInputMode(GLFW_CURSOR_NORMAL);
+//                 Engine::Core::Get().GetWindow().SetInputMode(GLFW_CURSOR_NORMAL);
 //                 isDragging = false;
 //             }
 
@@ -1137,7 +1140,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                 ImVec2 center = ImVec2(winPos.x + winSize.x * 0.5f, winPos.y + winSize.y * 0.5f);
 
 //                 double xpos, ypos;
-//                 m_Window.GetCursorPosition(xpos, ypos);
+//                 Engine::Core::Get().GetWindow().GetCursorPosition(xpos, ypos);
 
 //                 if (!skipNextMouseDelta) {
 //                     double deltaX = xpos - center.x;
@@ -1150,7 +1153,7 @@ void Editor::UIManager::OnUpdate(VkCommandBuffer commandBuffer, float deltaTime,
 //                     skipNextMouseDelta = false;
 //                 }
 
-//                 m_Window.SetCursorPosition(center.x, center.y);
+//                 Engine::Core::Get().GetWindow().SetCursorPosition(center.x, center.y);
 //             }
 
 //             float scroll = ImGui::GetIO().MouseWheel;

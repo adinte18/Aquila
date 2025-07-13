@@ -21,7 +21,7 @@ namespace Engine {
 
         const std::filesystem::path filePath(filepath);
         const std::string directoryPath = filePath.parent_path().string();
-        m_Path = directoryPath;
+        m_Path = filepath;
         
         m_Vertices.clear();
         m_Indices.clear();
