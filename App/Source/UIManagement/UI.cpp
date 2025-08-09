@@ -143,7 +143,7 @@ void Editor::UIManager::InitializeImGui() const {
     init_info.Device = Engine::Core::Get().GetDevice().vk_GetDevice();
     init_info.Queue = Engine::Core::Get().GetDevice().GetGraphicsQueue();
     init_info.DescriptorPool = m_UiDescriptorPool;
-    init_info.RenderPass = Engine::Core::Get().GetRenderManager().GetImGuiRenderPass();
+    init_info.RenderPass = Engine::Core::Get().GetRenderer().GetImGuiRenderPass();
     init_info.Subpass = 0;
     init_info.MinImageCount = 3;
     init_info.ImageCount = 3;

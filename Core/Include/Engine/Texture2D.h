@@ -127,6 +127,7 @@ namespace Engine {
         [[nodiscard]] VkDeviceMemory GetTextureImageMemory() const { return textureImageMemory; }
         [[nodiscard]] VkDescriptorSet GetDescriptorSet() const { return descriptorSet; }
         [[nodiscard]] uint32_t GetMipLevels() const { return m_MipLevels; }
+        [[nodiscard]] VkFormat GetFormat() const { return m_Format; }
 
         [[nodiscard]] bool HasImage() const { return textureImage != VK_NULL_HANDLE; }
         [[nodiscard]] bool HasImageView() const { return textureImageView != VK_NULL_HANDLE; }
@@ -157,6 +158,8 @@ namespace Engine {
     private:
         uint32_t m_MipLevels = 1;
         Device& m_Device;
+
+        VkFormat m_Format = VK_FORMAT_R8G8B8A8_UNORM;
 
         VkImage textureImage = VK_NULL_HANDLE;
         VkSampler textureSampler = VK_NULL_HANDLE;

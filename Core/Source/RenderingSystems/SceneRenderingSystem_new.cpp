@@ -1,5 +1,6 @@
 #include "RenderingSystems/SceneRenderingSystem_new.h"
 
+#include "Engine/Core.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Scene.h"
@@ -13,7 +14,7 @@ namespace Engine {
     };
 
 
-    SceneRenderingSystem_new::SceneRenderingSystem_new(Device& device, VkRenderPass renderPass)
+    SceneRenderSystem::SceneRenderSystem(Device& device, VkRenderPass renderPass)
         : RenderingSystemBase(device)
     {
         CreateDescriptorSetLayout();
@@ -31,14 +32,14 @@ namespace Engine {
         CreatePipeline(renderPass);
     }
 
-    void SceneRenderingSystem_new::CreateDescriptorSetLayout() {
+    void SceneRenderSystem::CreateDescriptorSetLayout() {
         m_Layout = DescriptorSetLayout::Builder(device)
             .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
             .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
     }
 
-    void SceneRenderingSystem_new::CreatePipeline(VkRenderPass renderPass) {
+    void SceneRenderSystem::CreatePipeline(VkRenderPass renderPass) {
         PipelineConfigInfo pipelineConfig{};
         Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
@@ -50,7 +51,7 @@ namespace Engine {
             pipelineConfig);
     }
 
-    void SceneRenderingSystem_new::CreatePipelineLayout(){
+    void SceneRenderSystem::CreatePipelineLayout(){
         VkPushConstantRange pushConstantRange{};
         pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
         pushConstantRange.offset = 0;
@@ -69,7 +70,7 @@ namespace Engine {
         }
     }
 
-    void SceneRenderingSystem_new::UpdateBuffer(const RenderContext& context){
+    void SceneRenderSystem::UpdateBuffer(const SceneRenderingContext& context){
         SceneUniformData data{};
         data.projection = context.camera->GetProjection();
         data.view = context.camera->GetView();
@@ -79,14 +80,16 @@ namespace Engine {
         m_Buffer->vk_Flush();
     }
 
-    void SceneRenderingSystem_new::Render(const RenderContext& context) {
-        auto& scene = context.scene;
+    void SceneRenderSystem::Render(const RenderContext& context) {
+        const auto& ctx = static_cast<const SceneRenderingContext&>(context);
+
+        auto* scene = Engine::Core::Get().GetSceneManager().GetActiveScene();
 
         auto& registry = scene->GetRegistry();
 
         m_Pipeline->Bind(context.commandBuffer);
 
-        UpdateBuffer(context);
+        UpdateBuffer(ctx);
 
         SendDataToGPU();
 

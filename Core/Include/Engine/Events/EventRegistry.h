@@ -3,7 +3,7 @@
 
 namespace Engine{
     class Device;
-    class OffscreenRenderer;
+    class Renderer;
     class EventBus;
     class AquilaScene;
     class EntityManager;
@@ -15,7 +15,7 @@ namespace Engine{
     public:
         EventRegistry() = delete;
 
-        void RegisterHandlers(Device* device, SceneManager* sceneManager, OffscreenRenderer* renderer);
+        void RegisterHandlers(Device* device, SceneManager* sceneManager, Renderer* renderer);
     };
 
 

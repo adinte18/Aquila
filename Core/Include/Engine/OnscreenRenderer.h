@@ -19,9 +19,9 @@ namespace Engine {
         OnscreenRenderer& operator=(const OnscreenRenderer&) = delete;
 
         [[nodiscard]]
-        VkRenderPass vk_GetCurrentRenderPass() const {return swapChain->renderPass;}
+        VkRenderPass vk_GetCurrentRenderPass() const {return swapChain->GetRenderpass();}
 
-        float vk_GetAspectRatio() const { return swapChain->vk_GetExtentAspectRatio(); }
+        float vk_GetAspectRatio() const { return swapChain->GetExtentAspectRatio(); }
 
         [[nodiscard]]
         bool vk_FrameStarted() const { return frameStarted; }
@@ -42,7 +42,7 @@ namespace Engine {
         [[nodiscard]] VkImageView vk_GetCurrentImageView() const;
 
         [[nodiscard]] VkFormat vk_GetDepthFormat() {
-            return swapChain->vk_FindDepthFormat();
+            return swapChain->FindDepthFormat();
         }
 
         [[nodiscard]]

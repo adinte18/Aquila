@@ -5,6 +5,8 @@
 #include "Engine/Window.h"
 #include "Engine/Device.h"
 
+#include "Engine/Renderer.h"
+
 #include "Engine/Events/EventRegistry.h"
 #include "Engine/Events/EventBus.h"
 
@@ -77,6 +79,10 @@ namespace Engine {
             return *m_RenderManager;
         }
 
+        Renderer& GetRenderer() const {
+            return *m_Renderer;
+        }
+
         SceneManager& GetSceneManager() const {
             return *m_SceneManager;
         }
@@ -89,15 +95,16 @@ namespace Engine {
         Core& operator=(const Core&)        = delete;
 
         // Timing
-        std::unique_ptr<Clock>              m_Clock;
+        Unique<Clock>                       m_Clock;
         float                               m_DeltaTime = 0.0f;
 
         // Systems
-        std::unique_ptr<Window>             m_Window;
-        std::unique_ptr<Device>             m_Device;
-        std::unique_ptr<RenderManager>      m_RenderManager;
-        std::unique_ptr<SceneManager>       m_SceneManager;
-        std::unique_ptr<EventRegistry>      m_EventRegistry;
+        Unique<Window>             m_Window;
+        Unique<Device>             m_Device;
+        Unique<RenderManager>      m_RenderManager;
+        Unique<Renderer>           m_Renderer;
+        Unique<SceneManager>       m_SceneManager;
+        Unique<EventRegistry>      m_EventRegistry;
     };
 
 } // namespace Engine

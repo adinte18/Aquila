@@ -10,6 +10,8 @@ namespace Engine {
         : m_Device(device), m_Window(window) {
         m_OnScreenRenderer = std::make_unique<OnscreenRenderer>(m_Window, m_Device);
         m_OffScreenRenderer = std::make_unique<OffscreenRenderer>(m_Device);
+
+        
     }
 
     Unique<OnscreenRenderer>& RenderManager::GetOnScreenRenderer() {

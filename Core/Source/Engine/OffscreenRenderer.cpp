@@ -1,7 +1,7 @@
 #include "Engine/OffscreenRenderer.h"
 
 namespace Engine {
-    OffscreenRenderer::OffscreenRenderer(Device& device) : m_Device(device), m_RenderpassManager(device, {800,600}) {
+    OffscreenRenderer::OffscreenRenderer(Device& device) : m_Device(device) {
         CreateCommandBuffers();
         Initialize(800, 600);
     }
@@ -85,103 +85,6 @@ namespace Engine {
         m_GeometryPass->Invalidate(m_Extent);
         m_CompositePass->Invalidate(m_Extent);
         m_Resized = false;
-    }
-
-    // TODO : this is so ugly, this needs to be reworked, or maybe even deleted, its not really used 
-    void OffscreenRenderer::TransitionImages(VkCommandBuffer commandBuffer, RenderPassType src, RenderPassType dst) {
-        struct TransitionInfo {
-            VkImage image;
-            VkImageLayout oldLayout;
-            VkImageLayout newLayout;
-            VkImageAspectFlags aspectMask;
-            VkPipelineStageFlags srcStage;
-            VkPipelineStageFlags dstStage;
-            VkAccessFlags srcAccessMask;
-            VkAccessFlags dstAccessMask;
-            uint32_t mipLevels;
-            uint32_t layerCount;
-        };
-
-        std::vector<TransitionInfo> transitions;
-
-        if (src == RenderPassType::ENV_TO_CUBEMAP && dst == RenderPassType::IBL) {
-            transitions.push_back({
-                GetPassObject<HDRiToCubemapPass>()->GetFinalImage(),
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_SHADER_READ_BIT,
-                1,
-                1
-            });
-        }
-
-
-        if (src == RenderPassType::GEOMETRY && dst == RenderPassType::FINAL) {
-            transitions.push_back({
-                GetPassObject<GeometryPass>()->GetFinalImage(),
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_SHADER_READ_BIT,
-                1,
-                1
-            });
-        }
-
-        if (src == RenderPassType::POST_PROCESSING && dst == RenderPassType::FINAL) {
-            transitions.push_back({
-                m_RenderpassManager.GetImage(src),
-                VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-                VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-                VK_IMAGE_ASPECT_COLOR_BIT,
-                VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
-                VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-                VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
-                VK_ACCESS_SHADER_READ_BIT,
-                1,
-                1
-            });
-        }
-
-        // Apply all transitions
-        std::vector<VkImageMemoryBarrier> barriers;
-        for (const auto& transition : transitions) {
-            VkImageMemoryBarrier barrier{};
-            barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-            barrier.oldLayout = transition.oldLayout;
-            barrier.newLayout = transition.newLayout;
-            barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-            barrier.image = transition.image;
-            barrier.subresourceRange.aspectMask = transition.aspectMask;
-            barrier.subresourceRange.baseMipLevel = 0;
-            barrier.subresourceRange.levelCount = transition.mipLevels;
-            barrier.subresourceRange.baseArrayLayer = 0;
-            barrier.subresourceRange.layerCount = transition.layerCount;
-            barrier.srcAccessMask = transition.srcAccessMask;
-            barrier.dstAccessMask = transition.dstAccessMask;
-
-            barriers.push_back(barrier);
-        }
-
-        if (!barriers.empty()) {
-            vkCmdPipelineBarrier(
-                commandBuffer,
-                transitions.front().srcStage,
-                transitions.front().dstStage,
-                0,
-                0, nullptr,
-                0, nullptr,
-                static_cast<uint32_t>(barriers.size()), barriers.data()
-            );
-        }
     }
 
     void OffscreenRenderer::EndRenderPass(VkCommandBuffer commandBuffer) {

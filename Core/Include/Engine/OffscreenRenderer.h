@@ -105,7 +105,9 @@ namespace Engine {
         }
 
         template<typename T>
-        void BeginRenderPass(VkCommandBuffer cmd, const Ref<T>& pass, int cubemapFace = -1, uint32_t mipExtent = UINT32_MAX) {
+        void BeginRenderPass(VkCommandBuffer cmd, int cubemapFace = -1, uint32_t mipExtent = UINT32_MAX) {
+            auto pass = GetPassObject<T>();
+
             VkRenderPassBeginInfo renderPassInfo{};
             renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
             renderPassInfo.renderPass = pass->GetRenderPass();
@@ -113,7 +115,7 @@ namespace Engine {
             if constexpr (std::is_same_v<T, HDRiToCubemapPass> || std::is_same_v<T, IrradianceSamplingPass> || std::is_same_v<T, HDRPrefilterPass> || std::is_same_v<T, PreethamSkyPass>) {
                 renderPassInfo.framebuffer = pass->GetFramebuffer(cubemapFace);
             } else {
-                renderPassInfo.framebuffer = pass->GetFramebuffer();
+                renderPassInfo.framebuffer = pass->GetFramebuffer()->GetHandle();
             }
 
             renderPassInfo.renderArea.offset = {0, 0};
@@ -157,7 +159,6 @@ namespace Engine {
         private:
         Device& m_Device;
         VkExtent2D m_Extent{};
-        RenderpassManager m_RenderpassManager;
         std::vector<VkCommandBuffer> m_CommandBuffers;
 
         bool m_Resized{false};

@@ -2,7 +2,7 @@
 #include "Engine/Events/Event.h"
 #include "Engine/Events/EventBus.h"
 
-#include "Engine/OffscreenRenderer.h"
+#include "Engine/Renderer.h"
 
 #include "Scene/SceneManager.h"
 #include "Scene/SceneGraph.h"
@@ -12,7 +12,7 @@
 
 
 namespace Engine {
-    void EventRegistry::RegisterHandlers(Device* device, SceneManager* sceneManager, OffscreenRenderer* renderer){
+    void EventRegistry::RegisterHandlers(Device* device, SceneManager* sceneManager, Renderer* renderer){
         Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, sceneManager](const QueryEvent& event){
             auto scene = sceneManager->GetActiveScene();
             if (!scene) return;

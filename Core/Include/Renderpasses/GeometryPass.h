@@ -5,6 +5,7 @@
 #ifndef GEOMETRYPASS_H
 #define GEOMETRYPASS_H
 
+#include "Engine/Framebuffer.h"
 #include "Engine/Renderpass.h"
 
 namespace Engine {
@@ -14,7 +15,7 @@ namespace Engine {
             : Renderpass(device, extent, descriptorSetLayout){}
 
         ~GeometryPass() override {
-            if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.vk_GetDevice(), m_Framebuffer, nullptr);
+            if (m_Framebuffer) m_Framebuffer->Destroy();
 
             if (colorAttachment) colorAttachment->Destroy();
             if (depthAttachment) depthAttachment->Destroy();
@@ -36,13 +37,13 @@ namespace Engine {
             if (colorAttachment) colorAttachment->Destroy();
             if (depthAttachment) depthAttachment->Destroy();
 
-            if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.vk_GetDevice(), m_Framebuffer, nullptr);
+            if (m_Framebuffer) m_Framebuffer->Destroy();
 
             CreateRenderTarget();
             CreateFramebuffer();
         }
 
-        [[nodiscard]] VkFramebuffer GetFramebuffer() const { return m_Framebuffer; }
+        [[nodiscard]] Ref<Framebuffer> GetFramebuffer() const { return m_Framebuffer; }
 
 
     private:
@@ -52,7 +53,7 @@ namespace Engine {
         void CreateClearValues() override;
 
 
-        VkFramebuffer m_Framebuffer{};
+        Ref<Framebuffer> m_Framebuffer{};
     };
 }
 

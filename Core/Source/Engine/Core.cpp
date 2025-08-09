@@ -18,7 +18,9 @@ namespace Engine {
 
         DescriptorAllocator::Init(*m_Device); // setup global descriptor pool 
 
-        m_RenderManager = std::make_unique<Engine::RenderManager>(*m_Device, *m_Window);
+//        m_RenderManager = std::make_unique<Engine::RenderManager>(*m_Device, *m_Window);
+
+        m_Renderer = std::make_unique<Engine::Renderer>(*m_Device, *m_Window);
 
         m_SceneManager = std::make_unique<Engine::SceneManager>();
         m_SceneManager->EnqueueScene(std::make_unique<Engine::AquilaScene>("Default Scene"));
@@ -26,7 +28,7 @@ namespace Engine {
         m_SceneManager->ProcessSceneChange();
         
         if (m_SceneManager->GetActiveScene() != nullptr) {
-            m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_RenderManager->GetOffscreenRenderer().get());
+            m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_Renderer.get());
         } else {
             AQUILA_OUT("[CORE] No active scene to register handlers for.");
         }
@@ -38,6 +40,11 @@ namespace Engine {
         m_Clock->Tick();
         m_DeltaTime = m_Clock->GetDeltaTime();
 
+        m_Renderer->InvalidatePasses();
+
+        // Handle scene change
+        HandleSceneChange();
+
         m_Window->PollEvents();
     }
 
@@ -45,21 +52,12 @@ namespace Engine {
         m_Window->CleanUp();
     }
 
-
-    void Core::InvalidatePasses() {
-        auto& renderer = Engine::Core::Get().GetRenderManager().GetOffscreenRenderer();
-        if (m_RenderManager && renderer->Resized()) {
-            renderer->InvalidatePasses();
-        }
-    }
-
     void Core::HandleSceneChange() {
         if (m_SceneManager && m_SceneManager->HasPendingSceneChange()) {
             m_SceneManager->ProcessSceneChange();
 
             Engine::EventBus::Get().Clear();
-            
-            m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_RenderManager->GetOffscreenRenderer().get());
+            m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_Renderer.get());
         }
     }
 

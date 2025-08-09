@@ -179,6 +179,7 @@ namespace Engine {
     void Texture2D::CreateMipMappedCubemap(uint32_t width, uint32_t height, VkFormat format,
         VkImageUsageFlags usage) {
         m_MipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(width, height)))) + 1;
+        m_Format = format;
 
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -382,6 +383,8 @@ namespace Engine {
     }
 
     void Texture2D::vk_CreateCubemapImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage) {
+        m_Format = format;
+
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.flags = VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
@@ -507,6 +510,8 @@ namespace Engine {
 
 
     void Texture2D::vk_CreateTextureImageView(VkFormat format) {
+        m_Format = format;
+
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = textureImage;
@@ -686,6 +691,8 @@ namespace Engine {
 
 
     void Texture2D::vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples) {
+        m_Format = format;
+        
         VkImageCreateInfo imageInfo{};
         imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
         imageInfo.imageType = VK_IMAGE_TYPE_2D;
@@ -786,6 +793,8 @@ namespace Engine {
     }
 
     void Texture2D::vk_CreateHDRTextureImageView(VkFormat format) {
+        m_Format = format;
+
         VkImageViewCreateInfo viewInfo{};
         viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         viewInfo.image = textureImage;

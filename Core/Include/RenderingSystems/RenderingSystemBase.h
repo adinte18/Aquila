@@ -1,27 +1,17 @@
 #ifndef RENDERING_SYSTEM_BASE_H
 #define RENDERING_SYSTEM_BASE_H
 
-#include "Engine/EditorCamera.h"
-#include "Scene/Scene.h"
-#include "Engine/Device.h"
-#include "Engine/Pipeline.h"
-#include "Engine/Buffer.h"
 #include "Engine/Descriptor.h"
-#include "Engine/DescriptorAllocator.h"
-
+#include "Engine/Pipeline.h"
 namespace Engine {
 
     
 class RenderingSystemBase {
 public:
-    
     struct RenderContext {
         VkCommandBuffer commandBuffer;
-        AquilaScene* scene = nullptr;
-        VkDescriptorSet desciptorSet = VK_NULL_HANDLE;
-        EditorCamera* camera;
-        //...
     };
+
 
     RenderingSystemBase(Device& device);
     virtual ~RenderingSystemBase();
@@ -31,7 +21,6 @@ public:
 
     void SetUniformData(uint32_t binding, const VkDescriptorBufferInfo* bufferInfo);
     void SetTexture(uint32_t binding, const VkDescriptorImageInfo* imageInfo);
-    
     virtual void SendDataToGPU();
 
     virtual void Render(const RenderContext& context) = 0;

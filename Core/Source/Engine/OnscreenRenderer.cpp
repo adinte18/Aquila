@@ -14,13 +14,13 @@ Engine::OnscreenRenderer::~OnscreenRenderer() {
 }
 
 VkImageView Engine::OnscreenRenderer::vk_GetCurrentImageView() const {
-    return swapChain->getImageView(currentImageID);
+    return swapChain->GetImageView(currentImageID);
 }
 
 VkCommandBuffer Engine::OnscreenRenderer::vk_BeginFrame()
 {
     AQUILA_CORE_ASSERT(!frameStarted && "Can't call vk_BeginFrame while already in progress");
-    auto result = swapChain->vk_GetNextImage(&currentImageID);
+    auto result = swapChain->GetNextImage(&currentImageID);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         vk_RecreateSwapChain();
@@ -54,7 +54,7 @@ void Engine::OnscreenRenderer::vk_EndFrame()
         throw std::runtime_error("failed to record command buffer!");
     }
 
-    auto result = swapChain->vk_SubmitCommandBuffers(&commandBuffer, &currentImageID);
+    auto result = swapChain->SubmitCommandBuffers(&commandBuffer, &currentImageID);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || window.IsWindowResized()) {
         window.ResetResizedFlag();
@@ -72,7 +72,7 @@ void Engine::OnscreenRenderer::vk_EndFrame()
 
 VkExtent2D Engine::OnscreenRenderer::vk_GetSwapChainExtent() const
 {
-    return swapChain->getSwapChainExtent();
+    return swapChain->GetExtent();
 }
 
 void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer commandBuffer)
@@ -82,8 +82,8 @@ void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer comma
     AQUILA_CORE_ASSERT(commandBuffer == vk_GetCurrentCommandBuffer()
         && "Can't begin render pass on command buffer from a different frame");
 
-    VkRenderPass pass =  swapChain->getRenderPass();
-    VkFramebuffer fb = swapChain->getFrameBuffer(currentImageID);
+    VkRenderPass pass =  swapChain->GetRenderpass();
+    VkFramebuffer fb = swapChain->GetFramebuffer(currentImageID);
 
     VkRenderPassBeginInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -91,7 +91,7 @@ void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer comma
     renderPassInfo.framebuffer = fb;
 
     renderPassInfo.renderArea.offset = {0, 0};
-    renderPassInfo.renderArea.extent = swapChain->getSwapChainExtent();
+    renderPassInfo.renderArea.extent = swapChain->GetExtent();
 
     std::array<VkClearValue, 2> clearValues{};
     clearValues[0].color = {0.f, 0.f, 0.f, 1.0f};
@@ -104,11 +104,11 @@ void Engine::OnscreenRenderer::vk_BeginSwapChainRenderPass(VkCommandBuffer comma
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(swapChain->getSwapChainExtent().width);
-    viewport.height = static_cast<float>(swapChain->getSwapChainExtent().height);
+    viewport.width = static_cast<float>(swapChain->GetExtent().width);
+    viewport.height = static_cast<float>(swapChain->GetExtent().height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
-    VkRect2D scissor{{0,0}, swapChain->getSwapChainExtent()};
+    VkRect2D scissor{{0,0}, swapChain->GetExtent()};
     vkCmdSetViewport(commandBuffer, 0, 1, &viewport);
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 }

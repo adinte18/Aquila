@@ -6,9 +6,7 @@
 #define VK_APP_VK_SWAP_CHAIN_H
 
 #include "Engine/Device.h"
-
-#include <vulkan/vulkan.h>
-#include <memory>
+#include "Engine/Framebuffer.h"
 
 namespace Engine{
     class Swapchain {
@@ -25,20 +23,20 @@ namespace Engine{
         Swapchain& operator=(const Swapchain&) = delete;
 
         // Helper functions
-        static VkSurfaceFormatKHR vk_ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-        static VkPresentModeKHR vk_ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
-        VkExtent2D vk_ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
-        [[nodiscard]] uint32_t width() const { return windowExtent.width; }
-        [[nodiscard]] uint32_t height() const { return windowExtent.height; }
-        [[nodiscard]] VkRenderPass getRenderPass() const { return renderPass; }
-        [[nodiscard]] size_t imageCount() const { return swapChainImages.size(); }
-        [[nodiscard]] VkFormat getSwapChainImageFormat() const { return swapChainImageFormat; }
-        [[nodiscard]] VkExtent2D getSwapChainExtent() const { return swapChainExtent; }
-        VkFramebuffer getFrameBuffer(int index) { return swapChainFramebuffers[index]; }
-        VkImageView getImageView(int index) { return swapChainImageViews[index]; }
-        VkResult vk_GetNextImage(uint32_t *imageIndex) const;
-        VkResult vk_SubmitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
-        float vk_GetExtentAspectRatio() {
+        static VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
+        static VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
+        VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
+        [[nodiscard]] uint32_t Width() const { return windowExtent.width; }
+        [[nodiscard]] uint32_t Height() const { return windowExtent.height; }
+        [[nodiscard]] VkRenderPass GetRenderpass() const { return renderPass; }
+        [[nodiscard]] size_t GetImageCount() const { return swapChainImages.size(); }
+        [[nodiscard]] VkFormat GetImageFormat() const { return swapChainImageFormat; }
+        [[nodiscard]] VkExtent2D GetExtent() const { return swapChainExtent; }
+        VkFramebuffer GetFramebuffer(int index) { return swapChainFramebuffers[index]->GetHandle(); }
+        VkImageView GetImageView(int index) { return swapChainImageViews[index]; }
+        VkResult GetNextImage(uint32_t *imageIndex) const;
+        VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
+        float GetExtentAspectRatio() {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
         }
 
@@ -53,7 +51,7 @@ namespace Engine{
         VkFormat swapChainDepthFormat;
         VkExtent2D swapChainExtent;
 
-        std::vector<VkFramebuffer> swapChainFramebuffers;
+        std::vector<Ref<Framebuffer>> swapChainFramebuffers;
         VkRenderPass renderPass;
 
         std::vector<VkImage> depthImages;
@@ -74,21 +72,21 @@ namespace Engine{
         std::vector<VkFence> imagesInFlight;
         size_t currentFrame = 0;
 
-        void SwapchainInit();
+        void Initialize();
 
-        void vk_CreateSwapChain();
+        void CreateSwapchain();
 
-        void vk_CreateImageViews();
+        void CreateImageViews();
 
-        void vk_CreateRenderPass();
+        void CreateRenderpass();
 
-        void vk_CreateFramebuffers();
+        void CreateFramebuffers();
 
-        void vk_CreateSyncObjects();
+        void CreateSyncObjects();
 
-        void vk_CreateDepthRessources();
+        void CreateDepthRessources();
 
-        VkFormat vk_FindDepthFormat();
+        VkFormat FindDepthFormat();
     };
 }
 
