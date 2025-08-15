@@ -7,9 +7,9 @@
 
 #include "AquilaCore.h"
 
-#include "Engine/Device.h"
-#include "Engine/Buffer.h"
-#include "Engine/Vertex.h"
+#include "Engine/Renderer/Device.h"
+#include "Engine/Renderer/Buffer.h"
+#include "Engine/Renderer/Vertex.h"
 
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"

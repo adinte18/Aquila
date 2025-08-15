@@ -28,7 +28,7 @@ bool Engine::CompositePass::CreateFramebuffer() {
     framebufferInfo.height = m_Extent.height;
     framebufferInfo.layers = 1;
 
-    if (vkCreateFramebuffer(m_Device.vk_GetDevice(), &framebufferInfo, nullptr, &m_Framebuffer) != VK_SUCCESS) {
+    if (vkCreateFramebuffer(m_Device.GetDevice(), &framebufferInfo, nullptr, &m_Framebuffer) != VK_SUCCESS) {
         return false;
     }
 
@@ -82,7 +82,7 @@ bool Engine::CompositePass::CreateRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(m_Device.vk_GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device.GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         return false;
     }
 

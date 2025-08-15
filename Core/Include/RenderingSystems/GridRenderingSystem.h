@@ -7,21 +7,19 @@
 
 #include "Engine/Mesh.h"
 
-#include "Engine/Device.h"
-#include "Engine/Pipeline.h"
-#include "ECS/SceneContext.h"
-
+#include "Engine/Renderer/Device.h"
+#include "Engine/Renderer/Pipeline.h"
 
 namespace Engine {
     class GridRenderingSystem {
     public:
         GridRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
-        ~GridRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~GridRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         GridRenderingSystem(const GridRenderingSystem&) = delete;
         GridRenderingSystem& operator=(const GridRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, SceneContext& scene) const;
+        void Render(VkCommandBuffer commandBuffer) const;
         void RecreatePipeline(VkRenderPass renderPass);
 
     private:

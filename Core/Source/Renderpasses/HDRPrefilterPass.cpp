@@ -33,24 +33,19 @@ bool Engine::HDRPrefilterPass::CreateFramebuffer() {
             viewInfo.subresourceRange.layerCount = 1;
 
             VkImageView imageView;
-            if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+            if (vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create cubemap face view!");
             }
             m_CubemapFaceViews[index] = imageView;
 
-            VkFramebufferCreateInfo faceFramebufferInfo{};
-            faceFramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-            faceFramebufferInfo.renderPass = m_RenderPass;
-            faceFramebufferInfo.attachmentCount = 1;
-            faceFramebufferInfo.pAttachments = &m_CubemapFaceViews[index];
-            faceFramebufferInfo.width = m_Extent.width;
-            faceFramebufferInfo.height = m_Extent.height;
-            faceFramebufferInfo.layers = 1;
-
-            if (vkCreateFramebuffer(m_Device.vk_GetDevice(), &faceFramebufferInfo, nullptr,
-                                    &m_Framebuffers[index]) != VK_SUCCESS) {
-                throw std::runtime_error("Failed to create framebuffer for cubemap face + mip!");
-            }
+            m_Framebuffers[face] = Engine::Framebuffer::Construct(m_Device, {
+                m_Extent.width,
+                m_Extent.height,
+                Engine::Framebuffer::Target::Offscreen,
+                1,
+                {m_CubemapFaceViews[face]},
+                m_RenderPass
+            });
         }
 
         m_Extent = originalExtent;
@@ -97,7 +92,7 @@ bool Engine::HDRPrefilterPass::CreateRenderPass() {
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_Device.vk_GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device.GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         return false;
     }
 

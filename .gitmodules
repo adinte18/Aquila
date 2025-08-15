@@ -28,3 +28,6 @@
 [submodule "Core/Include/External/SPIRV-Headers"]
 	path = Core/Include/External/SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
+[submodule "Core/Vendor/SDL"]
+	path = Core/Vendor/SDL
+	url = https://github.com/libsdl-org/SDL.git

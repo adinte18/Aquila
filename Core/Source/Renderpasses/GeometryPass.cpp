@@ -26,8 +26,8 @@ bool Engine::GeometryPass::CreateFramebuffer() {
         m_RenderPass
     };
 
-    m_Framebuffer = Framebuffer::Construct(m_Device, details);
-    if (!m_Framebuffer) {
+    m_Framebuffers.push_back(Framebuffer::Construct(m_Device, details));
+    if (!m_Framebuffers.back()) {
         throw std::runtime_error("Failed to create framebuffer!");
     }
 
@@ -95,7 +95,7 @@ bool Engine::GeometryPass::CreateRenderPass() {
     renderPassInfo.dependencyCount = 1;
     renderPassInfo.pDependencies = &dependency;
 
-    if (vkCreateRenderPass(m_Device.vk_GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device.GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         return false;
     }
 

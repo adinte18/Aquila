@@ -15,7 +15,6 @@ set(CORE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Core/Include)
 set(CORE_SOURCE_DIR ${CMAKE_SOURCE_DIR}/Core/Source)
 #==================================================================
 
-
 #=========================== VULKAN ===============================
 find_package(Vulkan REQUIRED)
 if (NOT Vulkan_FOUND)
@@ -28,12 +27,19 @@ else()
 endif()
 #==================================================================
 
-
 #=========================== GLFW =================================
 set(GLFW_INCLUDE_DIRS ${VENDOR_DIR}/glfw/include)
 add_subdirectory(${VENDOR_DIR}/glfw)
 #==================================================================
 
+#=========================== SDL ==================================
+set(SDL_DIR ${VENDOR_DIR}/SDL)
+add_subdirectory(${SDL_DIR})
+
+set(SDL_INCLUDE_DIRS
+    ${SDL_DIR}/include
+)
+#==================================================================
 
 #=========================== ASSIMP ===============================
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -51,11 +57,9 @@ include_directories(${ASSIMP_INCLUDE_DIRS})
 link_directories(${ASSIMP_LIBRARY_DIRS})
 #==================================================================
 
-
 #=========================== GLM ==================================
 set(GLM_INCLUDE_DIRS ${VENDOR_DIR}/glm)
 #==================================================================
-
 
 #=========================== CORE =================================
 file(GLOB_RECURSE ENGINE_SOURCES
@@ -75,6 +79,7 @@ target_include_directories(Core
         ${GLM_INCLUDE_DIRS}
         ${ASSIMP_INCLUDE_DIRS}
         ${GLFW_INCLUDE_DIRS}
+        ${SDL_INCLUDE_DIRS}
         ${VENDOR_DIR}
 )
 
@@ -91,6 +96,7 @@ target_compile_definitions(Core PRIVATE
 target_link_libraries(Core PRIVATE
     ${Vulkan_LIBRARIES}
     glfw
+    SDL3-static
     assimp
 )
 #==================================================================

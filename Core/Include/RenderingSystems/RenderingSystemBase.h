@@ -1,8 +1,8 @@
 #ifndef RENDERING_SYSTEM_BASE_H
 #define RENDERING_SYSTEM_BASE_H
 
-#include "Engine/Descriptor.h"
-#include "Engine/Pipeline.h"
+#include "Engine/Renderer/Descriptor.h"
+#include "Engine/Renderer/Pipeline.h"
 namespace Engine {
 
     

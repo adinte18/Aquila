@@ -4,7 +4,6 @@
 
 #include "RenderingSystems/CubemapRenderingSystem.h"
 #include "Engine/Mesh.h"
-#include "ECS/Components/Components.h"
 
 namespace Engine {
     struct PushConstantData
@@ -75,7 +74,7 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }

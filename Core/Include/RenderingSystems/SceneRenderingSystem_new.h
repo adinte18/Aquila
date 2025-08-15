@@ -2,7 +2,7 @@
 #define SCENE_RENDER_SYSTEM_H
 
 #include "RenderingSystems/RenderingSystemBase.h"
-#include "Engine/Buffer.h"
+#include "Engine/Renderer/Buffer.h"
 #include "Engine/EditorCamera.h"
 namespace Engine{
     class SceneRenderSystem : public RenderingSystemBase {

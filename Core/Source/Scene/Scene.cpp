@@ -4,7 +4,7 @@
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/EntityManager.h"
 #include "Scene/SceneGraph.h"
-#include "Engine/Core.h"
+#include "Engine/Controller.h"
 
 namespace Engine {
     AquilaScene::AquilaScene() {
@@ -177,7 +177,7 @@ namespace Engine {
             if (entityData.contains("MeshComponent")) {
                 const auto& meshJson = entityData["MeshComponent"];
                 MeshComponent mesh;
-                mesh.data = std::make_shared<Engine::Mesh>(Engine::Core::Get().GetDevice());
+                mesh.data = std::make_shared<Engine::Mesh>(Engine::Controller::Get().GetDevice());
                 mesh.data->Load(meshJson.value("Path", ""));
                 
                 if (!registry.all_of<MeshComponent>(entity)) {

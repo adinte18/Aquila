@@ -1,6 +1,6 @@
 #include "RenderingSystems/RenderingSystemBase.h"
 
-#include "Engine/DescriptorAllocator.h"
+#include "Engine/Renderer/DescriptorAllocator.h"
 namespace Engine {
 
     RenderingSystemBase::RenderingSystemBase(Device& device)
@@ -9,7 +9,7 @@ namespace Engine {
 
     RenderingSystemBase::~RenderingSystemBase() {
         if (m_PipelineLayout != VK_NULL_HANDLE) {
-            vkDestroyPipelineLayout(device.vk_GetDevice(), m_PipelineLayout, nullptr);
+            vkDestroyPipelineLayout(device.GetDevice(), m_PipelineLayout, nullptr);
         }
     }
 

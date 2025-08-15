@@ -1,15 +1,14 @@
 #ifndef PPRenderingSystem_H
 #define PPRenderingSystem_H
-#include "Engine/Device.h"
-#include "Engine/Pipeline.h"
-#include "ECS/Scene.h"
+#include "Engine/Renderer/Device.h"
+#include "Engine/Renderer/Pipeline.h"
 
 
 namespace Engine {
     class PPRenderingSystem {
     public:
         PPRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~PPRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~PPRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         PPRenderingSystem(const PPRenderingSystem&) = delete;
         PPRenderingSystem& operator=(const PPRenderingSystem&) = delete;

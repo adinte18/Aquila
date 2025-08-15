@@ -1,6 +1,6 @@
 #include "RenderingSystems/SceneRenderingSystem_new.h"
 
-#include "Engine/Core.h"
+#include "Engine/Controller.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Scene.h"
@@ -65,7 +65,7 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = &setLayout;
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }
@@ -83,7 +83,7 @@ namespace Engine {
     void SceneRenderSystem::Render(const RenderContext& context) {
         const auto& ctx = static_cast<const SceneRenderingContext&>(context);
 
-        auto* scene = Engine::Core::Get().GetSceneManager().GetActiveScene();
+        auto* scene = Engine::Controller::Get().GetSceneManager().GetActiveScene();
 
         auto& registry = scene->GetRegistry();
 

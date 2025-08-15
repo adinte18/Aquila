@@ -2,8 +2,9 @@
 #include "Engine/Events/Event.h"
 #include "Engine/Events/EventBus.h"
 
-#include "Engine/Renderer.h"
+#include "Engine/Renderer/Renderer.h"
 
+#include "Scene/Components/TransformComponent.h"
 #include "Scene/SceneManager.h"
 #include "Scene/SceneGraph.h"
 #include "Scene/Scene.h"
@@ -177,13 +178,29 @@ namespace Engine {
 
                 case UICommand::LoadMesh:{
                     auto& path = std::get<std::string>(event.m_Params.at("path"));
-                    auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
-
                     if (path.empty()) break;
 
-                    auto& meshData = scene->GetRegistry().get<MeshComponent>(entity);
-                    meshData.data = std::make_shared<Engine::Mesh>(*device);
-                    meshData.data->Load(path);
+                    if (event.m_Params.find("entity") == event.m_Params.end()) {
+                        auto newEntity = scene->GetEntityManager()->AddEntity();
+                        scene->GetRegistry().emplace<TransformComponent>(newEntity.GetHandle());
+                        scene->GetRegistry().emplace<MeshComponent>(newEntity.GetHandle());
+
+                        auto& meshData = scene->GetRegistry().get<MeshComponent>(newEntity.GetHandle());
+                        meshData.data = std::make_shared<Engine::Mesh>(*device);
+                        meshData.data->Load(path);
+                    }
+                    else {
+                        auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
+                        if (!scene->GetRegistry().valid(entity)) {
+                            Debug::LogError("Entity is not valid");
+                            return;
+                        }
+
+                        auto& meshData = scene->GetRegistry().get<MeshComponent>(entity);
+                        meshData.data = std::make_shared<Engine::Mesh>(*device);
+                        meshData.data->Load(path);
+                    }
+
                     break;
                 }
                 case UICommand::CreateChildEntity:{

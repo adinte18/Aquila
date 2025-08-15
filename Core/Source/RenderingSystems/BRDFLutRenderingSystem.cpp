@@ -1,6 +1,6 @@
 #include <utility>
 #include "RenderingSystems/BRDFLutRenderingSystem.h"
-#include "ECS/Components/Components.h"
+
 
 namespace Engine {
     BRDFLutRenderingSystem::BRDFLutRenderingSystem(Device &device, VkRenderPass renderPass,
@@ -51,7 +51,7 @@ namespace Engine {
         pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipelineLayoutInfo.setLayoutCount = 1;
         pipelineLayoutInfo.pSetLayouts = &layout;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }

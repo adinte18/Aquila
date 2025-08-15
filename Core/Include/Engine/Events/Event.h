@@ -5,7 +5,7 @@
 
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/Entity.h"
-#include "Engine/Texture2D.h"
+#include "Engine/Renderer/Texture2D.h"
 
 // Base Event class
 class Event {
