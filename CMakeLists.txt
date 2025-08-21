@@ -18,10 +18,17 @@ else()
     message(FATAL_ERROR "Unsupported platform: ${CMAKE_SYSTEM_NAME}")
 endif()
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+    set(PLATFORM_DEFINE ${PLATFORM_DEFINE} -DAQUILA_PLATFORM_64BIT)
+else()
+    set(PLATFORM_DEFINE ${PLATFORM_DEFINE} -DAQUILA_PLATFORM_32BIT)
+endif()
+
 add_compile_definitions(${PLATFORM_DEFINE})
 
 # =============================
 add_subdirectory(Core)
+add_subdirectory(Editor)
 add_subdirectory(App)
 
 file(GLOB SHADER_FILES "${CMAKE_SOURCE_DIR}/Resources/Shaders/*.frag" "${CMAKE_SOURCE_DIR}/Resources/Shaders/*.vert")
@@ -38,6 +45,7 @@ target_compile_definitions(App PRIVATE
     ICONS_PATH="${ICONS_PATH}"
     ASSET_PATH="${ASSET_PATH}"
 )
+
 
 foreach(SHADER_FILE ${SHADER_FILES})
     get_filename_component(SHADER_NAME_WE ${SHADER_FILE} NAME_WE)

@@ -7,16 +7,16 @@
 
 
 
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
+#include <Engine/Mesh.h>
 
 
 namespace Engine {
     class IrradianceRenderingSystem {
     public:
         IrradianceRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~IrradianceRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~IrradianceRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         IrradianceRenderingSystem(const IrradianceRenderingSystem&) = delete;
         IrradianceRenderingSystem& operator=(const IrradianceRenderingSystem&) = delete;

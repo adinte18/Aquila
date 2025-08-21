@@ -3,10 +3,6 @@
 
 #include "vulkan/vulkan.h"
 
-// Timing
-#include <chrono>
-
-// Maths includes
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -15,7 +11,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-// Base includes
 #include <cassert>
 #include <iostream>
 #include <memory>
@@ -31,36 +26,20 @@
 #include <inttypes.h>
 #include <optional>
 #include <set>
-
-// Aquila core utilities
-#include "Defines.h"
-#include "Asserts.h"
-
-template<typename T>
-using Ref = std::shared_ptr<T>;
-
-template<typename T>
-using Unique = std::unique_ptr<T>;
-
-template<typename T>
-using WeakRef = std::weak_ptr<T>;
-
-template<typename T>
-using Delegate = std::function<T>;
-
 #include <random>
 #include <cstdint>
 #include <iomanip>
 #include <sstream>
 
-struct DeltaTime {
-    float Seconds = 0.0f;
+#include "Defines.h"
+#include "Asserts.h"
 
-    explicit DeltaTime(float time = 0.0f) : Seconds(time) {}
 
-    operator float() const { return Seconds; }  // implicit conversion to float
-};
-
+#include "Platform/Platform.h"
+#include "Platform/Timer.h"
+#include "Platform/DebugLog.h"
+#include "Platform/Threading/Threading.h"
+#include "Platform/Filesystem/Filesystem.h"
 
 struct UUID {
     uint64_t high;

@@ -2,7 +2,7 @@
 
 #include "RenderingSystems/PreethamSkyRenderingSystem.h"
 #include "Engine/Mesh.h"
-#include "ECS/Components/Components.h"
+
 
 
 namespace Engine {
@@ -17,7 +17,7 @@ namespace Engine {
                                                                 VkDescriptorSetLayout layout): device(device) {
         CreatePipelineLayout(layout);
         CreatePipeline(renderPass);
-        model = std::make_shared<Engine::Mesh>(device);
+        model = CreateRef<Engine::Mesh>(device);
         // model->CreateCube();
     }
 
@@ -46,7 +46,7 @@ namespace Engine {
         Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/atmosphere_vert.spv",
                 std::string(SHADERS_PATH) + "/atmosphere_frag.spv",
@@ -75,7 +75,7 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = &layout;
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }

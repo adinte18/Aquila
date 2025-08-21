@@ -14,35 +14,35 @@ namespace Engine {
         CreatePipeline(renderPass);
     }
 
-    void DepthRenderingSystem::Render(VkCommandBuffer commandBuffer, Engine::SceneContext& sceneContext) const {
+    void DepthRenderingSystem::Render(VkCommandBuffer commandBuffer) const {
         pipeline->Bind(commandBuffer);
 
-        sceneContext.GetScene().GetRegistry().view<Engine::Light>().each([&sceneContext, this, &commandBuffer](Engine::Light& light) {
-            if (light.type == Engine::Light::LightType::Directional) {
+        // sceneContext.GetScene().GetRegistry().view<Engine::Light>().each([&sceneContext, this, &commandBuffer](Engine::Light& light) {
+        //     if (light.type == Engine::Light::LightType::Directional) {
 
-                light.UpdateMatrices();
+        //         light.UpdateMatrices();
 
-                sceneContext.GetScene().GetRegistry().view<Engine::Transform, Engine::MeshCmp>()
-                    .each([&sceneContext, this, &commandBuffer](Engine::Transform& transform, Engine::MeshCmp& mesh) {
+        //         sceneContext.GetScene().GetRegistry().view<Engine::Transform, Engine::MeshCmp>()
+        //             .each([&sceneContext, this, &commandBuffer](Engine::Transform& transform, Engine::MeshCmp& mesh) {
 
-                    if (mesh.mesh) {
-                        PushConstantData push{};
-                        push.modelMatrix = transform.TransformMatrix();
-                        push.normalMatrix = transform.NormalMatrix();
+        //             if (mesh.mesh) {
+        //                 PushConstantData push{};
+        //                 push.modelMatrix = transform.TransformMatrix();
+        //                 push.normalMatrix = transform.NormalMatrix();
 
-                        vkCmdPushConstants(commandBuffer,
-                            pipelineLayout,
-                            VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
-                            0,
-                            sizeof(PushConstantData),
-                            &push);
+        //                 vkCmdPushConstants(commandBuffer,
+        //                     pipelineLayout,
+        //                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        //                     0,
+        //                     sizeof(PushConstantData),
+        //                     &push);
 
-                        mesh.mesh->Bind(commandBuffer);
-                        // mesh.mesh->Draw(commandBuffer, sceneContext.GetSceneDescriptorSet(), pipelineLayout);
-                    }
-                });
-            }
-        });
+        //                 mesh.mesh->Bind(commandBuffer);
+        //                 // mesh.mesh->Draw(commandBuffer, sceneContext.GetSceneDescriptorSet(), pipelineLayout);
+        //             }
+        //         });
+        //     }
+        // });
     }
 
     void DepthRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
@@ -62,7 +62,7 @@ namespace Engine {
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         pipelineConfig.colorBlendAttachment.blendEnable = VK_FALSE;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/shadows_vert.spv",
                 std::string(SHADERS_PATH) + "/shadows_frag.spv",
@@ -83,7 +83,7 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = setLayouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }

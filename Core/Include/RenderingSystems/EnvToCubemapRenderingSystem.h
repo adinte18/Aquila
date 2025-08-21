@@ -5,15 +5,15 @@
 #ifndef CUBEMAPRENDERINGSYSTEM_H
 #define CUBEMAPRENDERINGSYSTEM_H
 
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
+#include <Engine/Mesh.h>
 
 namespace Engine {
     class EnvToCubemapRenderingSystem {
     public:
         EnvToCubemapRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~EnvToCubemapRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~EnvToCubemapRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         EnvToCubemapRenderingSystem(const EnvToCubemapRenderingSystem&) = delete;
         EnvToCubemapRenderingSystem& operator=(const EnvToCubemapRenderingSystem&) = delete;

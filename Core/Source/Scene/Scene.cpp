@@ -1,10 +1,11 @@
 #include "Scene/Scene.h"
 #include "AquilaCore.h"
+#include "Platform/Filesystem/VirtualFileSystem.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/EntityManager.h"
 #include "Scene/SceneGraph.h"
-#include "Engine/Core.h"
+#include "Engine/Controller.h"
 
 namespace Engine {
     AquilaScene::AquilaScene() {
@@ -64,8 +65,8 @@ namespace Engine {
      * for managing entities and their relationships within the scene.
      */
     void AquilaScene::OnStart() {
-        m_EntityManager = std::make_unique<EntityManager>(this);
-        m_SceneGraph = std::make_unique<SceneGraph>();
+        m_EntityManager = CreateUnique<EntityManager>(this);
+        m_SceneGraph = CreateUnique<SceneGraph>();
         m_SceneGraph->Construct(m_EntityManager->GetRegistry());
     }
 
@@ -76,15 +77,19 @@ namespace Engine {
     * associated with the scene are properly released.
     */
     bool AquilaScene::Deserialize(const std::string& filepath) {
-        std::ifstream file(filepath);
-        if (!file.is_open()) {
+        auto vfsFile = VFS::VirtualFileSystem::Get()->OpenFile(filepath, "r");
+
+        if (!vfsFile->IsValid()) {
             return false;
         }
 
-        nlohmann::ordered_json sceneJson;
-        file >> sceneJson;
-        file.close();
+        std::vector<char> buffer(vfsFile->Size());
+        size_t bytesRead = vfsFile->Read(buffer.data(), buffer.size());
+        vfsFile->Close();
 
+        nlohmann::ordered_json sceneJson;
+        sceneJson = nlohmann::ordered_json::parse(buffer.begin(), buffer.end());
+        
         m_SceneName = sceneJson.value("SceneName", "Untitled Scene");
 
         auto& registry = GetRegistry();
@@ -177,7 +182,7 @@ namespace Engine {
             if (entityData.contains("MeshComponent")) {
                 const auto& meshJson = entityData["MeshComponent"];
                 MeshComponent mesh;
-                mesh.data = std::make_shared<Engine::Mesh>(Engine::Core::Get().GetDevice());
+                mesh.data = CreateRef<Engine::Mesh>(Engine::Controller::Get()->GetDevice());
                 mesh.data->Load(meshJson.value("Path", ""));
                 
                 if (!registry.all_of<MeshComponent>(entity)) {
@@ -251,13 +256,13 @@ namespace Engine {
             sceneJson["Entities"][std::to_string(static_cast<int>(entity))] = entityJson;
         }
 
-        std::ofstream file(filepath);
-        if (!file.is_open()) {
+        auto vfsFile = VFS::VirtualFileSystem::Get()->OpenFile(filepath, "w");
+        if (!vfsFile->IsValid()) {
             return false;
         }
 
-        file << sceneJson.dump(4);
-        file.close();
+        vfsFile->Write(sceneJson.dump(4).data(), sceneJson.dump(4).size());
+        vfsFile->Close();
 
         return true;
     }

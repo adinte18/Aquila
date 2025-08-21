@@ -6,16 +6,16 @@
 #define PREETHAMSKYRENDERINGSYSTEM_H
 
 
+#include "Engine/Mesh.h"
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
 
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
 
 namespace Engine {
     class PreethamSkyRenderingSystem {
     public:
         PreethamSkyRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~PreethamSkyRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~PreethamSkyRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         PreethamSkyRenderingSystem(const PreethamSkyRenderingSystem&) = delete;
         PreethamSkyRenderingSystem& operator=(const PreethamSkyRenderingSystem&) = delete;

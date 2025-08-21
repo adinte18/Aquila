@@ -5,16 +5,17 @@
 #ifndef IBLRENDERINGSYSTEM_H
 #define IBLRENDERINGSYSTEM_H
 
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
+#include "Engine/Mesh.h"
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
+
 
 
 namespace Engine {
     class CubemapRenderingSystem {
     public:
         CubemapRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~CubemapRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~CubemapRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         CubemapRenderingSystem(const CubemapRenderingSystem&) = delete;
         CubemapRenderingSystem& operator=(const CubemapRenderingSystem&) = delete;

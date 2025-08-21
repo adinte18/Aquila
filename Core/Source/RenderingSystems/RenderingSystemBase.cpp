@@ -1,6 +1,7 @@
 #include "RenderingSystems/RenderingSystemBase.h"
 
-#include "Engine/DescriptorAllocator.h"
+#include "Engine/Renderer/DescriptorAllocator.h"
+#include "Engine/Renderer/Swapchain.h"
 namespace Engine {
 
     RenderingSystemBase::RenderingSystemBase(Device& device)
@@ -9,7 +10,7 @@ namespace Engine {
 
     RenderingSystemBase::~RenderingSystemBase() {
         if (m_PipelineLayout != VK_NULL_HANDLE) {
-            vkDestroyPipelineLayout(device.vk_GetDevice(), m_PipelineLayout, nullptr);
+            vkDestroyPipelineLayout(device.GetDevice(), m_PipelineLayout, nullptr);
         }
     }
 
@@ -27,7 +28,7 @@ namespace Engine {
             m_Textures.erase(binding);
     }
 
-    void RenderingSystemBase::SendDataToGPU() {
+    void RenderingSystemBase::SendDataToGPU(int frameIndex) {
         DescriptorWriter writer{*m_Layout, *DescriptorAllocator::GetSharedPool()};
 
         for (auto& [binding, bufInfo] : m_UniformBuffers) {
@@ -37,11 +38,14 @@ namespace Engine {
             writer.writeImage(binding, &imgInfo);
         }
 
-        writer.overwrite(m_DescriptorSet);
+        // Only overwrite the descriptor set for the current frame
+        writer.overwrite(m_DescriptorSets[frameIndex]);
     }
 
     void RenderingSystemBase::AllocateDescriptorSet() {
-        DescriptorAllocator::Allocate(m_Layout->GetDescriptorSetLayout(), m_DescriptorSet);
+        for (int i = 0; i < Swapchain::MAX_FRAMES_IN_FLIGHT; i++){
+            DescriptorAllocator::Allocate(m_Layout->GetDescriptorSetLayout(), m_DescriptorSets[i]);
+        }
     }
 
 } // namespace Engine

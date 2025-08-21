@@ -1,6 +1,7 @@
 #include "RenderingSystems/SceneRenderingSystem_new.h"
 
-#include "Engine/Core.h"
+#include "Engine/Controller.h"
+#include "Engine/EditorCamera.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Scene.h"
@@ -21,7 +22,7 @@ namespace Engine {
         AllocateDescriptorSet();
 
         // init buffer
-        m_Buffer = std::make_unique<Buffer>(device, sizeof(SceneUniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        m_Buffer = CreateUnique<Buffer>(device, sizeof(SceneUniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         m_Buffer->map();
 
         auto uniformData = m_Buffer->vk_DescriptorInfo();
@@ -44,7 +45,7 @@ namespace Engine {
         Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = m_PipelineLayout;
-        m_Pipeline = std::make_unique<Pipeline>(
+        m_Pipeline = CreateUnique<Pipeline>(
             device,
             std::string(SHADERS_PATH) + "/AqPBRvert.spv",
             std::string(SHADERS_PATH) + "/AqPBRfrag.spv",
@@ -65,36 +66,32 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = &setLayout;
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &m_PipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }
 
-    void SceneRenderSystem::UpdateBuffer(const SceneRenderingContext& context){
+    void SceneRenderSystem::UpdateBuffer(EditorCamera& camera){
         SceneUniformData data{};
-        data.projection = context.camera->GetProjection();
-        data.view = context.camera->GetView();
-        data.inverseView = context.camera->GetInverseView();
+        data.projection = camera.GetProjection();
+        data.view = camera.GetView();
+        data.inverseView = camera.GetInverseView();
 
         m_Buffer->vk_WriteToBuffer(&data);
         m_Buffer->vk_Flush();
     }
 
-    void SceneRenderSystem::Render(const RenderContext& context) {
-        const auto& ctx = static_cast<const SceneRenderingContext&>(context);
+    void SceneRenderSystem::Render(const FrameSpec& frameSpec) {
+        const auto& ctx = static_cast<const SceneRenderingContext&>(frameSpec);
 
-        auto* scene = Engine::Core::Get().GetSceneManager().GetActiveScene();
+        auto* scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
 
         auto& registry = scene->GetRegistry();
 
-        m_Pipeline->Bind(context.commandBuffer);
+        m_Pipeline->Bind(frameSpec.commandBuffer);
 
-        UpdateBuffer(ctx);
-
-        SendDataToGPU();
-
-        vkCmdBindDescriptorSets(context.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                m_PipelineLayout, 0, 1, &m_DescriptorSet, 0, nullptr);
+        // vkCmdBindDescriptorSets(frameSpec.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+        //                         m_PipelineLayout, 0, 1, &m_DescriptorSets[ctx.frameIndex], 0, nullptr);
 
         auto view = registry.view<MetadataComponent, MeshComponent, TransformComponent>();
 
@@ -105,7 +102,7 @@ namespace Engine {
                 push.modelMatrix = transformComp.GetWorldMatrix();
                 push.normalMatrix = transformComp.GetNormalMatrix();
 
-                vkCmdPushConstants(context.commandBuffer,
+                vkCmdPushConstants(frameSpec.commandBuffer,
                     m_PipelineLayout,
                     VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
                     0,
@@ -113,8 +110,8 @@ namespace Engine {
                     &push);
 
             if (meshComp.data != nullptr && metaComp.Enabled) {
-                meshComp.data->Bind(context.commandBuffer);
-                meshComp.data->Draw(context.commandBuffer, m_PipelineLayout, m_DescriptorSet);
+                meshComp.data->Bind(frameSpec.commandBuffer);
+                meshComp.data->Draw(frameSpec.commandBuffer, m_PipelineLayout, m_DescriptorSets[ctx.frameIndex]);
             }
         }
     }

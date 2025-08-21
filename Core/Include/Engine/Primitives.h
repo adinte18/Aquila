@@ -8,7 +8,7 @@
 #include <glm/glm.hpp>
 #include <vector>
 #include "AquilaCore.h"
-#include "Vertex.h"
+#include "Engine/Renderer/Vertex.h"
 
 namespace Engine {
 

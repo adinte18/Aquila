@@ -1,15 +1,14 @@
 #ifndef CompositeRenderingSystem_H
 #define CompositeRenderingSystem_H
-#include "Engine/Device.h"
-#include "Engine/Pipeline.h"
-#include "ECS/Scene.h"
+#include "Engine/Renderer/Device.h"
+#include "Engine/Renderer/Pipeline.h"
 
 
 namespace Engine {
     class CompositeRenderingSystem {
     public:
         CompositeRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~CompositeRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~CompositeRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         CompositeRenderingSystem(const CompositeRenderingSystem&) = delete;
         CompositeRenderingSystem& operator=(const CompositeRenderingSystem&) = delete;

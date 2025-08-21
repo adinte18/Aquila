@@ -8,7 +8,6 @@ struct CameraComponent {
     float aspectRatio = 1.778f; // default 16:9
     bool isOrthographic = false;
 
-    // Orthographic specifics
     float orthoLeft = -1.0f;
     float orthoRight = 1.0f;
     float orthoTop = 1.0f;
