@@ -20,7 +20,7 @@ namespace Editor::Elements {
             ImGui::TableSetColumnIndex(0);
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes;
 
-            if (UIManager::Get().GetSelectedEntity() == entity)
+            if (UIManager::Get()->GetSelectedEntity() == entity)
                 flags |= ImGuiTreeNodeFlags_Selected;
 
             if (node.Children.empty())
@@ -29,11 +29,11 @@ namespace Editor::Elements {
             bool opened = ImGui::TreeNodeEx(label.c_str(), flags, "%s", label.c_str());
 
             if (ImGui::IsItemClicked(ImGuiMouseButton_Left))
-                UIManager::Get().SetSelectedEntity(entity);
+                UIManager::Get()->SetSelectedEntity(entity);
 
             if (ImGui::BeginPopupContextItem())
             {
-                UIManager::Get().SetSelectedEntity(entity);
+                UIManager::Get()->SetSelectedEntity(entity);
                 Menu();
                 ImGui::EndPopup();
             }
@@ -120,14 +120,14 @@ namespace Editor::Elements {
     }
 
     void HierarchyElement::Menu() {
-        entt::entity selected = UIManager::Get().GetSelectedEntity();
+        entt::entity selected = UIManager::Get()->GetSelectedEntity();
 
         if (selected != entt::null){
             ImGui::SeparatorText("Family");
 
             if (ImGui::MenuItem(ICON_LC_PLUS " Create empty child entity")){
 
-                Engine::EventBus::Get().Dispatch(UICommandEvent{
+                Engine::EventBus::Get()->Dispatch(UICommandEvent{
                     UICommand::CreateChildEntity,
                     { {"entity", selected} }
                 });
@@ -135,7 +135,7 @@ namespace Editor::Elements {
 
             bool hasParent = false;
 
-            Engine::EventBus::Get().Dispatch(QueryEvent{
+            Engine::EventBus::Get()->Dispatch(QueryEvent{
                 QueryCommand::EntityHasParent,
                 { {"entity", selected} },
                 [&hasParent](UIEventResult result, CommandParam payload) {
@@ -147,7 +147,7 @@ namespace Editor::Elements {
 
             std::vector<Engine::AqEntity> attachableEntities;
 
-            Engine::EventBus::Get().Dispatch(QueryEvent{
+            Engine::EventBus::Get()->Dispatch(QueryEvent{
                 QueryCommand::GetAttachableEntities,
                 { {"entity", selected} },
                 [&attachableEntities](UIEventResult result, CommandParam payload) {
@@ -162,7 +162,7 @@ namespace Editor::Elements {
                     for (auto& entity : attachableEntities) {
                         ImGui::PushID(entity.GetUUID().ToString().c_str());
                         if (ImGui::MenuItem(entity.GetName().c_str())) {
-                            Engine::EventBus::Get().Dispatch(UICommandEvent{
+                            Engine::EventBus::Get()->Dispatch(UICommandEvent{
                                 UICommand::AttachToEntity,
                                 { {"entity", selected}, {"parent", entity.GetHandle()} }
                             });
@@ -176,7 +176,7 @@ namespace Editor::Elements {
 
             if (hasParent) {
                 if (ImGui::MenuItem(ICON_LC_UNLINK " Disown entity")) {
-                    Engine::EventBus::Get().Dispatch(UICommandEvent{
+                    Engine::EventBus::Get()->Dispatch(UICommandEvent{
                         UICommand::DisownEntity,
                         { {"entity", selected} }
                     });
@@ -197,14 +197,14 @@ namespace Editor::Elements {
             ImGui::Separator();
 
             if (ImGui::MenuItem(ICON_LC_TRASH " Delete entity")) {
-                Engine::EventBus::Get().Dispatch(UICommandEvent{
+                Engine::EventBus::Get()->Dispatch(UICommandEvent{
                     UICommand::DeleteEntity,
                     { {"entity", selected} }
                 });
             }
         } else {
             if (ImGui::MenuItem(ICON_LC_PLUS " Create empty entity")) {
-                Engine::EventBus::Get().Dispatch(UICommandEvent{
+                Engine::EventBus::Get()->Dispatch(UICommandEvent{
                     UICommand::AddEntity
                 });
             }
@@ -232,7 +232,7 @@ namespace Editor::Elements {
 
 
     void HierarchyElement::Draw(){
-        auto scene = Engine::Controller::Get().GetSceneManager().GetActiveScene();
+        auto scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
         if (!scene) return;
 
         ImGui::Begin(ICON_LC_LAYERS_2 " Scene Hierarchy", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -240,7 +240,7 @@ namespace Editor::Elements {
         DisplayHierarchy(scene);
 
         if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered()) {
-            UIManager::Get().SetSelectedEntity(entt::null);
+            UIManager::Get()->SetSelectedEntity(entt::null);
             ImGui::OpenPopup("SceneHierarchyPopup");
         }
 

@@ -17,16 +17,14 @@
 
 
 namespace Editor {
-    class UIManager {
-    public:
+    class UIManager : public Utility::Singleton<UIManager> {
+        friend class Singleton<UIManager>;
+        
+        public:
         void OnStart();
-        void OnUpdate(VkCommandBuffer commandBuffer);
         void OnEnd();
 
-        static UIManager& Get() {
-            static UIManager instance;
-            return instance;
-        }
+        void Render(VkCommandBuffer commandBuffer);
 
         entt::entity GetSelectedEntity() const { return m_SelectedEntity; }
         void SetSelectedEntity(entt::entity entity) { m_SelectedEntity = entity; }

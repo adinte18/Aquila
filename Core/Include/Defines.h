@@ -45,5 +45,12 @@
     #define AQUILA_LOG_DEBUG(message) ((void)0)
 #endif
 
+#define AQUILA_NONCOPYABLE(ClassName)        \
+    ClassName(const ClassName&) = delete;    \
+    ClassName& operator=(const ClassName&) = delete;
+
+#define AQUILA_NONMOVEABLE(ClassName) \
+    ClassName(ClassName&&) = delete; \
+    ClassName& operator=(ClassName&&) = delete \
 
 #endif

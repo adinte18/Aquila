@@ -6,7 +6,7 @@ namespace Filesystem {
     bool Exists(const std::string& path) {
         #ifdef AQUILA_PLATFORM_WINDOWS 
             DWORD attr = GetFileAttributesA(path.c_str());
-            return (attr != INVALID_FILE_ATTRIBUTES && !(attr & FILE_ATTRIBUTE_DIRECTORY));
+            return (attr != INVALID_FILE_ATTRIBUTES);
         #elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)
             struct stat buffer;
             return (stat(path.c_str(), &buffer) == 0);
@@ -19,10 +19,20 @@ namespace Filesystem {
             WIN32_FILE_ATTRIBUTE_DATA data;
             if (GetFileAttributesExA(path.c_str(), GetFileExInfoStandard, &data)) {
                 stat.exists = true;
-                stat.size = static_cast<uint32>(data.nFileSizeLow);
+                stat.size = (static_cast<uint64_t>(data.nFileSizeHigh) << 32) | data.nFileSizeLow;
                 stat.isDirectory = (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-                stat.isRegularFile = !stat.isDirectory;
-                stat.lastWriteTime = static_cast<uint32>(data.ftLastWriteTime.dwLowDateTime);
+                stat.isRegularFile = (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
+                
+                ULONGLONG qw = (static_cast<ULONGLONG>(data.ftLastWriteTime.dwHighDateTime) << 32) |
+                                data.ftLastWriteTime.dwLowDateTime;
+
+                FILETIME ft = data.ftLastWriteTime;
+                ULARGE_INTEGER ull;
+                ull.LowPart = ft.dwLowDateTime;
+                ull.HighPart = ft.dwHighDateTime;
+                time_t t = static_cast<time_t>((ull.QuadPart - 116444736000000000ULL) / 10000000ULL);
+
+                stat.lastWriteTime = static_cast<uint32_t>(t);
             }
         #elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)
             struct stat buffer;
@@ -60,6 +70,10 @@ namespace Filesystem {
         #ifdef AQUILA_PLATFORM_WINDOWS
             std::string normalized = path;
             std::replace(normalized.begin(), normalized.end(), '/', '\\');
+
+            if (normalized.size() > 3 && normalized.back() == '\\') {
+                normalized.pop_back();
+            }
             return normalized;
         #else
             return path;
@@ -101,11 +115,19 @@ namespace Filesystem {
         #endif
     }
 
-    bool Remove(const std::string& path) {
+    bool RemoveFile(const std::string& path) {
         #ifdef AQUILA_PLATFORM_WINDOWS
             return DeleteFileA(path.c_str()) != 0;
         #elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)
             return (remove(path.c_str()) == 0);
+        #endif
+    }
+
+    bool RemoveDir(const std::string& path) {
+        #ifdef AQUILA_PLATFORM_WINDOWS
+            return RemoveDirectoryA(path.c_str()) != 0;
+        #elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)
+            return (rmdir(path.c_str()) == 0);
         #endif
     }
 

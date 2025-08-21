@@ -3,6 +3,7 @@
 
 #include "AquilaCore.h"
 
+#include "Defines.h"
 #include "Engine/Window.h"
 
 namespace Engine {
@@ -73,6 +74,22 @@ namespace Engine {
         [[nodiscard]] std::vector<const char *> GetRequiredExtensions() const;
 
 
+        static const char* GetObjectTypeName(VkObjectType objectType) {
+            switch (objectType) {
+                case VK_OBJECT_TYPE_BUFFER: return "Buffer";
+                case VK_OBJECT_TYPE_IMAGE: return "Image";
+                case VK_OBJECT_TYPE_IMAGE_VIEW: return "ImageView";
+                case VK_OBJECT_TYPE_SAMPLER: return "Sampler";
+                case VK_OBJECT_TYPE_DESCRIPTOR_SET: return "DescriptorSet";
+                case VK_OBJECT_TYPE_FRAMEBUFFER: return "Framebuffer";
+                case VK_OBJECT_TYPE_COMMAND_BUFFER: return "CommandBuffer";
+                case VK_OBJECT_TYPE_PIPELINE: return "Pipeline";
+
+                default: return "Unknown";
+            }
+        }
+
+
         /*
          * The first parameter specifies the severity of the message, which is one of the following flags:
 
@@ -88,10 +105,70 @@ namespace Engine {
                 const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
                 void *pUserData) {
 
-            std::cerr << "validation layer: " << pCallbackData->pMessage << std::endl;
+                const char* severityColor = "";
+                const char* severityText = "";
+                const char* resetColor = "\033[0m";
+                
+                switch (messageSeverity) {
+                    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT:
+                        severityColor = "\033[31m";
+                        severityText = "ERROR";
+                        break;
+                    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
+                        severityColor = "\033[33m";
+                        severityText = "WARNING";
+                        break;
+                    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT:
+                        severityColor = "\033[36m";
+                        severityText = "INFO";
+                        break;
+                    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+                        severityColor = "\033[37m";
+                        severityText = "VERBOSE";
+                        break;
+                    case VK_DEBUG_UTILS_MESSAGE_SEVERITY_FLAG_BITS_MAX_ENUM_EXT:
+                        severityColor = "\033[37m";
+                        severityText = "FLAG BITS MAX ENUM";
+                        break;
+                    default:
+                        break; 
+                    }
 
-            return VK_FALSE;
+                std::string typeStr = "";
+                if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT) typeStr += "GENERAL";
+                if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) typeStr += "VALIDATION";
+                if (messageType & VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT) typeStr += "PERFORMANCE";
+                
+                std::cerr << severityColor << "[VULKAN " << severityText << "]" << resetColor;
+                if (!typeStr.empty()) {
+                    std::cerr << " [" << typeStr << "]";
+                }
+                std::cerr << std::endl;
+                
+                if (pCallbackData->pMessageIdName) {
+                    std::cerr << "  ID: " << pCallbackData->pMessageIdName << " (" << pCallbackData->messageIdNumber << ")" << std::endl;
+                }
+                
+                std::cerr << "  Message: " << pCallbackData->pMessage << std::endl;
+                
+                if (pCallbackData->objectCount > 0) {
+                    std::cerr << "  Objects involved:" << std::endl;
+                    for (uint32_t i = 0; i < pCallbackData->objectCount; i++) {
+                        const auto& obj = pCallbackData->pObjects[i];
+                        std::cerr << "    [" << i << "] " << GetObjectTypeName(obj.objectType);
+                        std::cerr << " (0x" << std::hex << obj.objectHandle << std::dec << ")";
+                        if (obj.pObjectName) {
+                            std::cerr << " \"" << obj.pObjectName << "\"";
+                        }
+                        std::cerr << std::endl;
+                    }
+                }
+                
+                std::cerr << std::endl;
+                
+                return VK_FALSE;
         }
+
 
         VkQueueFamilyIndices FindQueueFamilies(VkPhysicalDevice vkPhysicalDevice);
 
@@ -110,11 +187,8 @@ namespace Engine {
         explicit Device(Window &window);
         ~Device();
 
-        // Not copyable or movable
-        Device(const Device&) = delete;
-        Device& operator=(const Device&) = delete;
-        Device(const Device&&) = delete;
-        Device& operator=(const Device&&) = delete;
+        AQUILA_NONCOPYABLE(Device);
+        AQUILA_NONMOVEABLE(Device);
 
         VkCommandPool GetCommandPool() {
             return m_CommandPool;
@@ -156,6 +230,8 @@ namespace Engine {
 
         VkCommandBuffer BeginSingleTimeCommands();
         void EndSingleTimeCommands(VkCommandBuffer commandBuffer);
+
+        void Wait() { vkDeviceWaitIdle(m_Device); }
 
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     };

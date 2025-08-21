@@ -60,7 +60,7 @@ namespace Engine {
                     throw std::runtime_error("Cannot build a texture as both HDR and Cubemap. Choose only one.");
                 }
 
-                auto texture = std::make_shared<Texture2D>(device);
+                auto texture = CreateRef<Texture2D>(device);
 
                 if (!filepath.empty()) {
                     texture->CreateTexture(filepath, format);
@@ -106,7 +106,7 @@ namespace Engine {
         public:
 
         [[nodiscard]] static Ref<Texture2D> create(Device& device) {
-            return std::make_shared<Texture2D>(device);
+            return CreateRef<Texture2D>(device);
         }
 
         void GenerateMipmap(VkImage image, VkFormat format, int32_t width, int32_t height, uint32_t mipLevels);

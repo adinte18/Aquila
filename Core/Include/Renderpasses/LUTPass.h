@@ -22,7 +22,7 @@ namespace Engine {
         }
 
         static Ref<LUTPass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<LUTPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<LUTPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

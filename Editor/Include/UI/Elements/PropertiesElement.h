@@ -12,6 +12,7 @@ namespace Editor::Elements {
         void DrawComponent_Metadata(entt::registry& registry, entt::entity entity);
         void DrawComponent_Mesh(entt::registry& registry, entt::entity entity);
         void DrawComponent_Camera(entt::registry& registry, entt::entity entity);
+        void DrawComponent_Light(entt::registry& registry, entt::entity entity);
 
         public :
         void Draw() override;

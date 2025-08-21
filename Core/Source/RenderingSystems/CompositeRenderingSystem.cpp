@@ -40,7 +40,7 @@ namespace Engine {
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         pipelineConfig.multisampleInfo.rasterizationSamples = VK_SAMPLE_COUNT_4_BIT;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/final_vert.spv",
                 std::string(SHADERS_PATH) + "/final_frag.spv",

@@ -2,21 +2,31 @@
 #include "EditorLayer.h"
 
 int main(){
-    auto& Engine = Engine::Controller::Get();
-    auto& Editor = Editor::EditorLayer::Get();
-    
-    while (!Engine.GetWindow().ShouldClose()) {
-        Engine.OnUpdate();
+    // init systems
+    Engine::Controller::Init();
+    Editor::EditorLayer::Init();
 
-        if (auto commandBuffer = Engine.GetRenderer().BeginFrame()) {
-            Engine.GetRenderer().RenderScene(commandBuffer, Engine.GetCamera());
-            Editor.OnUpdate(commandBuffer);
+    
+    auto Engine = Engine::Controller::Get();
+    auto Editor = Editor::EditorLayer::Get();
+    
+    while (!Engine->GetWindow().ShouldClose()) {
+        Engine->OnUpdate();
+
+        if (auto commandBuffer = Engine->GetRenderer().BeginFrame()) {
+            Engine->GetRenderer().RenderScene();
+
+            Editor->RenderUI(commandBuffer);
         }
 
-        Engine.GetRenderer().EndFrame();
-
-        vkDeviceWaitIdle(Engine::Controller::Get().GetDevice().GetDevice());
+        Engine->GetRenderer().EndFrame();
     }
+
+    Engine->GetDevice().Wait();
+
+    // shutdown systems
+    Editor::EditorLayer::Shutdown();
+    Engine::Controller::Shutdown();
 
     return 0;
 }

@@ -25,7 +25,7 @@ namespace Engine{
         }
 
         static Ref<ShadowPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<ShadowPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<ShadowPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

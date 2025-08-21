@@ -15,7 +15,7 @@ struct PushConstantData
                                                                 VkDescriptorSetLayout layout): device(device) {
         CreatePipelineLayout(layout);
         CreatePipeline(renderPass);
-        model = std::make_shared<Engine::Mesh>(device);
+        model = CreateRef<Engine::Mesh>(device);
         // model->CreateCube();
     }
 
@@ -44,7 +44,7 @@ struct PushConstantData
         Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/irradiance_sample_vert.spv",
                 std::string(SHADERS_PATH) + "/irradiance_sample_frag.spv",

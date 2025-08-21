@@ -35,7 +35,11 @@ namespace Engine{
         VkFramebuffer GetFramebuffer(int index) { return swapChainFramebuffers[index]->GetHandle(); }
         VkImageView GetImageView(int index) { return swapChainImageViews[index]; }
         VkResult GetNextImage(uint32_t *imageIndex) const;
-        VkResult SubmitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex);
+        VkResult SubmitCommandBuffers(
+            const VkCommandBuffer* buffers,
+            const uint32_t* imageIndex,
+            const VkSemaphore* extraWaitSemaphores = nullptr,
+            uint32_t extraWaitCount = 0);
         float GetExtentAspectRatio() {
             return static_cast<float>(swapChainExtent.width) / static_cast<float>(swapChainExtent.height);
         }

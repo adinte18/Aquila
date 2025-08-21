@@ -5,7 +5,9 @@
 #include <cstdlib>
 #include <memory>
 #include <functional>
+#include <algorithm>
 #include <string>
+
 #include "SDL3/SDL.h"
 #include "Defines.h"
 

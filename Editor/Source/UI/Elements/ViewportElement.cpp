@@ -16,7 +16,7 @@ namespace Editor::Elements {
                 { "Height", static_cast<int>(viewportSize.y) }
             };
 
-            Engine::EventBus::Get().Dispatch(UICommandEvent{
+            Engine::EventBus::Get()->Dispatch(UICommandEvent{
                 UICommand::ViewportResized,
                 params
             });
@@ -24,7 +24,7 @@ namespace Editor::Elements {
             lastViewportSize = viewportSize;
         }
 
-        auto image = Engine::Controller::Get().GetRenderer().GetPassObject<Engine::GeometryPass>()->GetDescriptorSet();
+        auto image = Engine::Controller::Get()->GetRenderer().GetPassObject<Engine::GeometryPass>()->GetDescriptorSet();
 
         if (image != VK_NULL_HANDLE) {
             auto textureId = reinterpret_cast<ImTextureID>(image);
@@ -35,7 +35,7 @@ namespace Editor::Elements {
             if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("SCENE_PATH")) {
                 const char* droppedPath = static_cast<const char*>(payload->Data);
                 if (droppedPath) {
-                    Engine::EventBus::Get().Dispatch(UICommandEvent{
+                    Engine::EventBus::Get()->Dispatch(UICommandEvent{
                         UICommand::OpenScene,
                         {{"path", droppedPath}},
                         nullptr
@@ -50,7 +50,7 @@ namespace Editor::Elements {
                 const char* meshPath = (const char*)payload->Data;
                 if (meshPath) {
 
-                    Engine::EventBus::Get().Dispatch(UICommandEvent(UICommand::LoadMesh, 
+                    Engine::EventBus::Get()->Dispatch(UICommandEvent(UICommand::LoadMesh, 
                         {
                             { "path", std::string(meshPath) }
                         }

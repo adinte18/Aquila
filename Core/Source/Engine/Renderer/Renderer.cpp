@@ -1,5 +1,7 @@
 #include "Engine/Renderer/Renderer.h"
+#include "Engine/Controller.h"
 #include "Engine/Renderer/Device.h"
+#include "Platform/DebugLog.h"
 
 namespace Engine {
 
@@ -8,34 +10,139 @@ namespace Engine {
     }
 
     Renderer::~Renderer() {
-        FreeCommandBuffers();
+        m_Device.Wait();
     }
 
     void Renderer::Initialize(uint32_t width, uint32_t height) {
-        CreateCommandBuffers();
-
         m_Extent = {width, height};
+        
+        m_CommandPool = CreateUnique<CommandBufferPool>(m_Device, Swapchain::MAX_FRAMES_IN_FLIGHT);
+        m_SemaphoreManager = CreateUnique<SemaphoreManager>(m_Device, Swapchain::MAX_FRAMES_IN_FLIGHT);
+        
+        SetupCommandBuffers();
+        SetupSynchronization();
 
-        // Swapchain for rendering to the screen
-        // Note (A) : Use the swapchain to render ONLY the UI of the editor and the "game"/runtime view. Editor viewport should render everything to an offscreen framebuffer.
-        m_Swapchain = std::make_unique<Swapchain>(m_Device, m_Extent);
+        m_Swapchain = CreateUnique<Swapchain>(m_Device, m_Extent);
         if (!m_Swapchain) {
             throw std::runtime_error("Failed to create swapchain");
         }
 
-        // Shared descriptor set layout
         m_SharedDescriptorSetLayout = Engine::DescriptorSetLayout::Builder(m_Device)
             .addBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
 
-        // ====== Scene rendering system ====== 
-        if ((m_GeometryPass = GeometryPass::Initialize(m_Device, m_Extent, m_SharedDescriptorSetLayout)))
+        if ((m_GeometryPass = GeometryPass::Initialize(m_Device, m_Extent, m_SharedDescriptorSetLayout))) {
             std::cout << "Geometry pass initialized" << std::endl;
+        }
 
-        if ((m_SceneRendering = std::make_shared<SceneRenderSystem>(m_Device, m_GeometryPass->GetRenderPass()))) {
+        if ((m_SceneRendering = CreateRef<SceneRenderSystem>(m_Device, m_GeometryPass->GetRenderPass()))) {
             std::cout << "Scene rendering system initialized" << std::endl;
         }
-        // =====================================
+    }
+
+    void Renderer::SetupCommandBuffers() {
+        m_PresentCommandBuffers.reserve(Swapchain::MAX_FRAMES_IN_FLIGHT);
+        m_OffscreenCommandBuffers.reserve(Swapchain::MAX_FRAMES_IN_FLIGHT);
+        
+        for (uint32_t i = 0; i < Swapchain::MAX_FRAMES_IN_FLIGHT; ++i) {
+            m_PresentCommandBuffers.push_back(
+                m_CommandPool->GetFrameCommandBuffer(CommandBufferType::PRESENT, i, "PresentCommandBuffer"));
+            m_OffscreenCommandBuffers.push_back(
+                m_CommandPool->GetFrameCommandBuffer(CommandBufferType::OFFSCREEN, i, "OffscreenCommandBuffer"));
+        }
+    }
+
+    void Renderer::SetupSynchronization() {
+        m_SemaphoreManager->CreateSemaphore("OffscreenFinished");
+    }
+
+    VkCommandBuffer Renderer::BeginFrame() {
+        AQUILA_CORE_ASSERT(!m_FrameStarted && "Can't call BeginFrame while already in progress");
+
+        auto result = m_Swapchain->GetNextImage(&m_CurrentImageID);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            InvalidateSwapchain();
+            return VK_NULL_HANDLE;
+        }
+        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw std::runtime_error("Failed to acquire swap chain image!");
+        }
+
+        m_FrameStarted = true;
+        m_CurrentRenderType = RenderType::PRESENT;
+
+        auto& presentCmd = m_PresentCommandBuffers[m_CurrentFrameID];
+        presentCmd->Reset();
+        presentCmd->Begin();
+
+        return presentCmd->GetHandle();
+    }
+
+    void Renderer::EndFrame() {
+        AQUILA_CORE_ASSERT(m_FrameStarted && "Can't call EndFrame while frame is not in progress");
+
+        auto& presentCmd = m_PresentCommandBuffers[m_CurrentFrameID];
+        presentCmd->End();
+
+        VkSubmitInfo offSubmit{};
+        offSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        offSubmit.waitSemaphoreCount = 0;
+        offSubmit.pWaitSemaphores = nullptr;
+        offSubmit.commandBufferCount = 1;
+        
+        VkCommandBuffer offscreenHandle = m_OffscreenCommandBuffers[m_CurrentFrameID]->GetHandle();
+        offSubmit.pCommandBuffers = &offscreenHandle;
+        
+        VkSemaphore offSignal = m_SemaphoreManager->GetSemaphore("OffscreenFinished", m_CurrentFrameID);
+        offSubmit.signalSemaphoreCount = 1;
+        offSubmit.pSignalSemaphores = &offSignal;
+
+        // submit offscreen 
+        if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &offSubmit, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to submit offscreen command buffer!");
+        }
+
+        VkCommandBuffer presentHandle = presentCmd->GetHandle();
+        auto result = m_Swapchain->SubmitCommandBuffers(&presentHandle, &m_CurrentImageID, &offSignal, 1);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window.IsWindowResized()) {
+            m_Window.ResetResizedFlag();
+            InvalidateSwapchain();
+        } else if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to present swap chain image!");
+        }
+
+        m_FrameStarted = false;
+        m_CurrentFrameID = (m_CurrentFrameID + 1) % Swapchain::MAX_FRAMES_IN_FLIGHT;
+    }
+
+    void Renderer::RenderScene() {
+        // Note(A) : Keep in mind to update rendering systems before recording any commands to the command buffer.
+        GetRenderingSystem<SceneRenderSystem>()->UpdateBuffer(Engine::Controller::Get()->GetCamera());
+        GetRenderingSystem<SceneRenderSystem>()->SendDataToGPU(m_CurrentFrameID);
+
+        auto& offscreenCmd = m_OffscreenCommandBuffers[m_CurrentFrameID];
+        offscreenCmd->Reset();
+        offscreenCmd->Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+        Engine::FrameSpec frameSpec{};
+        frameSpec.frameIndex = m_CurrentFrameID;
+        frameSpec.commandBuffer = offscreenCmd->GetHandle();
+
+        // Geometry pass
+        {
+            RenderPassConfig config{};
+            config.type = RenderType::OFFSCREEN;
+            config.renderpass = GetPassObject<GeometryPass>();
+            config.mipExtent = UINT32_MAX;
+            config.autoSetViewportScissor = true;
+            
+            BeginRenderPass(offscreenCmd->GetHandle(), config);
+                GetRenderingSystem<SceneRenderSystem>()->Render(frameSpec);
+            EndRenderPass(offscreenCmd->GetHandle());
+        }
+
+        offscreenCmd->End();
     }
 
     void Renderer::Resize(VkExtent2D newExtent) {
@@ -54,57 +161,42 @@ namespace Engine {
             glfwWaitEvents();
         }
 
-        vkDeviceWaitIdle(m_Device.GetDevice());
+        m_Device.Wait();
 
         if (m_Swapchain == nullptr) {
-            m_Swapchain = std::make_unique<Swapchain>(m_Device, extent);
-        }
-        else {
+            m_Swapchain = CreateUnique<Swapchain>(m_Device, extent);
+        } else {
             Ref<Swapchain> oldSwapchain = std::move(m_Swapchain);
-            m_Swapchain = std::make_unique<Swapchain>(m_Device, extent, oldSwapchain);
+            m_Swapchain = CreateUnique<Swapchain>(m_Device, extent, oldSwapchain);
 
-            if(!oldSwapchain->vk_CompareSCFormats(*m_Swapchain)) {
+            if (!oldSwapchain->vk_CompareSCFormats(*m_Swapchain)) {
                 throw std::runtime_error("Swap chain image(or depth) format has changed");
             }
         }
+
+        m_Extent = extent;
 
         m_FrameStarted = false;
     }
 
     void Renderer::InvalidatePasses() {
         if (m_GeometryPass && m_Resized) {
+            m_Device.Wait();
             Debug::Log("Invalidating geometry pass due to resize");
-            m_GeometryPass->Invalidate(m_Extent);
+
+            if (m_Extent.width > 0 && m_Extent.height > 0) {
+                m_GeometryPass->Invalidate(m_Extent);
+            } else {
+                Debug::Log("Skip pass invalidation: zero extent");
+            }
         }
 
         m_Resized = false;
     }
 
-
-    void Renderer::CreateCommandBuffers() {
-        m_CommandBuffers.resize(Swapchain::MAX_FRAMES_IN_FLIGHT);
-
-        VkCommandBufferAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        allocInfo.commandPool = m_Device.GetCommandPool();
-        allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        allocInfo.commandBufferCount = static_cast<uint32_t>(m_CommandBuffers.size());
-
-        if (vkAllocateCommandBuffers(m_Device.GetDevice(), &allocInfo, m_CommandBuffers.data()) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to allocate command buffers");
-        }
-    }
-
-    void Renderer::FreeCommandBuffers() {
-        vkFreeCommandBuffers(m_Device.GetDevice(), m_Device.GetCommandPool(),
-                             static_cast<uint32_t>(m_CommandBuffers.size()), m_CommandBuffers.data());
-        m_CommandBuffers.clear();
-    }
-
     void Renderer::BeginRenderPass(VkCommandBuffer cmd, const RenderPassConfig& config) {
         AQUILA_CORE_ASSERT(m_FrameStarted && "Frame not started!");
         AQUILA_CORE_ASSERT(!m_RenderPassActive && "Render pass already active!");
-        AQUILA_CORE_ASSERT(cmd == GetCurrentCommandBuffer() && "Command buffer mismatch!");
 
         m_RenderPassActive = true;
         m_CurrentRenderType = config.type;
@@ -124,8 +216,7 @@ namespace Engine {
                 VkClearValue{.color = {0.0f, 0.0f, 0.0f, 1.0f}},
                 VkClearValue{.depthStencil = {1.0f, 0}}
             };
-        } 
-        else {            
+        } else {            
             auto pass = config.renderpass;
             renderPassInfo.renderPass = pass->GetRenderPass();
             renderPassInfo.framebuffer = pass->GetFramebuffers()->GetHandle();
@@ -168,81 +259,8 @@ namespace Engine {
     void Renderer::EndRenderPass(VkCommandBuffer cmd) {
         AQUILA_CORE_ASSERT(m_FrameStarted && "Frame not started!");
         AQUILA_CORE_ASSERT(m_RenderPassActive && "No active render pass to end!");
-        AQUILA_CORE_ASSERT(cmd == GetCurrentCommandBuffer() && "Command buffer mismatch!");
 
         vkCmdEndRenderPass(cmd);
         m_RenderPassActive = false;
-    }
-
-
-    VkCommandBuffer Renderer::BeginFrame() {
-        AQUILA_CORE_ASSERT(!m_FrameStarted && "Can't call BeginFrame while already in progress");
-        
-        auto result = m_Swapchain->GetNextImage(&m_CurrentImageID);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            InvalidateSwapchain();
-            return VK_NULL_HANDLE;
-        }
-
-        if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-            throw std::runtime_error("Failed to acquire swap chain image!");
-        }
-
-        m_FrameStarted = true;
-        m_CurrentRenderType = RenderType::OFFSCREEN;
-
-        auto commandBuffer = GetCurrentCommandBuffer();
-
-        VkCommandBufferBeginInfo beginInfo{};
-        beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-        if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to begin recording command buffer!");
-        }
-
-        return commandBuffer;
-    }
-
-    void Renderer::EndFrame() {
-        AQUILA_CORE_ASSERT(m_FrameStarted && "Can't call vk_EndFrame while frame is not in progress");
-        auto commandBuffer = GetCurrentCommandBuffer();
-
-        if (vkEndCommandBuffer(commandBuffer) != VK_SUCCESS) {
-            throw std::runtime_error("failed to record command buffer!");
-        }
-
-        auto result = m_Swapchain->SubmitCommandBuffers(&commandBuffer, &m_CurrentImageID);
-
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_Window.IsWindowResized()) {
-            m_Window.ResetResizedFlag();
-            InvalidateSwapchain();
-        }
-
-        else if (result != VK_SUCCESS) {
-            throw std::runtime_error("failed to present swap chain image!");
-        }
-
-        m_FrameStarted = false;
-
-        m_CurrentFrameID = (m_CurrentFrameID + 1) % Swapchain::MAX_FRAMES_IN_FLIGHT;
-    }
-
-
-    void Renderer::RenderScene(VkCommandBuffer commandBuffer, EditorCamera& editorCamera){
-        RenderPassConfig config{};
-        config.type = RenderType::OFFSCREEN;
-        config.renderpass = GetPassObject<GeometryPass>();
-        config.mipExtent = UINT32_MAX;
-        config.autoSetViewportScissor = true;
-        
-        BeginRenderPass(commandBuffer, config);
-        {
-            SceneRenderSystem::SceneRenderingContext context{};
-            context.commandBuffer = commandBuffer;
-            context.camera = &editorCamera;
-            GetRenderingSystem<SceneRenderSystem>()->Render(context);
-        }
-        EndRenderPass(commandBuffer);
     }
 }

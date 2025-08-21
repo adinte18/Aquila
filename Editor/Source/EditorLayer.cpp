@@ -12,28 +12,30 @@ namespace Editor {
     }
 
     void EditorLayer::OnAttach() {
-        UIManager::Get().OnStart();
+        UIManager::Init();
+        UIManager::Get()->OnStart();
 
         Debug::Log("Editor started");
     }
 
 
-    void EditorLayer::OnUpdate(VkCommandBuffer commandBuffer) {
+    void EditorLayer::RenderUI(VkCommandBuffer commandBuffer) {
         // render UI
-        auto& renderer = Engine::Controller::Get().GetRenderer();
+        auto& renderer = Engine::Controller::Get()->GetRenderer();
 
         Engine::RenderPassConfig config{};
         config.type = Engine::RenderType::PRESENT;
 
         renderer.BeginRenderPass(commandBuffer, config);
         {
-            UIManager::Get().OnUpdate(commandBuffer);
+            UIManager::Get()->Render(commandBuffer);
         }
         renderer.EndRenderPass(commandBuffer);
     }
 
     void EditorLayer::OnDetach() {
-        UIManager::Get().OnEnd();
+        UIManager::Get()->OnEnd();
+        UIManager::Shutdown();
 
         Debug::Log("Editor stopped");
     }

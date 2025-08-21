@@ -1,6 +1,7 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "Defines.h"
 #include "Engine/EditorCamera.h"
 #include "Engine/Window.h"
 
@@ -10,15 +11,18 @@
 #include "Engine/Events/EventRegistry.h"
 #include "Engine/Events/EventBus.h"
 
+#include "Platform/Filesystem/VirtualFileSystem.h"
+#include "Platform/Filesystem/NativeFileSystem.h"
+
 #include "Scene/SceneManager.h"
 
+#include "Utilities/Singleton.h"
 namespace Engine {
-    class Controller {
-    public:
-        static Controller& Get() {
-            static Controller instance;
-            return instance;
-        }
+    class Controller : public Utility::Singleton<Controller> {
+        friend class Utility::Singleton<Controller>;
+
+    
+        public:
 
         void OnStart();
         void OnUpdate();
@@ -57,8 +61,8 @@ namespace Engine {
         Controller(); // defined in cpp
         ~Controller(); // defined in cpp
 
-        Controller(const Controller&)                   = delete;
-        Controller& operator=(const Controller&)        = delete;
+        AQUILA_NONMOVEABLE(Controller);
+        AQUILA_NONCOPYABLE(Controller);
 
         // Timing
         Unique<Timer::Stopwatch>            m_Stopwatch;
@@ -73,6 +77,8 @@ namespace Engine {
         Unique<Renderer>           m_Renderer;
         Unique<SceneManager>       m_SceneManager;
         Unique<EventRegistry>      m_EventRegistry;
+
+        VFS::VirtualFileSystem* m_VFS;
     };
 
 } // namespace Engine

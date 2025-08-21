@@ -27,7 +27,7 @@ DescriptorSetLayout::Builder &DescriptorSetLayout::Builder::addBinding(
 }
 
 Unique<DescriptorSetLayout> DescriptorSetLayout::Builder::build() const {
-  return std::make_unique<DescriptorSetLayout>(device, bindings);
+  return CreateUnique<DescriptorSetLayout>(device, bindings);
 }
 
 // *************** Descriptor Set Layout *********************
@@ -77,7 +77,7 @@ DescriptorPool::Builder &DescriptorPool::Builder::setMaxSets(uint32_t count) {
 }
 
 Unique<DescriptorPool> DescriptorPool::Builder::build() const {
-  return std::make_unique<DescriptorPool>(device, maxSets, poolFlags, poolSizes);
+  return CreateUnique<DescriptorPool>(device, maxSets, poolFlags, poolSizes);
 }
 
 // *************** Descriptor Pool *********************

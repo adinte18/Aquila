@@ -19,8 +19,12 @@ namespace Editor {
 
             void ContentActionsPopup();
 
-            void DrawFolderTree(const std::filesystem::path& basePath, std::filesystem::path& selectedPath);
             
+            void DrawFolderTree(const std::string& basePath, std::string& selectedPath);
+            std::string GetFileExtension(const std::string& filename);
+            std::string GetParentPath(const std::string& path);
+
+
             bool m_OpenDeletePopup = false; //https://github.com/ocornut/imgui/issues/331
             bool m_OpenRenamePopup = false;
             std::string m_CurrentlyHoveredPath;
@@ -28,6 +32,8 @@ namespace Editor {
             std::vector<Ref<Engine::Texture2D>> m_Textures;
             public :
             void Draw() override;
+
+
             ContentElement();
         };
     }

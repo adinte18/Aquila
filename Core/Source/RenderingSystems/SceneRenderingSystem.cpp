@@ -51,7 +51,7 @@ namespace Engine {
         Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/shader_vert.spv",
                 std::string(SHADERS_PATH) + "/shader_frag.spv",

@@ -1,13 +1,12 @@
 #include "Engine/Controller.h"
-#include "Engine/EditorCamera.h"
-#include "Engine/Renderer/DescriptorAllocator.h"
-#include "Engine/Renderer/Renderer.h"
-#include "vulkan/vulkan_core.h"
+#include "Platform/DebugLog.h"
+#include "Platform/Filesystem/NativeFileSystem.h"
+#include "Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Engine {
     
     Controller::Controller() {
-        OnStart();    
+        OnStart();
     }
 
     Controller::~Controller() {
@@ -25,26 +24,34 @@ namespace Engine {
             return;
         }
 
-        m_Window = std::make_unique<Window>(800, 600, "Aquila Editor");
-        m_Device = std::make_unique<Device>(*m_Window);
-        m_Stopwatch = std::make_unique<Timer::Stopwatch>();
+        VFS::VirtualFileSystem::Init();
+        m_VFS = VFS::VirtualFileSystem::Get();
+        
+        auto assetsFolder = CreateRef<VFS::NativeFileSystem>(ASSET_PATH);
+        m_VFS->Mount("/Assets", assetsFolder, 100, false);
+        Debug::Log("VFS Initialized with " + std::to_string(m_VFS->GetMountPoints().size()) + " mount points.");
+
+        m_Window = CreateUnique<Window>(800, 600, "Aquila Editor");
+        m_Device = CreateUnique<Device>(*m_Window);
+        m_Stopwatch = CreateUnique<Timer::Stopwatch>();
 
         DescriptorAllocator::Init(*m_Device); // setup global descriptor pool 
 
-        m_EditorCamera = std::make_unique<EditorCamera>();
+        m_EditorCamera = CreateUnique<EditorCamera>();
         m_EditorCamera->SetPerspectiveProjection(40.f, 1.778f, 0.1f, 100.f);
         m_EditorCamera->SetPosition(glm::vec3(0, 1, -10));
         m_EditorCamera->SetViewYXZ(m_EditorCamera->GetPosition(), m_EditorCamera->GetRotation());
 
 
-        m_Renderer = std::make_unique<Renderer>(*m_Device, *m_Window);
+        m_Renderer = CreateUnique<Renderer>(*m_Device, *m_Window);
 
-        m_SceneManager = std::make_unique<SceneManager>();
-        m_SceneManager->EnqueueScene(std::make_unique<AquilaScene>("Default Scene"));
+        m_SceneManager = CreateUnique<SceneManager>();
+        m_SceneManager->EnqueueScene(CreateUnique<AquilaScene>("Default Scene"));
         m_SceneManager->RequestSceneChange();
         m_SceneManager->ProcessSceneChange();
         
         if (m_SceneManager->GetActiveScene() != nullptr) {
+            EventBus::Init();
             m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_Renderer.get());
         } else {
             Debug::LogError("No active scene to register handlers for.");
@@ -63,7 +70,7 @@ namespace Engine {
         if (m_SceneManager && m_SceneManager->HasPendingSceneChange()) {
             m_SceneManager->ProcessSceneChange();
 
-            EventBus::Get().Clear();
+            EventBus::Get()->Clear();
             m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_Renderer.get());
         }
 
@@ -71,7 +78,12 @@ namespace Engine {
     }
 
     void Controller::OnEnd(){
+        Debug::Log("Engine controller destructor called");
         m_Window->CleanUp();
+
+
+        VFS::VirtualFileSystem::Shutdown();
+        EventBus::Shutdown();
         Core::Platform::Shutdown();
 
     }
@@ -80,7 +92,7 @@ namespace Engine {
         if (m_SceneManager && m_SceneManager->HasPendingSceneChange()) {
             m_SceneManager->ProcessSceneChange();
 
-            EventBus::Get().Clear();
+            EventBus::Get()->Clear();
             m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(), m_Renderer.get());
         }
     }

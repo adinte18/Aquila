@@ -1,16 +1,17 @@
-#include "UI/Elements//ContentBrowserElement.h"
+#include "UI/Elements/ContentBrowserElement.h"
 #include "Platform/DebugLog.h"
 #include "UI/FontManager.h"
 #include "UI/UI.h"
+#include "Platform/Filesystem/VirtualFileSystem.h"
 #include "imgui.h"
 
 namespace Editor::Elements {
-    namespace fs = std::filesystem;
 
-    static fs::path s_CurrentPath = ASSET_PATH;
+    static std::string s_CurrentPath = "/Assets";
 
     ContentElement::ContentElement() {
-        Engine::EventBus::Get().Dispatch(QueryEvent{
+        
+        Engine::EventBus::Get()->Dispatch(QueryEvent{
             QueryCommand::ContentBrowserAskTextures,
             {},
             [this](UIEventResult result, CommandParam payload) {
@@ -22,50 +23,55 @@ namespace Editor::Elements {
             }
         });
 
-        // ensure the asset path exists
-        if (fs::exists(ASSET_PATH)) {
-            s_CurrentPath = ASSET_PATH;
-        } else {
-            fs::create_directory(ASSET_PATH);
-            s_CurrentPath = ASSET_PATH;
+        if (!VFS::VirtualFileSystem::Get()->IsMounted("/Assets")) {
+            Debug::LogError("ContentBrowser: /Assets mount point not found!");
         }
     }
 
-    void ContentElement::DrawFolderTree(const fs::path& basePath, fs::path& selectedPath) {
-        for (auto& entry : fs::directory_iterator(basePath)) {
-            if (!entry.is_directory())
+    void ContentElement::DrawFolderTree(const std::string& basePath, std::string& selectedPath) {
+        if (!VFS::VirtualFileSystem::Get()->IsDirectory(basePath)) {
+            return;
+        }
+
+        auto entries = VFS::VirtualFileSystem::Get()->ListDirectory(basePath);
+
+        for (const auto& entryName : entries) {
+            std::string fullPath = basePath;
+            if (fullPath.back() != '/') fullPath += "/";
+            fullPath += entryName;
+            
+            if (!VFS::VirtualFileSystem::Get()->IsDirectory(fullPath)) {
                 continue;
+            }
 
-            const fs::path& path = entry.path();
-            const std::string name = path.filename().string();
-            bool is_selected = (path == selectedPath);
+            bool is_selected = (fullPath == selectedPath);
 
-            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_DrawLinesToNodes ;
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnDoubleClick | 
+                                     ImGuiTreeNodeFlags_OpenOnArrow | 
+                                     ImGuiTreeNodeFlags_SpanAvailWidth | 
+                                     ImGuiTreeNodeFlags_DrawLinesToNodes;
             if (is_selected)
                 flags |= ImGuiTreeNodeFlags_Selected;
 
-            ImGui::PushID(name.c_str());
+            ImGui::PushID(entryName.c_str());
 
-            std::string label = std::string(ICON_LC_FOLDER) + " " + name;
+            std::string label = std::string(ICON_LC_FOLDER) + " " + entryName;
             bool open = ImGui::TreeNodeEx(label.c_str(), flags);
 
             if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left) && ImGui::IsItemHovered()) {
-                std::string pathStr = fs::path(path).string();
-                std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-
-                selectedPath = pathStr;
+                selectedPath = fullPath;
                 s_CurrentPath = selectedPath;
             }
 
             if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && ImGui::IsItemHovered()){
-                m_CurrentlyHoveredPath = path.string();
+                m_CurrentlyHoveredPath = fullPath;
                 ImGui::OpenPopup("FolderActions");
             }
 
             FolderActionsPopup();
 
             if (open) {
-                DrawFolderTree(path, selectedPath);
+                DrawFolderTree(fullPath, selectedPath);
                 ImGui::TreePop();
             }
 
@@ -77,21 +83,23 @@ namespace Editor::Elements {
         if (ImGui::BeginPopup("FolderActions", ImGuiWindowFlags_NoMove)) {
 
             if (ImGui::MenuItem(ICON_LC_TRASH " Delete")) {
-                m_OpenDeletePopup = true; //https://github.com/ocornut/imgui/issues/331 
+                m_OpenDeletePopup = true;
             }
 
             if (ImGui::MenuItem(ICON_LC_PEN " Rename")) {
                 m_RenameBuffer.resize(128);
                 std::fill(m_RenameBuffer.begin(), m_RenameBuffer.end(), 0);
 
-                fs::path currentPath(m_CurrentlyHoveredPath);
-                std::string currentName = currentPath.filename().string();
+                size_t lastSlash = m_CurrentlyHoveredPath.find_last_of('/');
+                std::string currentName = (lastSlash != std::string::npos) 
+                    ? m_CurrentlyHoveredPath.substr(lastSlash + 1) 
+                    : m_CurrentlyHoveredPath;
 
                 #ifdef AQUILA_PLATFORM_WINDOWS
                     strncpy_s(m_RenameBuffer.data(), m_RenameBuffer.size(), currentName.c_str(), _TRUNCATE);
                 #elif defined(AQUILA_PLATFORM_LINUX)
                     std::strncpy(m_RenameBuffer.data(), currentName.c_str(), m_RenameBuffer.size() - 1);
-                    m_RenameBuffer[m_RenameBuffer.size() - 1] = '\0';  // Null-terminate to avoid overflow
+                    m_RenameBuffer[m_RenameBuffer.size() - 1] = '\0';
                 #endif
 
                 m_OpenRenamePopup = true;
@@ -101,53 +109,55 @@ namespace Editor::Elements {
         }
     }
 
-    // TODO : make it safe, it works but unsafe
     void ContentElement::RenameFolderPopup() {
-        // later lol
-        // CreatePopup({500, 150});
-        // if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+        // Note: VFS rename operations would need to be supported by the underlying filesystem
+        // For now, this is a placeholder showing how it would work
+        /*
+        if (ImGui::BeginPopupModal("Rename", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
+            ImGui::PushFont(Editor::UI::fonts.Font28);
+            ImGui::Text("Enter new folder name:");
+            ImGui::PopFont();
 
-        //     ImGui::PushFont(Editor::UI::fonts.Font28);
-        //     ImGui::Text("Enter new folder name:");
-        //     ImGui::PopFont();
+            ImGui::InputText("##renameFolder", m_RenameBuffer.data(), m_RenameBuffer.size(), ImGuiInputTextFlags_EnterReturnsTrue);
 
-        //     ImGui::InputText("##renameFolder", m_RenameBuffer.data(), m_RenameBuffer.size(), ImGuiInputTextFlags_EnterReturnsTrue);
+            if (ImGui::Button("Rename") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
+                if (!m_RenameBuffer.empty()) {
+                    // Extract parent path
+                    size_t lastSlash = m_CurrentlyHoveredPath.find_last_of('/');
+                    std::string parentPath = (lastSlash != std::string::npos) 
+                        ? m_CurrentlyHoveredPath.substr(0, lastSlash + 1) 
+                        : "/";
+                    
+                    std::string newPath = parentPath + std::string(m_RenameBuffer.data());
 
-        //     if (ImGui::Button("Rename") || ImGui::IsKeyPressed(ImGuiKey_Enter)) {
-        //         if (!m_RenameBuffer.empty()) {
-        //             fs::path oldPath(m_CurrentlyHoveredPath);
-        //             fs::path newPath = oldPath.parent_path() / m_RenameBuffer;
+                    if (!m_VFS->Exists(newPath)) {
+                        // Note: You'd need to implement rename in your VFS
+                        // This might involve renaming on the underlying filesystem
+                        // if it supports write operations
+                        
+                        m_CurrentlyHoveredPath = newPath;
+                        s_CurrentPath = m_CurrentlyHoveredPath;
+                        ImGui::CloseCurrentPopup();
+                    } else {
+                        // Handle error - file exists
+                        Debug::LogWarning("Rename failed: Path already exists");
+                    }
+                }
+            }
 
-        //             if (!fs::exists(newPath)) {
-        //                 fs::rename(oldPath, newPath);
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel")) {
+                ImGui::CloseCurrentPopup();
+            }
 
-        //                 std::string pathStr = fs::path(newPath).string();
-        //                 std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
-
-
-        //                 m_CurrentlyHoveredPath = pathStr;
-        //                 s_CurrentPath = m_CurrentlyHoveredPath;
-        //                 ImGui::CloseCurrentPopup();
-        //             } else {
-        //                 // handle errors
-        //             }
-        //         }
-        //     }
-
-        //     ImGui::SameLine();
-
-        //     if (ImGui::Button("Cancel")) {
-        //         ImGui::CloseCurrentPopup();
-        //     }
-
-        //     ImGui::EndPopup();
-        // }
+            ImGui::EndPopup();
+        }
+        */
     }
-
 
     void ContentElement::DeleteItemPopup(){
         CreatePopup({500, 130});
-        if (ImGui::BeginPopupModal("Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove )) {
+        if (ImGui::BeginPopupModal("Delete", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
 
             ImGui::PushFont(UI::FontManager::Get().GetFonts().Font28);
             ImGui::Text("Are you sure you want to delete this?");
@@ -155,19 +165,26 @@ namespace Editor::Elements {
 
             ImGui::PushFont(UI::FontManager::Get().GetFonts().Font16);
             ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 100, 100, 255));
-            std::string displayPath = m_CurrentlyHoveredPath;
-            std::replace(displayPath.begin(), displayPath.end(), '\\', '/');
-            ImGui::TextWrapped("Item to be deleted: %s", displayPath.c_str());
+            ImGui::TextWrapped("Item to be deleted: %s", m_CurrentlyHoveredPath.c_str());
             ImGui::PopStyleColor();
             ImGui::PopFont();
 
             if (ImGui::Button(ICON_LC_CHECK " Yes", {90, 30})){
-                fs::remove_all(m_CurrentlyHoveredPath);
+                bool success = false;
+                if (VFS::VirtualFileSystem::Get()->IsDirectory(m_CurrentlyHoveredPath)) {
+                    success = VFS::VirtualFileSystem::Get()->DeleteDirectory(m_CurrentlyHoveredPath);
+                } else {
+                    success = VFS::VirtualFileSystem::Get()->DeleteFile_aq(m_CurrentlyHoveredPath);
+                }
+                
+                if (!success) {
+                    Debug::LogError("Failed to delete: " + m_CurrentlyHoveredPath);
+                }
+                
                 ImGui::CloseCurrentPopup();
             }
 
             ImGui::SameLine();
-
             if (ImGui::Button(ICON_LC_X " No", {90, 30})){
                 m_OpenDeletePopup = false;
                 ImGui::CloseCurrentPopup();
@@ -177,11 +194,10 @@ namespace Editor::Elements {
         }
     }
 
-
     void ContentElement::CreateFolderPopup(){
         CreatePopup({500, 170});
 
-        if (ImGui::BeginPopupModal("Create new folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove )) {
+        if (ImGui::BeginPopupModal("Create new folder", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove)) {
             static char folderName[128] = "";
 
             ImGui::PushFont(UI::FontManager::Get().GetFonts().Font32);
@@ -189,22 +205,25 @@ namespace Editor::Elements {
             ImGui::PopFont();
 
             ImGui::InputText("##foldername", folderName, IM_ARRAYSIZE(folderName));
-            fs::path newFolder = s_CurrentPath / folderName;
-            std::string pathStr = fs::path(newFolder).string();
-            std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
+            
+            std::string newFolderPath = s_CurrentPath;
+            if (newFolderPath.back() != '/') newFolderPath += "/";
+            newFolderPath += folderName;
 
-            ImGui::TextWrapped("The folder will be created in : \n %s", pathStr.c_str());
+            ImGui::TextWrapped("The folder will be created at: \n%s", newFolderPath.c_str());
 
             if (ImGui::Button("Create")) {
-                if (!fs::exists(newFolder)) {
-                    fs::create_directory(newFolder);
+                if (!VFS::VirtualFileSystem::Get()->Exists(newFolderPath)) {
+                    bool success = VFS::VirtualFileSystem::Get()->CreateDir(newFolderPath);
+                    if (!success) {
+                        Debug::LogError("Failed to create directory: " + newFolderPath);
+                    }
                 }
                 ImGui::CloseCurrentPopup();
                 folderName[0] = '\0';
             }
 
             ImGui::SameLine();
-
             if (ImGui::Button("Cancel")) {
                 ImGui::CloseCurrentPopup();
                 folderName[0] = '\0';
@@ -214,26 +233,23 @@ namespace Editor::Elements {
         }
     }
 
-    void ContentElement::ContentActionsPopup()
-    {
+    void ContentElement::ContentActionsPopup() {
         if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
             ImGui::OpenPopup("CreateNewItemPopup");
 
-        if (ImGui::BeginPopup("CreateNewItemPopup"))
-        {
-            if (ImGui::MenuItem(ICON_LC_PALETTE " Create Material"))
-            {
-                //todo
+        if (ImGui::BeginPopup("CreateNewItemPopup")) {
+            if (ImGui::MenuItem(ICON_LC_PALETTE " Create Material")) {
+                std::string materialPath = s_CurrentPath + "/NewMaterial.mat";
                 ImGui::CloseCurrentPopup();
             }
-            if (ImGui::MenuItem(ICON_LC_FILE_CODE " Create Script"))
-            {
-                // todo
+            
+            if (ImGui::MenuItem(ICON_LC_FILE_CODE " Create Script")) {
+                std::string scriptPath = s_CurrentPath + "/NewScript.cs";
                 ImGui::CloseCurrentPopup();
             }
-            if (ImGui::MenuItem(ICON_LC_SHAPES " Create Shader"))
-            {
-                //todo
+            
+            if (ImGui::MenuItem(ICON_LC_SHAPES " Create Shader")) {
+                std::string shaderPath = s_CurrentPath + "/NewShader.glsl";
                 ImGui::CloseCurrentPopup();
             }
 
@@ -241,6 +257,21 @@ namespace Editor::Elements {
         }
     }
 
+    std::string ContentElement::GetFileExtension(const std::string& filename) {
+        size_t dotPos = filename.find_last_of('.');
+        if (dotPos != std::string::npos && dotPos != filename.length() - 1) {
+            return filename.substr(dotPos);
+        }
+        return "";
+    }
+
+    std::string ContentElement::GetParentPath(const std::string& path) {
+        size_t lastSlash = path.find_last_of('/');
+        if (lastSlash != std::string::npos && lastSlash > 0) {
+            return path.substr(0, lastSlash);
+        }
+        return "/Assets";
+    }
 
     void ContentElement::Draw() {
         ImGui::Begin(ICON_LC_PACKAGE_OPEN " Content Browser", nullptr, ImGuiWindowFlags_NoCollapse);
@@ -249,12 +280,9 @@ namespace Editor::Elements {
 
         ImGui::BeginChild("Navigation", ImVec2(avail.x, 40), true, ImGuiWindowFlags_NoScrollbar);
 
-        if (s_CurrentPath != ASSET_PATH) {
+        if (s_CurrentPath != "/Assets") {
             if (ImGui::Button(ICON_LC_SQUARE_ARROW_LEFT)) {
-                s_CurrentPath = s_CurrentPath.parent_path();
-                if (!fs::exists(s_CurrentPath) || s_CurrentPath < ASSET_PATH) {
-                    s_CurrentPath = ASSET_PATH;
-                }
+                s_CurrentPath = GetParentPath(s_CurrentPath);
             }
         } else {
             ImGui::BeginDisabled();
@@ -278,9 +306,9 @@ namespace Editor::Elements {
 
         ImGui::SameLine();
 
-            ImGui::BeginChild("PathDisplay", ImVec2(avail.x - 50, 0), false);
-                ImGui::TextWrapped("%s", s_CurrentPath.string().c_str());
-            ImGui::EndChild();
+        ImGui::BeginChild("PathDisplay", ImVec2(avail.x - 50, 0), false);
+            ImGui::TextWrapped("%s", s_CurrentPath.c_str());
+        ImGui::EndChild();
 
         ImGui::EndChild();
 
@@ -302,17 +330,17 @@ namespace Editor::Elements {
         float content_width = avail.x - folders_width - 10.0f;
 
         ImGui::BeginChild("Folders", ImVec2(folders_width, avail.y - navigation_height), true);
-            DrawFolderTree(ASSET_PATH, s_CurrentPath);
+            DrawFolderTree("/Assets", s_CurrentPath);
         ImGui::EndChild();
 
         ImGui::SameLine();
 
         ImGui::BeginChild("Content", ImVec2(content_width, avail.y - navigation_height), true);
 
-        if (!s_CurrentPath.empty() && fs::exists(s_CurrentPath) && fs::is_directory(s_CurrentPath)) {
-            bool isEmpty = fs::directory_iterator(s_CurrentPath) == fs::directory_iterator();
+        if (!s_CurrentPath.empty() && VFS::VirtualFileSystem::Get()->Exists(s_CurrentPath) && VFS::VirtualFileSystem::Get()->IsDirectory(s_CurrentPath)) {
+            auto entries = VFS::VirtualFileSystem::Get()->ListDirectory(s_CurrentPath);
 
-            if (isEmpty) {
+            if (entries.empty()) {
                 ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Empty folder");
             } else {
                 constexpr float cardWidth = 100.0f;
@@ -323,15 +351,19 @@ namespace Editor::Elements {
                 int cardsPerRow = std::max(1, static_cast<int>(content_width / (cardWidth + padding)));
                 int cardIndex = 0;
 
-                for (auto& entry : fs::directory_iterator(s_CurrentPath)) {
-                    std::string name = entry.path().filename().string();
+                for (const auto& entryName : entries) {
+                    std::string fullPath = s_CurrentPath;
+                    if (fullPath.back() != '/') fullPath += "/";
+                    fullPath += entryName;
 
                     if (cardIndex % cardsPerRow != 0) ImGui::SameLine();
 
                     ImGui::BeginGroup();
                     ImGui::PushID(id++);
 
-                    ImGui::BeginChild("Card", ImVec2(cardWidth, cardHeight), true, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse);
+                    ImGui::BeginChild("Card", ImVec2(cardWidth, cardHeight), true, 
+                                    ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoMove | 
+                                    ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollWithMouse);
 
                     ImVec2 cardPos = ImGui::GetCursorScreenPos();
 
@@ -345,9 +377,12 @@ namespace Editor::Elements {
                         return;
                     }
 
-                    if (entry.is_directory()) {
+                    bool isDirectory = VFS::VirtualFileSystem::Get()->IsDirectory(fullPath);
+                    std::string extension = GetFileExtension(entryName);
+
+                    if (isDirectory) {
                         textureID = reinterpret_cast<ImTextureID>(m_Textures[0]->GetDescriptorSet());
-                    } else if (entry.path().extension() == ".aqscene") {
+                    } else if (extension == ".aqscene") {
                         textureID = reinterpret_cast<ImTextureID>(m_Textures[1]->GetDescriptorSet());
                     } else {
                         textureID = reinterpret_cast<ImTextureID>(m_Textures[2]->GetDescriptorSet());
@@ -358,42 +393,37 @@ namespace Editor::Elements {
                             ImVec2(cardWidth - 3.5f * iconPadding, cardWidth - 2 * iconPadding));
 
                         if (clicked) {
-                            if (entry.is_directory()) {
-                                s_CurrentPath = entry.path().string();
-                            }
-                            else if (entry.path().extension() == ".aqscene") {
-                                // Single click (already handled above)
+                            if (isDirectory) {
+                                s_CurrentPath = fullPath;
                             }
                         }
 
-                        if (entry.path().extension() == ".aqscene") {
+                        if (extension == ".aqscene") {
                             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                                std::string pathStr = entry.path().string();
-                                ImGui::SetDragDropPayload("SCENE_PATH", pathStr.c_str(), pathStr.size() + 1); // null-terminated
-                                ImGui::Text("Drag scene: %s", entry.path().filename().string().c_str());
+                                ImGui::SetDragDropPayload("SCENE_PATH", fullPath.c_str(), fullPath.size() + 1);
+                                ImGui::Text("Drag scene: %s", entryName.c_str());
                                 ImGui::EndDragDropSource();
                             }
 
                             if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-                                Engine::EventBus::Get().Dispatch(UICommandEvent{
+                                Engine::EventBus::Get()->Dispatch(UICommandEvent{
                                     UICommand::OpenScene,
-                                    {{"path", entry.path().string()}},
+                                    {{"path", fullPath}},
                                     nullptr
                                 });
                             }
                         }
 
-                        if (entry.path().extension() == ".gltf") {
+                        if (extension == ".gltf" || extension == ".glb" || extension == ".obj" || extension == ".fbx") {
                             if (ImGui::BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-                                std::string pathStr = entry.path().string();
-                                ImGui::SetDragDropPayload("MESH_ASSET", pathStr.c_str(), pathStr.size() + 1);
-                                ImGui::Text("Drag model: %s", entry.path().filename().string().c_str());
+                                ImGui::SetDragDropPayload("MESH_ASSET", fullPath.c_str(), fullPath.size() + 1);
+                                ImGui::Text("Drag model: %s", entryName.c_str());
                                 ImGui::EndDragDropSource();
                             }
                         }
                         
                         if (ImGui::IsItemHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right)) {
-                            m_CurrentlyHoveredPath = entry.path().string();
+                            m_CurrentlyHoveredPath = fullPath;
                             ImGui::OpenPopup("FolderActions");
                         }
 
@@ -402,9 +432,12 @@ namespace Editor::Elements {
 
                     ImGui::Separator();
 
-                    std::string displayName = name;
-                    if (!entry.is_directory()) {
-                        displayName = entry.path().stem().string();
+                    std::string displayName = entryName;
+                    if (!isDirectory) {
+                        size_t dotPos = displayName.find_last_of('.');
+                        if (dotPos != std::string::npos) {
+                            displayName = displayName.substr(0, dotPos);
+                        }
                     }
 
                     ImGui::PushFont(UI::FontManager::Get().GetFonts().Font14);
@@ -412,11 +445,11 @@ namespace Editor::Elements {
                     ImGui::PopFont();
 
                     std::string tag = "FILE";
-                    if (entry.is_directory())
+                    if (isDirectory)
                         tag = "FOLDER";
-                    else if (entry.path().extension() == ".aqscene")
+                    else if (extension == ".aqscene")
                         tag = "SCENE";
-                    else if (entry.path().extension() == ".gltf")
+                    else if (extension == ".gltf" || extension == ".glb" || extension == ".obj" || extension == ".fbx")
                         tag = "MODEL";
 
                     ImVec2 tagSize = ImGui::CalcTextSize(tag.c_str());
@@ -437,16 +470,13 @@ namespace Editor::Elements {
                 }
             }
         } else {
-            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid directory");
+            ImGui::TextColored(ImVec4(1, 0, 0, 1), "Invalid directory or VFS mount point not found");
         }
 
         ContentActionsPopup();
 
         ImGui::EndChild();
 
-
         ImGui::End();
     }
-
-
 }

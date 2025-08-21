@@ -6,11 +6,14 @@
 #define EVENTSYSTEM_H
 
 #include "Engine/Events/Event.h"
+#include "Utilities/Singleton.h"
 
 namespace Engine {
 
-    class EventBus {
-    public:
+    class EventBus : public Utility::Singleton<EventBus> {
+        friend class Utility::Singleton<EventBus>;
+    
+        public:
         template<typename EventType>
         using Handler = Delegate<void(const EventType&)>;
 
@@ -35,11 +38,6 @@ namespace Engine {
                     fn(event);
                 }
             }
-        }
-
-        static EventBus& Get() {
-            static EventBus instance;
-            return instance;
         }
 
         void Clear() {

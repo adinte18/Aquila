@@ -62,7 +62,7 @@ namespace Engine {
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
         pipelineConfig.colorBlendAttachment.blendEnable = VK_FALSE;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/shadows_vert.spv",
                 std::string(SHADERS_PATH) + "/shadows_frag.spv",

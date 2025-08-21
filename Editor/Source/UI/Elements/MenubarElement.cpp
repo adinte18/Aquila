@@ -10,7 +10,7 @@ namespace Editor::Elements {
 
             if (ImGui::BeginMenu("File")) {
                 if (ImGui::MenuItem(ICON_LC_FILE " New Scene", "Ctrl+N")) { 
-                    Engine::EventBus::Get().Dispatch(UICommandEvent{
+                    Engine::EventBus::Get()->Dispatch(UICommandEvent{
                         UICommand::NewScene
                     });
                 }
@@ -20,7 +20,7 @@ namespace Editor::Elements {
                     if (result == NFD_OKAY) {
                         std::string path = outPath;
                         std::cout << "Selected scene file: " << path << std::endl; 
-                        Engine::EventBus::Get().Dispatch(UICommandEvent{
+                        Engine::EventBus::Get()->Dispatch(UICommandEvent{
                             UICommand::OpenScene,
                             {{"path", path}}
                         });
@@ -32,7 +32,7 @@ namespace Editor::Elements {
                     }
                 }
                 if (ImGui::MenuItem(ICON_LC_SAVE_ALL " Save scene...", "Ctrl+S")) { 
-                    Engine::EventBus::Get().Dispatch(UICommandEvent{
+                    Engine::EventBus::Get()->Dispatch(UICommandEvent{
                         UICommand::SaveScene
                     });
                 }

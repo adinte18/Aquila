@@ -46,6 +46,7 @@ target_compile_definitions(App PRIVATE
     ASSET_PATH="${ASSET_PATH}"
 )
 
+
 foreach(SHADER_FILE ${SHADER_FILES})
     get_filename_component(SHADER_NAME_WE ${SHADER_FILE} NAME_WE)
 

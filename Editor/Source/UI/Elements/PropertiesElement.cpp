@@ -1,13 +1,16 @@
+#include "UI/Elements/PropertiesElement.h"
 #include "Scene/Components/TransformComponent.h"
 #include "UI/UI.h"
+#include "imgui.h"
+#include "lucide.h"
 
 namespace Editor::Elements {
     void PropertiesElement::Draw() {
-        auto* scene = Engine::Controller::Get().GetSceneManager().GetActiveScene();
+        auto* scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
         if (!scene) return;
 
         auto& registry = scene->GetRegistry();
-        entt::entity selected = UIManager::Get().GetSelectedEntity();
+        entt::entity selected = UIManager::Get()->GetSelectedEntity();
 
         ImGui::Begin("Properties");
 
@@ -29,6 +32,8 @@ namespace Editor::Elements {
         if (registry.any_of<CameraComponent>(selected))
             DrawComponent_Camera(registry, selected);
 
+        if (registry.any_of<LightComponent>(selected))
+            DrawComponent_Light(registry, selected);
 
         ImGui::Separator();
         ImGui::Spacing();
@@ -70,6 +75,12 @@ namespace Editor::Elements {
                 }
             }
 
+            if (!registry.any_of<LightComponent>(selected)) {
+                if (ImGui::MenuItem(ICON_LC_LIGHTBULB " Light")) {
+                    registry.emplace<LightComponent>(selected);
+                    ImGui::CloseCurrentPopup();
+                }
+            }
 
             ImGui::EndPopup();
         }
@@ -92,7 +103,6 @@ namespace Editor::Elements {
             auto& childTransform = registry.get<TransformComponent>(child);
             childTransform.UpdateWorldMatrix(parentWorldMatrix);
 
-            // Recursively update child's children
             UpdateChildrenTransforms(registry, child);
         }
     }
@@ -204,6 +214,34 @@ namespace Editor::Elements {
         }
     }
 
+    void PropertiesElement::DrawComponent_Light(entt::registry& registry, entt::entity entity) {
+        auto& component = registry.get<LightComponent>(entity);
+
+        if (ImGui::CollapsingHeader(ICON_LC_LIGHTBULB " LIGHT", ImGuiTreeNodeFlags_DefaultOpen)) {
+
+            const char* lightTypeNames[] = { "Point", "Directional", "Spot" };
+
+            ImGui::Combo("Light type", &reinterpret_cast<int&>(component.type), lightTypeNames, IM_ARRAYSIZE(lightTypeNames));
+
+            if (component.type == LightComponent::Type::Spot) {
+                ImGui::SliderFloat("Inner Cone Angle", &component.innerConeAngle, 0.0f, 90.0f);
+                ImGui::SliderFloat("Outer Cone Angle", &component.outerConeAngle, 0.0f, 90.0f);
+            }
+            else if (component.type == LightComponent::Type::Directional){
+                ImGui::SliderFloat3("Light Direction", glm::value_ptr(component.direction), -1.0f, 1.0f);
+            }
+            else {
+                component.innerConeAngle = 0.0f;
+                component.outerConeAngle = 45.0f;
+            }
+
+            ImGui::SeparatorText("General Properties");
+
+            ImGui::ColorEdit3("Color", glm::value_ptr(component.color));
+            ImGui::SliderFloat("Intensity", &component.intensity, 0.0f, 10.0f);
+        }
+    }
+
 
     void PropertiesElement::DrawComponent_Mesh(entt::registry &registry, entt::entity entity) {
         auto& component = registry.get<MeshComponent>(entity);
@@ -215,26 +253,7 @@ namespace Editor::Elements {
 
             std::string meshLabel = (component.data != nullptr && !component.data->GetPath().empty()) ? component.data->GetPath() : "None";
             if (ImGui::Button(meshLabel.c_str(), ImVec2(200, 0))) {
-                nfdchar_t *outPath = nullptr;
-                nfdresult_t result = NFD_OpenDialog( "gltf, fbx", nullptr, &outPath );
-
-                if (result == NFD_OKAY) {
-                    std::cout << "Selected file: " << outPath << std::endl;
-
-                    Engine::EventBus::Get().Dispatch(UICommandEvent(UICommand::LoadMesh, 
-                        {
-                        { "entity", entity }, 
-                        { "path", std::string(outPath) }
-                        }
-                    ));
-
-
-                    NFDi_Free(outPath);
-                } else if (result == NFD_CANCEL) {
-                    std::cout << "User cancelled." << std::endl;
-                } else {
-                    std::cout << "Error: " << NFD_GetError() << std::endl;
-                }
+                ImGui::Dummy(ImVec2(200, 100));
             }
 
 
@@ -242,7 +261,7 @@ namespace Editor::Elements {
                 if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("MESH_ASSET")) {
                     const char* outPath = static_cast<const char*>(payload->Data);
                     if (outPath) {
-                        Engine::EventBus::Get().Dispatch(UICommandEvent(UICommand::LoadMesh, 
+                        Engine::EventBus::Get()->Dispatch(UICommandEvent(UICommand::LoadMesh, 
                             {
                             { "entity", entity }, 
                             { "path", std::string(outPath) }

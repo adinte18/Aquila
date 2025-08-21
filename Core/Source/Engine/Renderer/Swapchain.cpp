@@ -301,31 +301,49 @@ namespace Engine {
         return result;
     }
 
-    VkResult Swapchain::SubmitCommandBuffers(const VkCommandBuffer *buffers, const uint32_t *imageIndex) {
+    // Swapchain.cpp (replace SubmitCommandBuffers implementation)
+    VkResult Swapchain::SubmitCommandBuffers(
+        const VkCommandBuffer *buffers,
+        const uint32_t *imageIndex,
+        const VkSemaphore* extraWaitSemaphores,
+        uint32_t extraWaitCount)
+    {
         if (imagesInFlight[*imageIndex] != VK_NULL_HANDLE) {
             vkWaitForFences(device.GetDevice(), 1, &imagesInFlight[*imageIndex], VK_TRUE, UINT64_MAX);
         }
         imagesInFlight[*imageIndex] = inFlightFences[currentFrame];
 
+        // Prepare wait semaphores: imageAvailable + extra ones
+        // We need arrays for semaphores and stages
+        std::vector<VkSemaphore> waitSemaphores;
+        std::vector<VkPipelineStageFlags> waitStages;
+
+        // Always wait on imageAvailable for this frame
+        waitSemaphores.push_back(imageAvailableSemaphores[currentFrame]);
+        waitStages.push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
+
+        // Append any extra wait semaphores (e.g., offscreenFinished)
+        for (uint32_t i = 0; i < extraWaitCount; ++i) {
+            waitSemaphores.push_back(extraWaitSemaphores[i]);
+            // Offscreen finished -> we need fragment shader stage for sampling
+            waitStages.push_back(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
+        }
+
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-
-        VkSemaphore waitSemaphores[] = {imageAvailableSemaphores[currentFrame]};
-        VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-        submitInfo.waitSemaphoreCount = 1;
-        submitInfo.pWaitSemaphores = waitSemaphores;
-        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.waitSemaphoreCount = static_cast<uint32_t>(waitSemaphores.size());
+        submitInfo.pWaitSemaphores = waitSemaphores.data();
+        submitInfo.pWaitDstStageMask = waitStages.data();
 
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = buffers;
 
-        VkSemaphore signalSemaphores[] = {renderFinishedSemaphores[currentFrame]};
+        VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
 
         vkResetFences(device.GetDevice(), 1, &inFlightFences[currentFrame]);
-        if (vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) !=
-            VK_SUCCESS) {
+        if (vkQueueSubmit(device.GetGraphicsQueue(), 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS) {
             throw std::runtime_error("failed to submit draw command buffer!");
         }
 
@@ -335,7 +353,7 @@ namespace Engine {
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
 
-        VkSwapchainKHR swapChains[] = {swapChain};
+        VkSwapchainKHR swapChains[] = { swapChain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
 

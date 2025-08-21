@@ -5,21 +5,19 @@
 #include "Engine/Controller.h"
 #include "Engine/EditorCamera.h"
 #include "UI/UI.h"
+#include "Utilities/Singleton.h"
 
 
 namespace Editor {
-    class EditorLayer {
-    public:
-        static EditorLayer& Get() {
-            static EditorLayer instance;
-            return instance;
-        }
-
+    class EditorLayer : public Utility::Singleton<EditorLayer> {
+        friend class Utility::Singleton<EditorLayer>;
+        
+        public:
         EditorLayer();
         ~EditorLayer();
 
         void OnAttach();
-        void OnUpdate(VkCommandBuffer commandBuffer);
+        void RenderUI(VkCommandBuffer commandBuffer);
         void OnDetach();
     };
 }

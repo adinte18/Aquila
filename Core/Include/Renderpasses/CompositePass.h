@@ -19,7 +19,7 @@ namespace Engine {
         }
 
         static Ref<CompositePass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<CompositePass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<CompositePass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

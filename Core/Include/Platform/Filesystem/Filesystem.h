@@ -18,12 +18,14 @@ namespace Filesystem {
     std::string NormalizePath(const std::string& path);
     bool IsAbsolute(const std::string& path);
     std::string GetCurrDirectory();
-    bool SetCurrentDirectory(const std::string& path);
+    bool SetCurrDirectory(const std::string& path);
 
     bool Exists(const std::string& path);
     FileStat Stat(const std::string& path);
     bool CreateDirectories(const std::string& path);
-    bool Remove(const std::string& path);
+    bool RemoveDir(const std::string& path);
+    bool RemoveFile(const std::string& path);
+
     bool Rename(const std::string& from, const std::string& to);
 
     std::vector<std::string> ListDirectory(const std::string& path, bool recursive = false);

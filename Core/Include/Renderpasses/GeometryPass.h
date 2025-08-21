@@ -5,7 +5,6 @@
 #ifndef GEOMETRYPASS_H
 #define GEOMETRYPASS_H
 
-#include "Engine/Renderer/Framebuffer.h"
 #include "Engine/Renderer/Renderpass.h"
 
 namespace Engine {
@@ -26,7 +25,7 @@ namespace Engine {
         }
 
         static Ref<GeometryPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<GeometryPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<GeometryPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;
@@ -49,7 +48,7 @@ namespace Engine {
             CreateFramebuffer();
         }
 
-        [[nodiscard]] std::vector<Ref<Framebuffer>> GetFramebuffers() const { return m_Framebuffers; }
+        // [[nodiscard]] std::vector<Ref<Framebuffer>> GetFramebuffers() const { return m_Framebuffers; }
 
 
     private:

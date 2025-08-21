@@ -33,7 +33,7 @@ namespace Engine {
         }
 
         static Ref<HDRiToCubemapPass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<HDRiToCubemapPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<HDRiToCubemapPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;

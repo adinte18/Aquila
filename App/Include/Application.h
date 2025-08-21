@@ -10,7 +10,7 @@
 //     public:
 //         Application() {
 //             Engine::Controller::Get(); // Initialize the core components (window, device, render manager, etc.)
-//             editorContext = std::make_unique<EditorLayer>();
+//             editorContext = CreateUnique<EditorLayer>();
 //         }
 
 //         ~Application() {
@@ -21,7 +21,7 @@
 //         Application& operator=(const Application&) = delete;
 
 //         void Run() {
-//             while (!Engine::Controller::Get().GetWindow().ShouldClose()) {
+//             while (!Engine::Controller::Get()->GetWindow().ShouldClose()) {
 //                 editorContext->OnUpdate();
 //             }
 //         }

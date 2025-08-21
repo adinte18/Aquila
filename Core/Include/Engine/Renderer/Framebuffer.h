@@ -1,6 +1,7 @@
 #ifndef AQUILA_FRAMEBUFFER_H
 #define AQUILA_FRAMEBUFFER_H
 
+#include "Defines.h"
 #include "Engine/Renderer/Device.h"
 
 namespace Engine {
@@ -23,14 +24,11 @@ namespace Engine {
         Framebuffer(Device& device, FramebufferDetails details);
         ~Framebuffer();
 
-        Framebuffer(const Framebuffer&) = delete;
-        Framebuffer& operator=(const Framebuffer&) = delete;
-
-        Framebuffer(Framebuffer&&) = delete;
-        Framebuffer& operator=(Framebuffer&&) = delete;
+        AQUILA_NONCOPYABLE(Framebuffer);
+        AQUILA_NONMOVEABLE(Framebuffer);
 
         static Ref<Framebuffer> Construct(Device& device, FramebufferDetails details) {
-            return std::make_shared<Framebuffer>(device, details);
+            return CreateRef<Framebuffer>(device, details);
         }
 
         void Resize(const VkExtent2D& newExtent);

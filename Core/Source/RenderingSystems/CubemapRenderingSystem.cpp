@@ -16,7 +16,7 @@ namespace Engine {
                                                                 VkDescriptorSetLayout layout): device(device) {
         CreatePipelineLayout(layout);
         CreatePipeline(renderPass);
-        model = std::make_shared<Engine::Mesh>(device);
+        model = CreateRef<Engine::Mesh>(device);
         // model->CreateCube();
     }
 
@@ -45,7 +45,7 @@ namespace Engine {
         Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/show_cubemap_vert.spv",
                 std::string(SHADERS_PATH) + "/show_cubemap_frag.spv",

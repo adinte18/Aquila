@@ -7,7 +7,7 @@
 namespace Engine{
     class SceneRenderSystem : public RenderingSystemBase {
         public:
-            struct SceneRenderingContext : public RenderContext {
+            struct SceneRenderingContext : public FrameSpec {
                 EditorCamera* camera;
             };
 
@@ -23,8 +23,8 @@ namespace Engine{
             SceneRenderSystem(const SceneRenderSystem&) = delete;
             SceneRenderSystem& operator=(const SceneRenderSystem&) = delete;
 
-            void Render(const RenderContext& context) override;
-            void UpdateBuffer(const SceneRenderingContext& context);
+            void Render(const FrameSpec& context) override;
+            void UpdateBuffer(EditorCamera& camera);
 
         private:
             void CreateDescriptorSetLayout() override;

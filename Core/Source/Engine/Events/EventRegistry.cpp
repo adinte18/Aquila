@@ -4,6 +4,7 @@
 
 #include "Engine/Renderer/Renderer.h"
 
+#include "Platform/Filesystem/VirtualFileSystem.h"
 #include "Scene/Components/TransformComponent.h"
 #include "Scene/SceneManager.h"
 #include "Scene/SceneGraph.h"
@@ -14,7 +15,7 @@
 
 namespace Engine {
     void EventRegistry::RegisterHandlers(Device* device, SceneManager* sceneManager, Renderer* renderer){
-        Engine::EventBus::Get().RegisterHandler<QueryEvent>([device, sceneManager](const QueryEvent& event){
+        Engine::EventBus::Get()->RegisterHandler<QueryEvent>([device, sceneManager](const QueryEvent& event){
             auto scene = sceneManager->GetActiveScene();
             if (!scene) return;
             
@@ -122,7 +123,7 @@ namespace Engine {
 
 
 
-        Engine::EventBus::Get().RegisterHandler<UICommandEvent>([device, sceneManager, renderer](const UICommandEvent& event){
+        Engine::EventBus::Get()->RegisterHandler<UICommandEvent>([device, sceneManager, renderer](const UICommandEvent& event){
             auto scene = sceneManager->GetActiveScene();
             switch (event.m_Command) {
                 case UICommand::ViewportResized: {
@@ -135,14 +136,22 @@ namespace Engine {
                 }
 
                 case UICommand::NewScene : {
-                    sceneManager->EnqueueScene(std::make_unique<AquilaScene>("New Scene"));
+                    sceneManager->EnqueueScene(CreateUnique<AquilaScene>("New Scene"));
                     sceneManager->RequestSceneChange();
                     break;
                 }
 
                 case UICommand::SaveScene: {
-                    std::string filename = std::string(ASSET_PATH"/" + scene->GetSceneName() + ".aqscene");
-                    scene->Serialize(filename);
+                    std::string baseName = scene->GetSceneName();
+                    std::string virtualPath = "/Assets/" + baseName + ".aqscene";
+
+                    int counter = 1;
+                    while (VFS::VirtualFileSystem::Get()->Exists(virtualPath)) {
+                        virtualPath = "/Assets/" + baseName + "_" + std::to_string(counter) + ".aqscene";
+                        counter++;
+                    }
+
+                    scene->Serialize(virtualPath);
                     break;
                 }
 
@@ -152,7 +161,7 @@ namespace Engine {
 
                     std::cout << "Opening scene at : " << path << std::endl;
 
-                    sceneManager->EnqueueScene(std::make_unique<AquilaScene>(),
+                    sceneManager->EnqueueScene(CreateUnique<AquilaScene>(),
                         [path](AquilaScene* scene) {
                             scene->Deserialize(path); // when the scene is activated, deserialize it
                         }
@@ -186,7 +195,7 @@ namespace Engine {
                         scene->GetRegistry().emplace<MeshComponent>(newEntity.GetHandle());
 
                         auto& meshData = scene->GetRegistry().get<MeshComponent>(newEntity.GetHandle());
-                        meshData.data = std::make_shared<Engine::Mesh>(*device);
+                        meshData.data = CreateRef<Engine::Mesh>(*device);
                         meshData.data->Load(path);
                     }
                     else {
@@ -197,7 +206,7 @@ namespace Engine {
                         }
 
                         auto& meshData = scene->GetRegistry().get<MeshComponent>(entity);
-                        meshData.data = std::make_shared<Engine::Mesh>(*device);
+                        meshData.data = CreateRef<Engine::Mesh>(*device);
                         meshData.data->Load(path);
                     }
 
