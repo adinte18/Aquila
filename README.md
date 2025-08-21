@@ -1,3 +1,11 @@
+# ⚠️ Major Rewrite in Progress ⚠️
+
+> **Important:** The engine is currently being **rewritten for better modularity and platform independence**.  
+> Many previously available features are **temporarily unavailable or incomplete** during this restructuring phase.  
+> Expect breaking changes, missing systems, and ongoing refactoring until stabilization.
+
+---
+
 # Aquila - Vulkan PBR Rendering Engine
 
 This project is a **Vulkan-based PBR (Physically-Based Rendering) engine** built entirely from scratch with the primary goal of learning and exploring modern graphics programming, Vulkan API usage, and real-time rendering techniques.
