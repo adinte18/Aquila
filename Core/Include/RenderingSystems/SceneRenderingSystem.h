@@ -4,21 +4,21 @@
 
 #ifndef SCENERENDERINGSYSTEM_H
 #define SCENERENDERINGSYSTEM_H
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
+
 
 
 namespace Engine {
     class SceneRenderingSystem {
     public:
         SceneRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
-        ~SceneRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~SceneRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         SceneRenderingSystem(const SceneRenderingSystem&) = delete;
         SceneRenderingSystem& operator=(const SceneRenderingSystem&) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, SceneContext& scene);
+        void Render(VkCommandBuffer commandBuffer);
         void RecreatePipeline(VkRenderPass renderPass);
 
 

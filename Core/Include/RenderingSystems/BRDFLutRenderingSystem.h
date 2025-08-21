@@ -7,15 +7,15 @@
 
 
 
-#include "Engine/Device.h"
-#include "Engine/Pipeline.h"
+#include "Engine/Renderer/Device.h"
+#include "Engine/Renderer/Pipeline.h"
 
 
 namespace Engine {
     class BRDFLutRenderingSystem {
     public:
         BRDFLutRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~BRDFLutRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~BRDFLutRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         BRDFLutRenderingSystem(const BRDFLutRenderingSystem&) = delete;
         BRDFLutRenderingSystem& operator=(const BRDFLutRenderingSystem&) = delete;

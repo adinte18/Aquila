@@ -1,5 +1,6 @@
 
 #include "Engine/Mesh.h"
+#include "Platform/Filesystem/VirtualFileSystem.h"
 #include "vulkan/vulkan_core.h"
 
 namespace Engine {
@@ -12,15 +13,38 @@ namespace Engine {
 
     void Mesh::Load(const std::string& filepath) {
         Assimp::Importer importer;
-        const aiScene* scene = importer.ReadFile(filepath,
-            aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_GenUVCoords | aiProcess_CalcTangentSpace | aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes | aiProcess_ConvertToLeftHanded);
+
+        auto file = VFS::VirtualFileSystem::Get()->OpenFile(filepath, "rb");
+        if (!file || !file->IsValid()) {
+            throw std::runtime_error("Failed to open mesh via VFS: " + filepath);
+        }
+
+        file->Seek(0, SEEK_SET);
+
+        int64 fileSize = file->Size();
+        if (fileSize <= 0) {
+            throw std::runtime_error("Mesh file is empty: " + filepath);
+        }
+
+        std::vector<uint8> buffer(fileSize);
+        size_t bytesRead = file->Read(buffer.data(), buffer.size());
+        if (bytesRead != buffer.size()) {
+            throw std::runtime_error("Failed to read entire mesh buffer from VFS");
+        }
+
+        const aiScene* scene = importer.ReadFileFromMemory(
+            buffer.data(),
+            buffer.size(),
+            aiProcess_Triangulate | aiProcess_GenSmoothNormals |
+            aiProcess_GenUVCoords | aiProcess_CalcTangentSpace |
+            aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes |
+            aiProcess_ConvertToLeftHanded
+        );
 
         if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
             throw std::runtime_error("Assimp failed to load model: " + std::string(importer.GetErrorString()));
         }
 
-        const std::filesystem::path filePath(filepath);
-        const std::string directoryPath = filePath.parent_path().string();
         m_Path = filepath;
         
         m_Vertices.clear();
@@ -88,7 +112,7 @@ namespace Engine {
         stagingBuffer.map();
         stagingBuffer.vk_WriteToBuffer((void*)vertices.data());
 
-        m_VertexBuffer = std::make_unique<Buffer>(m_Device,
+        m_VertexBuffer = CreateUnique<Buffer>(m_Device,
             vertexSize,
             m_VertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -146,7 +170,7 @@ namespace Engine {
         stagingBuffer.map();
         stagingBuffer.vk_WriteToBuffer((void*)indices.data());
 
-        m_IndexBuffer = std::make_unique<Buffer>(m_Device,
+        m_IndexBuffer = CreateUnique<Buffer>(m_Device,
             indexSize,
             m_IndexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,

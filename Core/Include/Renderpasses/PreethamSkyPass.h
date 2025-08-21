@@ -5,7 +5,7 @@
 #ifndef PREETHAMSKYPASS_H
 #define PREETHAMSKYPASS_H
 
-#include "Engine/Renderpass.h"
+#include "Engine/Renderer/Renderpass.h"
 
 namespace Engine {
     class PreethamSkyPass : public Renderpass {
@@ -15,25 +15,23 @@ namespace Engine {
 
         ~PreethamSkyPass() override {
             for (const auto& framebuffer : m_Framebuffers) {
-                if (framebuffer != VK_NULL_HANDLE) {
-                    vkDestroyFramebuffer(m_Device.vk_GetDevice(), framebuffer, nullptr);
-                }
+                framebuffer->Destroy();
             }
 
             for (const auto& imageView : m_CubemapFaceViews) {
                 if (imageView != VK_NULL_HANDLE) {
-                    vkDestroyImageView(m_Device.vk_GetDevice(), imageView, nullptr);
+                    vkDestroyImageView(m_Device.GetDevice(), imageView, nullptr);
                 }
             }
 
             if (colorAttachment) colorAttachment->Destroy();
             if (depthAttachment) depthAttachment->Destroy();
 
-            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
+            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
         }
 
         static Ref<PreethamSkyPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<PreethamSkyPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<PreethamSkyPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;
@@ -41,15 +39,12 @@ namespace Engine {
             return pass;
         }
 
-        [[nodiscard]] VkFramebuffer GetFramebuffer(const int face) const { return m_Framebuffers[face]; }
-
     private:
         bool CreateRenderTarget() override;
         bool CreateRenderPass() override;
         bool CreateFramebuffer() override;
         void CreateClearValues() override;
 
-        std::vector<VkFramebuffer> m_Framebuffers{6};
         std::vector<VkImageView> m_CubemapFaceViews{6};
     };
 }

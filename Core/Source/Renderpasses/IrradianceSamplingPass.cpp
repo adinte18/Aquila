@@ -25,26 +25,21 @@ bool Engine::IrradianceSamplingPass::CreateFramebuffer() {
         viewInfo.subresourceRange.layerCount = 1;
 
         VkImageView imageView;
-        if (vkCreateImageView(m_Device.vk_GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
+        if (vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &imageView) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create cubemap face view!");
         }
         m_CubemapFaceViews[i] = imageView;
     }
 
     for (uint32_t face = 0; face < 6; face++) {
-        VkFramebufferCreateInfo faceFramebufferInfo{};
-        faceFramebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        faceFramebufferInfo.renderPass = m_RenderPass;
-        faceFramebufferInfo.width = m_Extent.width;
-        faceFramebufferInfo.height = m_Extent.height;
-        faceFramebufferInfo.layers = 1;
-        faceFramebufferInfo.attachmentCount = 1; // 1 attachment per framebuffer
-        faceFramebufferInfo.pAttachments = &m_CubemapFaceViews[face];
-
-        if (vkCreateFramebuffer(m_Device.vk_GetDevice(), &faceFramebufferInfo, nullptr,
-                              &m_Framebuffers[face]) != VK_SUCCESS) {
-            return false;
-        }
+        m_Framebuffers[face] = Engine::Framebuffer::Construct(m_Device, {
+            m_Extent.width,
+            m_Extent.height,
+            Engine::Framebuffer::Target::Offscreen,
+            1,
+            {m_CubemapFaceViews[face]},
+            m_RenderPass
+        });
     }
     // write framebuffer result to descriptor set
     WriteToDescriptorSet();
@@ -88,7 +83,7 @@ bool Engine::IrradianceSamplingPass::CreateRenderPass() {
     renderPassInfo.dependencyCount = static_cast<uint32_t>(dependencies.size());
     renderPassInfo.pDependencies = dependencies.data();
 
-    if (vkCreateRenderPass(m_Device.vk_GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device.GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         return false;
     }
 

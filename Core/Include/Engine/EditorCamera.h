@@ -27,9 +27,9 @@ namespace Engine
 
             void SetPerspectiveProjection(float FOV_y, float aspect, float near, float far);
 
-            [[nodiscard]] const glm::mat4& GetProjection() const {return projectionMatrix;}
-            [[nodiscard]] const glm::mat4& GetView() const { return viewMatrix; }
-            [[nodiscard]] const glm::mat4& GetInverseView() const { return inverseViewMatrix; }
+            [[nodiscard]] const glm::mat4& GetProjection() const {return m_ProjectionMatrix;}
+            [[nodiscard]] const glm::mat4& GetView() const { return m_ViewMatrix; }
+            [[nodiscard]] const glm::mat4& GetInverseView() const { return m_InverseViewMatrix; }
 
             void SetViewDirection(glm::vec3 position,
                 glm::vec3 direction, glm::vec3 up = glm::vec3(0.f, -1.f, -0.f));
@@ -49,22 +49,22 @@ namespace Engine
             void Rotate(double yaw, double pitch);
             void Zoom(float offset, float aspectRatio);
 
-            [[nodiscard]] glm::vec3& GetPosition() { return position; }
-            [[nodiscard]] glm::vec3& GetRotation() { return rotation; }
-            [[nodiscard]] glm::vec3& GetDirection() { return direction; }
-            [[nodiscard]] const float& GetAspectRatio() const { return aspectRatio; }
-            [[nodiscard]] float& GetRotationSpeed() { return rotationSpeed; }
-            [[nodiscard]] float& GetMovementSpeed() { return movementSpeed; }
-            [[nodiscard]] float& GetFOV() { return fov; }
-            [[nodiscard]] float& GetNearPlane() { return near; }
-            [[nodiscard]] float& GetFarPlane() { return far;}
-            [[nodiscard]] CameraType GetType() const { return type; }
-            [[nodiscard]] bool& OrbitAroundEntity() { return orbitAroundEntity; }
-            [[nodiscard]] glm::vec3 GetTarget() const { return orbitTarget; }
-            [[nodiscard]] glm::vec3 GetRightVector() const { return glm::normalize(glm::vec3(viewMatrix[0])); }
-            [[nodiscard]] glm::vec3 GetUpVector() const { return glm::normalize(glm::vec3(viewMatrix[2])); }
-            void SetPosition(const glm::vec3 pos) { position = pos; }
-            void SetRotationSpeed(const float speed) {rotationSpeed = speed;}
+            [[nodiscard]] glm::vec3& GetPosition() { return m_Position; }
+            [[nodiscard]] glm::vec3& GetRotation() { return m_Rotation; }
+            [[nodiscard]] glm::vec3& GetDirection() { return m_Direction; }
+            [[nodiscard]] const float& GetAspectRatio() const { return m_AspectRatio; }
+            [[nodiscard]] float& GetRotationSpeed() { return m_RotationSpeed; }
+            [[nodiscard]] float& GetMovementSpeed() { return m_MovementSpeed; }
+            [[nodiscard]] float& GetFOV() { return m_Fov; }
+            [[nodiscard]] float& GetNearPlane() { return m_Near; }
+            [[nodiscard]] float& GetFarPlane() { return m_Far; }
+            [[nodiscard]] CameraType GetType() const { return m_CameraType; }
+            [[nodiscard]] bool& OrbitAroundEntity() { return m_OrbitAroundEntity; }
+            [[nodiscard]] glm::vec3 GetTarget() const { return m_OrbitTarget; }
+            [[nodiscard]] glm::vec3 GetRightVector() const { return glm::normalize(glm::vec3(m_ViewMatrix[0])); }
+            [[nodiscard]] glm::vec3 GetUpVector() const { return glm::normalize(glm::vec3(m_ViewMatrix[2])); }
+            void SetPosition(const glm::vec3 pos) { m_Position = pos; }
+            void SetRotationSpeed(const float speed) {m_RotationSpeed = speed;}
 
             void SetOrbitTarget(const glm::vec3& target);
             void OrbitRotate(float deltaYaw, float deltaPitch);
@@ -77,32 +77,32 @@ namespace Engine
             void OnResize(float width, float height);
 
         private:
-            CameraType type{CameraType::Free};
-            glm::mat4 projectionMatrix{1.f};
-            glm::mat4 viewMatrix{1.f};
-            glm::mat4 inverseViewMatrix{1.f};
+            CameraType m_CameraType{CameraType::Free};
+            glm::mat4 m_ProjectionMatrix{1.f};
+            glm::mat4 m_ViewMatrix{1.f};
+            glm::mat4 m_InverseViewMatrix{1.f};
 
-            glm::vec3 position{0.0f}; 
-            glm::vec3 rotation{0.0f}; 
+            glm::vec3 m_Position{0.0f}; 
+            glm::vec3 m_Rotation{0.0f}; 
 
-            float movementSpeed{5.0f};
-            float rotationSpeed{0.001f}; 
+            float m_MovementSpeed{5.0f};
+            float m_RotationSpeed{0.001f}; 
 
-            glm::vec3 direction{0.0f, 0.0f, -1.0f};
+            glm::vec3 m_Direction{0.0f, 0.0f, -1.0f};
 
-            float fov{80.0f};
-            float near{0.1f};
-            float far{100.f};
-            float aspectRatio{0.f};
+            float m_Fov{80.0f};
+            float m_Near{0.1f};
+            float m_Far{100.f};
+            float m_AspectRatio{0.f};
 
-            bool isSpedUp{false};
+            bool m_IsSpedUp{false};
 
-            glm::vec3 orbitTarget{0.0f, 0.0f, 0.0f};
-            float orbitRadius{10.0f};
-            float orbitYaw{0.0f};
-            float orbitPitch{0.0f};
+            glm::vec3 m_OrbitTarget{0.0f, 0.0f, 0.0f};
+            float m_OrbitRadius{10.0f};
+            float m_OrbitYaw{0.0f};
+            float m_OrbitPitch{0.0f};
 
-            bool orbitAroundEntity{false};
+            bool m_OrbitAroundEntity{false};
 
             void RecalculateView();
 

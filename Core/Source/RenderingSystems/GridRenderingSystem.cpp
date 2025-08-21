@@ -6,8 +6,8 @@
 
 
 #include <utility>
-#include "ECS/Components/Components.h"
-#include "ECS/SceneContext.h"
+
+
 
 
 namespace Engine {
@@ -25,7 +25,7 @@ namespace Engine {
         // model->CreateQuad(1000.f);
     }
 
-    void GridRenderingSystem::Render(VkCommandBuffer commandBuffer, Engine::SceneContext& scene) const {
+    void GridRenderingSystem::Render(VkCommandBuffer commandBuffer) const {
         pipeline->Bind(commandBuffer);
 
         PushConstantData push{};
@@ -58,7 +58,7 @@ namespace Engine {
         Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
         pipelineConfig.renderPass = renderPass;
         pipelineConfig.pipelineLayout = pipelineLayout;
-        pipeline = std::make_unique<Engine::Pipeline>(
+        pipeline = CreateUnique<Engine::Pipeline>(
                 device,
                 std::string(SHADERS_PATH) + "/grid_vert.spv",
                 std::string(SHADERS_PATH) + "/grid_frag.spv",
@@ -79,7 +79,7 @@ namespace Engine {
         pipelineLayoutInfo.pSetLayouts = setLayouts.data();
         pipelineLayoutInfo.pushConstantRangeCount = 1;
         pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-        if (vkCreatePipelineLayout(device.vk_GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
+        if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
         }
     }

@@ -5,8 +5,7 @@
 #ifndef GEOMETRYPASS_H
 #define GEOMETRYPASS_H
 
-#include "Engine/Framebuffer.h"
-#include "Engine/Renderpass.h"
+#include "Engine/Renderer/Renderpass.h"
 
 namespace Engine {
     class GeometryPass : public Renderpass {
@@ -15,16 +14,18 @@ namespace Engine {
             : Renderpass(device, extent, descriptorSetLayout){}
 
         ~GeometryPass() override {
-            if (m_Framebuffer) m_Framebuffer->Destroy();
+            for (auto& framebuffer : m_Framebuffers) {
+                framebuffer->Destroy();
+            }
 
             if (colorAttachment) colorAttachment->Destroy();
             if (depthAttachment) depthAttachment->Destroy();
 
-            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.vk_GetDevice(), m_RenderPass, nullptr);
+            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
         }
 
         static Ref<GeometryPass> Initialize(Device& device, VkExtent2D extent, Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = std::make_shared<GeometryPass>(device, extent, descriptorSetLayout);
+            auto pass = CreateRef<GeometryPass>(device, extent, descriptorSetLayout);
             pass->CreateClearValues();
             if (!pass->CreateRenderTarget()) return nullptr;
             if (!pass->CreateRenderPass()) return nullptr;
@@ -37,13 +38,17 @@ namespace Engine {
             if (colorAttachment) colorAttachment->Destroy();
             if (depthAttachment) depthAttachment->Destroy();
 
-            if (m_Framebuffer) m_Framebuffer->Destroy();
+            for (auto& framebuffer : m_Framebuffers) {
+                framebuffer->Destroy();
+            }
+
+            m_Framebuffers.clear();
 
             CreateRenderTarget();
             CreateFramebuffer();
         }
 
-        [[nodiscard]] Ref<Framebuffer> GetFramebuffer() const { return m_Framebuffer; }
+        // [[nodiscard]] std::vector<Ref<Framebuffer>> GetFramebuffers() const { return m_Framebuffers; }
 
 
     private:
@@ -51,9 +56,6 @@ namespace Engine {
         bool CreateRenderPass() override;
         bool CreateFramebuffer() override;
         void CreateClearValues() override;
-
-
-        Ref<Framebuffer> m_Framebuffer{};
     };
 }
 

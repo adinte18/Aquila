@@ -1,16 +1,17 @@
 #ifndef PREFILTERRENDERINGSYSTEM_H
 #define PREFILTERRENDERINGSYSTEM_H
 
-#include <Engine/Device.h>
-#include <Engine/Pipeline.h>
-#include <ECS/SceneContext.h>
+#include "Engine/Mesh.h"
+#include <Engine/Renderer/Device.h>
+#include <Engine/Renderer/Pipeline.h>
+
 
 
 namespace Engine {
     class PrefilterRenderingSystem {
     public:
         PrefilterRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~PrefilterRenderingSystem() { vkDestroyPipelineLayout(device.vk_GetDevice(), pipelineLayout, nullptr); };
+        ~PrefilterRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
 
         PrefilterRenderingSystem(const PrefilterRenderingSystem&) = delete;
         PrefilterRenderingSystem& operator=(const PrefilterRenderingSystem&) = delete;

@@ -18,18 +18,14 @@ bool Engine::ShadowPass::CreateFramebuffer() {
 
     const auto attachment = depthAttachment->GetTextureImageView();
 
-    VkFramebufferCreateInfo framebufferInfo{};
-    framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-    framebufferInfo.attachmentCount = 1;
-    framebufferInfo.pAttachments = &attachment;
-    framebufferInfo.renderPass = m_RenderPass;
-    framebufferInfo.width = m_Extent.width;
-    framebufferInfo.height = m_Extent.height;
-    framebufferInfo.layers = 1;
-
-    if (vkCreateFramebuffer(m_Device.vk_GetDevice(), &framebufferInfo, nullptr, &m_Framebuffer) != VK_SUCCESS) {
-        return false;
-    }
+    m_Framebuffers[0] = Engine::Framebuffer::Construct(m_Device, {
+        m_Extent.width,
+        m_Extent.height,
+        Engine::Framebuffer::Target::Offscreen,
+        1,
+        {attachment},
+        m_RenderPass
+    });
 
     // write framebuffer result to descriptor set
     WriteToDescriptorSet();
@@ -68,7 +64,7 @@ bool Engine::ShadowPass::CreateRenderPass() {
     renderPassInfo.subpassCount = 1;
     renderPassInfo.pSubpasses = &subpass;
 
-    if (vkCreateRenderPass(m_Device.vk_GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
+    if (vkCreateRenderPass(m_Device.GetDevice(), &renderPassInfo, nullptr, &m_RenderPass) != VK_SUCCESS) {
         return false;
     }
 
