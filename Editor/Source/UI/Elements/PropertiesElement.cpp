@@ -78,6 +78,10 @@ namespace Editor::Elements {
             if (!registry.any_of<LightComponent>(selected)) {
                 if (ImGui::MenuItem(ICON_LC_LIGHTBULB " Light")) {
                     registry.emplace<LightComponent>(selected);
+                    if (!registry.any_of<TransformComponent>(selected)) {
+                        registry.emplace<TransformComponent>(selected);
+                    }
+
                     ImGui::CloseCurrentPopup();
                 }
             }
@@ -221,24 +225,26 @@ namespace Editor::Elements {
 
             const char* lightTypeNames[] = { "Point", "Directional", "Spot" };
 
-            ImGui::Combo("Light type", &reinterpret_cast<int&>(component.type), lightTypeNames, IM_ARRAYSIZE(lightTypeNames));
+            ImGui::Combo("Light type", &reinterpret_cast<int&>(component.m_Type), lightTypeNames, IM_ARRAYSIZE(lightTypeNames));
 
-            if (component.type == LightComponent::Type::Spot) {
-                ImGui::SliderFloat("Inner Cone Angle", &component.innerConeAngle, 0.0f, 90.0f);
-                ImGui::SliderFloat("Outer Cone Angle", &component.outerConeAngle, 0.0f, 90.0f);
+            if (component.m_Type == LightComponent::Type::Spot) {
+                ImGui::SliderFloat("Inner Cone Angle", &component.m_InnerConeAngle, 0.0f, 90.0f);
+                ImGui::SliderFloat("Outer Cone Angle", &component.m_OuterConeAngle, 0.0f, 90.0f);
             }
-            else if (component.type == LightComponent::Type::Directional){
-                ImGui::SliderFloat3("Light Direction", glm::value_ptr(component.direction), -1.0f, 1.0f);
+            else if (component.m_Type == LightComponent::Type::Directional){
+                ImGui::SliderFloat3("Light Direction", glm::value_ptr(component.m_Direction), -1.0f, 1.0f);
             }
             else {
-                component.innerConeAngle = 0.0f;
-                component.outerConeAngle = 45.0f;
+                component.m_InnerConeAngle = 0.0f;
+                component.m_OuterConeAngle = 45.0f;
             }
 
             ImGui::SeparatorText("General Properties");
 
-            ImGui::ColorEdit3("Color", glm::value_ptr(component.color));
-            ImGui::SliderFloat("Intensity", &component.intensity, 0.0f, 10.0f);
+            ImGui::Checkbox("Is active", &component.m_IsActive);
+
+            ImGui::ColorEdit3("Color", glm::value_ptr(component.m_Color));
+            ImGui::SliderFloat("Intensity", &component.m_Intensity, 0.0f, 10.0f);
         }
     }
 

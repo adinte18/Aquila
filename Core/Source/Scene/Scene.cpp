@@ -1,6 +1,7 @@
 #include "Scene/Scene.h"
 #include "AquilaCore.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
+#include "Scene/Components/LightComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/EntityManager.h"
@@ -191,6 +192,45 @@ namespace Engine {
                     registry.replace<MeshComponent>(entity, mesh);
                 }
             }
+
+            if (entityData.contains("LightComponent")) {
+                const auto& lightJson = entityData["LightComponent"];
+
+                LightComponent light;
+
+                if (lightJson.contains("Type"))
+                    light.m_Type = static_cast<LightComponent::Type>(lightJson["Type"].get<int>());
+
+                if (lightJson.contains("Color"))
+                    light.m_Color = glm::vec3(
+                        lightJson["Color"][0].get<float>(),
+                        lightJson["Color"][1].get<float>(),
+                        lightJson["Color"][2].get<float>()
+                    );
+
+                if (lightJson.contains("Intensity"))
+                    light.m_Intensity = lightJson["Intensity"].get<float>();
+                if (lightJson.contains("Range"))
+                    light.m_Range = lightJson["Range"].get<float>();
+
+                if (lightJson.contains("Inner Cone Angle"))
+                    light.m_InnerConeAngle = lightJson["Inner Cone Angle"].get<float>();
+                if (lightJson.contains("Outer Cone Angle"))
+                    light.m_OuterConeAngle = lightJson["Outer Cone Angle"].get<float>();
+
+                if (lightJson.contains("Direction"))
+                    light.m_Direction = glm::vec3(
+                        lightJson["Direction"][0].get<float>(),
+                        lightJson["Direction"][1].get<float>(),
+                        lightJson["Direction"][2].get<float>()
+                    );
+
+                if (lightJson.contains("Is Active"))
+                    light.m_IsActive = lightJson["Is Active"].get<bool>();
+
+                registry.emplace_or_replace<LightComponent>(entity, light);
+            }
+
         }
 
         return true;
@@ -250,6 +290,21 @@ namespace Engine {
                 auto& mesh = registry.get<MeshComponent>(entity);
                 entityJson["MeshComponent"] = {
                     {"Path", mesh.data->GetPath()}
+                };
+            }
+
+            if (registry.all_of<LightComponent>(entity)) {
+                auto& light = registry.get<LightComponent>(entity);
+
+                entityJson["LightComponent"] = {
+                    {"Type", static_cast<int>(light.m_Type)}, // store as int: 0=Point,1=Directional,2=Spot
+                    {"Color", {light.m_Color.r, light.m_Color.g, light.m_Color.b}},
+                    {"Intensity", light.m_Intensity},
+                    {"Range", light.m_Range},
+                    {"Inner Cone Angle", light.m_InnerConeAngle},
+                    {"Outer Cone Angle", light.m_OuterConeAngle},
+                    {"Direction", {light.m_Direction.x, light.m_Direction.y, light.m_Direction.z}},
+                    {"Is Active", light.m_IsActive}
                 };
             }
 

@@ -142,15 +142,12 @@ namespace Engine {
                 }
 
                 case UICommand::SaveScene: {
+
+                    // Note(A) : hardcoded - not cool
+                    // todo : redo this, or atleast do something that is consistent/modular and not hard coded 
+
                     std::string baseName = scene->GetSceneName();
                     std::string virtualPath = "/Assets/" + baseName + ".aqscene";
-
-                    int counter = 1;
-                    while (VFS::VirtualFileSystem::Get()->Exists(virtualPath)) {
-                        virtualPath = "/Assets/" + baseName + "_" + std::to_string(counter) + ".aqscene";
-                        counter++;
-                    }
-
                     scene->Serialize(virtualPath);
                     break;
                 }

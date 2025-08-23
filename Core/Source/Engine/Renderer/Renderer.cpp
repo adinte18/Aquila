@@ -118,7 +118,9 @@ namespace Engine {
 
     void Renderer::RenderScene() {
         // Note(A) : Keep in mind to update rendering systems before recording any commands to the command buffer.
+        GetRenderingSystem<SceneRenderSystem>()->UpdateLights();
         GetRenderingSystem<SceneRenderSystem>()->UpdateBuffer(Engine::Controller::Get()->GetCamera());
+
         GetRenderingSystem<SceneRenderSystem>()->SendDataToGPU(m_CurrentFrameID);
 
         auto& offscreenCmd = m_OffscreenCommandBuffers[m_CurrentFrameID];

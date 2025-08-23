@@ -2,9 +2,12 @@
 
 #include "Engine/Controller.h"
 #include "Engine/EditorCamera.h"
+
+#include "Scene/Scene.h"
+
+#include "Scene/Components/LightComponent.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
-#include "Scene/Scene.h"
 #include "Scene/Components/TransformComponent.h"
 
 namespace Engine {
@@ -25,9 +28,14 @@ namespace Engine {
         m_Buffer = CreateUnique<Buffer>(device, sizeof(SceneUniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         m_Buffer->map();
 
+        m_LightBuffer = CreateUnique<Buffer>(device, sizeof(LightData) * 32, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        m_LightBuffer->map();
+
         auto uniformData = m_Buffer->vk_DescriptorInfo();
+        auto lightUBO = m_LightBuffer->vk_DescriptorInfo();
 
         SetUniformData(0, &uniformData);
+        SetUniformData(1, &lightUBO);
 
         CreatePipelineLayout();
         CreatePipeline(renderPass);
@@ -36,7 +44,8 @@ namespace Engine {
     void SceneRenderSystem::CreateDescriptorSetLayout() {
         m_Layout = DescriptorSetLayout::Builder(device)
             .addBinding(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
-            .addBinding(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_FRAGMENT_BIT)
+            .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
             .build();
     }
 
@@ -81,9 +90,42 @@ namespace Engine {
         m_Buffer->vk_Flush();
     }
 
-    void SceneRenderSystem::Render(const FrameSpec& frameSpec) {
-        const auto& ctx = static_cast<const SceneRenderingContext&>(frameSpec);
+    void SceneRenderSystem::UpdateLights() {
+        std::vector<LightData> lights;
 
+        auto* scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
+
+        auto& registry = scene->GetRegistry();
+
+
+        auto view = registry.view<LightComponent, TransformComponent>();
+        for (auto entity : view) {
+            auto [light, transform] = view.get<LightComponent, TransformComponent>(entity);
+
+            if (!light.m_IsActive) continue;
+
+            LightData ld{};
+            ld.color     = light.m_Color;
+            ld.intensity = light.m_Intensity;
+            ld.direction = light.m_Direction;
+            ld.range     = light.m_Range;
+            ld.position  = glm::vec3(transform.GetLocalPosition());
+            ld.type      = static_cast<int>(light.m_Type);
+            ld.innerCone = light.m_InnerConeAngle;
+            ld.outerCone = light.m_OuterConeAngle;
+            ld.isActive  = light.m_IsActive ? 1 : 0;
+
+            lights.push_back(ld);
+        }
+
+        if (!lights.empty()) {
+            m_LightBuffer->vk_WriteToBuffer(lights.data(), lights.size() * sizeof(LightData));
+            m_LightBuffer->vk_Flush();
+        }
+    }
+
+
+    void SceneRenderSystem::Render(const FrameSpec& frameSpec) {
         auto* scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
 
         auto& registry = scene->GetRegistry();
@@ -111,7 +153,7 @@ namespace Engine {
 
             if (meshComp.data != nullptr && metaComp.Enabled) {
                 meshComp.data->Bind(frameSpec.commandBuffer);
-                meshComp.data->Draw(frameSpec.commandBuffer, m_PipelineLayout, m_DescriptorSets[ctx.frameIndex]);
+                meshComp.data->Draw(frameSpec.commandBuffer, m_PipelineLayout, m_DescriptorSets[frameSpec.frameIndex]);
             }
         }
     }
