@@ -5,7 +5,7 @@
 #include "Renderpasses/ShadowPass.h"
 
 bool Engine::ShadowPass::CreateRenderTarget() {
-    depthAttachment = RenderTarget::CreateDepthTexture(m_Device, 8192, 8192, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    depthAttachment = RenderTarget::CreateDepthTexture(m_Device,"ShadowPass_DepthAttachment", 8192, 8192, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     return depthAttachment->HasImageView();
 }
 

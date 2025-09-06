@@ -25,20 +25,21 @@ namespace Engine {
                      uint32_t width, uint32_t height,
                      VkFormat colorFormat, VkImageUsageFlags colorUsage,
                      VkFormat depthFormat, VkImageUsageFlags depthUsage,
+                     const std::string& debugName = "",
                      AttachmentType attachmentType = AttachmentType::BOTH,
                      TargetType targetType = TargetType::TEXTURE_2D)
             : device(dev), target(targetType) {
 
             if (attachmentType == AttachmentType::COLOR || attachmentType == AttachmentType::BOTH) {
-                colorTexture = CreateColorTexture(dev, targetType, width, height, colorFormat, colorUsage);
+                colorTexture = CreateColorTexture(dev, debugName, targetType, width, height, colorFormat, colorUsage);
             }
 
             if (attachmentType == AttachmentType::DEPTH || attachmentType == AttachmentType::BOTH) {
-                depthTexture = CreateDepthTexture(dev, width, height, depthFormat, depthUsage);
+                depthTexture = CreateDepthTexture(dev, debugName, width, height, depthFormat, depthUsage);
             }
         }
 
-        static Ref<Texture2D> CreateColorTexture(Device& device,
+        static Ref<Texture2D> CreateColorTexture(Device& device, const std::string& debugName,
                                                               TargetType target,
                                                               uint32_t width, uint32_t height,
                                                               VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT)
@@ -49,6 +50,7 @@ namespace Engine {
                     .setSize(width, height)
                     .setFormat(format)
                     .setUsage(usage | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+                    .setDebugName(debugName)
                     .asCubemap()
                     .build();
             } else {
@@ -56,13 +58,14 @@ namespace Engine {
                     .setSize(width, height)
                     .setFormat(format)
                     .setUsage(usage)
+                    .setDebugName(debugName)
                     .setSamples(samples)
                     .build();
             }
             return texture;
         }
 
-        static Ref<Texture2D> CreateDepthTexture(Device& device,
+        static Ref<Texture2D> CreateDepthTexture(Device& device, const std::string& debugName,
                                                               uint32_t width, uint32_t height,
                                                               VkFormat format, VkImageUsageFlags usage)
         {
@@ -71,6 +74,7 @@ namespace Engine {
                 .setSize(width, height)
                 .setFormat(format)
                 .setUsage(usage)
+                .setDebugName(debugName)
                 .build();
             return texture;
         }

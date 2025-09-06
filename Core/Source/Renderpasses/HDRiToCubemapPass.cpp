@@ -2,6 +2,7 @@
 
 bool Engine::HDRiToCubemapPass::CreateRenderTarget() {
     colorAttachment = RenderTarget::CreateColorTexture(m_Device,
+        "HDRiPass_ColorAttachment", 
         RenderTarget::TargetType::CUBEMAP,
         m_Extent.width,
         m_Extent.height,

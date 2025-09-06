@@ -321,7 +321,7 @@ namespace Engine {
         createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
         createInfo.messageSeverity =
-                VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+                VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                 VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
         createInfo.messageType =
                 VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
@@ -486,6 +486,21 @@ namespace Engine {
         vkCmdCopyBuffer(commandBuffer, srcBuffer, dstBuffer, 1, &copyRegion);
 
         EndSingleTimeCommands(commandBuffer);
+    }
+
+    void Device::SetObjectDebugName(VkObjectType objectType, uint64 handle, const char* name) {
+        if (!enableValidationLayers) return;
+        
+        VkDebugUtilsObjectNameInfoEXT nameInfo{};
+        nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        nameInfo.objectType = objectType;
+        nameInfo.objectHandle = handle;
+        nameInfo.pObjectName = name;
+        
+        auto func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetInstanceProcAddr(m_VulkanInstance, "vkSetDebugUtilsObjectNameEXT");
+        if (func != nullptr) {
+            func(m_Device, &nameInfo);
+        }
     }
 
 

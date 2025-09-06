@@ -1,6 +1,7 @@
 #include "Engine/Renderer/Texture2D.h"
 #include "Engine/Renderer/DescriptorAllocator.h"
 #include "Engine/Renderer/Device.h"
+#include "vulkan/vulkan_core.h"
 #include <Engine/Renderer/Buffer.h>
 
 
@@ -9,7 +10,7 @@
 
 
 namespace Engine {
-    Texture2D::Texture2D(Device& device) : m_Device(device){
+    Texture2D::Texture2D(Device& device, const std::string& debugName) : m_Device(device), m_DebugName(debugName){
         textureImage = VK_NULL_HANDLE;
         textureSampler = VK_NULL_HANDLE;
         textureImageView = VK_NULL_HANDLE;
@@ -422,6 +423,9 @@ namespace Engine {
         TransitionImageLayout(textureImage, VK_FORMAT_R32G32B32A32_SFLOAT,
                         VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 6);
 
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(textureImage), std::string(m_DebugName + "_Cubemap_Image").c_str());
+
     }
 
     void Texture2D::vk_CreateCubemapImageView(VkFormat format) {
@@ -439,6 +443,8 @@ namespace Engine {
         if (vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create cubemap image view!");
         }
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64>(textureImageView), std::string(m_DebugName + "_Cubemap_ImageView").c_str());
     }
     void Texture2D::vk_CreateCubemapSampler() {
         VkPhysicalDeviceProperties properties{};
@@ -462,6 +468,8 @@ namespace Engine {
         if (vkCreateSampler(m_Device.GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create cubemap sampler!");
         }
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_SAMPLER, reinterpret_cast<uint64>(textureSampler), std::string(m_DebugName + "_Cubemap_Sampler").c_str());
     }
 
 
@@ -526,6 +534,8 @@ namespace Engine {
         if (vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture image view!");
         }
+        
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64>(textureImageView), std::string(m_DebugName + "_LDR_ImageView").c_str());
     }
 
     void Texture2D::vk_CreateTextureSampler() {
@@ -550,6 +560,8 @@ namespace Engine {
         if (vkCreateSampler(m_Device.GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler!");
         }
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_SAMPLER, reinterpret_cast<uint64>(textureSampler), std::string(m_DebugName + "_LDR_Sampler").c_str());
     }
 
     void Texture2D::vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) const {
@@ -725,6 +737,7 @@ namespace Engine {
         }
 
         vkBindImageMemory(m_Device.GetDevice(), textureImage, textureImageMemory, 0);
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(textureImage), std::string(m_DebugName + "_LDR_Image").c_str());
     }
 
     void Texture2D::vk_CreateHDRTextureImage(const std::string& filepath) {
@@ -790,6 +803,7 @@ namespace Engine {
             static_cast<uint32_t>(texHeight));
 
         GenerateMipmap(textureImage, VK_FORMAT_R32G32B32A32_SFLOAT, texWidth, texHeight, m_MipLevels);
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(textureImage), std::string(m_DebugName + "_HDR_Image").c_str());
     }
 
     void Texture2D::vk_CreateHDRTextureImageView(VkFormat format) {
@@ -809,6 +823,8 @@ namespace Engine {
         if (vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &textureImageView) != VK_SUCCESS) {
             throw std::runtime_error("failed to create HDR texture image view!");
         }
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64>(textureImageView), std::string(m_DebugName + "_HDR_ImageView").c_str());
     }
 
     void Texture2D::vk_CreateHDRTextureSampler() {
@@ -833,6 +849,9 @@ namespace Engine {
         if (vkCreateSampler(m_Device.GetDevice(), &samplerInfo, nullptr, &textureSampler) != VK_SUCCESS) {
             throw std::runtime_error("failed to create HDR texture sampler!");
         }
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_SAMPLER, reinterpret_cast<uint64>(textureImage), std::string(m_DebugName + "_HDR_Sampler").c_str());
+
     }
 
     void Texture2D::vk_CreateTextureImage(const std::string& filepath) {
@@ -880,6 +899,8 @@ namespace Engine {
         stagingBuffer.unmap();
     
         GenerateMipmap(textureImage, VK_FORMAT_R8G8B8A8_UNORM, texWidth, texHeight, m_MipLevels);
+
+        m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(textureImage), std::string(m_DebugName + "_LDR_Image").c_str());
     }
 
 }

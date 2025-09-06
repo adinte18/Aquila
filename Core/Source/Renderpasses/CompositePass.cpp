@@ -2,6 +2,7 @@
 
 bool Engine::CompositePass::CreateRenderTarget() {
     colorAttachment = RenderTarget::CreateColorTexture(m_Device,
+        "CompositePass_ColorAttachment",
         RenderTarget::TargetType::TEXTURE_2D,
         m_Extent.width,
         m_Extent.height,

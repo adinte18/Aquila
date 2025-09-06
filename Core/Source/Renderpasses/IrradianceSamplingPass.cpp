@@ -2,6 +2,7 @@
 
 bool Engine::IrradianceSamplingPass::CreateRenderTarget() {
     colorAttachment = RenderTarget::CreateColorTexture(m_Device,
+        "IrradianceSamplingPass_ColorAttachment", 
         RenderTarget::TargetType::CUBEMAP,
         m_Extent.width,
         m_Extent.height,

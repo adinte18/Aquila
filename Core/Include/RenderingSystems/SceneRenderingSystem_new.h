@@ -32,8 +32,7 @@ namespace Engine{
             SceneRenderSystem& operator=(const SceneRenderSystem&) = delete;
 
             void Render(const FrameSpec& context) override;
-            void UpdateBuffer(EditorCamera& camera);
-            void UpdateLights();
+            void Update(EditorCamera& camera);
 
         private:
             void CreateDescriptorSetLayout() override;

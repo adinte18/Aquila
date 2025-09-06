@@ -80,7 +80,8 @@ namespace Engine {
         }
     }
 
-    void SceneRenderSystem::UpdateBuffer(EditorCamera& camera){
+    void SceneRenderSystem::Update(EditorCamera& camera) {
+        // Update scene
         SceneUniformData data{};
         data.projection = camera.GetProjection();
         data.view = camera.GetView();
@@ -88,15 +89,12 @@ namespace Engine {
 
         m_Buffer->vk_WriteToBuffer(&data);
         m_Buffer->vk_Flush();
-    }
 
-    void SceneRenderSystem::UpdateLights() {
         std::vector<LightData> lights;
 
         auto* scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
 
         auto& registry = scene->GetRegistry();
-
 
         auto view = registry.view<LightComponent, TransformComponent>();
         for (auto entity : view) {

@@ -1,8 +1,19 @@
 #include "Renderpasses/GeometryPass.h"
 
 bool Engine::GeometryPass::CreateRenderTarget() {
-    colorAttachment = RenderTarget::CreateColorTexture(m_Device, RenderTarget::TargetType::TEXTURE_2D, m_Extent.width, m_Extent.height, VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    depthAttachment = RenderTarget::CreateDepthTexture(m_Device, m_Extent.width, m_Extent.height, VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    colorAttachment = RenderTarget::CreateColorTexture(m_Device, 
+        "GeometryPass_ColorAttachment", 
+        RenderTarget::TargetType::TEXTURE_2D, 
+        m_Extent.width, 
+        m_Extent.height,
+        VK_FORMAT_B8G8R8A8_UNORM, 
+        VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    depthAttachment = RenderTarget::CreateDepthTexture(m_Device, 
+        "GeometryPass_DepthAttachment", 
+        m_Extent.width, 
+        m_Extent.height, 
+        VK_FORMAT_D32_SFLOAT, 
+        VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     return colorAttachment->HasImageView() && depthAttachment->HasImageView();
 }
 

@@ -8,6 +8,7 @@
 #include <memory>
 #include <glm/vec4.hpp>
 
+#include "Defines.h"
 #include "Descriptor.h"
 #include "Engine/Renderer/Device.h"
 
@@ -45,6 +46,11 @@ namespace Engine {
                 return *this;
             }
 
+            Builder& setDebugName(const std::string& debugName) {
+                this->debugName = debugName;
+                return *this;
+            }
+
             Builder& asCubemap() {
                 useCubemap = true;
                 return *this;
@@ -60,7 +66,7 @@ namespace Engine {
                     throw std::runtime_error("Cannot build a texture as both HDR and Cubemap. Choose only one.");
                 }
 
-                auto texture = CreateRef<Texture2D>(device);
+                auto texture = CreateRef<Texture2D>(device, debugName);
 
                 if (!filepath.empty()) {
                     texture->CreateTexture(filepath, format);
@@ -92,6 +98,7 @@ namespace Engine {
             VkImageUsageFlags usage = VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
             VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT;
             std::string filepath;
+            std::string debugName;
         };
 
         enum class TextureType {
@@ -105,8 +112,8 @@ namespace Engine {
 
         public:
 
-        [[nodiscard]] static Ref<Texture2D> create(Device& device) {
-            return CreateRef<Texture2D>(device);
+        [[nodiscard]] static Ref<Texture2D> create(Device& device, const std::string& debugName = "") {
+            return CreateRef<Texture2D>(device, debugName);
         }
 
         void GenerateMipmap(VkImage image, VkFormat format, int32_t width, int32_t height, uint32_t mipLevels);
@@ -146,16 +153,16 @@ namespace Engine {
                          VkImageUsageFlags usage, VkMemoryPropertyFlags properties,
                          VkImage& image, VkDeviceMemory& imageMemory);
 
-        // Rule of five
-        Texture2D(Device& device);
+        Texture2D(Device& device, const std::string& debugName);
         ~Texture2D();
 
-        Texture2D(const Texture2D&) = delete;
-        Texture2D& operator=(const Texture2D&) = delete;
-        Texture2D(Texture2D&&) noexcept = default;
-        Texture2D& operator=(Texture2D&&) noexcept = delete;
+        AQUILA_NONCOPYABLE(Texture2D);
+        AQUILA_NONMOVEABLE(Texture2D);
+
 
     private:
+        std::string m_DebugName;
+    
         uint32_t m_MipLevels = 1;
         Device& m_Device;
 

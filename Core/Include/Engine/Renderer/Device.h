@@ -5,6 +5,7 @@
 
 #include "Defines.h"
 #include "Engine/Window.h"
+#include "vulkan/vulkan_core.h"
 
 namespace Engine {
     struct VkSwapChainSupportDetails {
@@ -84,11 +85,11 @@ namespace Engine {
                 case VK_OBJECT_TYPE_FRAMEBUFFER: return "Framebuffer";
                 case VK_OBJECT_TYPE_COMMAND_BUFFER: return "CommandBuffer";
                 case VK_OBJECT_TYPE_PIPELINE: return "Pipeline";
+                case VK_OBJECT_TYPE_DEVICE: return "Device";
 
                 default: return "Unknown";
             }
         }
-
 
         /*
          * The first parameter specifies the severity of the message, which is one of the following flags:
@@ -233,6 +234,7 @@ namespace Engine {
 
         void Wait() { vkDeviceWaitIdle(m_Device); }
 
+        void SetObjectDebugName(VkObjectType objectType, uint64_t handle, const char* name);
         void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     };
 }

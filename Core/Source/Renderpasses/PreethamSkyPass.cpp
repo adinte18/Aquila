@@ -2,6 +2,7 @@
 
 bool Engine::PreethamSkyPass::CreateRenderTarget() {
     colorAttachment = RenderTarget::CreateColorTexture(m_Device,
+        "PreethamSkyPass_ColorAttachment", 
         RenderTarget::TargetType::CUBEMAP,
         m_Extent.width,
         m_Extent.height,
