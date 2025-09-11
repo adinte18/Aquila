@@ -53,11 +53,13 @@ namespace Engine {
         void KillEntity(AqEntity entity);
         bool IsEntityValid(AqEntity entity) const;
 
-
+        void QueueForKill(entt::entity entity);
+        void FlushScene();
 
         private:
             AquilaScene* m_Scene;
             entt::registry m_Registry;
+            std::vector<entt::entity> m_DeletionQueue;
     };
 }
 

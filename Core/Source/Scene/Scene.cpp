@@ -183,7 +183,7 @@ namespace Engine {
             if (entityData.contains("MeshComponent")) {
                 const auto& meshJson = entityData["MeshComponent"];
                 MeshComponent mesh;
-                mesh.data = CreateRef<Engine::Mesh>(Engine::Controller::Get()->GetDevice());
+                mesh.data = CreateRef<Engine::Mesh>(Engine::Controller::Get()->GetDevice(), meshJson.value("DebugName", ""));
                 mesh.data->Load(meshJson.value("Path", ""));
                 
                 if (!registry.all_of<MeshComponent>(entity)) {
@@ -289,7 +289,8 @@ namespace Engine {
             if (registry.all_of<MeshComponent>(entity)) {
                 auto& mesh = registry.get<MeshComponent>(entity);
                 entityJson["MeshComponent"] = {
-                    {"Path", mesh.data->GetPath()}
+                    {"Path", mesh.data->GetPath()},
+                    {"DebugName", mesh.data->GetDebugName()}
                 };
             }
 

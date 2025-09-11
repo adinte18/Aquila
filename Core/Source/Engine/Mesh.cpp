@@ -1,11 +1,10 @@
 
 #include "Engine/Mesh.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
-#include "vulkan/vulkan_core.h"
 
 namespace Engine {
-    Mesh::Mesh(Device &device)
-    : m_Device{device},
+    Mesh::Mesh(Device &device, const std::string& debugName)
+    : m_Device{device}, m_DebugName(debugName),
     m_VertexCount(0),
     m_IndexCount(0) {}
 
@@ -103,6 +102,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            std::string(m_DebugName + "_VertexStagingBuffer"),
             vertexSize,
             m_VertexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -113,6 +113,7 @@ namespace Engine {
         stagingBuffer.vk_WriteToBuffer((void*)vertices.data());
 
         m_VertexBuffer = CreateUnique<Buffer>(m_Device,
+            std::string(m_DebugName + "_VertexBuffer"),
             vertexSize,
             m_VertexCount,
             VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,
@@ -135,6 +136,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            std::string(m_DebugName + "_VertexStagingBuffer"),
             vertexSize,
             static_cast<uint32_t>(vertices.size()),
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -161,6 +163,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            std::string(m_DebugName + "_IndexStagingBuffer"),
             indexSize,
             m_IndexCount,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -171,6 +174,7 @@ namespace Engine {
         stagingBuffer.vk_WriteToBuffer((void*)indices.data());
 
         m_IndexBuffer = CreateUnique<Buffer>(m_Device,
+            std::string(m_DebugName + "_IndexBuffer"),
             indexSize,
             m_IndexCount,
             VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT,

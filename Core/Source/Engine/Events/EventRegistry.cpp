@@ -127,8 +127,8 @@ namespace Engine {
             auto scene = sceneManager->GetActiveScene();
             switch (event.m_Command) {
                 case UICommand::ViewportResized: {
-                    uint32_t width = std::get<int>(event.m_Params.at("Width"));
-                    uint32_t height = std::get<int>(event.m_Params.at("Height"));
+                    uint32 width = std::get<int>(event.m_Params.at("Width"));
+                    uint32 height = std::get<int>(event.m_Params.at("Height"));
 
                     renderer->Resize({width, height});
 
@@ -186,13 +186,37 @@ namespace Engine {
                     auto& path = std::get<std::string>(event.m_Params.at("path"));
                     if (path.empty()) break;
 
+                    auto extractFilename = [](const std::string& fullPath) -> std::string {
+                        size_t lastSlash = fullPath.find_last_of("/\\");
+                        std::string filename = (lastSlash != std::string::npos) ? 
+                            fullPath.substr(lastSlash + 1) : fullPath;
+                        
+                        size_t lastDot = filename.find_last_of('.');
+                        if (lastDot != std::string::npos) {
+                            filename = filename.substr(0, lastDot);
+                        }
+                        
+                        return filename;
+                    };
+
+                    auto generateDebugName = [&extractFilename](const std::string& vfsPath, entt::entity entityHandle) -> std::string {
+                        std::string meshName = extractFilename(vfsPath);
+                        
+                        std::stringstream ss;
+                        ss << std::hex << static_cast<uint32>(entityHandle);
+                        
+                        return meshName + "_" + ss.str();
+                    };
+
                     if (event.m_Params.find("entity") == event.m_Params.end()) {
                         auto newEntity = scene->GetEntityManager()->AddEntity();
                         scene->GetRegistry().emplace<TransformComponent>(newEntity.GetHandle());
                         scene->GetRegistry().emplace<MeshComponent>(newEntity.GetHandle());
 
+                        std::string debugName = generateDebugName(path, newEntity.GetHandle());
+
                         auto& meshData = scene->GetRegistry().get<MeshComponent>(newEntity.GetHandle());
-                        meshData.data = CreateRef<Engine::Mesh>(*device);
+                        meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
                         meshData.data->Load(path);
                     }
                     else {
@@ -201,9 +225,10 @@ namespace Engine {
                             Debug::LogError("Entity is not valid");
                             return;
                         }
+                        std::string debugName = generateDebugName(path, entity);
 
                         auto& meshData = scene->GetRegistry().get<MeshComponent>(entity);
-                        meshData.data = CreateRef<Engine::Mesh>(*device);
+                        meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
                         meshData.data->Load(path);
                     }
 
@@ -230,13 +255,7 @@ namespace Engine {
                 
                 case UICommand::DeleteEntity:{
                     auto& entityHandle = std::get<entt::entity>(event.m_Params.at("entity"));
-                    auto& node = scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
-
-                    if (!node.Children.empty()) 
-                        scene->GetSceneGraph()->RemoveAllChildren(scene->GetRegistry(), node.Entity);
-
-                    Engine::AqEntity{node.Entity, scene}.Kill();
-
+                    scene->GetEntityManager()->QueueForKill(entityHandle);
                     break;
                 }
                     

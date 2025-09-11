@@ -38,6 +38,8 @@ namespace Engine {
         void CreateVertexBuffer(const std::vector<Vertex> &vertices);
         void CreateIndexBuffer(const std::vector<uint32_t> &indices);
 
+        std::string m_DebugName;
+
         Device &m_Device;
         Unique<Buffer> m_VertexBuffer;
         uint32_t m_VertexCount;
@@ -53,7 +55,7 @@ namespace Engine {
         std::vector<Vertex> m_Vertices{};
         std::vector<uint32_t> m_Indices{};
     public:
-        explicit Mesh(Device &device);
+        Mesh(Device &device, const std::string& debugName);
         ~Mesh();
 
         Mesh(const Mesh&) = delete;
@@ -62,13 +64,13 @@ namespace Engine {
         void UpdateVertexBuffer(std::vector<Vertex> &vertices) const;
 
         void Load(const std::string& filepath);
-
         void LoadFromData(const MeshData& meshData);
 
         void Bind(VkCommandBuffer commandBuffer) const;
         void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout, VkDescriptorSet descriptorSet);
 
         [[nodiscard]] std::string GetPath() const { return m_Path; }
+        [[nodiscard]] std::string GetDebugName() const { return m_DebugName; }
     };
 }
 

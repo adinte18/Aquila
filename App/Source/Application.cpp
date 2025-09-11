@@ -20,6 +20,10 @@ int main(){
         }
 
         Engine->GetRenderer().EndFrame();
+
+        if (Engine->GetRenderer().IsPreviousFrameComplete()) {
+            Engine->GetSceneManager().GetActiveScene()->GetEntityManager()->FlushScene();
+        }
     }
 
     Engine->GetDevice().Wait();

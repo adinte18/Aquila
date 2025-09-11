@@ -16,7 +16,7 @@ namespace Engine {
                                                                 VkDescriptorSetLayout layout): device(device) {
         CreatePipelineLayout(layout);
         CreatePipeline(renderPass);
-        model = CreateRef<Engine::Mesh>(device);
+        model = CreateRef<Engine::Mesh>(device, "CubeMapMeshs");
         // model->CreateCube();
     }
 

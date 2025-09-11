@@ -15,12 +15,15 @@ namespace Engine
     public:
         Buffer(
             Device& device,
+            const std::string& debugName,
             VkDeviceSize instanceSize,
             uint32_t instanceCount,
             VkBufferUsageFlags usageFlags,
             VkMemoryPropertyFlags memoryPropertyFlags,
             VkDeviceSize minOffsetAlignment = 1);
         ~Buffer();
+
+        
 
         Buffer(const Buffer&) = delete;
         Buffer& operator=(const Buffer&) = delete;

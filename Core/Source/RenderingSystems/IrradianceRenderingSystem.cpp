@@ -15,7 +15,7 @@ struct PushConstantData
                                                                 VkDescriptorSetLayout layout): device(device) {
         CreatePipelineLayout(layout);
         CreatePipeline(renderPass);
-        model = CreateRef<Engine::Mesh>(device);
+        model = CreateRef<Engine::Mesh>(device, "irradianceSystemModel");
         // model->CreateCube();
     }
 

@@ -1,6 +1,7 @@
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Controller.h"
 #include "Engine/Renderer/Device.h"
+#include "Engine/SynchronizationManager.h"
 #include "Platform/DebugLog.h"
 
 namespace Engine {
@@ -17,7 +18,7 @@ namespace Engine {
         m_Extent = {width, height};
         
         m_CommandPool = CreateUnique<CommandBufferPool>(m_Device, Swapchain::MAX_FRAMES_IN_FLIGHT);
-        m_SemaphoreManager = CreateUnique<SemaphoreManager>(m_Device, Swapchain::MAX_FRAMES_IN_FLIGHT);
+        m_SynchronizationManager = CreateUnique<SynchronizationManager>(m_Device, Swapchain::MAX_FRAMES_IN_FLIGHT);
         
         SetupCommandBuffers();
         SetupSynchronization();
@@ -53,11 +54,15 @@ namespace Engine {
     }
 
     void Renderer::SetupSynchronization() {
-        m_SemaphoreManager->CreateSemaphore("OffscreenFinished");
+        m_SynchronizationManager->CreateSemaphore("OffscreenFinished");
+        m_SynchronizationManager->CreateFence("InFlight", true);
     }
 
     VkCommandBuffer Renderer::BeginFrame() {
         AQUILA_CORE_ASSERT(!m_FrameStarted && "Can't call BeginFrame while already in progress");
+
+        m_SynchronizationManager->WaitForFence("InFlight", m_CurrentFrameID);
+        m_SynchronizationManager->ResetFence("InFlight", m_CurrentFrameID);
 
         auto result = m_Swapchain->GetNextImage(&m_CurrentImageID);
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -93,12 +98,14 @@ namespace Engine {
         VkCommandBuffer offscreenHandle = m_OffscreenCommandBuffers[m_CurrentFrameID]->GetHandle();
         offSubmit.pCommandBuffers = &offscreenHandle;
         
-        VkSemaphore offSignal = m_SemaphoreManager->GetSemaphore("OffscreenFinished", m_CurrentFrameID);
+        VkSemaphore offSignal = m_SynchronizationManager->GetSemaphore("OffscreenFinished", m_CurrentFrameID);
         offSubmit.signalSemaphoreCount = 1;
         offSubmit.pSignalSemaphores = &offSignal;
+    
+        VkFence inFlightFence = m_SynchronizationManager->GetFence("InFlight", m_CurrentFrameID);
 
         // submit offscreen 
-        if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &offSubmit, VK_NULL_HANDLE) != VK_SUCCESS) {
+        if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &offSubmit, inFlightFence) != VK_SUCCESS) {
             throw std::runtime_error("Failed to submit offscreen command buffer!");
         }
 
@@ -114,6 +121,11 @@ namespace Engine {
 
         m_FrameStarted = false;
         m_CurrentFrameID = (m_CurrentFrameID + 1) % Swapchain::MAX_FRAMES_IN_FLIGHT;
+    }
+
+    bool Renderer::IsPreviousFrameComplete() {
+        uint32_t previousFrame = (m_CurrentFrameID + Swapchain::MAX_FRAMES_IN_FLIGHT - 1) % Swapchain::MAX_FRAMES_IN_FLIGHT;
+        return m_SynchronizationManager->IsFenceSignaled("InFlight", previousFrame);
     }
 
     void Renderer::RenderScene() {

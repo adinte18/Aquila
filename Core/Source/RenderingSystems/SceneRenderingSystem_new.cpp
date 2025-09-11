@@ -25,10 +25,10 @@ namespace Engine {
         AllocateDescriptorSet();
 
         // init buffer
-        m_Buffer = CreateUnique<Buffer>(device, sizeof(SceneUniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        m_Buffer = CreateUnique<Buffer>(device, "Scene_CameraInfoUBO", sizeof(SceneUniformData), 1,VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         m_Buffer->map();
 
-        m_LightBuffer = CreateUnique<Buffer>(device, sizeof(LightData) * 32, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        m_LightBuffer = CreateUnique<Buffer>(device, "Scene_LightUBO", sizeof(LightData) * 32, 1, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         m_LightBuffer->map();
 
         auto uniformData = m_Buffer->vk_DescriptorInfo();

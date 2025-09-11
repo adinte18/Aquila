@@ -5,6 +5,7 @@
  * https://github.com/SaschaWillems/Vulkan/blob/master/base/VulkanBuffer.h
  */
 #include "AquilaCore.h"
+#include "vulkan/vulkan_core.h"
 
 #include "Engine/Renderer/Buffer.h"
 
@@ -30,6 +31,7 @@ VkDeviceSize Buffer::vk_GetAlignment(VkDeviceSize instanceSize, VkDeviceSize min
 
 Buffer::Buffer(
     Device &device,
+    const std::string& debugName,
     VkDeviceSize instanceSize,
     uint32_t instanceCount,
     VkBufferUsageFlags usageFlags,
@@ -40,9 +42,10 @@ Buffer::Buffer(
       m_InstanceCount{instanceCount},
       m_UsageFlags{usageFlags},
       m_MemoryPropertyFlags{memoryPropertyFlags} {
-  m_AlignmentSize = vk_GetAlignment(instanceSize, minOffsetAlignment);
-  m_BufferSize = m_AlignmentSize * instanceCount;
-  device.CreateBuffer(m_BufferSize, usageFlags, memoryPropertyFlags, m_Buffer, m_Memory);
+        m_AlignmentSize = vk_GetAlignment(instanceSize, minOffsetAlignment);
+        m_BufferSize = m_AlignmentSize * instanceCount;
+        device.CreateBuffer(m_BufferSize, usageFlags, memoryPropertyFlags, m_Buffer, m_Memory);
+        device.SetObjectDebugName(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64>(m_Buffer), debugName.c_str());
 }
 
 Buffer::~Buffer() {

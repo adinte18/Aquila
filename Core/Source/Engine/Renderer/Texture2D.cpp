@@ -600,6 +600,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            "SolidCubemap_StagingBuffer",
             imageSize,
             1,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -643,6 +644,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            "SolidColor_StagingBuffer",
             imageSize,
             1,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -768,6 +770,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            "HDR_Texture_StagingBuffer",
             imageSize,
             1,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
@@ -865,6 +868,7 @@ namespace Engine {
 
         Buffer stagingBuffer{
             m_Device,
+            "Texture_StagingBuffer",
             imageSize,
             1,
             VK_BUFFER_USAGE_TRANSFER_SRC_BIT,

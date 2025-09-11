@@ -6,7 +6,7 @@
 #include "Renderpasses/GeometryPass.h"
 
 #include "Engine/Renderer/Swapchain.h"
-#include "Engine/SemaphoreManager.h"
+#include "Engine/SynchronizationManager.h"
 #include "Engine/Renderer/CommandBufferPool.h"
 
 namespace Engine {
@@ -56,6 +56,7 @@ namespace Engine {
             }
             return nullptr;
         }
+        bool IsPreviousFrameComplete();
 
         VkRenderPass GetImGuiRenderPass() { return m_Swapchain->GetRenderpass(); }
 
@@ -69,7 +70,7 @@ namespace Engine {
         Window& m_Window;
         
         Unique<CommandBufferPool> m_CommandPool;
-        Unique<SemaphoreManager> m_SemaphoreManager;
+        Unique<SynchronizationManager> m_SynchronizationManager;
         
         std::vector<Unique<CommandBuffer>> m_PresentCommandBuffers;
         std::vector<Unique<CommandBuffer>> m_OffscreenCommandBuffers;

@@ -1,5 +1,6 @@
 #include "Scene/EntityManager.h"
 #include "Scene/Scene.h"
+#include "Scene/SceneGraph.h"
 
 namespace Engine {
     EntityManager::~EntityManager() = default;
@@ -14,6 +15,23 @@ namespace Engine {
         AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
 
         return m_Registry;
+    }
+
+    void EntityManager::QueueForKill(entt::entity handle) {
+        m_DeletionQueue.emplace_back(handle);
+    }
+
+    void EntityManager::FlushScene(){
+        for (auto& entityHandle : m_DeletionQueue){
+            auto& node = m_Scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
+
+            if (!node.Children.empty()) 
+                m_Scene->GetSceneGraph()->RemoveAllChildren(m_Scene->GetRegistry(), node.Entity);
+
+            AqEntity{entityHandle, m_Scene}.Kill();
+        }
+
+        m_DeletionQueue.clear();
     }
 
     /**
