@@ -8,78 +8,66 @@
 #include "Engine/Renderer/Device.h"
 #include "Engine/Renderer/Renderer.h"
 
-#include "Engine/Events/EventRegistry.h"
 #include "Engine/Events/EventBus.h"
+#include "Engine/Events/EventRegistry.h"
 
-#include "Platform/Filesystem/VirtualFileSystem.h"
+
 #include "Platform/Filesystem/NativeFileSystem.h"
+#include "Platform/Filesystem/VirtualFileSystem.h"
+
 
 #include "Scene/SceneManager.h"
 
 #include "Utilities/Singleton.h"
 namespace Engine {
-    class Controller : public Utility::Singleton<Controller> {
-        friend class Utility::Singleton<Controller>;
+class Controller : public Utility::Singleton<Controller> {
+  friend class Utility::Singleton<Controller>;
 
-    
-        public:
+public:
+  void OnStart();
+  void OnUpdate();
+  void OnEnd();
 
-        void OnStart();
-        void OnUpdate();
-        void OnEnd();
+  void InvalidatePasses();
+  void HandleSceneChange();
 
-        void InvalidatePasses();
-        void HandleSceneChange();
-        
-        float GetDeltaTime();
+  float GetDeltaTime();
 
-        Device& GetDevice() const {
-            return *m_Device;
-        }
+  Device &GetDevice() const { return *m_Device; }
 
-        Window& GetWindow() const {
-            return *m_Window;
-        }
+  Window &GetWindow() const { return *m_Window; }
 
-        Renderer& GetRenderer() const {
-            return *m_Renderer;
-        }
+  Renderer &GetRenderer() const { return *m_Renderer; }
 
-        SceneManager& GetSceneManager() const {
-            return *m_SceneManager;
-        }
+  SceneManager &GetSceneManager() const { return *m_SceneManager; }
 
-        Timer::Stopwatch& GetStopwatch() {
-            return *m_Stopwatch;
-        }
+  Timer::Stopwatch &GetStopwatch() { return *m_Stopwatch; }
 
-        EditorCamera& GetCamera() {
-            return *m_EditorCamera;
-        }
+  EditorCamera &GetCamera() { return *m_EditorCamera; }
 
-    private:
-        Controller(); // defined in cpp
-        ~Controller(); // defined in cpp
+private:
+  Controller();  // defined in cpp
+  ~Controller(); // defined in cpp
 
-        AQUILA_NONMOVEABLE(Controller);
-        AQUILA_NONCOPYABLE(Controller);
+  AQUILA_NONMOVEABLE(Controller);
+  AQUILA_NONCOPYABLE(Controller);
 
-        // Timing
-        Unique<Timer::Stopwatch>            m_Stopwatch;
-        float                               m_DeltaTime = 0.0f;
+  // Timing
+  Unique<Timer::Stopwatch> m_Stopwatch;
+  float m_DeltaTime = 0.0f;
 
-        // Camera
-        Unique<EditorCamera>       m_EditorCamera;
+  // Camera
+  Unique<EditorCamera> m_EditorCamera;
 
-        // Systems
-        Unique<Window>             m_Window;
-        Unique<Device>             m_Device;
-        Unique<Renderer>           m_Renderer;
-        Unique<SceneManager>       m_SceneManager;
-        Unique<EventRegistry>      m_EventRegistry;
+  // Systems
+  Unique<Window> m_Window;
+  Unique<Device> m_Device;
+  Unique<Renderer> m_Renderer;
+  Unique<SceneManager> m_SceneManager;
+  Unique<EventRegistry> m_EventRegistry;
 
-        VFS::VirtualFileSystem* m_VFS;
-    };
+  VFS::VirtualFileSystem *m_VFS;
+};
 
 } // namespace Engine
 

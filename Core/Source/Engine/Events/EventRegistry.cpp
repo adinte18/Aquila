@@ -6,272 +6,303 @@
 
 #include "Platform/Filesystem/VirtualFileSystem.h"
 #include "Scene/Components/TransformComponent.h"
-#include "Scene/SceneManager.h"
-#include "Scene/SceneGraph.h"
-#include "Scene/Scene.h"
 #include "Scene/Entity.h"
 #include "Scene/EntityManager.h"
-
+#include "Scene/Scene.h"
+#include "Scene/SceneGraph.h"
+#include "Scene/SceneManager.h"
 
 namespace Engine {
-    void EventRegistry::RegisterHandlers(Device* device, SceneManager* sceneManager, Renderer* renderer){
-        Engine::EventBus::Get()->RegisterHandler<QueryEvent>([device, sceneManager](const QueryEvent& event){
-            auto scene = sceneManager->GetActiveScene();
-            if (!scene) return;
-            
-            switch(event.m_Command){
+void EventRegistry::RegisterHandlers(Device *device, SceneManager *sceneManager,
+                                     Renderer *renderer) {
+  Engine::EventBus::Get()->RegisterHandler<QueryEvent>(
+      [device, sceneManager](const QueryEvent &event) {
+        auto scene = sceneManager->GetActiveScene();
+        if (!scene)
+          return;
 
-                case QueryCommand::EntityHasParent: {
-                    auto& entityHandle = std::get<entt::entity>(event.m_Params.at("entity"));
-                    auto& node = scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
+        switch (event.m_Command) {
 
-                    if (node.Parent != entt::null){
-                        // has parent
-                        event.m_Callback(UIEventResult::Success, {});
-                    }
-                }
+        case QueryCommand::EntityHasParent: {
+          auto &entityHandle =
+              std::get<entt::entity>(event.m_Params.at("entity"));
+          auto &node =
+              scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
 
-                case QueryCommand::ExistingEntities:{
-                    std::vector<AqEntity> entities;
+          if (node.Parent != entt::null) {
+            // has parent
+            event.m_Callback(UIEventResult::Success, {});
+          }
+        }
 
-                    auto view = scene->GetRegistry().view<SceneNodeComponent>();
-                    for (auto entity : view) {
-                        entities.push_back(AqEntity{entity, scene});
-                    }
+        case QueryCommand::ExistingEntities: {
+          std::vector<AqEntity> entities;
 
-                    event.m_Callback(UIEventResult::Success, entities);
-                    break;
-                };
-                case QueryCommand::GetAttachableEntities: {
-                    auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
-                    std::vector<Engine::AqEntity> attachableEntities;
+          auto view = scene->GetRegistry().view<SceneNodeComponent>();
+          for (auto entity : view) {
+            entities.push_back(AqEntity{entity, scene});
+          }
 
-                    auto& registry = scene->GetRegistry();
-                    auto* sceneGraph = scene->GetSceneGraph();
+          event.m_Callback(UIEventResult::Success, entities);
+          break;
+        };
+        case QueryCommand::GetAttachableEntities: {
+          auto &entity = std::get<entt::entity>(event.m_Params.at("entity"));
+          std::vector<Engine::AqEntity> attachableEntities;
 
-                    auto isDescendant = [&](entt::entity ancestor, entt::entity descendant) -> bool {
-                        return sceneGraph->IsDescendant(registry,ancestor, descendant);
-                    };
+          auto &registry = scene->GetRegistry();
+          auto *sceneGraph = scene->GetSceneGraph();
 
-                    auto isAncestor = [&](entt::entity descendant, entt::entity ancestor) -> bool {
-                        return sceneGraph->IsDescendant(registry,ancestor, descendant);
-                    };
+          auto isDescendant = [&](entt::entity ancestor,
+                                  entt::entity descendant) -> bool {
+            return sceneGraph->IsDescendant(registry, ancestor, descendant);
+          };
 
-                    for (auto e : registry.view<SceneNodeComponent>()) {
-                        if (e == entity) continue;
-                        if (isDescendant(entity, e)) continue;  // exclude descendants
-                        if (isAncestor(entity, e)) continue;    // exclude ancestors
+          auto isAncestor = [&](entt::entity descendant,
+                                entt::entity ancestor) -> bool {
+            return sceneGraph->IsDescendant(registry, ancestor, descendant);
+          };
 
-                        attachableEntities.emplace_back(Engine::AqEntity{ e, scene });
-                    }
+          for (auto e : registry.view<SceneNodeComponent>()) {
+            if (e == entity)
+              continue;
+            if (isDescendant(entity, e))
+              continue; // exclude descendants
+            if (isAncestor(entity, e))
+              continue; // exclude ancestors
 
-                    if (event.m_Callback)
-                        event.m_Callback(UIEventResult::Success, attachableEntities);
+            attachableEntities.emplace_back(Engine::AqEntity{e, scene});
+          }
 
-                    break;
-                }
-                case QueryCommand::ContentBrowserAskTextures: {
-                    std::vector<Ref<Engine::Texture2D>> textures;
+          if (event.m_Callback)
+            event.m_Callback(UIEventResult::Success, attachableEntities);
 
-                    //! todo : i dont like this, works for now but hardcoded 
-                    std::vector<std::string> texturePaths = {
-                        TEXTURES_PATH"/folder.png",
-                        TEXTURES_PATH"/aquila-logo.png",
-                        TEXTURES_PATH"/file.png"
+          break;
+        }
+        case QueryCommand::ContentBrowserAskTextures: {
+          std::vector<Ref<Engine::Texture2D>> textures;
 
-                    };
+          //! todo : i dont like this, works for now but hardcoded
+          std::vector<std::string> texturePaths = {
+              TEXTURES_PATH "/folder.png", TEXTURES_PATH "/aquila-logo.png",
+              TEXTURES_PATH "/file.png"
 
-                    for (const auto& path : texturePaths) {
-                        Ref<Engine::Texture2D> texture = Engine::Texture2D::Builder(*device).setFilepath(path).build();
-                        textures.push_back(texture);
-                    }
+          };
 
-                    if (event.m_Callback) {
-                        event.m_Callback(UIEventResult::Success, textures);
-                    }
-                    
-                    break;
-                }
-                case QueryCommand::EntityIsDescendant:{
-                    auto& ancestor = std::get<entt::entity>(event.m_Params.at("ancestor"));
-                    auto& descendant = std::get<entt::entity>(event.m_Params.at("descendant"));
+          for (const auto &path : texturePaths) {
+            Ref<Engine::Texture2D> texture =
+                Engine::Texture2D::Builder(*device).setFilepath(path).build();
+            textures.push_back(texture);
+          }
 
-                    bool found = false;
+          if (event.m_Callback) {
+            event.m_Callback(UIEventResult::Success, textures);
+          }
 
-                    std::function<bool(entt::entity)> search = [&](entt::entity parent) -> bool {
-                        if (!scene->GetRegistry().valid(parent)) return false;
+          break;
+        }
+        case QueryCommand::EntityIsDescendant: {
+          auto &ancestor =
+              std::get<entt::entity>(event.m_Params.at("ancestor"));
+          auto &descendant =
+              std::get<entt::entity>(event.m_Params.at("descendant"));
 
-                        auto* node = scene->GetRegistry().try_get<SceneNodeComponent>(parent);
-                        if (!node) return false;
+          bool found = false;
 
-                        for (auto& child : node->Children) {
-                            if (child == descendant) return true;
-                            if (search(child)) return true;
-                        }
-                        return false;
-                    };
+          std::function<bool(entt::entity)> search =
+              [&](entt::entity parent) -> bool {
+            if (!scene->GetRegistry().valid(parent))
+              return false;
 
-                    found = search(ancestor);
+            auto *node =
+                scene->GetRegistry().try_get<SceneNodeComponent>(parent);
+            if (!node)
+              return false;
 
-                    if (event.m_Callback)
-                        event.m_Callback(UIEventResult::Success, found);
-
-                    break;
-                }
-                }
-        });
-
-
-
-        Engine::EventBus::Get()->RegisterHandler<UICommandEvent>([device, sceneManager, renderer](const UICommandEvent& event){
-            auto scene = sceneManager->GetActiveScene();
-            switch (event.m_Command) {
-                case UICommand::ViewportResized: {
-                    uint32 width = std::get<int>(event.m_Params.at("Width"));
-                    uint32 height = std::get<int>(event.m_Params.at("Height"));
-
-                    renderer->Resize({width, height});
-
-                    break;
-                }
-
-                case UICommand::NewScene : {
-                    sceneManager->EnqueueScene(CreateUnique<AquilaScene>("New Scene"));
-                    sceneManager->RequestSceneChange();
-                    break;
-                }
-
-                case UICommand::SaveScene: {
-
-                    // Note(A) : hardcoded - not cool
-                    // todo : redo this, or atleast do something that is consistent/modular and not hard coded 
-
-                    std::string baseName = scene->GetSceneName();
-                    std::string virtualPath = "/Assets/" + baseName + ".aqscene";
-                    scene->Serialize(virtualPath);
-                    break;
-                }
-
-                case UICommand::OpenScene: {
-                    auto& path = std::get<std::string>(event.m_Params.at("path"));
-                    if (path.empty()) break;
-
-                    std::cout << "Opening scene at : " << path << std::endl;
-
-                    sceneManager->EnqueueScene(CreateUnique<AquilaScene>(),
-                        [path](AquilaScene* scene) {
-                            scene->Deserialize(path); // when the scene is activated, deserialize it
-                        }
-                    );
-
-                    sceneManager->RequestSceneChange();
-                    break;
-                }
-
-                case UICommand::AttachToEntity:{
-                    auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
-                    auto& parent = std::get<entt::entity>(event.m_Params.at("parent"));
-                    
-                    scene->GetSceneGraph()->AttachTo(scene->GetRegistry(), parent, entity);
-
-                    break;
-                }
-
-                case UICommand::AddEntity: {
-                    scene->GetEntityManager()->AddEntity();
-                    break;
-                }
-
-                case UICommand::LoadMesh:{
-                    auto& path = std::get<std::string>(event.m_Params.at("path"));
-                    if (path.empty()) break;
-
-                    auto extractFilename = [](const std::string& fullPath) -> std::string {
-                        size_t lastSlash = fullPath.find_last_of("/\\");
-                        std::string filename = (lastSlash != std::string::npos) ? 
-                            fullPath.substr(lastSlash + 1) : fullPath;
-                        
-                        size_t lastDot = filename.find_last_of('.');
-                        if (lastDot != std::string::npos) {
-                            filename = filename.substr(0, lastDot);
-                        }
-                        
-                        return filename;
-                    };
-
-                    auto generateDebugName = [&extractFilename](const std::string& vfsPath, entt::entity entityHandle) -> std::string {
-                        std::string meshName = extractFilename(vfsPath);
-                        
-                        std::stringstream ss;
-                        ss << std::hex << static_cast<uint32>(entityHandle);
-                        
-                        return meshName + "_" + ss.str();
-                    };
-
-                    if (event.m_Params.find("entity") == event.m_Params.end()) {
-                        auto newEntity = scene->GetEntityManager()->AddEntity();
-                        scene->GetRegistry().emplace<TransformComponent>(newEntity.GetHandle());
-                        scene->GetRegistry().emplace<MeshComponent>(newEntity.GetHandle());
-
-                        std::string debugName = generateDebugName(path, newEntity.GetHandle());
-
-                        auto& meshData = scene->GetRegistry().get<MeshComponent>(newEntity.GetHandle());
-                        meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
-                        meshData.data->Load(path);
-                    }
-                    else {
-                        auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
-                        if (!scene->GetRegistry().valid(entity)) {
-                            Debug::LogError("Entity is not valid");
-                            return;
-                        }
-                        std::string debugName = generateDebugName(path, entity);
-
-                        auto& meshData = scene->GetRegistry().get<MeshComponent>(entity);
-                        meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
-                        meshData.data->Load(path);
-                    }
-
-                    break;
-                }
-                case UICommand::CreateChildEntity:{
-                    auto& entity = std::get<entt::entity>(event.m_Params.at("entity"));
-
-                    scene->GetSceneGraph()->AddChild(scene->GetRegistry(), entity, scene->GetEntityManager()->AddEntity().GetHandle());
-
-                    break;
-
-                }
-                case UICommand::DisownEntity:{
-                    auto& entityHandle = std::get<entt::entity>(event.m_Params.at("entity"));
-                    auto& node = scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
-
-                    if (node.Parent != entt::null){
-                        scene->GetSceneGraph()->RemoveChild(scene->GetRegistry(), node.Parent, node.Entity);                    
-                    }
-
-                    break;
-                }
-                
-                case UICommand::DeleteEntity:{
-                    auto& entityHandle = std::get<entt::entity>(event.m_Params.at("entity"));
-                    scene->GetEntityManager()->QueueForKill(entityHandle);
-                    break;
-                }
-                    
-                case UICommand::AddPrimitiveCube:{
-                    break;
-                }
-                case UICommand::AddPrimitiveSphere:{
-                    break;
-                }
-                case UICommand::AddPrimitiveCylinder:{
-                    break;
-                }
-                case UICommand::AddPrimitiveCapsule:{
-                    break;
-                }
+            for (auto &child : node->Children) {
+              if (child == descendant)
+                return true;
+              if (search(child))
+                return true;
             }
-        });
-    }
-};
+            return false;
+          };
+
+          found = search(ancestor);
+
+          if (event.m_Callback)
+            event.m_Callback(UIEventResult::Success, found);
+
+          break;
+        }
+        }
+      });
+
+  Engine::EventBus::Get()->RegisterHandler<UICommandEvent>(
+      [device, sceneManager, renderer](const UICommandEvent &event) {
+        auto scene = sceneManager->GetActiveScene();
+        switch (event.m_Command) {
+        case UICommand::ViewportResized: {
+          uint32 width = std::get<int>(event.m_Params.at("Width"));
+          uint32 height = std::get<int>(event.m_Params.at("Height"));
+
+          renderer->Resize({width, height});
+
+          break;
+        }
+
+        case UICommand::NewScene: {
+          sceneManager->EnqueueScene(CreateUnique<AquilaScene>("New Scene"));
+          sceneManager->RequestSceneChange();
+          break;
+        }
+
+        case UICommand::SaveScene: {
+
+          // Note(A) : hardcoded - not cool
+          // todo : redo this, or atleast do something that is
+          // consistent/modular and not hard coded
+
+          std::string baseName = scene->GetSceneName();
+          std::string virtualPath = "/Assets/" + baseName + ".aqscene";
+          scene->Serialize(virtualPath);
+          break;
+        }
+
+        case UICommand::OpenScene: {
+          auto &path = std::get<std::string>(event.m_Params.at("path"));
+          if (path.empty())
+            break;
+
+          std::cout << "Opening scene at : " << path << std::endl;
+
+          sceneManager->EnqueueScene(
+              CreateUnique<AquilaScene>(), [path](AquilaScene *scene) {
+                scene->Deserialize(
+                    path); // when the scene is activated, deserialize it
+              });
+
+          sceneManager->RequestSceneChange();
+          break;
+        }
+
+        case UICommand::AttachToEntity: {
+          auto &entity = std::get<entt::entity>(event.m_Params.at("entity"));
+          auto &parent = std::get<entt::entity>(event.m_Params.at("parent"));
+
+          scene->GetSceneGraph()->AttachTo(scene->GetRegistry(), parent,
+                                           entity);
+
+          break;
+        }
+
+        case UICommand::AddEntity: {
+          scene->GetEntityManager()->AddEntity();
+          break;
+        }
+
+        case UICommand::LoadMesh: {
+          auto &path = std::get<std::string>(event.m_Params.at("path"));
+          if (path.empty())
+            break;
+
+          auto extractFilename =
+              [](const std::string &fullPath) -> std::string {
+            size_t lastSlash = fullPath.find_last_of("/\\");
+            std::string filename = (lastSlash != std::string::npos)
+                                       ? fullPath.substr(lastSlash + 1)
+                                       : fullPath;
+
+            size_t lastDot = filename.find_last_of('.');
+            if (lastDot != std::string::npos) {
+              filename = filename.substr(0, lastDot);
+            }
+
+            return filename;
+          };
+
+          auto generateDebugName =
+              [&extractFilename](const std::string &vfsPath,
+                                 entt::entity entityHandle) -> std::string {
+            std::string meshName = extractFilename(vfsPath);
+
+            std::stringstream ss;
+            ss << std::hex << static_cast<uint32>(entityHandle);
+
+            return meshName + "_" + ss.str();
+          };
+
+          if (event.m_Params.find("entity") == event.m_Params.end()) {
+            auto newEntity = scene->GetEntityManager()->AddEntity();
+            scene->GetRegistry().emplace<TransformComponent>(
+                newEntity.GetHandle());
+            scene->GetRegistry().emplace<MeshComponent>(newEntity.GetHandle());
+
+            std::string debugName =
+                generateDebugName(path, newEntity.GetHandle());
+
+            auto &meshData =
+                scene->GetRegistry().get<MeshComponent>(newEntity.GetHandle());
+            meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
+            meshData.data->Load(path);
+          } else {
+            auto &entity = std::get<entt::entity>(event.m_Params.at("entity"));
+            if (!scene->GetRegistry().valid(entity)) {
+              Aquila::LogError("Entity is not valid");
+              return;
+            }
+            std::string debugName = generateDebugName(path, entity);
+
+            auto &meshData = scene->GetRegistry().get<MeshComponent>(entity);
+            meshData.data = CreateRef<Engine::Mesh>(*device, debugName);
+            meshData.data->Load(path);
+          }
+
+          break;
+        }
+        case UICommand::CreateChildEntity: {
+          auto &entity = std::get<entt::entity>(event.m_Params.at("entity"));
+
+          scene->GetSceneGraph()->AddChild(
+              scene->GetRegistry(), entity,
+              scene->GetEntityManager()->AddEntity().GetHandle());
+
+          break;
+        }
+        case UICommand::DisownEntity: {
+          auto &entityHandle =
+              std::get<entt::entity>(event.m_Params.at("entity"));
+          auto &node =
+              scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
+
+          if (node.Parent != entt::null) {
+            scene->GetSceneGraph()->RemoveChild(scene->GetRegistry(),
+                                                node.Parent, node.Entity);
+          }
+
+          break;
+        }
+
+        case UICommand::DeleteEntity: {
+          auto &entityHandle =
+              std::get<entt::entity>(event.m_Params.at("entity"));
+          scene->GetEntityManager()->QueueForKill(entityHandle);
+          break;
+        }
+
+        case UICommand::AddPrimitiveCube: {
+          break;
+        }
+        case UICommand::AddPrimitiveSphere: {
+          break;
+        }
+        case UICommand::AddPrimitiveCylinder: {
+          break;
+        }
+        case UICommand::AddPrimitiveCapsule: {
+          break;
+        }
+        }
+      });
+}
+}; // namespace Engine

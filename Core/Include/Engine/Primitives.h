@@ -5,28 +5,22 @@
 #ifndef PRIMITIVES_H
 #define PRIMITIVES_H
 
-#include <glm/glm.hpp>
-#include <vector>
 #include "AquilaCore.h"
 #include "Engine/Renderer/Vertex.h"
+#include <glm/glm.hpp>
+#include <vector>
+
 
 namespace Engine {
 
-    class Primitives {
-    public:
-        enum class PrimitiveType {
-            Cube,
-            Sphere,
-            Plane
-        };
+class Primitives {
+public:
+  enum class PrimitiveType { Cube, Sphere, Plane };
 
+  static std::vector<Vertex> CreateCube(float size);
+  static std::vector<Vertex> CreateSphere(float radius, int sectorCount,
+                                          int stackCount);
+};
+} // namespace Engine
 
-        static std::vector<Vertex> CreateCube(float size);
-        static std::vector<Vertex> CreateSphere(float radius, int sectorCount, int stackCount);
-    };
-}
-
-
-
-
-#endif //PRIMITIVES_H
+#endif // PRIMITIVES_H

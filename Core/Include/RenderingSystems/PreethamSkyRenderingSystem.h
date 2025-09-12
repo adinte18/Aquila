@@ -5,39 +5,37 @@
 #ifndef PREETHAMSKYRENDERINGSYSTEM_H
 #define PREETHAMSKYRENDERINGSYSTEM_H
 
-
 #include "Engine/Mesh.h"
 #include <Engine/Renderer/Device.h>
 #include <Engine/Renderer/Pipeline.h>
 
-
 namespace Engine {
-    class PreethamSkyRenderingSystem {
-    public:
-        PreethamSkyRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~PreethamSkyRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
+class PreethamSkyRenderingSystem {
+public:
+  PreethamSkyRenderingSystem(Device &device, VkRenderPass renderPass,
+                             VkDescriptorSetLayout layout);
+  ~PreethamSkyRenderingSystem() {
+    vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr);
+  };
 
-        PreethamSkyRenderingSystem(const PreethamSkyRenderingSystem&) = delete;
-        PreethamSkyRenderingSystem& operator=(const PreethamSkyRenderingSystem&) = delete;
+  PreethamSkyRenderingSystem(const PreethamSkyRenderingSystem &) = delete;
+  PreethamSkyRenderingSystem &
+  operator=(const PreethamSkyRenderingSystem &) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, glm::mat4& viewMatrix);
-        void RecreatePipeline(VkRenderPass renderPass);
+  void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
+              glm::mat4 &viewMatrix);
+  void RecreatePipeline(VkRenderPass renderPass);
 
+private:
+  Device &device;
 
-    private:
-        Device& device;
+  Unique<Pipeline> pipeline;
+  VkPipelineLayout pipelineLayout;
+  Ref<Mesh> model;
 
-        Unique<Pipeline> pipeline;
-        VkPipelineLayout pipelineLayout;
-        Ref<Mesh> model;
+  void CreatePipeline(VkRenderPass renderPass);
+  void CreatePipelineLayout(VkDescriptorSetLayout layout);
+};
+} // namespace Engine
 
-
-        void CreatePipeline(VkRenderPass renderPass);
-        void CreatePipelineLayout(VkDescriptorSetLayout layout);
-
-    };
-}
-
-
-
-#endif //PREETHAMSKYRENDERINGSYSTEM_H
+#endif // PREETHAMSKYRENDERINGSYSTEM_H

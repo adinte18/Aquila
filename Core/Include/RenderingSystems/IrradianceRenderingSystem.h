@@ -5,40 +5,37 @@
 #ifndef IRRADIANCERENDERINGSYSTEM_H
 #define IRRADIANCERENDERINGSYSTEM_H
 
-
-
+#include <Engine/Mesh.h>
 #include <Engine/Renderer/Device.h>
 #include <Engine/Renderer/Pipeline.h>
-#include <Engine/Mesh.h>
-
 
 namespace Engine {
-    class IrradianceRenderingSystem {
-    public:
-        IrradianceRenderingSystem(Device &device, VkRenderPass renderPass, VkDescriptorSetLayout layout);
-        ~IrradianceRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
+class IrradianceRenderingSystem {
+public:
+  IrradianceRenderingSystem(Device &device, VkRenderPass renderPass,
+                            VkDescriptorSetLayout layout);
+  ~IrradianceRenderingSystem() {
+    vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr);
+  };
 
-        IrradianceRenderingSystem(const IrradianceRenderingSystem&) = delete;
-        IrradianceRenderingSystem& operator=(const IrradianceRenderingSystem&) = delete;
+  IrradianceRenderingSystem(const IrradianceRenderingSystem &) = delete;
+  IrradianceRenderingSystem &
+  operator=(const IrradianceRenderingSystem &) = delete;
 
-        void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet, glm::mat4& viewMatrix);
-        void RecreatePipeline(VkRenderPass renderPass);
+  void Render(VkCommandBuffer commandBuffer, VkDescriptorSet descriptorSet,
+              glm::mat4 &viewMatrix);
+  void RecreatePipeline(VkRenderPass renderPass);
 
+private:
+  Device &device;
 
-    private:
-        Device& device;
+  Unique<Pipeline> pipeline;
+  VkPipelineLayout pipelineLayout;
+  Ref<Mesh> model;
 
-        Unique<Pipeline> pipeline;
-        VkPipelineLayout pipelineLayout;
-        Ref<Mesh> model;
+  void CreatePipeline(VkRenderPass renderPass);
+  void CreatePipelineLayout(VkDescriptorSetLayout layout);
+};
+} // namespace Engine
 
-
-        void CreatePipeline(VkRenderPass renderPass);
-        void CreatePipelineLayout(VkDescriptorSetLayout layout);
-
-    };
-}
-
-
-
-#endif //IRRADIANCERENDERINGSYSTEM_H
+#endif // IRRADIANCERENDERINGSYSTEM_H

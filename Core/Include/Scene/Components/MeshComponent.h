@@ -4,7 +4,7 @@
 #include "Engine/Mesh.h"
 
 struct MeshComponent {
-    Ref<Engine::Mesh> data{};
+  Ref<Engine::Mesh> data{};
 };
 
 #endif

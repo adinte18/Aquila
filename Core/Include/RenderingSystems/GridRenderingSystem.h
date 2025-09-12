@@ -11,31 +11,30 @@
 #include "Engine/Renderer/Pipeline.h"
 
 namespace Engine {
-    class GridRenderingSystem {
-    public:
-        GridRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
-        ~GridRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
+class GridRenderingSystem {
+public:
+  GridRenderingSystem(Device &device, VkRenderPass renderPass,
+                      std::array<VkDescriptorSetLayout, 2> setLayouts);
+  ~GridRenderingSystem() {
+    vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr);
+  };
 
-        GridRenderingSystem(const GridRenderingSystem&) = delete;
-        GridRenderingSystem& operator=(const GridRenderingSystem&) = delete;
+  GridRenderingSystem(const GridRenderingSystem &) = delete;
+  GridRenderingSystem &operator=(const GridRenderingSystem &) = delete;
 
-        void Render(VkCommandBuffer commandBuffer) const;
-        void RecreatePipeline(VkRenderPass renderPass);
+  void Render(VkCommandBuffer commandBuffer) const;
+  void RecreatePipeline(VkRenderPass renderPass);
 
-    private:
-        Device& device;
-        // Ref<Mesh> model = Mesh::create(device);
+private:
+  Device &device;
+  // Ref<Mesh> model = Mesh::create(device);
 
-        Unique<Pipeline> pipeline;
-        VkPipelineLayout pipelineLayout;
+  Unique<Pipeline> pipeline;
+  VkPipelineLayout pipelineLayout;
 
+  void CreatePipeline(VkRenderPass renderPass);
+  void CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts);
+};
+} // namespace Engine
 
-        void CreatePipeline(VkRenderPass renderPass);
-        void CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts);
-
-    };
-}
-
-
-
-#endif //GRIDRENDERINGSYSTEM_H
+#endif // GRIDRENDERINGSYSTEM_H

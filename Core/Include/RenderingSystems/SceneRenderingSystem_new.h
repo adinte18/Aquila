@@ -1,47 +1,48 @@
 #ifndef SCENE_RENDER_SYSTEM_H
 #define SCENE_RENDER_SYSTEM_H
 
-#include "RenderingSystems/RenderingSystemBase.h"
-#include "Engine/Renderer/Buffer.h"
 #include "Engine/EditorCamera.h"
-namespace Engine{
-    class SceneRenderSystem : public RenderingSystemBase {
-        public:
-            struct alignas(16) LightData {
-                glm::vec3 color;
-                float intensity;
-                glm::vec3 direction;
-                float range;
-                glm::vec3 position;
-                int type;
-                float innerCone;
-                float outerCone;
-                int isActive;
-            };
-            
-            struct SceneUniformData{
-                alignas(16) glm::mat4 projection{1.f};
-                alignas(16) glm::mat4 view{1.f};
-                alignas(16) glm::mat4 inverseView{1.f};
-            };
+#include "Engine/Renderer/Buffer.h"
+#include "RenderingSystems/RenderingSystemBase.h"
 
-            SceneRenderSystem(Device& device, VkRenderPass renderPass);
-            ~SceneRenderSystem() override = default;
+namespace Engine {
+class SceneRenderSystem : public RenderingSystemBase {
+public:
+  struct alignas(16) LightData {
+    glm::vec3 color;
+    float intensity;
+    glm::vec3 direction;
+    float range;
+    glm::vec3 position;
+    int type;
+    float innerCone;
+    float outerCone;
+    int isActive;
+  };
 
-            SceneRenderSystem(const SceneRenderSystem&) = delete;
-            SceneRenderSystem& operator=(const SceneRenderSystem&) = delete;
+  struct SceneUniformData {
+    alignas(16) glm::mat4 projection{1.f};
+    alignas(16) glm::mat4 view{1.f};
+    alignas(16) glm::mat4 inverseView{1.f};
+  };
 
-            void Render(const FrameSpec& context) override;
-            void Update(EditorCamera& camera);
+  SceneRenderSystem(Device &device, VkRenderPass renderPass);
+  ~SceneRenderSystem() override = default;
 
-        private:
-            void CreateDescriptorSetLayout() override;
-            void CreatePipeline(VkRenderPass renderPass) override;
-            void CreatePipelineLayout() override;
-            
-            Unique<Buffer> m_Buffer;
-            Unique<Buffer> m_LightBuffer;
-    };
+  SceneRenderSystem(const SceneRenderSystem &) = delete;
+  SceneRenderSystem &operator=(const SceneRenderSystem &) = delete;
+
+  void Render(const FrameSpec &context) override;
+  void Update(EditorCamera &camera);
+
+private:
+  void CreateDescriptorSetLayout() override;
+  void CreatePipeline(VkRenderPass renderPass) override;
+  void CreatePipelineLayout() override;
+
+  Unique<Buffer> m_Buffer;
+  Unique<Buffer> m_LightBuffer;
 };
+}; // namespace Engine
 
 #endif

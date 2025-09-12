@@ -10,46 +10,48 @@
 
 namespace Engine {
 
-    class EventBus : public Utility::Singleton<EventBus> {
-        friend class Utility::Singleton<EventBus>;
-    
-        public:
-        template<typename EventType>
-        using Handler = Delegate<void(const EventType&)>;
+class EventBus : public Utility::Singleton<EventBus> {
+  friend class Utility::Singleton<EventBus>;
 
-        template<typename EventType>
-        void RegisterHandler(Handler<EventType> handler) {
-            std::lock_guard<std::mutex> lock(mutex);
-            auto type = std::type_index(typeid(EventType));
+public:
+  template <typename EventType>
+  using Handler = Delegate<void(const EventType &)>;
 
-            auto wrapper = [handler](const Event& event) {
-                handler(static_cast<const EventType&>(event));
-            };
+  template <typename EventType>
+  void RegisterHandler(Handler<EventType> handler) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto type = std::type_index(typeid(EventType));
 
-            handlers[type].push_back(wrapper);
-        }
-
-        void Dispatch(const Event& event) {
-            std::lock_guard<std::mutex> lock(mutex);
-            auto type = std::type_index(typeid(event));
-            auto it = handlers.find(type);
-            if (it != handlers.end()) {
-                for (auto& fn : it->second) {
-                    fn(event);
-                }
-            }
-        }
-
-        void Clear() {
-            std::lock_guard<std::mutex> lock(mutex);
-            handlers.clear();
-        }
-
-    private:
-        std::unordered_map<std::type_index, std::vector<Delegate<void(const Event&)>>> handlers;
-        std::mutex mutex;
+    auto wrapper = [handler](const Event &event) {
+      handler(static_cast<const EventType &>(event));
     };
 
-}
+    handlers[type].push_back(wrapper);
+  }
 
-#endif //EVENTSYSTEM_H
+  void Dispatch(const Event &event) {
+    std::lock_guard<std::mutex> lock(mutex);
+    auto type = std::type_index(typeid(event));
+    auto it = handlers.find(type);
+    if (it != handlers.end()) {
+      for (auto &fn : it->second) {
+        fn(event);
+      }
+    }
+  }
+
+  void Clear() {
+    std::lock_guard<std::mutex> lock(mutex);
+    handlers.clear();
+  }
+
+private:
+  std::unordered_map<std::type_index,
+                     std::vector<Delegate<void(const Event &)>>>
+      handlers;
+  std::mutex mutex;
+};
+
+} // namespace Engine
+
+#endif // EVENTSYSTEM_H

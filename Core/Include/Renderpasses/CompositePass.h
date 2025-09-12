@@ -4,53 +4,63 @@
 #include "Engine/Renderer/Renderpass.h"
 
 namespace Engine {
-    class CompositePass : public Renderpass {
-    public:
-        CompositePass(Device& device, const VkExtent2D& extent,  Ref<DescriptorSetLayout>& descriptorSetLayout)
-            : Renderpass(device, extent, descriptorSetLayout){}
+class CompositePass : public Renderpass {
+public:
+  CompositePass(Device &device, const VkExtent2D &extent,
+                Ref<DescriptorSetLayout> &descriptorSetLayout)
+      : Renderpass(device, extent, descriptorSetLayout) {}
 
-        ~CompositePass() override {
-            if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);
+  ~CompositePass() override {
+    if (m_Framebuffer != VK_NULL_HANDLE)
+      vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);
 
-            if (colorAttachment) colorAttachment->Destroy();
-            if (depthAttachment) depthAttachment->Destroy();
+    if (colorAttachment)
+      colorAttachment->Destroy();
+    if (depthAttachment)
+      depthAttachment->Destroy();
 
-            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
-        }
+    if (m_RenderPass != VK_NULL_HANDLE)
+      vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
+  }
 
-        static Ref<CompositePass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = CreateRef<CompositePass>(device, extent, descriptorSetLayout);
-            pass->CreateClearValues();
-            if (!pass->CreateRenderTarget()) return nullptr;
-            if (!pass->CreateRenderPass()) return nullptr;
-            if (!pass->CreateFramebuffer()) return nullptr;
-            return pass;
-        }
+  static Ref<CompositePass>
+  Initialize(Device &device, VkExtent2D extent,
+             Ref<DescriptorSetLayout> &descriptorSetLayout) {
+    auto pass = CreateRef<CompositePass>(device, extent, descriptorSetLayout);
+    pass->CreateClearValues();
+    if (!pass->CreateRenderTarget())
+      return nullptr;
+    if (!pass->CreateRenderPass())
+      return nullptr;
+    if (!pass->CreateFramebuffer())
+      return nullptr;
+    return pass;
+  }
 
-        void Invalidate(const VkExtent2D& extent) {
-            m_Extent = extent;
-            if (colorAttachment) colorAttachment->Destroy();
-            if (depthAttachment) depthAttachment->Destroy();
+  void Invalidate(const VkExtent2D &extent) {
+    m_Extent = extent;
+    if (colorAttachment)
+      colorAttachment->Destroy();
+    if (depthAttachment)
+      depthAttachment->Destroy();
 
-            if (m_Framebuffer != VK_NULL_HANDLE) vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);
+    if (m_Framebuffer != VK_NULL_HANDLE)
+      vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);
 
-            CreateRenderTarget();
-            CreateFramebuffer();
-        }
+    CreateRenderTarget();
+    CreateFramebuffer();
+  }
 
-        [[nodiscard]] VkFramebuffer GetFramebuffer() const { return m_Framebuffer; }
+  [[nodiscard]] VkFramebuffer GetFramebuffer() const { return m_Framebuffer; }
 
-    private:
-        bool CreateRenderTarget() override;
-        bool CreateRenderPass() override;
-        bool CreateFramebuffer() override;
-        void CreateClearValues() override;
+private:
+  bool CreateRenderTarget() override;
+  bool CreateRenderPass() override;
+  bool CreateFramebuffer() override;
+  void CreateClearValues() override;
 
-        VkFramebuffer m_Framebuffer{};
-    };
-}
+  VkFramebuffer m_Framebuffer{};
+};
+} // namespace Engine
 
-
-
-
-#endif //COMPOSITEPASS_H
+#endif // COMPOSITEPASS_H

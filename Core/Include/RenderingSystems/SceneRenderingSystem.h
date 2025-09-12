@@ -7,34 +7,30 @@
 #include <Engine/Renderer/Device.h>
 #include <Engine/Renderer/Pipeline.h>
 
-
-
 namespace Engine {
-    class SceneRenderingSystem {
-    public:
-        SceneRenderingSystem(Device &device, VkRenderPass renderPass, std::array<VkDescriptorSetLayout, 2> setLayouts);
-        ~SceneRenderingSystem() { vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr); };
+class SceneRenderingSystem {
+public:
+  SceneRenderingSystem(Device &device, VkRenderPass renderPass,
+                       std::array<VkDescriptorSetLayout, 2> setLayouts);
+  ~SceneRenderingSystem() {
+    vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr);
+  };
 
-        SceneRenderingSystem(const SceneRenderingSystem&) = delete;
-        SceneRenderingSystem& operator=(const SceneRenderingSystem&) = delete;
+  SceneRenderingSystem(const SceneRenderingSystem &) = delete;
+  SceneRenderingSystem &operator=(const SceneRenderingSystem &) = delete;
 
-        void Render(VkCommandBuffer commandBuffer);
-        void RecreatePipeline(VkRenderPass renderPass);
+  void Render(VkCommandBuffer commandBuffer);
+  void RecreatePipeline(VkRenderPass renderPass);
 
+private:
+  Device &device;
 
-    private:
-        Device& device;
+  Unique<Pipeline> pipeline;
+  VkPipelineLayout pipelineLayout;
 
-        Unique<Pipeline> pipeline;
-        VkPipelineLayout pipelineLayout;
+  void CreatePipeline(VkRenderPass renderPass);
+  void CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts);
+};
+} // namespace Engine
 
-
-        void CreatePipeline(VkRenderPass renderPass);
-        void CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts);
-
-    };
-}
-
-
-
-#endif //SCENERENDERINGSYSTEM_H
+#endif // SCENERENDERINGSYSTEM_H

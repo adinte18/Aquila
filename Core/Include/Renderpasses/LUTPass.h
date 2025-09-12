@@ -5,55 +5,66 @@
 
 namespace Engine {
 
-    class LUTPass : public Renderpass {
-    public:
-        LUTPass(Device& device, const VkExtent2D& extent, const Ref<DescriptorSetLayout>& descriptorSetLayout)
-            : Renderpass(device, extent, descriptorSetLayout){}
+class LUTPass : public Renderpass {
+public:
+  LUTPass(Device &device, const VkExtent2D &extent,
+          const Ref<DescriptorSetLayout> &descriptorSetLayout)
+      : Renderpass(device, extent, descriptorSetLayout) {}
 
-        ~LUTPass() override {
-            for (const auto& framebuffer : m_Framebuffers) {
-                framebuffer->Destroy();
-            }
+  ~LUTPass() override {
+    for (const auto &framebuffer : m_Framebuffers) {
+      framebuffer->Destroy();
+    }
 
-            if (colorAttachment) colorAttachment->Destroy();
-            if (depthAttachment) depthAttachment->Destroy();
+    if (colorAttachment)
+      colorAttachment->Destroy();
+    if (depthAttachment)
+      depthAttachment->Destroy();
 
-            if (m_RenderPass != VK_NULL_HANDLE) vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
-        }
+    if (m_RenderPass != VK_NULL_HANDLE)
+      vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
+  }
 
-        static Ref<LUTPass> Initialize(Device& device, VkExtent2D extent,  Ref<DescriptorSetLayout>& descriptorSetLayout) {
-            auto pass = CreateRef<LUTPass>(device, extent, descriptorSetLayout);
-            pass->CreateClearValues();
-            if (!pass->CreateRenderTarget()) return nullptr;
-            if (!pass->CreateRenderPass()) return nullptr;
-            if (!pass->CreateFramebuffer()) return nullptr;
-            return pass;
-        }
+  static Ref<LUTPass>
+  Initialize(Device &device, VkExtent2D extent,
+             Ref<DescriptorSetLayout> &descriptorSetLayout) {
+    auto pass = CreateRef<LUTPass>(device, extent, descriptorSetLayout);
+    pass->CreateClearValues();
+    if (!pass->CreateRenderTarget())
+      return nullptr;
+    if (!pass->CreateRenderPass())
+      return nullptr;
+    if (!pass->CreateFramebuffer())
+      return nullptr;
+    return pass;
+  }
 
-        void Invalidate(const VkExtent2D& extent) {
-            m_Extent = extent;
-            if (colorAttachment) colorAttachment->Destroy();
-            if (depthAttachment) depthAttachment->Destroy();
+  void Invalidate(const VkExtent2D &extent) {
+    m_Extent = extent;
+    if (colorAttachment)
+      colorAttachment->Destroy();
+    if (depthAttachment)
+      depthAttachment->Destroy();
 
-            for (const auto& framebuffer : m_Framebuffers) {
-                framebuffer->Destroy();
-            }
+    for (const auto &framebuffer : m_Framebuffers) {
+      framebuffer->Destroy();
+    }
 
-            CreateRenderTarget();
-            CreateFramebuffer();
-        }
+    CreateRenderTarget();
+    CreateFramebuffer();
+  }
 
-        [[nodiscard]] Ref<Framebuffer> GetFramebuffer() const { return m_Framebuffers[0]; }
+  [[nodiscard]] Ref<Framebuffer> GetFramebuffer() const {
+    return m_Framebuffers[0];
+  }
 
-    private:
-        bool CreateRenderTarget() override;
-        bool CreateRenderPass() override;
-        bool CreateFramebuffer() override;
-        void CreateClearValues() override;
-    };
+private:
+  bool CreateRenderTarget() override;
+  bool CreateRenderPass() override;
+  bool CreateFramebuffer() override;
+  void CreateClearValues() override;
+};
 
-}
+} // namespace Engine
 
-
-
-#endif //LUTPASS_H
+#endif // LUTPASS_H

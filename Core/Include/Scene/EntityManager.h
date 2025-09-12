@@ -5,62 +5,58 @@
 #include "Scene.h"
 
 namespace Engine {
-    class EntityManager{
-        public :
+class EntityManager {
+public:
+  EntityManager(AquilaScene *scene) : m_Scene(scene) { m_Registry = {}; }
+  ~EntityManager();
 
-        EntityManager(AquilaScene* scene) : m_Scene(scene) { m_Registry = {}; }
-        ~EntityManager();
+  entt::registry &GetRegistry();
 
-        entt::registry& GetRegistry();
+  template <typename... Components> AqEntity GetFirstEntityWith() {
+    AQUILA_CORE_ASSERT(m_Scene);
+    auto view = m_Registry.view<Components...>();
 
-        template<typename...Components>
-        AqEntity GetFirstEntityWith(){
-            AQUILA_CORE_ASSERT(m_Scene);
-            auto view = m_Registry.view<Components...>();
+    if (view.begin() == view.end()) {
+      return AqEntity{};
+    }
 
-            if (view.begin() == view.end()) {
-                return AqEntity{};
-            }
+    entt::entity firstEntity = *view.begin();
+    return AqEntity{firstEntity, m_Scene};
+  }
 
-            entt::entity firstEntity = *view.begin();
-            return AqEntity{firstEntity, m_Scene};
-        }
+  template <typename... Components> std::vector<AqEntity> GetAllWith() {
+    AQUILA_CORE_ASSERT(m_Scene);
+    auto view = m_Registry.view<Components...>();
 
-        template<typename...Components>
-        std::vector<AqEntity> GetAllWith(){
-            AQUILA_CORE_ASSERT(m_Scene);
-            auto view = m_Registry.view<Components...>();
+    std::vector<AqEntity> result{};
+    result.reserve(std::distance(view.begin(), view.end()));
 
-            std::vector<AqEntity> result{};
-            result.reserve(std::distance(view.begin(), view.end()));
+    for (auto entity : view) {
+      result.emplace(result.begin(), AqEntity{entity, m_Scene});
+    }
 
-            for (auto entity : view){
-                result.emplace(result.begin(),AqEntity{entity, m_Scene});
-            }
+    return result;
+  }
 
-            return result;
-        }
+  AqEntity AddEntity();
+  AqEntity AddEntity(const std::string &name);
+  AqEntity GetEntityByUUID(UUID id);
 
+  void DeleteEntity();
+  void Clear();
 
-        AqEntity AddEntity();
-        AqEntity AddEntity(const std::string& name);
-        AqEntity GetEntityByUUID(UUID id);
-        
-        void DeleteEntity();
-        void Clear();
+  bool EntityExists(UUID id);
+  void KillEntity(AqEntity entity);
+  bool IsEntityValid(AqEntity entity) const;
 
-        bool EntityExists(UUID id);
-        void KillEntity(AqEntity entity);
-        bool IsEntityValid(AqEntity entity) const;
+  void QueueForKill(entt::entity entity);
+  void FlushScene();
 
-        void QueueForKill(entt::entity entity);
-        void FlushScene();
-
-        private:
-            AquilaScene* m_Scene;
-            entt::registry m_Registry;
-            std::vector<entt::entity> m_DeletionQueue;
-    };
-}
+private:
+  AquilaScene *m_Scene;
+  entt::registry m_Registry;
+  std::vector<entt::entity> m_DeletionQueue;
+};
+} // namespace Engine
 
 #endif

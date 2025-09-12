@@ -3,140 +3,142 @@
 #include "Scene/SceneGraph.h"
 
 namespace Engine {
-    EntityManager::~EntityManager() = default;
+EntityManager::~EntityManager() = default;
 
+/**
+ * @brief Initializes the EntityManager with a given scene.
+ *
+ * @param scene The scene to be managed by this EntityManager.
+ */
+entt::registry &EntityManager::GetRegistry() {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
 
-    /**
-     * @brief Initializes the EntityManager with a given scene.
-     * 
-     * @param scene The scene to be managed by this EntityManager.
-     */
-    entt::registry& EntityManager::GetRegistry(){
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-        return m_Registry;
-    }
-
-    void EntityManager::QueueForKill(entt::entity handle) {
-        m_DeletionQueue.emplace_back(handle);
-    }
-
-    void EntityManager::FlushScene(){
-        for (auto& entityHandle : m_DeletionQueue){
-            auto& node = m_Scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
-
-            if (!node.Children.empty()) 
-                m_Scene->GetSceneGraph()->RemoveAllChildren(m_Scene->GetRegistry(), node.Entity);
-
-            AqEntity{entityHandle, m_Scene}.Kill();
-        }
-
-        m_DeletionQueue.clear();
-    }
-
-    /**
-     * @brief Adds a new entity to the scene with a default name.
-     * 
-     * @return AqEntity The newly created entity wrapped in AqEntity.
-     */
-    AqEntity EntityManager::AddEntity(){
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-        auto entity = m_Registry.create();
-
-        m_Registry.emplace<MetadataComponent>(entity, MetadataComponent {UUID::Generate(), "Unnamed entity", true});
-        m_Registry.emplace<SceneNodeComponent>(entity);
-        return AqEntity(entity, m_Scene);
-    }
-
-    AqEntity EntityManager::AddEntity(const std::string& name) {
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-        auto entity = m_Registry.create();
-
-        m_Registry.emplace<MetadataComponent>(entity, MetadataComponent {UUID::Generate(), name, true});
-        m_Registry.emplace<SceneNodeComponent>(entity);
-        return AqEntity(entity, m_Scene);
-    }
-
-    /**
-     * @brief Clears all entities from the scene.
-     * 
-     * This function destroys all entities in the registry and clears the registry.
-     */
-    void EntityManager::Clear()
-    {
-        for(auto [entity] : m_Registry.storage<entt::entity>().each())
-        {
-            m_Registry.destroy(entity);
-        }
-
-        m_Registry.clear();
-    }
-
-    /**
-     * @brief Get entity by his UUID
-     * 
-     * @param uuid UUID of the entity to find
-     * @return AqEntity Entity with the given UUID 
-     */
-    AqEntity EntityManager::GetEntityByUUID(UUID uuid){
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-        auto view = m_Registry.view<MetadataComponent>(); // get all entities with metadata component
-
-        for (auto& entity : view){
-            auto idComponent = m_Registry.get<MetadataComponent>(entity);
-            if (idComponent.ID == uuid){
-                AQUILA_CORE_ASSERT(m_Scene);
-                return AqEntity(entity, m_Scene);
-            }  
-        }
-
-        return AqEntity();
-    }
-
-    /**
-     * @brief Verify if entity exists in the scene
-     * 
-     * @param uuid 
-     * @return true if exsists
-     * @return false if not
-     */
-    bool EntityManager::EntityExists(UUID uuid){
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-        auto view = m_Registry.view<MetadataComponent>(); // get all entities with metadata component
-
-        for (auto& entity : view){
-            auto idComponent = m_Registry.get<MetadataComponent>(entity);
-            if (idComponent.ID == uuid){
-                return true;
-            }  
-        }
-
-        return false;
-    }
-
-    /**
-     * @brief Kill a given entity
-     * 
-     * @param entity 
-     */
-    void EntityManager::KillEntity(AqEntity entity) {
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-        m_Registry.destroy(entity.GetHandle());
-    }
-
-    /**
-     * @brief Verify if the entity is valid
-     * 
-     * @param entity 
-     * @return true if valid
-     * @return false if not
-     */
-    bool EntityManager::IsEntityValid(AqEntity entity) const {
-        AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-        return m_Registry.valid(entity.GetHandle());
-    }
+  return m_Registry;
 }
+
+void EntityManager::QueueForKill(entt::entity handle) {
+  m_DeletionQueue.emplace_back(handle);
+}
+
+void EntityManager::FlushScene() {
+  for (auto &entityHandle : m_DeletionQueue) {
+    auto &node = m_Scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
+
+    if (!node.Children.empty())
+      m_Scene->GetSceneGraph()->RemoveAllChildren(m_Scene->GetRegistry(),
+                                                  node.Entity);
+
+    AqEntity{entityHandle, m_Scene}.Kill();
+  }
+
+  m_DeletionQueue.clear();
+}
+
+/**
+ * @brief Adds a new entity to the scene with a default name.
+ *
+ * @return AqEntity The newly created entity wrapped in AqEntity.
+ */
+AqEntity EntityManager::AddEntity() {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+
+  auto entity = m_Registry.create();
+
+  m_Registry.emplace<MetadataComponent>(
+      entity, MetadataComponent{UUID::Generate(), "Unnamed entity", true});
+  m_Registry.emplace<SceneNodeComponent>(entity);
+  return AqEntity(entity, m_Scene);
+}
+
+AqEntity EntityManager::AddEntity(const std::string &name) {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+
+  auto entity = m_Registry.create();
+
+  m_Registry.emplace<MetadataComponent>(
+      entity, MetadataComponent{UUID::Generate(), name, true});
+  m_Registry.emplace<SceneNodeComponent>(entity);
+  return AqEntity(entity, m_Scene);
+}
+
+/**
+ * @brief Clears all entities from the scene.
+ *
+ * This function destroys all entities in the registry and clears the registry.
+ */
+void EntityManager::Clear() {
+  for (auto [entity] : m_Registry.storage<entt::entity>().each()) {
+    m_Registry.destroy(entity);
+  }
+
+  m_Registry.clear();
+}
+
+/**
+ * @brief Get entity by his UUID
+ *
+ * @param uuid UUID of the entity to find
+ * @return AqEntity Entity with the given UUID
+ */
+AqEntity EntityManager::GetEntityByUUID(UUID uuid) {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+
+  auto view = m_Registry.view<MetadataComponent>(); // get all entities with
+                                                    // metadata component
+
+  for (auto &entity : view) {
+    auto idComponent = m_Registry.get<MetadataComponent>(entity);
+    if (idComponent.ID == uuid) {
+      AQUILA_CORE_ASSERT(m_Scene);
+      return AqEntity(entity, m_Scene);
+    }
+  }
+
+  return AqEntity();
+}
+
+/**
+ * @brief Verify if entity exists in the scene
+ *
+ * @param uuid
+ * @return true if exsists
+ * @return false if not
+ */
+bool EntityManager::EntityExists(UUID uuid) {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+
+  auto view = m_Registry.view<MetadataComponent>(); // get all entities with
+                                                    // metadata component
+
+  for (auto &entity : view) {
+    auto idComponent = m_Registry.get<MetadataComponent>(entity);
+    if (idComponent.ID == uuid) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
+ * @brief Kill a given entity
+ *
+ * @param entity
+ */
+void EntityManager::KillEntity(AqEntity entity) {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+  m_Registry.destroy(entity.GetHandle());
+}
+
+/**
+ * @brief Verify if the entity is valid
+ *
+ * @param entity
+ * @return true if valid
+ * @return false if not
+ */
+bool EntityManager::IsEntityValid(AqEntity entity) const {
+  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+  return m_Registry.valid(entity.GetHandle());
+}
+} // namespace Engine

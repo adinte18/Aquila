@@ -1,24 +1,24 @@
 #ifndef EVENTREGISTRY_H
 #define EVENTREGISTRY_H
 
-namespace Engine{
-    class Device;
-    class Renderer;
-    class EventBus;
-    class AquilaScene;
-    class EntityManager;
-    class SceneManager;
+namespace Engine {
+class Device;
+class Renderer;
+class EventBus;
+class AquilaScene;
+class EntityManager;
+class SceneManager;
 
-    class EventRegistry {
-    friend class Event;
+class EventRegistry {
+  friend class Event;
 
-    public:
-        EventRegistry() = delete;
+public:
+  EventRegistry() = delete;
 
-        void RegisterHandlers(Device* device, SceneManager* sceneManager, Renderer* renderer);
-    };
+  void RegisterHandlers(Device *device, SceneManager *sceneManager,
+                        Renderer *renderer);
+};
 
+} // namespace Engine
 
-}
-
-#endif //EVENTREGISTRY_H
+#endif // EVENTREGISTRY_H

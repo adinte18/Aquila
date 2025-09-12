@@ -4,10 +4,9 @@
 #include "entt.h"
 
 struct SceneNodeComponent {
-    entt::entity Entity = entt::null;
-    entt::entity Parent = entt::null;
-    std::vector<entt::entity> Children;
+  entt::entity Entity = entt::null;
+  entt::entity Parent = entt::null;
+  std::vector<entt::entity> Children;
 };
-
 
 #endif
