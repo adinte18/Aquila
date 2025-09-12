@@ -1,7 +1,3 @@
-//
-// Created by alexa on 10/04/2025.
-//
-
 #include "RenderingSystems/PrefilterRenderingSystem.h"
 
 namespace Engine {
@@ -77,9 +73,7 @@ void PrefilterRenderingSystem::CreatePipelineLayout(
   pipelineLayoutInfo.pSetLayouts = &layout;
   pipelineLayoutInfo.pushConstantRangeCount = 1;
   pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-  if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr,
-                             &pipelineLayout) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create pipeline layout!");
-  }
+  AQUILA_VULKAN_CHECK(vkCreatePipelineLayout(
+      device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
 }
 } // namespace Engine

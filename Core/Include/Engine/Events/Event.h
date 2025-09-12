@@ -7,7 +7,6 @@
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/Entity.h"
 
-
 // Base Event class
 class Event {
 public:

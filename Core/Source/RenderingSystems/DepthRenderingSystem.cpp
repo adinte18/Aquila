@@ -86,10 +86,8 @@ void DepthRenderingSystem::CreatePipelineLayout(
   pipelineLayoutInfo.pSetLayouts = setLayouts.data();
   pipelineLayoutInfo.pushConstantRangeCount = 1;
   pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
-  if (vkCreatePipelineLayout(device.GetDevice(), &pipelineLayoutInfo, nullptr,
-                             &pipelineLayout) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create pipeline layout!");
-  }
+  AQUILA_VULKAN_CHECK(vkCreatePipelineLayout(
+      device.GetDevice(), &pipelineLayoutInfo, nullptr, &pipelineLayout));
 }
 
 } // namespace Engine

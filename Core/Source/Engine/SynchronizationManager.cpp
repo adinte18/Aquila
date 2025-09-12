@@ -33,11 +33,8 @@ void SynchronizationManager::CreateSemaphore(const std::string &name) {
 
   VkSemaphoreCreateInfo semInfo{VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO};
   for (uint32_t i = 0; i < m_FramesInFlight; ++i) {
-    if (vkCreateSemaphore(m_Device.GetDevice(), &semInfo, nullptr,
-                          &semaphoreSet.semaphores[i]) != VK_SUCCESS) {
-      throw std::runtime_error("Failed to create semaphore: " + name + "_" +
-                               std::to_string(i));
-    }
+    AQUILA_VULKAN_CHECK(vkCreateSemaphore(
+        m_Device.GetDevice(), &semInfo, nullptr, &semaphoreSet.semaphores[i]));
   }
 
   m_Semaphores[name] = std::move(semaphoreSet);
@@ -74,11 +71,8 @@ void SynchronizationManager::CreateFence(const std::string &name,
   }
 
   for (uint32_t i = 0; i < m_FramesInFlight; ++i) {
-    if (vkCreateFence(m_Device.GetDevice(), &fenceInfo, nullptr,
-                      &fenceSet.fences[i]) != VK_SUCCESS) {
-      throw std::runtime_error("Failed to create fence: " + name + "_" +
-                               std::to_string(i));
-    }
+    AQUILA_VULKAN_CHECK(vkCreateFence(m_Device.GetDevice(), &fenceInfo, nullptr,
+                                      &fenceSet.fences[i]));
   }
 
   m_Fences[name] = std::move(fenceSet);

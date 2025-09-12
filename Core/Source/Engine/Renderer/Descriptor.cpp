@@ -4,7 +4,6 @@
 
 #include "Engine/Renderer/Descriptor.h"
 #include "Asserts.h"
-#include <stdexcept>
 
 namespace Engine {
 // *************** Descriptor Set Layout Builder *********************
@@ -44,11 +43,9 @@ DescriptorSetLayout::DescriptorSetLayout(
       static_cast<uint32_t>(setLayoutBindings.size());
   descriptorSetLayoutInfo.pBindings = setLayoutBindings.data();
 
-  if (vkCreateDescriptorSetLayout(device.GetDevice(), &descriptorSetLayoutInfo,
-                                  nullptr,
-                                  &descriptorSetLayout) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create descriptor set layout!");
-  }
+  AQUILA_VULKAN_CHECK(
+      vkCreateDescriptorSetLayout(device.GetDevice(), &descriptorSetLayoutInfo,
+                                  nullptr, &descriptorSetLayout));
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
@@ -92,10 +89,8 @@ DescriptorPool::DescriptorPool(
   descriptorPoolInfo.maxSets = maxSets;
   descriptorPoolInfo.flags = poolFlags;
 
-  if (vkCreateDescriptorPool(device.GetDevice(), &descriptorPoolInfo, nullptr,
-                             &descriptorPool) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create descriptor pool!");
-  }
+  AQUILA_VULKAN_CHECK(vkCreateDescriptorPool(
+      device.GetDevice(), &descriptorPoolInfo, nullptr, &descriptorPool));
 }
 
 DescriptorPool::~DescriptorPool() {

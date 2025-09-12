@@ -12,10 +12,8 @@ CommandBuffer::CommandBuffer(Device &device, VkCommandPool commandPool,
   allocInfo.commandPool = commandPool;
   allocInfo.commandBufferCount = 1;
 
-  if (vkAllocateCommandBuffers(device.GetDevice(), &allocInfo,
-                               &m_CommandBuffer) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to allocate command buffer");
-  }
+  AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(device.GetDevice(), &allocInfo,
+                                               &m_CommandBuffer));
 }
 
 CommandBuffer::~CommandBuffer() {
@@ -31,11 +29,7 @@ void CommandBuffer::Begin(VkCommandBufferUsageFlags flags) {
   VkCommandBufferBeginInfo beginInfo{};
   beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
   beginInfo.flags = flags;
-
-  if (vkBeginCommandBuffer(m_CommandBuffer, &beginInfo) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to begin command buffer");
-  }
-
+  AQUILA_VULKAN_CHECK(vkBeginCommandBuffer(m_CommandBuffer, &beginInfo));
   m_IsRecording = true;
 }
 
@@ -44,9 +38,7 @@ void CommandBuffer::End() {
     throw std::runtime_error("Command buffer " + m_Name + " is not recording!");
   }
 
-  if (vkEndCommandBuffer(m_CommandBuffer) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to record command buffer: " + m_Name);
-  }
+  AQUILA_VULKAN_CHECK(vkEndCommandBuffer(m_CommandBuffer));
 
   m_IsRecording = false;
 }

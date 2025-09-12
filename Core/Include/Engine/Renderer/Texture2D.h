@@ -1,16 +1,9 @@
-//
-// Created by alexa on 09/08/2024.
-//
-
 #ifndef TEXTURE2D_H
 #define TEXTURE2D_H
 
-#include <glm/vec4.hpp>
-#include <memory>
-
-
-#include "Defines.h"
-#include "Descriptor.h"
+#include "Engine/Renderer/Buffer.h"
+#include "Engine/Renderer/Descriptor.h"
+#include "Engine/Renderer/DescriptorAllocator.h"
 #include "Engine/Renderer/Device.h"
 
 namespace Engine {
@@ -71,15 +64,14 @@ public:
       auto texture = CreateRef<Texture2D>(device, debugName);
 
       if (!filepath.empty()) {
-        texture->CreateTexture(filepath, format);
+        if (useHDR) {
+          texture->CreateHDRTexture(filepath, format);
+        } else {
+          texture->CreateTexture(filepath, format);
+        }
       } else {
         if (useCubemap) {
           texture->CreateCubeMap(width, height, format, usage);
-        } else if (useHDR) {
-          if (!filepath.empty())
-            texture->CreateHDRTexture(filepath);
-          else
-            throw std::runtime_error("HDR texture requires a filepath.");
         } else {
           texture->CreateTexture(width, height, format, usage, samples);
         }
@@ -113,14 +105,20 @@ public:
   };
 
 public:
+  // Factory method
   [[nodiscard]] static Ref<Texture2D>
   create(Device &device, const std::string &debugName = "") {
     return CreateRef<Texture2D>(device, debugName);
   }
 
-  void GenerateMipmap(VkImage image, VkFormat format, int32_t width,
-                      int32_t height, uint32_t mipLevels);
+  // Constructor/Destructor
+  Texture2D(Device &device, const std::string &debugName);
+  ~Texture2D();
 
+  AQUILA_NONCOPYABLE(Texture2D);
+  AQUILA_NONMOVEABLE(Texture2D);
+
+  // Public API methods
   void CreateHDRTexture(const std::string &filepath,
                         VkFormat format = VK_FORMAT_R32G32B32A32_SFLOAT);
   void CreateCubeMap(uint32_t width, uint32_t height, VkFormat format,
@@ -136,95 +134,145 @@ public:
                      VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT);
   void UseFallbackTextures(TextureType type);
 
-  // Inline Getters
-  [[nodiscard]] VkImage GetTextureImage() const { return textureImage; }
-  [[nodiscard]] VkImageView GetTextureImageView() const {
-    return textureImageView;
-  }
-  [[nodiscard]] VkSampler GetTextureSampler() const { return textureSampler; }
+  // Utility methods
+  void GenerateMipmap(VkImage image, VkFormat format, int32_t width,
+                      int32_t height, uint32_t mipLevels);
+  void CreateImage(uint32_t width, uint32_t height, VkFormat format,
+                   VkImageTiling tiling, VkImageUsageFlags usage,
+                   VkMemoryPropertyFlags properties, VkImage &image,
+                   VkDeviceMemory &imageMemory);
+
+  // Getters
+  [[nodiscard]] VkImage GetTextureImage() const { return m_Image; }
+  [[nodiscard]] VkImageView GetTextureImageView() const { return m_ImageView; }
+  [[nodiscard]] VkSampler GetTextureSampler() const { return m_Sampler; }
   [[nodiscard]] VkDeviceMemory GetTextureImageMemory() const {
-    return textureImageMemory;
+    return m_Memory;
   }
   [[nodiscard]] VkDescriptorSet GetDescriptorSet() const {
     return descriptorSet;
   }
   [[nodiscard]] uint32_t GetMipLevels() const { return m_MipLevels; }
   [[nodiscard]] VkFormat GetFormat() const { return m_Format; }
-
-  [[nodiscard]] bool HasImage() const { return textureImage != VK_NULL_HANDLE; }
-  [[nodiscard]] bool HasImageView() const {
-    return textureImageView != VK_NULL_HANDLE;
-  }
-  [[nodiscard]] bool HasSampler() const {
-    return textureSampler != VK_NULL_HANDLE;
-  }
-  [[nodiscard]] bool HasImageMemory() const {
-    return textureImageMemory != VK_NULL_HANDLE;
-  }
-
   [[nodiscard]] VkDescriptorImageInfo GetDescriptorSetInfo() const;
 
+  // State queries
+  [[nodiscard]] bool HasImage() const { return m_Image != VK_NULL_HANDLE; }
+  [[nodiscard]] bool HasImageView() const {
+    return m_ImageView != VK_NULL_HANDLE;
+  }
+  [[nodiscard]] bool HasSampler() const { return m_Sampler != VK_NULL_HANDLE; }
+  [[nodiscard]] bool HasImageMemory() const {
+    return m_Memory != VK_NULL_HANDLE;
+  }
+
+  // Resource management
   void MarkForDestruction() { isMarkedForDestruction = true; }
   bool isMarkedForDestruction = false;
-
   void DestroyAll();
   void Destroy();
 
-  void CreateImage(uint32_t width, uint32_t height, VkFormat format,
-                   VkImageTiling tiling, VkImageUsageFlags usage,
-                   VkMemoryPropertyFlags properties, VkImage &image,
-                   VkDeviceMemory &imageMemory);
-
-  Texture2D(Device &device, const std::string &debugName);
-  ~Texture2D();
-
-  AQUILA_NONCOPYABLE(Texture2D);
-  AQUILA_NONMOVEABLE(Texture2D);
-
 private:
+  // Member variables
   std::string m_DebugName;
-
   uint32_t m_MipLevels = 1;
   Device &m_Device;
-
   VkFormat m_Format = VK_FORMAT_R8G8B8A8_UNORM;
 
-  VkImage textureImage = VK_NULL_HANDLE;
-  VkSampler textureSampler = VK_NULL_HANDLE;
-  VkImageView textureImageView = VK_NULL_HANDLE;
-  VkDeviceMemory textureImageMemory = VK_NULL_HANDLE;
+  VkImage m_Image = VK_NULL_HANDLE;
+  VkSampler m_Sampler = VK_NULL_HANDLE;
+  VkImageView m_ImageView = VK_NULL_HANDLE;
+  VkDeviceMemory m_Memory = VK_NULL_HANDLE;
 
   Unique<DescriptorPool> descriptorPool;
   Unique<DescriptorSetLayout> descriptorSetLayout;
   VkDescriptorSet descriptorSet = VK_NULL_HANDLE;
 
-  // HDR
-  void vk_CreateHDRTextureImage(const std::string &filepath);
-  void vk_CreateHDRTextureImageView(VkFormat format);
-  void vk_CreateHDRTextureSampler();
+  // Initialization and cleanup helpers
+  void InitializeHandles();
+  void CreateDescriptorSetLayout();
+  void AllocateDescriptorSet();
+  void DestroyVulkanResources();
+  void ReleaseDescriptorResources();
 
-  // Cubemap
-  void vk_CreateCubemapImage(uint32_t width, uint32_t height, VkFormat format,
-                             VkImageUsageFlags usage);
-  void vk_CreateCubemapImageView(VkFormat format);
-  void vk_CreateCubemapSampler();
-  void vk_CreateSolidColorCubemap(glm::vec4 color);
+  // Common creation helpers
+  VkImageCreateInfo CreateImageCreateInfo(uint32_t width, uint32_t height,
+                                          VkFormat format, VkImageTiling tiling,
+                                          VkImageUsageFlags usage,
+                                          uint32_t arrayLayers,
+                                          uint32_t mipLevels) const;
+  void AllocateAndBindImageMemory(VkImage image,
+                                  VkMemoryPropertyFlags properties,
+                                  VkDeviceMemory &imageMemory);
+  VkImageView CreateImageView(VkImage image, VkFormat format,
+                              VkImageViewType viewType, uint32_t layerCount,
+                              uint32_t mipLevels) const;
+  VkSamplerCreateInfo CreateSamplerCreateInfo() const;
+  Buffer CreateStagingBuffer(VkDeviceSize size,
+                             const std::string &debugName) const;
+  void SetDebugName(VkObjectType objectType, void *handle,
+                    const std::string &name) const;
 
-  // LDR
-  void vk_CreateTextureImage(const std::string &filepath);
-  void vk_CreateTextureImage(uint32_t width, uint32_t height, VkFormat format,
-                             VkImageUsageFlags usage,
-                             VkSampleCountFlagBits samples);
-  void vk_CreateTextureImageView(VkFormat format);
-  void vk_CreateTextureSampler();
-  void vk_CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
-                            uint32_t height) const;
-  void vk_WriteToDescriptorSet();
-  void vk_CreateSolidColorTexture(glm::vec4 color);
+  // Mipmap generation helpers
+  void ValidateLinearFilteringSupport(VkFormat imageFormat) const;
+  VkImageMemoryBarrier CreateMipmapBarrier(VkImage image) const;
+  void TransitionMipLevel(VkCommandBuffer commandBuffer,
+                          VkImageMemoryBarrier &barrier, uint32_t mipLevel,
+                          VkImageLayout oldLayout, VkImageLayout newLayout,
+                          VkAccessFlags srcAccess,
+                          VkAccessFlags dstAccess) const;
+  void BlitMipLevel(VkCommandBuffer commandBuffer, VkImage image,
+                    uint32_t srcMip, uint32_t dstMip, int32_t srcWidth,
+                    int32_t srcHeight) const;
+  void CalculateNextMipDimensions(int32_t &width, int32_t &height) const;
+  void CalculateMipLevels(uint32_t width, uint32_t height);
 
+  // Layout transition helpers
   void TransitionImageLayout(VkImage image, VkFormat format,
                              VkImageLayout oldLayout, VkImageLayout newLayout,
                              uint32_t layers = 1);
+  VkImageMemoryBarrier CreateLayoutTransitionBarrier(VkImage image,
+                                                     VkFormat format,
+                                                     VkImageLayout oldLayout,
+                                                     VkImageLayout newLayout,
+                                                     uint32_t layers) const;
+  std::pair<VkAccessFlags, VkAccessFlags>
+  GetAccessMasks(VkImageLayout oldLayout, VkImageLayout newLayout) const;
+  std::pair<VkPipelineStageFlags, VkPipelineStageFlags>
+  GetPipelineStages(VkImageLayout oldLayout, VkImageLayout newLayout) const;
+
+  // Buffer to image operations
+  void CopyBufferToImage(VkBuffer buffer, VkImage image, uint32_t width,
+                         uint32_t height) const;
+  void WriteToDescriptorSet();
+
+  // Specific texture creation methods
+  void CreateHDRTextureImage(const std::string &filepath);
+  void CreateTextureImageFromFile(const std::string &filepath);
+  void CreateTextureImage(uint32_t width, uint32_t height, VkFormat format,
+                          VkImageUsageFlags usage,
+                          VkSampleCountFlagBits samples);
+  void CreateTextureImageView(VkFormat format);
+  void CreateTextureSampler();
+
+  // Cubemap specific methods
+  void CreateCubemapImage(uint32_t width, uint32_t height, VkFormat format,
+                          VkImageUsageFlags usage);
+  void CreateCubemapImageView(VkFormat format);
+  void CreateMipMappedCubemapImage(uint32_t width, uint32_t height,
+                                   VkFormat format);
+  void CreateMipMappedCubemapImageView(VkFormat format);
+  void CreateMipMappedCubemapSampler();
+
+  // Solid color texture helpers
+  void CreateSolidColorTexture(glm::vec4 color);
+  void CreateSolidColorCubemap(glm::vec4 color);
+  std::array<uint8_t, 4> CreatePixelData(glm::vec4 color,
+                                         bool isHDR = false) const;
+
+  // Image manipulation helpers
+  std::unique_ptr<float[]> FlipImageVertically(float *pixels, int width,
+                                               int height, int channels) const;
 };
 
 } // namespace Engine

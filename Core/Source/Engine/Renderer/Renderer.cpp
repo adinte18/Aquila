@@ -1,8 +1,5 @@
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Controller.h"
-#include "Engine/Renderer/Device.h"
-#include "Engine/SynchronizationManager.h"
-#include "Utilities/Log.h"
 
 namespace Engine {
 
@@ -59,18 +56,27 @@ void Renderer::SetupCommandBuffers() {
 }
 
 void Renderer::SetupSynchronization() {
+  // Create semaphores and fences for frame synchronization
+  m_SynchronizationManager->CreateSemaphore("ImageAvailable");
+  m_SynchronizationManager->CreateSemaphore("RenderFinished");
   m_SynchronizationManager->CreateSemaphore("OffscreenFinished");
-  m_SynchronizationManager->CreateFence("InFlight", true);
+  m_SynchronizationManager->CreateFence("InFlight", true); // Start signaled
 }
 
 VkCommandBuffer Renderer::BeginFrame() {
   AQUILA_CORE_ASSERT(!m_FrameStarted &&
                      "Can't call BeginFrame while already in progress");
 
+  // Wait for the current frame's fence
   m_SynchronizationManager->WaitForFence("InFlight", m_CurrentFrameID);
   m_SynchronizationManager->ResetFence("InFlight", m_CurrentFrameID);
 
-  auto result = m_Swapchain->GetNextImage(&m_CurrentImageID);
+  // Acquire next swapchain image
+  VkSemaphore imageAvailable = m_SynchronizationManager->GetSemaphore(
+      "ImageAvailable", m_CurrentFrameID);
+  auto result =
+      m_Swapchain->AcquireNextImage(&m_CurrentImageID, imageAvailable);
+
   if (result == VK_ERROR_OUT_OF_DATE_KHR) {
     InvalidateSwapchain();
     return VK_NULL_HANDLE;
@@ -96,33 +102,62 @@ void Renderer::EndFrame() {
   auto &presentCmd = m_PresentCommandBuffers[m_CurrentFrameID];
   presentCmd->End();
 
-  VkSubmitInfo offSubmit{};
-  offSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-  offSubmit.waitSemaphoreCount = 0;
-  offSubmit.pWaitSemaphores = nullptr;
-  offSubmit.commandBufferCount = 1;
-
-  VkCommandBuffer offscreenHandle =
-      m_OffscreenCommandBuffers[m_CurrentFrameID]->GetHandle();
-  offSubmit.pCommandBuffers = &offscreenHandle;
-
-  VkSemaphore offSignal = m_SynchronizationManager->GetSemaphore(
-      "OffscreenFinished", m_CurrentFrameID);
-  offSubmit.signalSemaphoreCount = 1;
-  offSubmit.pSignalSemaphores = &offSignal;
-
   VkFence inFlightFence =
       m_SynchronizationManager->GetFence("InFlight", m_CurrentFrameID);
+  VkSemaphore offscreenFinished = m_SynchronizationManager->GetSemaphore(
+      "OffscreenFinished", m_CurrentFrameID);
+  VkSemaphore imageAvailable = m_SynchronizationManager->GetSemaphore(
+      "ImageAvailable", m_CurrentFrameID);
+  VkSemaphore renderFinished = m_SynchronizationManager->GetSemaphore(
+      "RenderFinished", m_CurrentFrameID);
 
-  // submit offscreen
-  if (vkQueueSubmit(m_Device.GetGraphicsQueue(), 1, &offSubmit,
-                    inFlightFence) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to submit offscreen command buffer!");
+  // Submit offscreen rendering
+  {
+    VkSubmitInfo offSubmit{};
+    offSubmit.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    offSubmit.waitSemaphoreCount = 0;
+    offSubmit.pWaitSemaphores = nullptr;
+    offSubmit.commandBufferCount = 1;
+
+    VkCommandBuffer offscreenHandle =
+        m_OffscreenCommandBuffers[m_CurrentFrameID]->GetHandle();
+    offSubmit.pCommandBuffers = &offscreenHandle;
+
+    offSubmit.signalSemaphoreCount = 1;
+    offSubmit.pSignalSemaphores = &offscreenFinished;
+
+    AQUILA_VULKAN_CHECK(vkQueueSubmit(m_Device.GetGraphicsQueue(), 1,
+                                      &offSubmit, VK_NULL_HANDLE));
   }
 
-  VkCommandBuffer presentHandle = presentCmd->GetHandle();
-  auto result = m_Swapchain->SubmitCommandBuffers(
-      &presentHandle, &m_CurrentImageID, &offSignal, 1);
+  // Submit present rendering
+  {
+    std::vector<VkSemaphore> waitSemaphores = {imageAvailable,
+                                               offscreenFinished};
+    std::vector<VkPipelineStageFlags> waitStages = {
+        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT};
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount =
+        static_cast<uint32_t>(waitSemaphores.size());
+    submitInfo.pWaitSemaphores = waitSemaphores.data();
+    submitInfo.pWaitDstStageMask = waitStages.data();
+
+    VkCommandBuffer presentHandle = presentCmd->GetHandle();
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &presentHandle;
+
+    submitInfo.signalSemaphoreCount = 1;
+    submitInfo.pSignalSemaphores = &renderFinished;
+
+    AQUILA_VULKAN_CHECK(vkQueueSubmit(m_Device.GetGraphicsQueue(), 1,
+                                      &submitInfo, inFlightFence));
+  }
+
+  // Present the image
+  auto result = m_Swapchain->PresentImage(&m_CurrentImageID, renderFinished);
 
   if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR ||
       m_Window.IsWindowResized()) {
@@ -205,7 +240,6 @@ void Renderer::InvalidateSwapchain() {
   }
 
   m_Extent = extent;
-
   m_FrameStarted = false;
 }
 
@@ -292,4 +326,5 @@ void Renderer::EndRenderPass(VkCommandBuffer cmd) {
   vkCmdEndRenderPass(cmd);
   m_RenderPassActive = false;
 }
+
 } // namespace Engine

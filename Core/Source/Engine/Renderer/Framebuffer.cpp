@@ -1,5 +1,4 @@
 #include "Engine/Renderer/Framebuffer.h"
-#include "Engine/Controller.h"
 
 namespace Engine {
 Framebuffer::Framebuffer(Device &device, FramebufferDetails details)
@@ -20,10 +19,8 @@ Framebuffer::Framebuffer(Device &device, FramebufferDetails details)
   framebufferInfo.height = m_Extent.height;
   framebufferInfo.layers = 1;
 
-  if (vkCreateFramebuffer(m_Device->GetDevice(), &framebufferInfo, nullptr,
-                          &m_Framebuffer) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to create framebuffer");
-  }
+  AQUILA_VULKAN_CHECK(vkCreateFramebuffer(
+      m_Device->GetDevice(), &framebufferInfo, nullptr, &m_Framebuffer));
 }
 
 Framebuffer::~Framebuffer() { Destroy(); }
@@ -42,9 +39,7 @@ void Framebuffer::Resize(const VkExtent2D &newExtent) {
   framebufferInfo.height = m_Extent.height;
   framebufferInfo.layers = 1;
 
-  if (vkCreateFramebuffer(m_Device->GetDevice(), &framebufferInfo, nullptr,
-                          &m_Framebuffer) != VK_SUCCESS) {
-    throw std::runtime_error("Failed to create framebuffer");
-  }
+  AQUILA_VULKAN_CHECK(vkCreateFramebuffer(
+      m_Device->GetDevice(), &framebufferInfo, nullptr, &m_Framebuffer));
 }
 } // namespace Engine

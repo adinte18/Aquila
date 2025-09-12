@@ -1,8 +1,5 @@
 #include "Engine/Renderer/Pipeline.h"
 #include "Engine/Renderer/Vertex.h"
-
-#include <stdexcept>
-
 Engine::Pipeline::Pipeline(Engine::Device &device,
                            const std::string &vertFilepath,
                            const std::string &fragFilepath,
@@ -249,9 +246,7 @@ void Engine::Pipeline::vk_CreateGraphicsPipeline(
   pipelineInfo.basePipelineIndex = -1;
   pipelineInfo.basePipelineHandle = VK_NULL_HANDLE;
 
-  if (vkCreateGraphicsPipelines(m_Device.GetDevice(), VK_NULL_HANDLE, 1,
-                                &pipelineInfo, nullptr,
-                                &m_GraphicsPipeline) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create graphics pipeline!");
-  }
+  AQUILA_VULKAN_CHECK(
+      vkCreateGraphicsPipelines(m_Device.GetDevice(), VK_NULL_HANDLE, 1,
+                                &pipelineInfo, nullptr, &m_GraphicsPipeline));
 }

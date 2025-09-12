@@ -1,6 +1,5 @@
 #include "Engine/Renderer/Device.h"
 #include "Engine/Renderer/DescriptorAllocator.h"
-#include <cstring>
 
 namespace Engine {
 Device::Device(Window &window) : m_Window{window} {
@@ -105,9 +104,8 @@ void Device::CreateInstance() {
     createInfo.pNext = nullptr;
   }
 
-  if (vkCreateInstance(&createInfo, nullptr, &m_VulkanInstance) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create instance!");
-  }
+  AQUILA_VULKAN_CHECK(
+      vkCreateInstance(&createInfo, nullptr, &m_VulkanInstance));
 }
 
 #pragma region Validation Layer and Extension Support
@@ -310,10 +308,8 @@ void Device::SetupDebugMessenger() {
   VkDebugUtilsMessengerCreateInfoEXT createInfo;
   PopulateDebugMessengerCreateInfo(createInfo);
 
-  if (CreateDebugMessengerEXT(m_VulkanInstance, &createInfo, nullptr,
-                              &m_DebugMessenger) != VK_SUCCESS) {
-    throw std::runtime_error("failed to set up debug messenger!");
-  }
+  AQUILA_VULKAN_CHECK(CreateDebugMessengerEXT(m_VulkanInstance, &createInfo,
+                                              nullptr, &m_DebugMessenger));
 }
 
 VkResult Device::CreateDebugMessengerEXT(
@@ -408,9 +404,7 @@ void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
   bufferInfo.usage = usage;
   bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-  if (vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create vertex buffer!");
-  }
+  AQUILA_VULKAN_CHECK(vkCreateBuffer(m_Device, &bufferInfo, nullptr, &buffer));
 
   VkMemoryRequirements memRequirements;
   vkGetBufferMemoryRequirements(m_Device, buffer, &memRequirements);
@@ -432,9 +426,7 @@ void Device::CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage,
 void Device::CreateImageWithInfo(const VkImageCreateInfo &imageInfo,
                                  VkMemoryPropertyFlags properties,
                                  VkImage &image, VkDeviceMemory &imageMemory) {
-  if (vkCreateImage(m_Device, &imageInfo, nullptr, &image) != VK_SUCCESS) {
-    throw std::runtime_error("failed to create image!");
-  }
+  AQUILA_VULKAN_CHECK(vkCreateImage(m_Device, &imageInfo, nullptr, &image));
 
   VkMemoryRequirements memRequirements;
   vkGetImageMemoryRequirements(m_Device, image, &memRequirements);
@@ -444,15 +436,10 @@ void Device::CreateImageWithInfo(const VkImageCreateInfo &imageInfo,
   allocInfo.allocationSize = memRequirements.size;
   allocInfo.memoryTypeIndex =
       FindMemoryType(memRequirements.memoryTypeBits, properties);
+  AQUILA_VULKAN_CHECK(
+      vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory));
 
-  if (vkAllocateMemory(m_Device, &allocInfo, nullptr, &imageMemory) !=
-      VK_SUCCESS) {
-    throw std::runtime_error("failed to allocate image memory!");
-  }
-
-  if (vkBindImageMemory(m_Device, image, imageMemory, 0) != VK_SUCCESS) {
-    throw std::runtime_error("failed to bind image memory!");
-  }
+  AQUILA_VULKAN_CHECK(vkBindImageMemory(m_Device, image, imageMemory, 0));
 }
 
 VkFormat Device::FindSupportedFormat(const std::vector<VkFormat> &candidates,

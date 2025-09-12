@@ -1,36 +1,38 @@
-#include "Engine/Controller.h"
 #include "EditorLayer.h"
+#include "Engine/Controller.h"
 
-int main(){
-    // init systems
-    Engine::Controller::Init();
-    Editor::EditorLayer::Init();
+int main() {
+  // init systems
+  Engine::Controller::Init();
+  Editor::EditorLayer::Init();
 
-    
-    auto Engine = Engine::Controller::Get();
-    auto Editor = Editor::EditorLayer::Get();
-    
-    while (!Engine->GetWindow().ShouldClose()) {
-        Engine->OnUpdate();
+  auto Engine = Engine::Controller::Get();
+  auto Editor = Editor::EditorLayer::Get();
 
-        if (auto commandBuffer = Engine->GetRenderer().BeginFrame()) {
-            Engine->GetRenderer().RenderScene();
+  while (!Engine->GetWindow().ShouldClose()) {
+    Engine->OnUpdate();
 
-            Editor->RenderUI(commandBuffer);
-        }
+    if (auto commandBuffer = Engine->GetRenderer().BeginFrame()) {
+      Engine->GetRenderer().RenderScene();
 
-        Engine->GetRenderer().EndFrame();
-
-        if (Engine->GetRenderer().IsPreviousFrameComplete()) {
-            Engine->GetSceneManager().GetActiveScene()->GetEntityManager()->FlushScene();
-        }
+      Editor->RenderUI(commandBuffer);
     }
 
-    Engine->GetDevice().Wait();
+    Engine->GetRenderer().EndFrame();
 
-    // shutdown systems
-    Editor::EditorLayer::Shutdown();
-    Engine::Controller::Shutdown();
+    if (Engine->GetRenderer().IsPreviousFrameComplete()) {
+      Engine->GetSceneManager()
+          .GetActiveScene()
+          ->GetEntityManager()
+          ->FlushScene();
+    }
+  }
 
-    return 0;
+  Engine->GetDevice().Wait();
+
+  // shutdown systems
+  Editor::EditorLayer::Shutdown();
+  Engine::Controller::Shutdown();
+
+  return 0;
 }
