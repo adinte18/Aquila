@@ -11,7 +11,7 @@ void EditorLayer::OnAttach() {
   UIManager::Init();
   UIManager::Get()->OnStart();
 
-  Aquila::Log("Editor started");
+  AQUILA_LOG_INFO("Editor started");
 }
 
 void EditorLayer::RenderUI(VkCommandBuffer commandBuffer) {
@@ -32,7 +32,7 @@ void EditorLayer::OnDetach() {
   UIManager::Get()->OnEnd();
   UIManager::Shutdown();
 
-  Aquila::Log("Editor stopped");
+  AQUILA_LOG_INFO("Editor stopped");
 }
 
 } // namespace Editor

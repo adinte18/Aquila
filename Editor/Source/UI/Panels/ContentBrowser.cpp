@@ -1,35 +1,39 @@
-#include "UI/Elements/ContentBrowserElement.h"
+#include "UI/Panels/ContentBrowser.h"
+#include "Engine/Events/Event.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
 #include "UI/FontManager.h"
 #include "UI/UI.h"
 #include "Utilities/Log.h"
+#include "Utilities/Singleton.h"
 #include "imgui.h"
+#include "lucide.h"
 
-namespace Editor::Elements {
+namespace Editor::Panels {
 
 static std::string s_CurrentPath = "/Assets";
 
-ContentElement::ContentElement() {
+Content::Content() {
 
-  Engine::EventBus::Get()->Dispatch(QueryEvent{
-      QueryCommand::ContentBrowserAskTextures,
-      {},
-      [this](UIEventResult result, CommandParam payload) {
-        if (result == UIEventResult::Success) {
-          if (auto textures =
-                  std::get_if<std::vector<Ref<Engine::Texture2D>>>(&payload)) {
-            m_Textures = *textures;
-          }
-        }
-      }});
+  auto askTexturesQuery = CreateUnique<Engine::ContentBrowserTexturesQuery>();
+  askTexturesQuery->callback = [this](const Engine::EventResult &result) {
+    if (result.IsSuccess()) {
+      auto textures = result.GetData<std::vector<Ref<Engine::Texture2D>>>();
+      if (textures)
+        m_Textures = *textures;
+    } else {
+      AQUILA_LOG_WARNING("Failed to get textures: {}", result.errorMessage);
+    }
+  };
+
+  Engine::EventBus::Get()->DispatchSync(std::move(askTexturesQuery));
 
   if (!VFS::VirtualFileSystem::Get()->IsMounted("/Assets")) {
-    Aquila::LogError("ContentBrowser: /Assets mount point not found!");
+    AQUILA_LOG_ERROR("ContentBrowser: /Assets mount point not found!");
   }
 }
 
-void ContentElement::DrawFolderTree(const std::string &basePath,
-                                    std::string &selectedPath) {
+void Content::DrawFolderTree(const std::string &basePath,
+                             std::string &selectedPath) {
   if (!VFS::VirtualFileSystem::Get()->IsDirectory(basePath)) {
     return;
   }
@@ -82,7 +86,7 @@ void ContentElement::DrawFolderTree(const std::string &basePath,
   }
 }
 
-void ContentElement::FolderActionsPopup() {
+void Content::FolderActionsPopup() {
   if (ImGui::BeginPopup("FolderActions", ImGuiWindowFlags_NoMove)) {
 
     if (ImGui::MenuItem(ICON_LC_TRASH " Delete")) {
@@ -115,7 +119,7 @@ void ContentElement::FolderActionsPopup() {
   }
 }
 
-void ContentElement::RenameFolderPopup() {
+void Content::RenameFolderPopup() {
   // Note: VFS rename operations would need to be supported by the underlying
   // filesystem For now, this is a placeholder showing how it would work
   /*
@@ -149,7 +153,7 @@ void ContentElement::RenameFolderPopup() {
                   ImGui::CloseCurrentPopup();
               } else {
                   // Handle error - file exists
-                  Aquila::LogWarning("Rename failed: Path already exists");
+                  AQUILA_LOG_WARNING("Rename failed: Path already exists");
               }
           }
       }
@@ -164,7 +168,7 @@ void ContentElement::RenameFolderPopup() {
   */
 }
 
-void ContentElement::DeleteItemPopup() {
+void Content::DeleteItemPopup() {
   CreatePopup({500, 130});
   if (ImGui::BeginPopupModal("Delete", nullptr,
                              ImGuiWindowFlags_AlwaysAutoResize |
@@ -192,7 +196,7 @@ void ContentElement::DeleteItemPopup() {
       }
 
       if (!success) {
-        Aquila::LogError("Failed to delete: " + m_CurrentlyHoveredPath);
+        AQUILA_LOG_ERROR("Failed to delete: " + m_CurrentlyHoveredPath);
       }
 
       ImGui::CloseCurrentPopup();
@@ -208,7 +212,7 @@ void ContentElement::DeleteItemPopup() {
   }
 }
 
-void ContentElement::CreateFolderPopup() {
+void Content::CreateFolderPopup() {
   CreatePopup({500, 170});
 
   if (ImGui::BeginPopupModal("Create new folder", nullptr,
@@ -234,7 +238,7 @@ void ContentElement::CreateFolderPopup() {
       if (!VFS::VirtualFileSystem::Get()->Exists(newFolderPath)) {
         bool success = VFS::VirtualFileSystem::Get()->CreateDir(newFolderPath);
         if (!success) {
-          Aquila::LogError("Failed to create directory: " + newFolderPath);
+          AQUILA_LOG_ERROR("Failed to create directory: " + newFolderPath);
         }
       }
       ImGui::CloseCurrentPopup();
@@ -251,7 +255,7 @@ void ContentElement::CreateFolderPopup() {
   }
 }
 
-void ContentElement::ContentActionsPopup() {
+void Content::ContentActionsPopup() {
   if (ImGui::IsWindowHovered() && ImGui::IsMouseClicked(ImGuiMouseButton_Right))
     ImGui::OpenPopup("CreateNewItemPopup");
 
@@ -275,7 +279,7 @@ void ContentElement::ContentActionsPopup() {
   }
 }
 
-std::string ContentElement::GetFileExtension(const std::string &filename) {
+std::string Content::GetFileExtension(const std::string &filename) {
   size_t dotPos = filename.find_last_of('.');
   if (dotPos != std::string::npos && dotPos != filename.length() - 1) {
     return filename.substr(dotPos);
@@ -283,7 +287,7 @@ std::string ContentElement::GetFileExtension(const std::string &filename) {
   return "";
 }
 
-std::string ContentElement::GetParentPath(const std::string &path) {
+std::string Content::GetParentPath(const std::string &path) {
   size_t lastSlash = path.find_last_of('/');
   if (lastSlash != std::string::npos && lastSlash > 0) {
     return path.substr(0, lastSlash);
@@ -291,7 +295,7 @@ std::string ContentElement::GetParentPath(const std::string &path) {
   return "/Assets";
 }
 
-void ContentElement::Draw() {
+void Content::Draw() {
   ImGui::Begin(ICON_LC_PACKAGE_OPEN " Content Browser", nullptr,
                ImGuiWindowFlags_NoCollapse);
 
@@ -345,9 +349,9 @@ void ContentElement::Draw() {
   DeleteItemPopup();
   RenameFolderPopup();
 
-  float navigation_height = 45.0f;
-  float folders_width = avail.x * 0.10f;
-  float content_width = avail.x - folders_width - 10.0f;
+  f32 navigation_height = 45.0f;
+  f32 folders_width = avail.x * 0.10f;
+  f32 content_width = avail.x - folders_width - 10.0f;
 
   ImGui::BeginChild("Folders",
                     ImVec2(folders_width, avail.y - navigation_height), true);
@@ -367,9 +371,9 @@ void ContentElement::Draw() {
     if (entries.empty()) {
       ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Empty folder");
     } else {
-      constexpr float cardWidth = 100.0f;
-      constexpr float cardHeight = 160.0f;
-      constexpr float padding = 10.0f;
+      constexpr f32 cardWidth = 100.0f;
+      constexpr f32 cardHeight = 160.0f;
+      constexpr f32 padding = 10.0f;
       int id = 0;
 
       int cardsPerRow =
@@ -395,14 +399,13 @@ void ContentElement::Draw() {
 
         ImVec2 cardPos = ImGui::GetCursorScreenPos();
 
-        constexpr float iconPadding = 5.0f;
+        constexpr f32 iconPadding = 5.0f;
         ImGui::SetCursorPos(ImVec2(iconPadding, iconPadding));
 
         ImTextureID textureID;
 
         if (m_Textures.empty()) {
-          Aquila::LogError(
-              "ContentBrowserElement: No textures available for icons");
+          AQUILA_LOG_ERROR("ContentBrowser: No textures available for icons");
           return;
         }
 
@@ -443,8 +446,11 @@ void ContentElement::Draw() {
 
             if (ImGui::IsItemHovered() &&
                 ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-              Engine::EventBus::Get()->Dispatch(UICommandEvent{
-                  UICommand::OpenScene, {{"path", fullPath}}, nullptr});
+
+              auto openSceneEvent = CreateUnique<Engine::OpenSceneEvent>();
+              openSceneEvent->scenePath = fullPath;
+
+              Engine::EventBus::Get()->DispatchSync(std::move(openSceneEvent));
             }
           }
 
@@ -492,8 +498,8 @@ void ContentElement::Draw() {
           tag = "MODEL";
 
         ImVec2 tagSize = ImGui::CalcTextSize(tag.c_str());
-        float tagX = cardPos.x + cardWidth - tagSize.x - 10;
-        float tagY = cardPos.y + cardHeight - tagSize.y - 14;
+        f32 tagX = cardPos.x + cardWidth - tagSize.x - 10;
+        f32 tagY = cardPos.y + cardHeight - tagSize.y - 14;
 
         ImGui::SetCursorScreenPos(ImVec2(tagX, tagY));
 
@@ -519,4 +525,4 @@ void ContentElement::Draw() {
 
   ImGui::End();
 }
-} // namespace Editor::Elements
+} // namespace Editor::Panels

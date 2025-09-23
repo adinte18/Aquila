@@ -1,11 +1,12 @@
 #ifndef UI_H
 #define UI_H
 
-#include "UI/Elements/ContentBrowserElement.h"
-#include "UI/Elements/HierarchyElement.h"
-#include "UI/Elements/ViewportElement.h"
-#include "UI/Elements/MenubarElement.h"
-#include "UI/Elements/PropertiesElement.h"
+#include "UI/Panels/ContentBrowser.h"
+#include "UI/Panels/Hierarchy.h"
+#include "UI/Panels/IPanel.h"
+#include "UI/Panels/Menubar.h"
+#include "UI/Panels/Properties.h"
+#include "UI/Panels/Viewport.h"
 
 #include "UI/UIConfig.h"
 
@@ -15,44 +16,39 @@
 #include "ImGuizmo/ImGuizmo.h"
 #include "nativefiledialog/src/nfd_common.h"
 
-
 namespace Editor {
-    class UIManager : public Utility::Singleton<UIManager> {
-        friend class Singleton<UIManager>;
-        
-        public:
-        void OnStart();
-        void OnEnd();
+class UIManager : public Utility::Singleton<UIManager> {
+  friend class Singleton<UIManager>;
 
-        void Render(VkCommandBuffer commandBuffer);
+public:
+  void OnStart();
+  void OnEnd();
 
-        entt::entity GetSelectedEntity() const { return m_SelectedEntity; }
-        void SetSelectedEntity(entt::entity entity) { m_SelectedEntity = entity; }
-                
-        VkDescriptorSet GetFinalImage() const { return m_FinalImage; }
-        void SetFinalImage(VkDescriptorSet image) { m_FinalImage = image; }
+  void Render(VkCommandBuffer commandBuffer);
 
-        VkDescriptorSet FetchRenderedImage() { return m_FinalImage; }
+  entt::entity GetSelectedEntity() const { return m_SelectedEntity; }
+  void SetSelectedEntity(entt::entity entity) { m_SelectedEntity = entity; }
 
-    private:
-        UIManager() = default;
+  VkDescriptorSet GetFinalImage() const { return m_FinalImage; }
+  void SetFinalImage(VkDescriptorSet image) { m_FinalImage = image; }
 
-        Elements::MenubarElement m_Menubar{};
-        Elements::ContentElement m_ContentBrowser{};
-        Elements::HierarchyElement m_Hierarchy{};
-        Elements::ViewportElement m_Viewport{};
-        Elements::PropertiesElement m_Properties{};
+  VkDescriptorSet FetchRenderedImage() { return m_FinalImage; }
 
-        void SetupIMGUI();
-        void SetupDescriptorSets();
-        void SetupDockspace();
+private:
+  UIManager() = default;
 
-        entt::entity m_SelectedEntity = entt::null;
+  std::vector<Unique<Panels::IPanel>> m_Panels;
 
-        Unique<Engine::DescriptorPool> m_DescriptorPool;
+  void SetupIMGUI();
+  void SetupDescriptorSets();
+  void SetupDockspace();
 
-        VkDescriptorSet m_FinalImage{};
-    };
-}
+  entt::entity m_SelectedEntity = entt::null;
 
-#endif //UI_H
+  Unique<Engine::DescriptorPool> m_DescriptorPool;
+
+  VkDescriptorSet m_FinalImage{};
+};
+} // namespace Editor
+
+#endif // UI_H

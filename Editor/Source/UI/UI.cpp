@@ -1,6 +1,9 @@
 #include "UI/UI.h"
 #include "Engine/Controller.h"
 #include "UI/FontManager.h"
+#include "UI/Panels/Hierarchy.h"
+#include "UI/Panels/Properties.h"
+#include "UI/Panels/Viewport.h"
 
 namespace Editor {
 void UIManager::OnStart() {
@@ -41,9 +44,15 @@ void UIManager::OnStart() {
   UI::FontManager::Get().SetCurrentFont(
       UI::FontManager::Get().GetFonts().Font16);
 
-  UI::ThemeManager::Get().ApplyAquilaTheme();
+  m_Panels.push_back(CreateUnique<Panels::Content>());
+  m_Panels.push_back(CreateUnique<Panels::Viewport>());
+  m_Panels.push_back(CreateUnique<Panels::Hierarchy>());
+  m_Panels.push_back(CreateUnique<Panels::Properties>());
+  m_Panels.push_back(CreateUnique<Panels::Menubar>());
 
-  Aquila::Log("UI context initialized");
+  UI::ThemeManager::Get().ApplyAquila2Theme();
+
+  AQUILA_LOG_INFO("UI context initialized");
 }
 
 void UIManager::OnEnd() {
@@ -52,7 +61,7 @@ void UIManager::OnEnd() {
 
   ImGui::DestroyContext();
 
-  Aquila::Log("UI context destroyed");
+  AQUILA_LOG_INFO("UI context destroyed");
 }
 
 void UIManager::SetupDockspace() {
@@ -91,14 +100,9 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
   SetupDockspace();
 
-  // Draw menu bar
-  m_Menubar.Draw();
-
-  // Draw panels
-  m_ContentBrowser.Draw();
-  m_Hierarchy.Draw();
-  m_Properties.Draw();
-  m_Viewport.Draw();
+  for (auto &panel : m_Panels) {
+    panel->Draw();
+  }
 
   if (currentFont)
     ImGui::PopFont();
@@ -204,7 +208,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //         writer.overwrite(material.descriptorSet);
 //     }
 // }
-// void OnUpdate(VkCommandBuffer commandBuffer,  sceneContext, float deltaTime)
+// void OnUpdate(VkCommandBuffer commandBuffer,  sceneContext, f32 deltaTime)
 // {
 //     ImGuiIO& io = ImGui::GetIO();
 
@@ -252,7 +256,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //         auto& camera = sceneContext.GetScene().GetActiveCamera();
 //         auto type = camera.GetType();
-//         float childHeight = camera.GetType() ==
+//         f32 childHeight = camera.GetType() ==
 //         Engine::Camera::CameraType::Orbit ? 110.0f : 80.0f;
 //         ImGui::SeparatorText(ICON_LC_VIDEO " CAMERA SETTINGS");
 
@@ -261,7 +265,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //             ImGui::Separator();
 
 //             int cameraMode = type == Engine::Camera::CameraType::Orbit ? 1 :
-//             0; float btnWidth = 220.0f;
+//             0; f32 btnWidth = 220.0f;
 
 //             if (cameraMode == 0) ImGui::PushStyleColor(ImGuiCol_Button,
 //             ImVec4(0.2f, 0.6f, 1.0f, 1.0f)); if (ImGui::Button("Free",
@@ -342,10 +346,10 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //             bool projectionChanged = false;
 
-//             float& fov = camera.GetFOV();
-//             float& nearPlane = camera.GetNearPlane();
-//             float& farPlane = camera.GetFarPlane();
-//             float aspectRatio = camera.GetAspectRatio();
+//             f32& fov = camera.GetFOV();
+//             f32& nearPlane = camera.GetNearPlane();
+//             f32& farPlane = camera.GetFarPlane();
+//             f32 aspectRatio = camera.GetAspectRatio();
 
 //             ImGui::Text("Projection Type");
 //             ImGui::SameLine();
@@ -630,7 +634,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                 if (ImGui::CollapsingHeader(ICON_LC_MOVE_3D " TRANSFORM",
 //                 ImGuiTreeNodeFlags_DefaultOpen)) {
 //                     auto DrawVector3Control = [](const char* label,
-//                     glm::vec3& values, float resetValue = 0.0f) {
+//                     vec3& values, f32 resetValue = 0.0f) {
 //                         ImGui::PushID(label);
 //                         ImGui::Columns(2);
 //                         ImGui::SetColumnWidth(0, 100);
@@ -645,9 +649,9 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                         };
 
 //                         for (int i = 0; i < 3; i++) {
-//                             constexpr float inputWidth = 70.0f;
+//                             constexpr f32 inputWidth = 70.0f;
 //                             ImGui::PushStyleColor(ImGuiCol_Button,
-//                             colors[i]); if (constexpr float buttonWidth
+//                             colors[i]); if (constexpr f32 buttonWidth
 //                             = 20.0f; ImGui::Button(labels[i],
 //                             ImVec2(buttonWidth, 20))) values[i] = resetValue;
 //                             ImGui::PopStyleColor();
@@ -664,7 +668,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                     };
 
 //                     DrawVector3Control("Position", transform->position);
-//                     glm::vec3 eulerRotation =
+//                     vec3 eulerRotation =
 //                     glm::degrees(glm::eulerAngles(transform->rotation));
 //                     DrawVector3Control("Rotation", eulerRotation);
 //                     transform->rotation =
@@ -750,7 +754,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                 if (ImGui::CollapsingHeader(ICON_LC_MOVE_3D " TRANSFORM",
 //                 ImGuiTreeNodeFlags_DefaultOpen)) {
 //                     auto DrawVector3Control = [](const char* label,
-//                     glm::vec3& values, float resetValue = 0.0f) {
+//                     vec3& values, f32 resetValue = 0.0f) {
 //                         ImGui::PushID(label);
 //                         ImGui::Columns(2);
 //                         ImGui::SetColumnWidth(0, 100);
@@ -765,9 +769,9 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                         };
 
 //                         for (int i = 0; i < 3; i++) {
-//                             constexpr float inputWidth = 70.0f;
+//                             constexpr f32 inputWidth = 70.0f;
 //                             ImGui::PushStyleColor(ImGuiCol_Button,
-//                             colors[i]); if (constexpr float buttonWidth
+//                             colors[i]); if (constexpr f32 buttonWidth
 //                             = 20.0f; ImGui::Button(labels[i],
 //                             ImVec2(buttonWidth, 20))) values[i] = resetValue;
 //                             ImGui::PopStyleColor();
@@ -784,7 +788,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                     };
 
 //                     DrawVector3Control("Position", transform->position);
-//                     glm::vec3 eulerRotation =
+//                     vec3 eulerRotation =
 //                     glm::degrees(glm::eulerAngles(transform->rotation));
 //                     DrawVector3Control("Rotation", eulerRotation);
 //                     transform->rotation =
@@ -847,7 +851,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                 ImGui::Text("Material Properties");
 
 //                 ImGui::ColorEdit3("Albedo Color",
-//                 reinterpret_cast<float*>(&material->albedoColor));
+//                 reinterpret_cast<f32*>(&material->albedoColor));
 
 //                 if (material->albedoTexture) {
 //                     ImGui::Text("Albedo Texture: ");
@@ -926,7 +930,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //                 // Display and edit the emission color
 //                 ImGui::ColorEdit3("Emission Color",
-//                 reinterpret_cast<float*>(&material->emissionColor));
+//                 reinterpret_cast<f32*>(&material->emissionColor));
 
 //                 // Display the emissive texture and allow changing it
 //                 if (material->emissiveTexture) {
@@ -992,11 +996,11 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //                     ImGui::Text("Color");
 //                     ImGui::ColorEdit3("##ColorPicker",
-//                     reinterpret_cast<float*>(&light->color));
+//                     reinterpret_cast<f32*>(&light->color));
 
 //                     ImGui::Text("Position");
 //                     ImGui::DragFloat3("##Position",
-//                     reinterpret_cast<float*>(&light->position), 0.1f);
+//                     reinterpret_cast<f32*>(&light->position), 0.1f);
 
 //                     ImGui::Text("Intensity");
 //                     ImGui::SliderFloat("##Intensity", &light->intensity,
@@ -1132,9 +1136,9 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                     double deltaY = ypos - center.y;
 
 //                     camera.OrbitRotate(
-//                         static_cast<float>(deltaX) *
+//                         static_cast<f32>(deltaX) *
 //                         camera.GetRotationSpeed(),
-//                         static_cast<float>(-deltaY) *
+//                         static_cast<f32>(-deltaY) *
 //                         camera.GetRotationSpeed());
 //                 } else {
 //                     skipNextMouseDelta = false;
@@ -1144,7 +1148,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //                 center.y);
 //             }
 
-//             float scroll = ImGui::GetIO().MouseWheel;
+//             f32 scroll = ImGui::GetIO().MouseWheel;
 //             if (camera.GetType() == Engine::Camera::CameraType::Orbit &&
 //             scroll != 0.0f) {
 //                 camera.OrbitZoom(-scroll * 2.0f);
@@ -1163,16 +1167,16 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 //         // Calculate the center position for the buttons
 //         ImVec2 windowSize = ImGui::GetWindowSize();
 //         ImVec2 buttonSize(30, 30); // Assuming each button is 30x30 pixels
-//         float spacing = 10; // Space between buttons
+//         f32 spacing = 10; // Space between buttons
 
 //         // Calculate the total width of the buttons including spacing
-//         float totalButtonsWidth = (buttonSize.x * 3) + (spacing * 2);
+//         f32 totalButtonsWidth = (buttonSize.x * 3) + (spacing * 2);
 
 //         // Calculate the starting X position for the first button
-//         float startX = (windowSize.x - totalButtonsWidth) / 2;
+//         f32 startX = (windowSize.x - totalButtonsWidth) / 2;
 
 //         // Calculate the starting Y position for the buttons
-//         float startY = (windowSize.y - buttonSize.y) / 2;
+//         f32 startY = (windowSize.y - buttonSize.y) / 2;
 
 //         // Set the cursor position to the center
 //         ImGui::SetCursorPos(ImVec2(startX, startY));
@@ -1197,8 +1201,8 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //         // Render scene to viewport
 //         ImVec2 viewportSize = ImGui::GetContentRegionAvail();
-//         float newWidth = viewportSize.x;
-//         float newHeight = viewportSize.y;
+//         f32 newWidth = viewportSize.x;
+//         f32 newHeight = viewportSize.y;
 
 //         if (newWidth != m_LastViewportSize.x || newHeight !=
 //         m_LastViewportSize.y) {
@@ -1237,7 +1241,7 @@ void UIManager::Render(VkCommandBuffer commandBuffer) {
 
 //                 if (ImGuizmo::IsUsing()) {
 
-//                     glm::vec3 translation, rotation, scale;
+//                     vec3 translation, rotation, scale;
 //                     ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(transformComponent),
 //                             glm::value_ptr(translation),
 //                             glm::value_ptr(rotation),

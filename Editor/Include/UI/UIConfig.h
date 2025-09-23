@@ -28,6 +28,8 @@ struct Config {
 
   static inline float BaseFontSize = 16.0f;
 
+  static inline std::string CurrentPath = "/Assets";
+
 #if defined(AQUILA_PLATFORM_WINDOWS)
   static inline const char *MainFontPath = R"(C:/Windows/Fonts/segoeui.ttf)";
   static inline std::string IconsFontPath =

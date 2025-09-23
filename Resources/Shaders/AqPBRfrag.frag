@@ -11,10 +11,8 @@ layout(location = 0) out vec4 outColor;
 struct LightData {
     vec3 color;
     float intensity;
-
     vec3 direction;
     float range;
-
     vec3 position;
     int type;
     float innerCone;
@@ -24,18 +22,17 @@ struct LightData {
 
 layout(std140, set = 0, binding = 1) uniform Lights {
     LightData lights[32];
+    int lightCount;
 };
 
 const vec3 baseColor = vec3(1.0, 0.8, 0.6);
 
 void main() {
     vec3 N = normalize(fragNormal);
-    vec3 result = vec3(0.0); // ambient term
+    vec3 result = vec3(0.0);
 
-    for (int i = 0; i < 32; ++i) {
+    for (int i = 0; i < lightCount; ++i) {
         LightData light = lights[i];
-
-        if (light.isActive == 0) continue; // still dont get it why this does not kill the light and stop its contribution
 
         if (light.type == 1) { // directional
             vec3 L = normalize(-light.direction);
