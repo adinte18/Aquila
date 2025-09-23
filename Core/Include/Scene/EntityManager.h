@@ -12,42 +12,46 @@ public:
 
   entt::registry &GetRegistry();
 
-  template <typename... Components> AqEntity GetFirstEntityWith() {
-    AQUILA_CORE_ASSERT(m_Scene);
+  template <typename... Components> Entity GetFirstEntityWith() {
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     auto view = m_Registry.view<Components...>();
 
     if (view.begin() == view.end()) {
-      return AqEntity{};
+      return Entity{};
     }
 
     entt::entity firstEntity = *view.begin();
-    return AqEntity{firstEntity, m_Scene};
+    return Entity{firstEntity, m_Scene};
   }
 
-  template <typename... Components> std::vector<AqEntity> GetAllWith() {
-    AQUILA_CORE_ASSERT(m_Scene);
+  template <typename... Components> std::vector<Entity> GetAllWith() {
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     auto view = m_Registry.view<Components...>();
 
-    std::vector<AqEntity> result{};
+    std::vector<Entity> result{};
     result.reserve(std::distance(view.begin(), view.end()));
 
     for (auto entity : view) {
-      result.emplace(result.begin(), AqEntity{entity, m_Scene});
+      result.emplace(result.begin(), Entity{entity, m_Scene});
     }
 
     return result;
   }
 
-  AqEntity AddEntity();
-  AqEntity AddEntity(const std::string &name);
-  AqEntity GetEntityByUUID(UUID id);
+  Entity AddEntity(const std::string &name);
+  Entity GetEntityByUUID(Utility::UUID id);
+
+  std::string GenerateUniqueName(const std::string &baseName);
+  std::optional<Entity> FindEntityByName(const std::string &name);
 
   void DeleteEntity();
   void Clear();
 
-  bool EntityExists(UUID id);
-  void KillEntity(AqEntity entity);
-  bool IsEntityValid(AqEntity entity) const;
+  void ApplyPreset(Entity &entity, EntityPreset preset);
+  std::string GetDefaultName(EntityPreset preset);
+  bool EntityExists(const Utility::UUID &uuid);
+  void KillEntity(Entity entity);
+  bool IsEntityValid(Entity entity) const;
 
   void QueueForKill(entt::entity entity);
   void FlushScene();

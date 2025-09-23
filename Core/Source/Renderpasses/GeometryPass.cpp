@@ -1,26 +1,26 @@
 #include "Renderpasses/GeometryPass.h"
 
 bool Engine::GeometryPass::CreateRenderTarget() {
-  colorAttachment = RenderTarget::CreateColorTexture(
+  m_ColorAttachment = RenderTarget::CreateColorTexture(
       m_Device, "GeometryPass_ColorAttachment",
       RenderTarget::TargetType::TEXTURE_2D, m_Extent.width, m_Extent.height,
       VK_FORMAT_B8G8R8A8_UNORM, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-  depthAttachment = RenderTarget::CreateDepthTexture(
+  m_DepthAttachment = RenderTarget::CreateDepthTexture(
       m_Device, "GeometryPass_DepthAttachment", m_Extent.width, m_Extent.height,
       VK_FORMAT_D32_SFLOAT, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-  return colorAttachment->HasImageView() && depthAttachment->HasImageView();
+  return m_ColorAttachment->HasImageView() && m_DepthAttachment->HasImageView();
 }
 
 bool Engine::GeometryPass::CreateFramebuffer() {
-  if (!colorAttachment || !colorAttachment->HasImageView() ||
-      !depthAttachment || !depthAttachment->HasImageView()) {
+  if (!m_ColorAttachment || !m_ColorAttachment->HasImageView() ||
+      !m_DepthAttachment || !m_DepthAttachment->HasImageView()) {
     throw std::runtime_error(
         "Missing image views for framebuffer attachments!");
   }
 
   std::vector<VkImageView> attachments = {
-      colorAttachment->GetTextureImageView(),
-      depthAttachment->GetTextureImageView()};
+      m_ColorAttachment->GetTextureImageView(),
+      m_DepthAttachment->GetTextureImageView()};
 
   Framebuffer::FramebufferDetails details = {
       m_Extent.width, m_Extent.height, Framebuffer::Target::Offscreen, 1,

@@ -3,7 +3,7 @@
 
 #include <chrono>
 
-namespace Timer {
+namespace Utility {
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
@@ -38,16 +38,16 @@ public:
     m_LastFrameTime = currentTime;
   }
 
-  float GetDeltaTime() const { return m_DeltaTime; }
+  f32 GetDeltaTime() const { return m_DeltaTime; }
 
-  float GetElapsedTime() const { return ElapsedSeconds(m_StartTime, Now()); }
+  f32 GetElapsedTime() const { return ElapsedSeconds(m_StartTime, Now()); }
 
 private:
   TimePoint m_StartTime;
   TimePoint m_LastFrameTime;
-  float m_DeltaTime = 0.0f;
+  f32 m_DeltaTime = 0.0f;
 };
 
-} // namespace Timer
+} // namespace Utility
 
 #endif // AQUILA_TIMER_H

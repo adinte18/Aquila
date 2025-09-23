@@ -4,19 +4,20 @@
 
 #include "Engine/Renderer/Renderpass.h"
 
+namespace Engine {
 Renderpass::~Renderpass() {}
 
 VkDescriptorImageInfo Renderpass::GetImageInfo(VkImageLayout layout) const {
   VkDescriptorImageInfo info = {};
 
-  if (colorAttachment && colorAttachment->HasImageView() &&
-      colorAttachment->HasSampler()) {
-    info.imageView = colorAttachment->GetTextureImageView();
-    info.sampler = colorAttachment->GetTextureSampler();
-  } else if (depthAttachment && depthAttachment->HasImageView() &&
-             depthAttachment->HasSampler()) {
-    info.imageView = depthAttachment->GetTextureImageView();
-    info.sampler = depthAttachment->GetTextureSampler();
+  if (m_ColorAttachment && m_ColorAttachment->HasImageView() &&
+      m_ColorAttachment->HasSampler()) {
+    info.imageView = m_ColorAttachment->GetTextureImageView();
+    info.sampler = m_ColorAttachment->GetTextureSampler();
+  } else if (m_DepthAttachment && m_DepthAttachment->HasImageView() &&
+             m_DepthAttachment->HasSampler()) {
+    info.imageView = m_DepthAttachment->GetTextureImageView();
+    info.sampler = m_DepthAttachment->GetTextureSampler();
   }
   info.imageLayout = layout;
   return info;
@@ -24,14 +25,14 @@ VkDescriptorImageInfo Renderpass::GetImageInfo(VkImageLayout layout) const {
 
 void Renderpass::WriteToDescriptorSet() {
   VkDescriptorImageInfo descriptorInfo{};
-  if (colorAttachment && colorAttachment->HasImageView()) {
-    descriptorInfo.sampler = colorAttachment->GetTextureSampler();
-    descriptorInfo.imageView = colorAttachment->GetTextureImageView();
+  if (m_ColorAttachment && m_ColorAttachment->HasImageView()) {
+    descriptorInfo.sampler = m_ColorAttachment->GetTextureSampler();
+    descriptorInfo.imageView = m_ColorAttachment->GetTextureImageView();
     descriptorInfo.imageLayout =
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL; // For color
-  } else if (depthAttachment && depthAttachment->HasImageView()) {
-    descriptorInfo.sampler = depthAttachment->GetTextureSampler();
-    descriptorInfo.imageView = depthAttachment->GetTextureImageView();
+  } else if (m_DepthAttachment && m_DepthAttachment->HasImageView()) {
+    descriptorInfo.sampler = m_DepthAttachment->GetTextureSampler();
+    descriptorInfo.imageView = m_DepthAttachment->GetTextureImageView();
     descriptorInfo.imageLayout =
         VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL; // For depth
   }
@@ -41,3 +42,4 @@ void Renderpass::WriteToDescriptorSet() {
   writer.writeImage(0, &descriptorInfo);
   writer.overwrite(m_DescriptorSet);
 }
+} // namespace Engine

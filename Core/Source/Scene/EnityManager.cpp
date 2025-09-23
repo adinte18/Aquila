@@ -1,3 +1,11 @@
+#include "Engine/Controller.h"
+#include "Engine/Mesh.h"
+#include "Scene/Components/CameraComponent.h"
+#include "Scene/Components/LightComponent.h"
+#include "Scene/Components/MeshComponent.h"
+#include "Scene/Components/MetadataComponent.h"
+#include "Scene/Components/SceneNodeComponent.h"
+#include "Scene/Components/TransformComponent.h"
 #include "Scene/EntityManager.h"
 #include "Scene/Scene.h"
 #include "Scene/SceneGraph.h"
@@ -11,7 +19,7 @@ EntityManager::~EntityManager() = default;
  * @param scene The scene to be managed by this EntityManager.
  */
 entt::registry &EntityManager::GetRegistry() {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+  AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
 
   return m_Registry;
 }
@@ -22,45 +30,208 @@ void EntityManager::QueueForKill(entt::entity handle) {
 
 void EntityManager::FlushScene() {
   for (auto &entityHandle : m_DeletionQueue) {
-    auto &node = m_Scene->GetRegistry().get<SceneNodeComponent>(entityHandle);
+    auto entity = Entity{entityHandle, m_Scene};
+
+    auto &node = entity.GetComponent<SceneNodeComponent>();
 
     if (!node.Children.empty())
       m_Scene->GetSceneGraph()->RemoveAllChildren(m_Scene->GetRegistry(),
                                                   node.Entity);
 
-    AqEntity{entityHandle, m_Scene}.Kill();
+    entity.Kill();
   }
 
   m_DeletionQueue.clear();
 }
 
+void EntityManager::ApplyPreset(Entity &entity, EntityPreset preset) {
+  switch (preset) {
+  case EntityPreset::Empty:
+    break;
+
+  case EntityPreset::Cube: {
+    auto &component = entity.AddComponent<MeshComponent>();
+
+    auto mesh = CreateRef<Mesh>(Engine::Controller::Get()->GetDevice(),
+                                "procedural_cube");
+    auto meshData = mesh->GenerateCube(5.f);
+    mesh->LoadFromData(meshData);
+
+    component.data = mesh;
+
+    break;
+  }
+  case EntityPreset::Sphere: {
+    auto &component = entity.AddComponent<MeshComponent>();
+
+    auto mesh = CreateRef<Mesh>(Engine::Controller::Get()->GetDevice(),
+                                "procedural_sphere");
+    auto meshData = mesh->GenerateSphere();
+    mesh->LoadFromData(meshData);
+
+    component.data = mesh;
+
+    break;
+  }
+
+  case EntityPreset::Cylinder: {
+    auto &component = entity.AddComponent<MeshComponent>();
+
+    auto mesh = CreateRef<Mesh>(Engine::Controller::Get()->GetDevice(),
+                                "procedural_cylinder");
+    auto meshData = mesh->GenerateCylinder();
+    mesh->LoadFromData(meshData);
+
+    component.data = mesh;
+
+    break;
+  }
+  case EntityPreset::Plane: {
+    auto &component = entity.AddComponent<MeshComponent>();
+
+    auto mesh = CreateRef<Mesh>(Engine::Controller::Get()->GetDevice(),
+                                "procedural_plane");
+    auto meshData = mesh->GeneratePlane();
+    mesh->LoadFromData(meshData);
+
+    component.data = mesh;
+
+    break;
+  }
+  // Lights
+  case EntityPreset::DirectionalLight: {
+    auto &component = entity.AddComponent<LightComponent>();
+    component.m_Type = LightComponent::Type::Directional;
+    break;
+  }
+  case EntityPreset::PointLight: {
+    auto &component = entity.AddComponent<LightComponent>();
+    component.m_Type = LightComponent::Type::Point;
+    break;
+  }
+
+  case EntityPreset::SpotLight: {
+    auto &component = entity.AddComponent<LightComponent>();
+    component.m_Type = LightComponent::Type::Spot;
+    break;
+  }
+  // Cameras
+  case EntityPreset::PerspectiveCamera: {
+    auto &component = entity.AddComponent<CameraComponent>();
+    component.isOrthographic = false;
+
+    break;
+  }
+
+  case EntityPreset::OrthographicCamera: {
+    auto &component = entity.AddComponent<CameraComponent>();
+    component.isOrthographic = true;
+
+    break;
+  }
+  default:
+    AQUILA_LOG_WARNING("Unknown EntityPreset");
+    break;
+  }
+}
+
+std::string EntityManager::GetDefaultName(EntityPreset preset) {
+  switch (preset) {
+  case EntityPreset::Empty:
+    return "Empty Entity";
+  case EntityPreset::Cube:
+    return "Cube";
+  case EntityPreset::Sphere:
+    return "Sphere";
+  case EntityPreset::Cylinder:
+    return "Cylinder";
+  case EntityPreset::Plane:
+    return "Plane";
+  case EntityPreset::DirectionalLight:
+    return "Directional Light";
+  case EntityPreset::PointLight:
+    return "Point Light";
+  case EntityPreset::SpotLight:
+    return "Spot Light";
+  case EntityPreset::PerspectiveCamera:
+    return "Camera";
+  case EntityPreset::OrthographicCamera:
+    return "Orthographic Camera";
+  default:
+    return "Unknown Entity";
+  }
+}
+
+Entity EntityManager::AddEntity(const std::string &name) {
+  AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
+
+  auto entity = Entity{m_Registry.create(), m_Scene};
+
+  std::string uniqueName = GenerateUniqueName(name);
+
+  entity.AddComponent<MetadataComponent>(Utility::UUID::Generate(), uniqueName,
+                                         true);
+  entity.AddComponent<SceneNodeComponent>();
+  entity.AddComponent<TransformComponent>();
+
+  return entity;
+}
+
+std::string EntityManager::GenerateUniqueName(const std::string &baseName) {
+  auto entities = GetAllWith<MetadataComponent>();
+
+  std::unordered_set<std::string> existingNames;
+  for (auto entity : entities) {
+    auto &metadata = m_Registry.get<MetadataComponent>(entity.GetHandle());
+    existingNames.insert(metadata.Name);
+  }
+
+  if (existingNames.find(baseName) == existingNames.end()) {
+    return baseName;
+  }
+
+  int counter = 1;
+  std::string candidateName;
+  do {
+    candidateName = baseName + " (" + std::to_string(counter) + ")";
+    counter++;
+  } while (existingNames.find(candidateName) != existingNames.end());
+
+  return candidateName;
+}
 /**
- * @brief Adds a new entity to the scene with a default name.
+ * @brief Verify if entity exists in the scene
  *
- * @return AqEntity The newly created entity wrapped in AqEntity.
+ * @param uuid
+ * @return true if exsists
+ * @return false if not
  */
-AqEntity EntityManager::AddEntity() {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
 
-  auto entity = m_Registry.create();
+bool EntityManager::EntityExists(const Utility::UUID &uuid) {
+  auto entities = GetAllWith<MetadataComponent>();
 
-  m_Registry.emplace<MetadataComponent>(
-      entity, MetadataComponent{UUID::Generate(), "Unnamed entity", true});
-  m_Registry.emplace<SceneNodeComponent>(entity);
-  return AqEntity(entity, m_Scene);
+  for (auto entity : entities) {
+    auto &metadata = m_Registry.get<MetadataComponent>(entity.GetHandle());
+    if (metadata.ID == uuid) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
-AqEntity EntityManager::AddEntity(const std::string &name) {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+std::optional<Entity> EntityManager::FindEntityByName(const std::string &name) {
+  auto entities = GetAllWith<MetadataComponent>();
 
-  auto entity = m_Registry.create();
+  for (auto entity : entities) {
+    auto &metadata = m_Registry.get<MetadataComponent>(entity.GetHandle());
+    if (metadata.Name == name) {
+      return entity;
+    }
+  }
 
-  m_Registry.emplace<MetadataComponent>(
-      entity, MetadataComponent{UUID::Generate(), name, true});
-  m_Registry.emplace<SceneNodeComponent>(entity);
-  return AqEntity(entity, m_Scene);
+  return std::nullopt;
 }
-
 /**
  * @brief Clears all entities from the scene.
  *
@@ -78,10 +249,10 @@ void EntityManager::Clear() {
  * @brief Get entity by his UUID
  *
  * @param uuid UUID of the entity to find
- * @return AqEntity Entity with the given UUID
+ * @return Entity Entity with the given UUID
  */
-AqEntity EntityManager::GetEntityByUUID(UUID uuid) {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+Entity EntityManager::GetEntityByUUID(Utility::UUID uuid) {
+  AQUILA_ASSERT(m_Scene, "There should be an active scene");
 
   auto view = m_Registry.view<MetadataComponent>(); // get all entities with
                                                     // metadata component
@@ -89,35 +260,12 @@ AqEntity EntityManager::GetEntityByUUID(UUID uuid) {
   for (auto &entity : view) {
     auto idComponent = m_Registry.get<MetadataComponent>(entity);
     if (idComponent.ID == uuid) {
-      AQUILA_CORE_ASSERT(m_Scene);
-      return AqEntity(entity, m_Scene);
+      AQUILA_ASSERT(m_Scene, "There should be an active scene");
+      return Entity(entity, m_Scene);
     }
   }
 
-  return AqEntity();
-}
-
-/**
- * @brief Verify if entity exists in the scene
- *
- * @param uuid
- * @return true if exsists
- * @return false if not
- */
-bool EntityManager::EntityExists(UUID uuid) {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
-
-  auto view = m_Registry.view<MetadataComponent>(); // get all entities with
-                                                    // metadata component
-
-  for (auto &entity : view) {
-    auto idComponent = m_Registry.get<MetadataComponent>(entity);
-    if (idComponent.ID == uuid) {
-      return true;
-    }
-  }
-
-  return false;
+  return Entity();
 }
 
 /**
@@ -125,8 +273,8 @@ bool EntityManager::EntityExists(UUID uuid) {
  *
  * @param entity
  */
-void EntityManager::KillEntity(AqEntity entity) {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+void EntityManager::KillEntity(Entity entity) {
+  AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
   m_Registry.destroy(entity.GetHandle());
 }
 
@@ -137,8 +285,8 @@ void EntityManager::KillEntity(AqEntity entity) {
  * @return true if valid
  * @return false if not
  */
-bool EntityManager::IsEntityValid(AqEntity entity) const {
-  AQUILA_CORE_ASSERT(m_Scene && "Scene should not be nullptr");
+bool EntityManager::IsEntityValid(Entity entity) const {
+  AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
   return m_Registry.valid(entity.GetHandle());
 }
 } // namespace Engine

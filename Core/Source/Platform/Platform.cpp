@@ -1,7 +1,5 @@
 #include "Platform/Platform.h"
 
-#include <iostream>
-
 namespace Core::Platform {
 
 static PlatformSpec s_PlatformInfo = {};
@@ -66,9 +64,7 @@ bool Initialize() {
   s_PlatformInfo.is64Bit = true;
   s_PlatformInfo.version = "64-bit";
 #endif
-
   s_Initialized = true;
-  Aquila::Log("Platform layer initialized successfully");
   return true;
 }
 
@@ -78,9 +74,7 @@ void Shutdown() {
   if (!s_Initialized) {
     return;
   }
-
   s_Initialized = false;
-  Aquila::Log("Platform layer shutdown successfully");
 }
 
 std::uint64_t GetHighResolutionTime() {

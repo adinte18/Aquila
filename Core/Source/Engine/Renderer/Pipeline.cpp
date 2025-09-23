@@ -1,5 +1,6 @@
 #include "Engine/Renderer/Pipeline.h"
 #include "Engine/Renderer/Vertex.h"
+
 Engine::Pipeline::Pipeline(Engine::Device &device,
                            const std::string &vertFilepath,
                            const std::string &fragFilepath,

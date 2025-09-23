@@ -4,35 +4,35 @@
 #include "Engine/Renderer/Device.h"
 #include "Texture2D.h"
 
-
 namespace Engine {
 class RenderTarget {
 public:
-  Ref<Texture2D> colorTexture{}; // Shared pointer to color texture
-  Ref<Texture2D> depthTexture{}; // Shared pointer to depth texture
+  Ref<Texture2D> m_ColorAttachment{}; // Shared pointer to color texture
+  Ref<Texture2D> m_DepthAttachment{}; // Shared pointer to depth texture
 
   enum class AttachmentType { COLOR, DEPTH, BOTH };
 
   enum class TargetType { TEXTURE_2D, CUBEMAP };
 
-  RenderTarget(Device &dev, uint32_t width, uint32_t height,
+  RenderTarget(Device &device, uint32_t width, uint32_t height,
                VkFormat colorFormat, VkImageUsageFlags colorUsage,
                VkFormat depthFormat, VkImageUsageFlags depthUsage,
                const std::string &debugName = "",
                AttachmentType attachmentType = AttachmentType::BOTH,
                TargetType targetType = TargetType::TEXTURE_2D)
-      : device(dev), target(targetType) {
+      : m_Device(device), m_Target(targetType) {
 
     if (attachmentType == AttachmentType::COLOR ||
         attachmentType == AttachmentType::BOTH) {
-      colorTexture = CreateColorTexture(dev, debugName, targetType, width,
-                                        height, colorFormat, colorUsage);
+      m_ColorAttachment =
+          CreateColorTexture(device, debugName, targetType, width, height,
+                             colorFormat, colorUsage);
     }
 
     if (attachmentType == AttachmentType::DEPTH ||
         attachmentType == AttachmentType::BOTH) {
-      depthTexture = CreateDepthTexture(dev, debugName, width, height,
-                                        depthFormat, depthUsage);
+      m_DepthAttachment = CreateDepthTexture(device, debugName, width, height,
+                                             depthFormat, depthUsage);
     }
   }
 
@@ -79,8 +79,8 @@ public:
   }
 
 private:
-  Device &device;
-  TargetType target;
+  Device &m_Device;
+  TargetType m_Target;
 };
 } // namespace Engine
 

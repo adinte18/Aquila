@@ -1,4 +1,5 @@
 #include "Scene/SceneManager.h"
+#include "Utilities/Singleton.h"
 
 namespace Engine {
 /**
@@ -21,7 +22,7 @@ AquilaScene *SceneManager::GetActiveScene() const { return m_ActiveScene; }
  *
  * @param name The name of the scene to change to.
  */
-void SceneManager::ChangeScene(const UUID &handle) {
+void SceneManager::ChangeScene(const Utility::UUID &handle) {
   auto it = m_Scenes.find(handle);
   if (it != m_Scenes.end()) {
     m_ActiveScene = it->second.get();
@@ -42,7 +43,7 @@ bool SceneManager::HasScene() const { return !m_Scenes.empty(); }
  *
  * @param name The name of the scene to be removed.
  */
-void SceneManager::RemoveScene(const UUID &handle) {
+void SceneManager::RemoveScene(const Utility::UUID &handle) {
   auto it = m_Scenes.find(handle);
   if (it != m_Scenes.end()) {
     if (m_ActiveScene == it->second.get()) {
@@ -60,8 +61,8 @@ void SceneManager::RemoveScene(const UUID &handle) {
  * @param onActivated A callback function that will be called when the scene is
  * activated.
  */
-void SceneManager::EnqueueScene(
-    Unique<AquilaScene> scene, std::function<void(AquilaScene *)> onActivated) {
+void SceneManager::EnqueueScene(Unique<AquilaScene> scene,
+                                Delegate<void(AquilaScene *)> onActivated) {
   m_Scenes[scene->GetHandle()] = std::move(scene);
 
   // callback for when the scene is activated
@@ -105,12 +106,15 @@ void SceneManager::ProcessSceneChange() {
     return;
 
   ChangeScene(m_PendingSceneChangeHandle);
-  m_PendingSceneChangeHandle = UUID::Null();
+  m_PendingSceneChangeHandle = Utility::UUID::Null();
   m_HasPendingSceneChange = false;
 
   if (m_OnSceneActivated && m_ActiveScene) {
     m_OnSceneActivated(m_ActiveScene);
     m_OnSceneActivated = nullptr;
   }
+
+  AQUILA_LOG_DEBUG("Current active scene : {}",
+                   GetActiveScene()->GetSceneName());
 }
 } // namespace Engine

@@ -61,8 +61,7 @@ Buffer::~Buffer() {
  * @return VkResult of the buffer mapping call
  */
 VkResult Buffer::Map(VkDeviceSize size, VkDeviceSize offset) {
-  AQUILA_CORE_ASSERT(m_Buffer && m_Memory &&
-                     "Called map on buffer before create");
+  AQUILA_ASSERT(m_Buffer && m_Memory, "Called map on buffer before create");
   return vkMapMemory(m_Device.GetDevice(), m_Memory, offset, size, 0,
                      &m_Mapped);
 }
@@ -90,7 +89,7 @@ void Buffer::UnMap() {
  *
  */
 void Buffer::Write(void *data, VkDeviceSize size, VkDeviceSize offset) {
-  AQUILA_CORE_ASSERT(m_Mapped && "Cannot copy to unmapped buffer");
+  AQUILA_ASSERT(m_Mapped, "Cannot copy to unmapped buffer");
 
   if (size == VK_WHOLE_SIZE) {
     memcpy(m_Mapped, data, m_BufferSize);

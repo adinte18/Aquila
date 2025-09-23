@@ -19,11 +19,25 @@
 namespace Engine {
 class EntityManager;
 
-class AqEntity {
+enum class EntityPreset {
+  Empty,
+  Cube,
+  Sphere,
+  Cylinder,
+  Plane,
+  PointLight,
+  DirectionalLight,
+  SpotLight,
+  EnvLight,
+  OrthographicCamera,
+  PerspectiveCamera,
+};
+
+class Entity {
 public:
-  AqEntity() {};
-  AqEntity(entt::entity handle, AquilaScene *scene)
-      : m_Scene(scene), m_EntityHandle(handle) {};
+  Entity() {};
+  Entity(entt::entity handle, AquilaScene *scene)
+      : m_EntityHandle(handle), m_Scene(scene) {};
 
   template <typename T, typename... Args> T &AddComponent(Args &&...args) {
     return m_Scene->GetRegistry().emplace<T>(m_EntityHandle,
@@ -35,7 +49,7 @@ public:
   }
 
   template <typename T> const T &GetComponent() const {
-    AQUILA_CORE_ASSERT(m_Scene);
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     return m_Scene->GetRegistry().get<T>(m_EntityHandle);
   }
 
@@ -59,22 +73,22 @@ public:
   }
 
   template <typename T> bool HasComponent() const {
-    AQUILA_CORE_ASSERT(m_Scene);
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     return m_Scene->GetRegistry().all_of<T>(m_EntityHandle);
   }
 
   template <typename T> void RemoveComponent() const {
-    AQUILA_CORE_ASSERT(m_Scene);
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     m_Scene->GetRegistry().remove<T>(m_EntityHandle);
   }
 
   entt::entity GetHandle() const { return m_EntityHandle; }
   AquilaScene *GetScene() const {
-    AQUILA_CORE_ASSERT(m_Scene);
+    AQUILA_ASSERT(m_Scene, "There should be an active scene");
     return m_Scene;
   }
 
-  const UUID &GetUUID() const;
+  const Utility::UUID &GetUUID() const;
   const std::string &GetName() const;
 
   void Kill();

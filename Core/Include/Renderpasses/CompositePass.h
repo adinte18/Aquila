@@ -14,10 +14,10 @@ public:
     if (m_Framebuffer != VK_NULL_HANDLE)
       vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);
 
-    if (colorAttachment)
-      colorAttachment->Destroy();
-    if (depthAttachment)
-      depthAttachment->Destroy();
+    if (m_ColorAttachment)
+      m_ColorAttachment->Destroy();
+    if (m_DepthAttachment)
+      m_DepthAttachment->Destroy();
 
     if (m_RenderPass != VK_NULL_HANDLE)
       vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
@@ -39,10 +39,10 @@ public:
 
   void Invalidate(const VkExtent2D &extent) {
     m_Extent = extent;
-    if (colorAttachment)
-      colorAttachment->Destroy();
-    if (depthAttachment)
-      depthAttachment->Destroy();
+    if (m_ColorAttachment)
+      m_ColorAttachment->Destroy();
+    if (m_DepthAttachment)
+      m_DepthAttachment->Destroy();
 
     if (m_Framebuffer != VK_NULL_HANDLE)
       vkDestroyFramebuffer(m_Device.GetDevice(), m_Framebuffer, nullptr);

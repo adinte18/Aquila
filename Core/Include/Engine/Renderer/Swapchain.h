@@ -29,9 +29,9 @@ public:
   uint32_t Width() { return swapChainExtent.width; }
   uint32_t Height() { return swapChainExtent.height; }
 
-  float ExtentAspectRatio() {
-    return static_cast<float>(swapChainExtent.width) /
-           static_cast<float>(swapChainExtent.height);
+  f32 ExtentAspectRatio() {
+    return static_cast<f32>(swapChainExtent.width) /
+           static_cast<f32>(swapChainExtent.height);
   }
 
   VkFormat FindDepthFormat();

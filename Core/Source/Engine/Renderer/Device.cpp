@@ -158,7 +158,7 @@ void Device::CreateLogicalDevice() {
   std::set<uint32_t> uniqueQueueFamilies = {indices.m_GraphicsFamily.value(),
                                             indices.m_PresentFamily.value()};
 
-  float queuePriority = 1.0f;
+  f32 queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
     VkDeviceQueueCreateInfo queueCreateInfo{};
     queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;

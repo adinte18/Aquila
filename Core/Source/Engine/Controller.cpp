@@ -2,6 +2,7 @@
 #include "Platform/Filesystem/NativeFileSystem.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
 #include "Utilities/Log.h"
+#include "Utilities/Singleton.h"
 
 namespace Engine {
 
@@ -12,13 +13,13 @@ Controller::~Controller() { OnEnd(); }
 void Controller::OnStart() {
   if (Core::Platform::Initialize()) {
     const auto &info = Core::Platform::GetPlatformInfo();
-    Aquila::Log("Running on: " + std::string(info.name) + " (" +
-                std::string(info.version) + ")");
-    Aquila::Log("CPU Cores: " + std::to_string(info.cpuCores));
-    Aquila::Log("Total Memory: " +
-                std::to_string(info.totalMemory / (1024 * 1024)) + " MB");
+    AQUILA_LOG_INFO("Running on: " + std::string(info.name) + " (" +
+                    std::string(info.version) + ")");
+    AQUILA_LOG_INFO("CPU Cores: " + std::to_string(info.cpuCores));
+    AQUILA_LOG_INFO("Total Memory: " +
+                    std::to_string(info.totalMemory / (1024 * 1024)) + " MB");
   } else {
-    Aquila::LogError("Failed to initialize platform");
+    AQUILA_LOG_ERROR("Failed to initialize platform");
     return;
   }
 
@@ -27,19 +28,19 @@ void Controller::OnStart() {
 
   auto assetsFolder = CreateRef<VFS::NativeFileSystem>(ASSET_PATH);
   m_VFS->Mount("/Assets", assetsFolder, 100, false);
-  Aquila::Log("VFS Initialized with " +
-              std::to_string(m_VFS->GetMountPoints().size()) +
-              " mount points.");
+  AQUILA_LOG_INFO("VFS Initialized with " +
+                  std::to_string(m_VFS->GetMountPoints().size()) +
+                  " mount points.");
 
   m_Window = CreateUnique<Window>(800, 600, "Aquila Editor");
   m_Device = CreateUnique<Device>(*m_Window);
-  m_Stopwatch = CreateUnique<Timer::Stopwatch>();
+  m_Stopwatch = CreateUnique<Utility::Stopwatch>();
 
   DescriptorAllocator::Init(*m_Device); // setup global descriptor pool
 
   m_EditorCamera = CreateUnique<EditorCamera>();
   m_EditorCamera->SetPerspectiveProjection(40.f, 1.778f, 0.1f, 100.f);
-  m_EditorCamera->SetPosition(glm::vec3(0, 1, -10));
+  m_EditorCamera->SetPosition(vec3(0, 1, -10));
   m_EditorCamera->SetViewYXZ(m_EditorCamera->GetPosition(),
                              m_EditorCamera->GetRotation());
 
@@ -52,13 +53,12 @@ void Controller::OnStart() {
 
   if (m_SceneManager->GetActiveScene() != nullptr) {
     EventBus::Init();
-    m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(),
-                                      m_Renderer.get());
+    m_EventRegistry->RegisterHandlers(m_Device, m_SceneManager, m_Renderer);
   } else {
-    Aquila::LogError("No active scene to register handlers for.");
+    AQUILA_LOG_ERROR("No active scene to register handlers for.");
   }
 
-  Aquila::Log("Initialized");
+  AQUILA_LOG_INFO("Engine core initialized");
 }
 
 void Controller::OnUpdate() {
@@ -67,20 +67,15 @@ void Controller::OnUpdate() {
 
   m_Renderer->InvalidatePasses();
 
-  // Handle scene change
   if (m_SceneManager && m_SceneManager->HasPendingSceneChange()) {
     m_SceneManager->ProcessSceneChange();
-
-    EventBus::Get()->Clear();
-    m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(),
-                                      m_Renderer.get());
   }
 
   m_Window->PollEvents();
 }
 
 void Controller::OnEnd() {
-  Aquila::Log("Engine controller destructor called");
+  AQUILA_LOG_INFO("Engine controller destructor called");
 
   VFS::VirtualFileSystem::Shutdown();
   EventBus::Shutdown();
@@ -90,10 +85,6 @@ void Controller::OnEnd() {
 void Controller::HandleSceneChange() {
   if (m_SceneManager && m_SceneManager->HasPendingSceneChange()) {
     m_SceneManager->ProcessSceneChange();
-
-    EventBus::Get()->Clear();
-    m_EventRegistry->RegisterHandlers(m_Device.get(), m_SceneManager.get(),
-                                      m_Renderer.get());
   }
 }
 } // namespace Engine

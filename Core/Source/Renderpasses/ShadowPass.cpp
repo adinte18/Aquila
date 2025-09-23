@@ -5,21 +5,21 @@
 #include "Renderpasses/ShadowPass.h"
 
 bool Engine::ShadowPass::CreateRenderTarget() {
-  depthAttachment = RenderTarget::CreateDepthTexture(
+  m_DepthAttachment = RenderTarget::CreateDepthTexture(
       m_Device, "ShadowPass_DepthAttachment", 8192, 8192, VK_FORMAT_D32_SFLOAT,
       VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-  return depthAttachment->HasImageView();
+  return m_DepthAttachment->HasImageView();
 }
 
 bool Engine::ShadowPass::CreateFramebuffer() {
   m_Extent = {8192, 8192};
 
-  if (!depthAttachment || !depthAttachment->HasImageView()) {
+  if (!m_DepthAttachment || !m_DepthAttachment->HasImageView()) {
     throw std::runtime_error(
         "Missing image views for framebuffer attachments!");
   }
 
-  const auto attachment = depthAttachment->GetTextureImageView();
+  const auto attachment = m_DepthAttachment->GetTextureImageView();
 
   m_Framebuffers[0] = Engine::Framebuffer::Construct(
       m_Device, {m_Extent.width,

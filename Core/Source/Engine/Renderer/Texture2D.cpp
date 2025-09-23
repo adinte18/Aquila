@@ -527,14 +527,14 @@ void Texture2D::CreateHDRTextureImage(const std::string &filepath) {
   stbi_set_flip_vertically_on_load(false);
 
   int texWidth, texHeight, texChannels;
-  float *pixels =
+  f32 *pixels =
       stbi_loadf(filepath.c_str(), &texWidth, &texHeight, &texChannels, 4);
   if (!pixels) {
     throw std::runtime_error("Failed to load HDR texture image: " + filepath);
   }
 
   auto flippedPixels = FlipImageVertically(pixels, texWidth, texHeight, 4);
-  VkDeviceSize imageSize = texWidth * texHeight * 4 * sizeof(float);
+  VkDeviceSize imageSize = texWidth * texHeight * 4 * sizeof(f32);
 
   Buffer stagingBuffer =
       CreateStagingBuffer(imageSize, "HDR_Texture_StagingBuffer");
@@ -564,10 +564,10 @@ void Texture2D::CreateHDRTextureImage(const std::string &filepath) {
   SetDebugName(VK_OBJECT_TYPE_IMAGE, m_Image, m_DebugName + "_HDR_Image");
 }
 
-std::unique_ptr<float[]> Texture2D::FlipImageVertically(float *pixels,
-                                                        int width, int height,
-                                                        int channels) const {
-  auto flippedPixels = std::make_unique<float[]>(width * height * channels);
+std::unique_ptr<f32[]> Texture2D::FlipImageVertically(f32 *pixels, int width,
+                                                      int height,
+                                                      int channels) const {
+  auto flippedPixels = std::make_unique<f32[]>(width * height * channels);
 
   for (int y = 0; y < height; ++y) {
     for (int x = 0; x < width; ++x) {
@@ -769,7 +769,7 @@ void Texture2D::CreateMipMappedCubemapImageView(VkFormat format) {
 void Texture2D::CreateMipMappedCubemapSampler() {
   VkSamplerCreateInfo samplerInfo = CreateSamplerCreateInfo();
   samplerInfo.minLod = 0.0f;
-  samplerInfo.maxLod = static_cast<float>(m_MipLevels);
+  samplerInfo.maxLod = static_cast<f32>(m_MipLevels);
   samplerInfo.mipLodBias = 0.0f;
   samplerInfo.anisotropyEnable = VK_FALSE;
 
@@ -846,7 +846,7 @@ void Texture2D::CreateSolidColorCubemap(glm::vec4 color) {
 std::array<uint8_t, 4> Texture2D::CreatePixelData(glm::vec4 color,
                                                   bool isHDR) const {
   if (isHDR) {
-    // For HDR, we'd need a different approach with float data
+    // For HDR, we'd need a different approach with f32 data
     throw std::runtime_error(
         "HDR pixel data creation not implemented in this helper");
   }

@@ -25,10 +25,10 @@ public:
       }
     }
 
-    if (colorAttachment)
-      colorAttachment->Destroy();
-    if (depthAttachment)
-      depthAttachment->Destroy();
+    if (m_ColorAttachment)
+      m_ColorAttachment->Destroy();
+    if (m_DepthAttachment)
+      m_DepthAttachment->Destroy();
 
     if (m_RenderPass != VK_NULL_HANDLE)
       vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);
@@ -53,7 +53,7 @@ public:
     return m_Framebuffers[face];
   }
   [[nodiscard]] uint32_t GetMipLevels() const {
-    return colorAttachment->GetMipLevels();
+    return m_ColorAttachment->GetMipLevels();
   }
 
 private:

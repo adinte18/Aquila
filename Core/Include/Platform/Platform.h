@@ -1,10 +1,8 @@
 #ifndef CORE_PLATFORM_H
 #define CORE_PLATFORM_H
-
-// Debug macros
-
-#include "PrimitiveTypes.h"
-#include "Utilities/Log.h"
+#include "Platform/PrimitiveTypes.h"
+#include <cstddef>
+#include <cstdint>
 
 namespace Core::Platform {
 

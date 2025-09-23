@@ -18,7 +18,6 @@ void SceneGraph::Construct(entt::registry &registry) {
   // Connect callbacks to SceneNodeComponent events
   registry.on_construct<SceneNodeComponent>()
       .connect<&SceneGraph::OnConstruct>();
-  registry.on_update<SceneNodeComponent>().connect<&SceneGraph::OnUpdate>();
   registry.on_destroy<SceneNodeComponent>().connect<&SceneGraph::OnDestroy>();
 }
 
@@ -45,24 +44,6 @@ void SceneGraph::OnConstruct(entt::registry &registry, entt::entity entity) {
       siblings.push_back(entity);
     }
   }
-}
-
-/**
- * @brief Updates the scene graph by iterating through all SceneNodeComponents.
- *
- * This function can be used to perform operations on the scene graph, such as
- * updating transforms, checking for changes, or any other logic that needs to
- * be applied to the nodes.
- *
- * @param registry The entt registry containing the scene graph.
- */
-void SceneGraph::OnUpdate(entt::registry &registry) {
-  registry.view<SceneNodeComponent>().each(
-      [&](entt::entity entity, SceneNodeComponent &node) {
-        if (node.Parent == entt::null) {
-          // didn't found a usage for this, but it might be useful in the future
-        }
-      });
 }
 
 /**

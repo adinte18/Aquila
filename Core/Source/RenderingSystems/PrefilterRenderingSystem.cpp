@@ -39,8 +39,8 @@ void PrefilterRenderingSystem::Render(VkCommandBuffer commandBuffer,
 }
 
 void PrefilterRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
-  AQUILA_CORE_ASSERT(pipelineLayout != nullptr &&
-                     "Cannot create pipeline before pipeline layout");
+  AQUILA_ASSERT(pipelineLayout != nullptr,
+                "Cannot create pipeline before pipeline layout");
 
   Engine::PipelineConfigInfo pipelineConfig{};
   Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);

@@ -1,23 +1,23 @@
 #include "Renderpasses/CompositePass.h"
 
 bool Engine::CompositePass::CreateRenderTarget() {
-  colorAttachment = RenderTarget::CreateColorTexture(
+  m_ColorAttachment = RenderTarget::CreateColorTexture(
       m_Device, "CompositePass_ColorAttachment",
       RenderTarget::TargetType::TEXTURE_2D, m_Extent.width, m_Extent.height,
       VK_FORMAT_B8G8R8A8_UNORM,
       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
       VK_SAMPLE_COUNT_4_BIT);
 
-  return colorAttachment->HasImageView();
+  return m_ColorAttachment->HasImageView();
 }
 
 bool Engine::CompositePass::CreateFramebuffer() {
-  if (!colorAttachment || !colorAttachment->HasImageView()) {
+  if (!m_ColorAttachment || !m_ColorAttachment->HasImageView()) {
     throw std::runtime_error(
         "Missing image views for framebuffer attachments!");
   }
 
-  const auto attachment = colorAttachment->GetTextureImageView();
+  const auto attachment = m_ColorAttachment->GetTextureImageView();
 
   VkFramebufferCreateInfo framebufferInfo{};
   framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

@@ -1,12 +1,12 @@
 #include "Renderpasses/HDRiToCubemapPass.h"
 
 bool Engine::HDRiToCubemapPass::CreateRenderTarget() {
-  colorAttachment = RenderTarget::CreateColorTexture(
+  m_ColorAttachment = RenderTarget::CreateColorTexture(
       m_Device, "HDRiPass_ColorAttachment", RenderTarget::TargetType::CUBEMAP,
       m_Extent.width, m_Extent.height, VK_FORMAT_R32G32B32A32_SFLOAT,
       VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
-  return colorAttachment->HasImageView();
+  return m_ColorAttachment->HasImageView();
 }
 
 bool Engine::HDRiToCubemapPass::CreateFramebuffer() {
@@ -14,7 +14,7 @@ bool Engine::HDRiToCubemapPass::CreateFramebuffer() {
   for (uint32_t i = 0; i < 6; ++i) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = colorAttachment->GetTextureImage();
+    viewInfo.image = m_ColorAttachment->GetTextureImage();
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

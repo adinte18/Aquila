@@ -271,8 +271,8 @@ private:
                                          bool isHDR = false) const;
 
   // Image manipulation helpers
-  std::unique_ptr<float[]> FlipImageVertically(float *pixels, int width,
-                                               int height, int channels) const;
+  std::unique_ptr<f32[]> FlipImageVertically(f32 *pixels, int width, int height,
+                                             int channels) const;
 };
 
 } // namespace Engine

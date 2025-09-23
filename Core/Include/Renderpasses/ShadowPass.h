@@ -19,10 +19,10 @@ public:
       framebuffer->Destroy();
     }
 
-    if (colorAttachment)
-      colorAttachment->Destroy();
-    if (depthAttachment)
-      depthAttachment->Destroy();
+    if (m_ColorAttachment)
+      m_ColorAttachment->Destroy();
+    if (m_DepthAttachment)
+      m_DepthAttachment->Destroy();
 
     if (m_RenderPass != VK_NULL_HANDLE)
       vkDestroyRenderPass(m_Device.GetDevice(), m_RenderPass, nullptr);

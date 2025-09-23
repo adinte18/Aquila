@@ -1,7 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "Defines.h"
+#include "AquilaCore.h"
+
 #include "Engine/EditorCamera.h"
 #include "Engine/Window.h"
 
@@ -11,10 +12,8 @@
 #include "Engine/Events/EventBus.h"
 #include "Engine/Events/EventRegistry.h"
 
-
 #include "Platform/Filesystem/NativeFileSystem.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
-
 
 #include "Scene/SceneManager.h"
 
@@ -31,7 +30,7 @@ public:
   void InvalidatePasses();
   void HandleSceneChange();
 
-  float GetDeltaTime();
+  f32 GetDeltaTime();
 
   Device &GetDevice() const { return *m_Device; }
 
@@ -41,29 +40,26 @@ public:
 
   SceneManager &GetSceneManager() const { return *m_SceneManager; }
 
-  Timer::Stopwatch &GetStopwatch() { return *m_Stopwatch; }
+  Utility::Stopwatch &GetStopwatch() { return *m_Stopwatch; }
 
   EditorCamera &GetCamera() { return *m_EditorCamera; }
 
 private:
-  Controller();  // defined in cpp
-  ~Controller(); // defined in cpp
+  Controller();
+  ~Controller();
 
   AQUILA_NONMOVEABLE(Controller);
   AQUILA_NONCOPYABLE(Controller);
 
-  // Timing
-  Unique<Timer::Stopwatch> m_Stopwatch;
-  float m_DeltaTime = 0.0f;
+  Unique<Utility::Stopwatch> m_Stopwatch;
+  f32 m_DeltaTime = 0.0f;
 
-  // Camera
   Unique<EditorCamera> m_EditorCamera;
 
-  // Systems
   Unique<Window> m_Window;
-  Unique<Device> m_Device;
-  Unique<Renderer> m_Renderer;
-  Unique<SceneManager> m_SceneManager;
+  Ref<Device> m_Device;
+  Ref<Renderer> m_Renderer;
+  Ref<SceneManager> m_SceneManager;
   Unique<EventRegistry> m_EventRegistry;
 
   VFS::VirtualFileSystem *m_VFS;

@@ -19,7 +19,7 @@ namespace Engine {
 
 struct MeshData {
   std::vector<Vertex> vertices;
-  std::vector<uint32_t> indices;
+  std::vector<uint32> indices;
   std::string path;
 
   void Load(const std::string &filepath);
@@ -27,32 +27,32 @@ struct MeshData {
 
 class Mesh {
   struct Primitive {
-    uint32_t firstIndex;
-    uint32_t firstVertex;
-    uint32_t indexCount;
-    uint32_t vertexCount;
+    uint32 firstIndex;
+    uint32 firstVertex;
+    uint32 indexCount;
+    uint32 vertexCount;
   };
 
 private:
   void CreateVertexBuffer(const std::vector<Vertex> &vertices);
-  void CreateIndexBuffer(const std::vector<uint32_t> &indices);
+  void CreateIndexBuffer(const std::vector<uint32> &indices);
 
   std::string m_DebugName;
 
   Device &m_Device;
   Unique<Buffer> m_VertexBuffer;
-  uint32_t m_VertexCount;
+  uint32 m_VertexCount;
 
   bool m_HasIndexBuffer = false;
   Unique<Buffer> m_IndexBuffer;
-  uint32_t m_IndexCount;
+  uint32 m_IndexCount;
 
   std::vector<Primitive> m_Primitives{};
 
   std::string m_Path;
 
   std::vector<Vertex> m_Vertices{};
-  std::vector<uint32_t> m_Indices{};
+  std::vector<uint32> m_Indices{};
 
 public:
   Mesh(Device &device, const std::string &debugName);
@@ -65,6 +65,14 @@ public:
 
   void Load(const std::string &filepath);
   void LoadFromData(const MeshData &meshData);
+
+  MeshData GenerateCube(f32 size);
+  MeshData GenerateSphere(f32 radius = 1.0f, uint32 segments = 32,
+                          uint32 rings = 16);
+  MeshData GenerateCylinder(f32 radius = 1.0f, f32 height = 2.0f,
+                            uint32 segments = 32);
+  MeshData GeneratePlane(f32 width = 2.0f, f32 height = 2.0f,
+                         uint32 widthSegments = 1, uint32 heightSegments = 1);
 
   void Bind(VkCommandBuffer commandBuffer) const;
   void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout,

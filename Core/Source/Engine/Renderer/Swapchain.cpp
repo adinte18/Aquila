@@ -20,7 +20,7 @@ void Swapchain::Initialize() {
   CreateDepthRessources();
   CreateFramebuffers();
 
-  Aquila::Log(std::string("Swapchain initialized"));
+  AQUILA_LOG_DEBUG("Swapchain initialized");
 }
 
 Swapchain::~Swapchain() {

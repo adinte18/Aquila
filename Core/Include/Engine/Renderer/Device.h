@@ -3,7 +3,6 @@
 
 #include "AquilaCore.h"
 
-#include "Defines.h"
 #include "Engine/Window.h"
 
 namespace Engine {

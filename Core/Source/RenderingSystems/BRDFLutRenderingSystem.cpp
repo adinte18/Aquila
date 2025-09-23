@@ -32,8 +32,8 @@ void BRDFLutRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
 }
 
 void BRDFLutRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
-  AQUILA_CORE_ASSERT(pipelineLayout != nullptr &&
-                     "Cannot create pipeline before pipeline layout");
+  AQUILA_ASSERT(pipelineLayout != nullptr,
+                "Cannot create pipeline before pipeline layout");
 
   Engine::PipelineConfigInfo pipelineConfig{};
   Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);

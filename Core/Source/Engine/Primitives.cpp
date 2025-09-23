@@ -1,15 +1,13 @@
 #include "Engine/Primitives.h"
 
 #include <glm/ext/scalar_constants.hpp>
-#define M_PI 3.14159265358979323846
 
 namespace Engine {
-std::vector<Vertex> Primitives::CreateCube(float size) {
+std::vector<Vertex> Primitives::CreateCube(f32 size) {
   std::vector<Vertex> vertices;
-  float halfSize = size / 2.0f;
+  f32 halfSize = size / 2.0f;
 
-  // Define the positions of the 8 vertices of the cube
-  glm::vec3 positions[8] = {
+  vec3 positions[8] = {
       {-halfSize, -halfSize, -halfSize}, // 0
       {halfSize, -halfSize, -halfSize},  // 1
       {halfSize, halfSize, -halfSize},   // 2
@@ -20,26 +18,23 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
       {-halfSize, halfSize, halfSize}    // 7
   };
 
-  // Define texcoords for each face of the cube
-  glm::vec2 texcoords[6][6] = {
-      // Front (z+)
-      {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
-      // Back (z-)
-      {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
-      // Left (x-)
-      {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
-      // Right (x+)
-      {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
-      // Top (y+)
-      {{0, 1}, {0, 0}, {1, 0}, {1, 0}, {1, 1}, {0, 1}},
-      // Bottom (y-)
-      {{0, 1}, {1, 1}, {1, 0}, {1, 0}, {0, 0}, {0, 1}}};
+  vec2 texcoords[6][6] = {// Front (z+)
+                          {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
+                          // Back (z-)
+                          {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
+                          // Left (x-)
+                          {{1, 0}, {0, 0}, {0, 1}, {0, 1}, {1, 1}, {1, 0}},
+                          // Right (x+)
+                          {{0, 0}, {1, 0}, {1, 1}, {1, 1}, {0, 1}, {0, 0}},
+                          // Top (y+)
+                          {{0, 1}, {0, 0}, {1, 0}, {1, 0}, {1, 1}, {0, 1}},
+                          // Bottom (y-)
+                          {{0, 1}, {1, 1}, {1, 0}, {1, 0}, {0, 0}, {0, 1}}};
 
-  // Define the faces (indices and normals)
   struct Face {
     int indices[6];
-    glm::vec3 normal;
-    glm::vec3 tangent;
+    vec3 normal;
+    vec3 tangent;
   };
 
   Face faces[6] = {
@@ -81,36 +76,32 @@ std::vector<Vertex> Primitives::CreateCube(float size) {
   return vertices;
 }
 
-std::vector<Vertex> Primitives::CreateSphere(float radius, int latitudeSegments,
+std::vector<Vertex> Primitives::CreateSphere(f32 radius, int latitudeSegments,
                                              int longitudeSegments) {
   std::vector<Vertex> vertices;
 
   for (int lat = 0; lat <= latitudeSegments; ++lat) {
-    float theta = lat * glm::pi<float>() / latitudeSegments;
-    float sinTheta = sin(theta);
-    float cosTheta = cos(theta);
+    f32 theta = lat * glm::pi<f32>() / latitudeSegments;
+    f32 sinTheta = sin(theta);
+    f32 cosTheta = cos(theta);
 
     for (int lon = 0; lon <= longitudeSegments; ++lon) {
-      float phi = lon * 2.0f * glm::pi<float>() / longitudeSegments;
-      float sinPhi = sin(phi);
-      float cosPhi = cos(phi);
+      f32 phi = lon * 2.0f * glm::pi<f32>() / longitudeSegments;
+      f32 sinPhi = sin(phi);
+      f32 cosPhi = cos(phi);
 
       Vertex vertex;
 
-      // Position
-      vertex.pos = glm::vec3(radius * cosPhi * sinTheta, radius * cosTheta,
-                             radius * sinPhi * sinTheta);
+      vertex.pos = vec3(radius * cosPhi * sinTheta, radius * cosTheta,
+                        radius * sinPhi * sinTheta);
 
-      // Normal
       vertex.normals = glm::normalize(vertex.pos);
 
-      // Texture Coordinates
-      vertex.texcoord =
-          glm::vec2(static_cast<float>(lon) / longitudeSegments, // u
-                    static_cast<float>(lat) / latitudeSegments   // v
-          );
+      vertex.texcoord = vec2(static_cast<f32>(lon) / longitudeSegments, // u
+                             static_cast<f32>(lat) / latitudeSegments   // v
+      );
 
-      vertex.color = glm::vec3(1.0f);
+      vertex.color = vec3(1.0f);
 
       vertices.push_back(vertex);
     }
@@ -132,7 +123,6 @@ std::vector<Vertex> Primitives::CreateSphere(float radius, int latitudeSegments,
     }
   }
 
-  // Create the final vertex array using indexed vertices
   std::vector<Vertex> finalVertices;
   for (int index : indices) {
     finalVertices.push_back(vertices[index]);

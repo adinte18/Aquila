@@ -1,16 +1,16 @@
 #include "Renderpasses/HDRPrefilterPass.h"
 
 bool Engine::HDRPrefilterPass::CreateRenderTarget() {
-  colorAttachment = Texture2D::create(m_Device);
-  colorAttachment->CreateMipMappedCubemap(m_Extent.width, m_Extent.height,
-                                          VK_FORMAT_R16G16B16A16_SFLOAT,
-                                          VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+  m_ColorAttachment = Texture2D::create(m_Device);
+  m_ColorAttachment->CreateMipMappedCubemap(
+      m_Extent.width, m_Extent.height, VK_FORMAT_R16G16B16A16_SFLOAT,
+      VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
 
   return true;
 }
 
 bool Engine::HDRPrefilterPass::CreateFramebuffer() {
-  auto mipLevels = colorAttachment->GetMipLevels();
+  auto mipLevels = m_ColorAttachment->GetMipLevels();
   m_CubemapFaceViews.resize(mipLevels * 6);
   m_Framebuffers.resize(mipLevels * 6);
 
@@ -25,7 +25,7 @@ bool Engine::HDRPrefilterPass::CreateFramebuffer() {
 
       VkImageViewCreateInfo viewInfo{};
       viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-      viewInfo.image = colorAttachment->GetTextureImage();
+      viewInfo.image = m_ColorAttachment->GetTextureImage();
       viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
       viewInfo.format = VK_FORMAT_R32G32B32A32_SFLOAT;
       viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;

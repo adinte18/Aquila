@@ -1,36 +1,53 @@
-//
-// Created by alexa on 19/10/2024.
-//
+#ifndef SCENE_RENDER_SYSTEM_H
+#define SCENE_RENDER_SYSTEM_H
 
-#ifndef SCENERENDERINGSYSTEM_H
-#define SCENERENDERINGSYSTEM_H
-#include <Engine/Renderer/Device.h>
-#include <Engine/Renderer/Pipeline.h>
+#include "Engine/EditorCamera.h"
+#include "Engine/Renderer/Buffer.h"
+#include "RenderingSystems/RenderingSystemBase.h"
 
 namespace Engine {
-class SceneRenderingSystem {
+class SceneRenderSystem : public RenderingSystemBase {
 public:
-  SceneRenderingSystem(Device &device, VkRenderPass renderPass,
-                       std::array<VkDescriptorSetLayout, 2> setLayouts);
-  ~SceneRenderingSystem() {
-    vkDestroyPipelineLayout(device.GetDevice(), pipelineLayout, nullptr);
+  struct alignas(16) LightData {
+    vec3 color;
+    f32 intensity;
+    vec3 direction;
+    f32 range;
+    vec3 position;
+    int type;
+    f32 innerCone;
+    f32 outerCone;
+    int isActive;
   };
 
-  SceneRenderingSystem(const SceneRenderingSystem &) = delete;
-  SceneRenderingSystem &operator=(const SceneRenderingSystem &) = delete;
+  struct LightUniformData {
+    LightData lights[32];
+    int lightCount; // 4 bytes
+  };
 
-  void Render(VkCommandBuffer commandBuffer);
-  void RecreatePipeline(VkRenderPass renderPass);
+  struct SceneUniformData {
+    alignas(16) glm::mat4 projection{1.f};
+    alignas(16) glm::mat4 view{1.f};
+    alignas(16) glm::mat4 inverseView{1.f};
+  };
+
+  SceneRenderSystem(Device &device, VkRenderPass renderPass);
+  ~SceneRenderSystem() override = default;
+
+  SceneRenderSystem(const SceneRenderSystem &) = delete;
+  SceneRenderSystem &operator=(const SceneRenderSystem &) = delete;
+
+  void Render(const FrameSpec &context) override;
+  void Update(EditorCamera &camera);
 
 private:
-  Device &device;
+  void CreateDescriptorSetLayout() override;
+  void CreatePipeline(VkRenderPass renderPass) override;
+  void CreatePipelineLayout() override;
 
-  Unique<Pipeline> pipeline;
-  VkPipelineLayout pipelineLayout;
-
-  void CreatePipeline(VkRenderPass renderPass);
-  void CreatePipelineLayout(std::array<VkDescriptorSetLayout, 2> setLayouts);
+  Unique<Buffer> m_Buffer;
+  Unique<Buffer> m_LightBuffer;
 };
-} // namespace Engine
+}; // namespace Engine
 
-#endif // SCENERENDERINGSYSTEM_H
+#endif

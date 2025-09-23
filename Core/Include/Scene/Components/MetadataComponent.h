@@ -4,13 +4,13 @@
 #include "AquilaCore.h"
 
 struct MetadataComponent {
-  UUID ID;
+  Utility::UUID ID;
   std::string Name;
   bool Enabled = true;
 
   MetadataComponent() = default;
 
-  MetadataComponent(const UUID &id, const std::string &name,
+  MetadataComponent(const Utility::UUID &id, const std::string &name,
                     bool enabled = true)
       : ID(id), Name(name), Enabled(enabled) {}
 };

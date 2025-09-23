@@ -5,106 +5,97 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#define GLM_FORCE_RADIANS
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
-#include <algorithm>
-#include <glm/glm.hpp>
-
-
-#include "AquilaCore.h"
+#include "Platform/PrimitiveTypes.h"
 
 namespace Engine {
 class EditorCamera {
 public:
   enum class CameraType { Free, Orbit };
 
-  void SetOrthographicProjection(float left, float right, float top,
-                                 float bottom, float near, float far);
+  void SetOrthographicProjection(f32 left, f32 right, f32 top, f32 bottom,
+                                 f32 near, f32 far);
 
-  void SetPerspectiveProjection(float FOV_y, float aspect, float near,
-                                float far);
+  void SetPerspectiveProjection(f32 FOV_y, f32 aspect, f32 near, f32 far);
 
-  [[nodiscard]] const glm::mat4 &GetProjection() const {
-    return m_ProjectionMatrix;
-  }
-  [[nodiscard]] const glm::mat4 &GetView() const { return m_ViewMatrix; }
-  [[nodiscard]] const glm::mat4 &GetInverseView() const {
+  [[nodiscard]] const mat4 &GetProjection() const { return m_ProjectionMatrix; }
+  [[nodiscard]] const mat4 &GetView() const { return m_ViewMatrix; }
+  [[nodiscard]] const mat4 &GetInverseView() const {
     return m_InverseViewMatrix;
   }
 
-  void SetViewDirection(glm::vec3 position, glm::vec3 direction,
-                        glm::vec3 up = glm::vec3(0.f, -1.f, -0.f));
-  void SetViewTarget(glm::vec3 position, glm::vec3 target,
-                     glm::vec3 up = glm::vec3(0.f, -1.f, -0.f));
+  void SetViewDirection(vec3 position, vec3 direction,
+                        vec3 up = vec3(0.f, -1.f, -0.f));
+  void SetViewTarget(vec3 position, vec3 target,
+                     vec3 up = vec3(0.f, -1.f, -0.f));
 
-  void SetViewYXZ(glm::vec3 position, glm::vec3 rotation);
+  void SetViewYXZ(vec3 position, vec3 rotation);
 
   void SpeedUp();
 
   void ResetSpeed();
 
-  void MoveForward(float delta);
-  void MoveBackward(float delta);
-  void MoveRight(float delta);
-  void MoveLeft(float delta);
+  void MoveForward(f32 delta);
+  void MoveBackward(f32 delta);
+  void MoveRight(f32 delta);
+  void MoveLeft(f32 delta);
   void Rotate(double yaw, double pitch);
-  void Zoom(float offset, float aspectRatio);
+  void Zoom(f32 offset, f32 aspectRatio);
 
-  [[nodiscard]] glm::vec3 &GetPosition() { return m_Position; }
-  [[nodiscard]] glm::vec3 &GetRotation() { return m_Rotation; }
-  [[nodiscard]] glm::vec3 &GetDirection() { return m_Direction; }
-  [[nodiscard]] const float &GetAspectRatio() const { return m_AspectRatio; }
-  [[nodiscard]] float &GetRotationSpeed() { return m_RotationSpeed; }
-  [[nodiscard]] float &GetMovementSpeed() { return m_MovementSpeed; }
-  [[nodiscard]] float &GetFOV() { return m_Fov; }
-  [[nodiscard]] float &GetNearPlane() { return m_Near; }
-  [[nodiscard]] float &GetFarPlane() { return m_Far; }
+  [[nodiscard]] vec3 &GetPosition() { return m_Position; }
+  [[nodiscard]] vec3 &GetRotation() { return m_Rotation; }
+  [[nodiscard]] vec3 &GetDirection() { return m_Direction; }
+  [[nodiscard]] const f32 &GetAspectRatio() const { return m_AspectRatio; }
+  [[nodiscard]] f32 &GetRotationSpeed() { return m_RotationSpeed; }
+  [[nodiscard]] f32 &GetMovementSpeed() { return m_MovementSpeed; }
+  [[nodiscard]] f32 &GetFOV() { return m_Fov; }
+  [[nodiscard]] f32 &GetNearPlane() { return m_Near; }
+  [[nodiscard]] f32 &GetFarPlane() { return m_Far; }
   [[nodiscard]] CameraType GetType() const { return m_CameraType; }
   [[nodiscard]] bool &OrbitAroundEntity() { return m_OrbitAroundEntity; }
-  [[nodiscard]] glm::vec3 GetTarget() const { return m_OrbitTarget; }
-  [[nodiscard]] glm::vec3 GetRightVector() const {
-    return glm::normalize(glm::vec3(m_ViewMatrix[0]));
+  [[nodiscard]] vec3 GetTarget() const { return m_OrbitTarget; }
+  [[nodiscard]] vec3 GetRightVector() const {
+    return glm::normalize(vec3(m_ViewMatrix[0]));
   }
-  [[nodiscard]] glm::vec3 GetUpVector() const {
-    return glm::normalize(glm::vec3(m_ViewMatrix[2]));
+  [[nodiscard]] vec3 GetUpVector() const {
+    return glm::normalize(vec3(m_ViewMatrix[2]));
   }
-  void SetPosition(const glm::vec3 pos) { m_Position = pos; }
-  void SetRotationSpeed(const float speed) { m_RotationSpeed = speed; }
+  void SetPosition(const vec3 pos) { m_Position = pos; }
+  void SetRotationSpeed(const f32 speed) { m_RotationSpeed = speed; }
 
-  void SetOrbitTarget(const glm::vec3 &target);
-  void OrbitRotate(float deltaYaw, float deltaPitch);
-  void OrbitZoom(float deltaRadius);
+  void SetOrbitTarget(const vec3 &target);
+  void OrbitRotate(f32 deltaYaw, f32 deltaPitch);
+  void OrbitZoom(f32 deltaRadius);
   void UpdateOrbitPosition();
 
-  void SwitchToType(CameraType newType, glm::vec3 targetPos = glm::vec3{0.f});
+  void SwitchToType(CameraType newType, vec3 targetPos = vec3{0.f});
 
-  void OnResize(float width, float height);
+  void OnResize(f32 width, f32 height);
 
 private:
   CameraType m_CameraType{CameraType::Free};
-  glm::mat4 m_ProjectionMatrix{1.f};
-  glm::mat4 m_ViewMatrix{1.f};
-  glm::mat4 m_InverseViewMatrix{1.f};
+  mat4 m_ProjectionMatrix{1.f};
+  mat4 m_ViewMatrix{1.f};
+  mat4 m_InverseViewMatrix{1.f};
 
-  glm::vec3 m_Position{0.0f};
-  glm::vec3 m_Rotation{0.0f};
+  vec3 m_Position{0.0f};
+  vec3 m_Rotation{0.0f};
 
-  float m_MovementSpeed{5.0f};
-  float m_RotationSpeed{0.001f};
+  f32 m_MovementSpeed{5.0f};
+  f32 m_RotationSpeed{0.001f};
 
-  glm::vec3 m_Direction{0.0f, 0.0f, -1.0f};
+  vec3 m_Direction{0.0f, 0.0f, -1.0f};
 
-  float m_Fov{80.0f};
-  float m_Near{0.1f};
-  float m_Far{100.f};
-  float m_AspectRatio{0.f};
+  f32 m_Fov{80.0f};
+  f32 m_Near{0.1f};
+  f32 m_Far{100.f};
+  f32 m_AspectRatio{0.f};
 
   bool m_IsSpedUp{false};
 
-  glm::vec3 m_OrbitTarget{0.0f, 0.0f, 0.0f};
-  float m_OrbitRadius{10.0f};
-  float m_OrbitYaw{0.0f};
-  float m_OrbitPitch{0.0f};
+  vec3 m_OrbitTarget{0.0f, 0.0f, 0.0f};
+  f32 m_OrbitRadius{10.0f};
+  f32 m_OrbitYaw{0.0f};
+  f32 m_OrbitPitch{0.0f};
 
   bool m_OrbitAroundEntity{false};
 

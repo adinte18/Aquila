@@ -9,10 +9,10 @@
 #include "Scene/SceneGraph.h"
 
 namespace Engine {
-AquilaScene::AquilaScene() { m_SceneID = UUID::Generate(); }
+AquilaScene::AquilaScene() { m_SceneID = Utility::UUID::Generate(); }
 
 AquilaScene::AquilaScene(const std::string &name) : m_SceneName(name) {
-  m_SceneID = UUID::Generate();
+  m_SceneID = Utility::UUID::Generate();
 }
 
 AquilaScene::~AquilaScene() = default;
@@ -27,7 +27,7 @@ entt::registry &AquilaScene::GetRegistry() {
   return m_EntityManager->GetRegistry();
 }
 
-const UUID AquilaScene::GetHandle() const { return m_SceneID; }
+const Utility::UUID AquilaScene::GetHandle() const { return m_SceneID; }
 
 /**
  * @brief Retrieves the EntityManager associated with the scene.
@@ -103,7 +103,7 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
       const auto &meta = entityData["MetadataComponent"];
       MetadataComponent metadata;
       metadata.Name = meta.value("Name", "");
-      metadata.ID = UUID::FromString(meta.value("UUID", ""));
+      metadata.ID = Utility::UUID::FromString(meta.value("UUID", ""));
       metadata.Enabled = meta.value("Enabled", true);
       registry.emplace<MetadataComponent>(entity, metadata);
 
@@ -118,17 +118,16 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
 
     if (entityData.contains("TransformComponent")) {
       const auto &transformJson = entityData["TransformComponent"];
-      glm::vec3 position =
-          glm::vec3(transformJson["Position"][0], transformJson["Position"][1],
-                    transformJson["Position"][2]);
+      vec3 position =
+          vec3(transformJson["Position"][0], transformJson["Position"][1],
+               transformJson["Position"][2]);
 
-      glm::vec3 rotation =
-          glm::vec3(transformJson["Rotation"][0], transformJson["Rotation"][1],
-                    transformJson["Rotation"][2]);
+      vec3 rotation =
+          vec3(transformJson["Rotation"][0], transformJson["Rotation"][1],
+               transformJson["Rotation"][2]);
 
-      glm::vec3 scale =
-          glm::vec3(transformJson["Scale"][0], transformJson["Scale"][1],
-                    transformJson["Scale"][2]);
+      vec3 scale = vec3(transformJson["Scale"][0], transformJson["Scale"][1],
+                        transformJson["Scale"][2]);
 
       TransformComponent transform;
       transform.SetLocalPosition(position);
@@ -197,24 +196,24 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
             static_cast<LightComponent::Type>(lightJson["Type"].get<int>());
 
       if (lightJson.contains("Color"))
-        light.m_Color = glm::vec3(lightJson["Color"][0].get<float>(),
-                                  lightJson["Color"][1].get<float>(),
-                                  lightJson["Color"][2].get<float>());
+        light.m_Color = vec3(lightJson["Color"][0].get<f32>(),
+                             lightJson["Color"][1].get<f32>(),
+                             lightJson["Color"][2].get<f32>());
 
       if (lightJson.contains("Intensity"))
-        light.m_Intensity = lightJson["Intensity"].get<float>();
+        light.m_Intensity = lightJson["Intensity"].get<f32>();
       if (lightJson.contains("Range"))
-        light.m_Range = lightJson["Range"].get<float>();
+        light.m_Range = lightJson["Range"].get<f32>();
 
       if (lightJson.contains("Inner Cone Angle"))
-        light.m_InnerConeAngle = lightJson["Inner Cone Angle"].get<float>();
+        light.m_InnerConeAngle = lightJson["Inner Cone Angle"].get<f32>();
       if (lightJson.contains("Outer Cone Angle"))
-        light.m_OuterConeAngle = lightJson["Outer Cone Angle"].get<float>();
+        light.m_OuterConeAngle = lightJson["Outer Cone Angle"].get<f32>();
 
       if (lightJson.contains("Direction"))
-        light.m_Direction = glm::vec3(lightJson["Direction"][0].get<float>(),
-                                      lightJson["Direction"][1].get<float>(),
-                                      lightJson["Direction"][2].get<float>());
+        light.m_Direction = vec3(lightJson["Direction"][0].get<f32>(),
+                                 lightJson["Direction"][1].get<f32>(),
+                                 lightJson["Direction"][2].get<f32>());
 
       if (lightJson.contains("Is Active"))
         light.m_IsActive = lightJson["Is Active"].get<bool>();

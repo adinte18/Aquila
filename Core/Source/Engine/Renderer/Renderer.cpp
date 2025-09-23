@@ -34,12 +34,12 @@ void Renderer::Initialize(uint32_t width, uint32_t height) {
 
   if ((m_GeometryPass = GeometryPass::Initialize(
            m_Device, m_Extent, m_SharedDescriptorSetLayout))) {
-    std::cout << "Geometry pass initialized" << std::endl;
+    AQUILA_LOG_INFO("Geometry pass initialized");
   }
 
   if ((m_SceneRendering = CreateRef<SceneRenderSystem>(
            m_Device, m_GeometryPass->GetRenderPass()))) {
-    std::cout << "Scene rendering system initialized" << std::endl;
+    AQUILA_LOG_INFO("Scene rendering system initialized");
   }
 }
 
@@ -64,8 +64,8 @@ void Renderer::SetupSynchronization() {
 }
 
 VkCommandBuffer Renderer::BeginFrame() {
-  AQUILA_CORE_ASSERT(!m_FrameStarted &&
-                     "Can't call BeginFrame while already in progress");
+  AQUILA_ASSERT(!m_FrameStarted,
+                "Can't call BeginFrame while already in progress");
 
   // Wait for the current frame's fence
   m_SynchronizationManager->WaitForFence("InFlight", m_CurrentFrameID);
@@ -96,8 +96,8 @@ VkCommandBuffer Renderer::BeginFrame() {
 }
 
 void Renderer::EndFrame() {
-  AQUILA_CORE_ASSERT(m_FrameStarted &&
-                     "Can't call EndFrame while frame is not in progress");
+  AQUILA_ASSERT(m_FrameStarted,
+                "Can't call EndFrame while frame is not in progress");
 
   auto &presentCmd = m_PresentCommandBuffers[m_CurrentFrameID];
   presentCmd->End();
@@ -246,12 +246,17 @@ void Renderer::InvalidateSwapchain() {
 void Renderer::InvalidatePasses() {
   if (m_GeometryPass && m_Resized) {
     m_Device.Wait();
-    Aquila::Log("Invalidating geometry pass due to resize");
 
     if (m_Extent.width > 0 && m_Extent.height > 0) {
+
+      auto &camera = Engine::Controller::Get()->GetCamera();
+      camera.OnResize(m_Extent.width, m_Extent.height);
+
       m_GeometryPass->Invalidate(m_Extent);
+      AQUILA_LOG_DEBUG("Render passes invalidated");
+
     } else {
-      Aquila::Log("Skip pass invalidation: zero extent");
+      AQUILA_LOG_DEBUG("Skip pass invalidation: zero extent");
     }
   }
 
@@ -260,8 +265,8 @@ void Renderer::InvalidatePasses() {
 
 void Renderer::BeginRenderPass(VkCommandBuffer cmd,
                                const RenderPassConfig &config) {
-  AQUILA_CORE_ASSERT(m_FrameStarted && "Frame not started!");
-  AQUILA_CORE_ASSERT(!m_RenderPassActive && "Render pass already active!");
+  AQUILA_ASSERT(m_FrameStarted, "Frame not started!");
+  AQUILA_ASSERT(!m_RenderPassActive, " Render pass already active!");
 
   m_RenderPassActive = true;
   m_CurrentRenderType = config.type;
@@ -305,8 +310,8 @@ void Renderer::BeginRenderPass(VkCommandBuffer cmd,
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(extent.width);
-    viewport.height = static_cast<float>(extent.height);
+    viewport.width = static_cast<f32>(extent.width);
+    viewport.height = static_cast<f32>(extent.height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
@@ -320,8 +325,8 @@ void Renderer::BeginRenderPass(VkCommandBuffer cmd,
 }
 
 void Renderer::EndRenderPass(VkCommandBuffer cmd) {
-  AQUILA_CORE_ASSERT(m_FrameStarted && "Frame not started!");
-  AQUILA_CORE_ASSERT(m_RenderPassActive && "No active render pass to end!");
+  AQUILA_ASSERT(m_FrameStarted, " Frame not started!");
+  AQUILA_ASSERT(m_RenderPassActive, " No active render pass to end!");
 
   vkCmdEndRenderPass(cmd);
   m_RenderPassActive = false;

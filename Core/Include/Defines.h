@@ -1,55 +1,7 @@
-#ifndef AQUILA_DEFINES_H
-#define AQUILA_DEFINES_H
-
 #include "Utilities/Log.h"
 
-#ifdef AQUILA_PLATFORM_WINDOWS
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#include <direct.h>
-#include <intrin.h>
-#include <sysinfoapi.h>
-#include <windows.h>
-
-#elif defined(AQUILA_PLATFORM_LINUX)
-#include <sys/sysinfo.h>
-#include <thread>
-#include <unistd.h>
-
-#elif defined(AQUILA_PLATFORM_MACOS)
-#include <mach/mach.h>
-#include <sys/sysctl.h>
-#include <unistd.h>
-
-#endif
-
-/* Enable asserts by default - @todo i should maybe change this or condition
- * it*/
-#define AQUILA_ENABLE_ASSERTS
-
-#define AQUILA_OUT(x) (std::cout << x << std::endl)
-
 #define BIT(x) (1 << x)
-
 #define BIND_EVENT_FN(fn) std::bind(&fn, this, std::placeholders::_1)
-
-#ifdef _DEBUG
-#define AQUILA_DEBUG
-#endif
-
-#if defined(AQUILA_DEBUG)
-#define AQUILA_ASSERT(condition, message)                                      \
-  do {                                                                         \
-    if (!(condition)) {                                                        \
-      Aquila::AssertFailed(#condition, message, __FILE__, __LINE__);           \
-    }                                                                          \
-  } while (0)
-#define AQUILA_LOG_DEBUG(message) Aquila::Log(message)
-#else
-#define AQUILA_ASSERT(condition, message) ((void)0)
-#define AQUILA_LOG_DEBUG(message) ((void)0)
-#endif
 
 #define AQUILA_NONCOPYABLE(ClassName)                                          \
   ClassName(const ClassName &) = delete;                                       \
@@ -59,14 +11,66 @@
   ClassName(ClassName &&) = delete;                                            \
   ClassName &operator=(ClassName &&) = delete
 
+#ifdef _MSC_VER
+#define AQUILA_FORCE_INLINE __forceinline
+#define AQUILA_NEVER_INLINE __declspec(noinline)
+#define AQUILA_RESTRICT __restrict
+#elif defined(__GNUC__) || defined(__clang__)
+#define AQUILA_FORCE_INLINE __attribute__((always_inline)) inline
+#define AQUILA_NEVER_INLINE __attribute__((noinline))
+#define AQUILA_RESTRICT __restrict__
+#else
+#define AQUILA_FORCE_INLINE inline
+#define AQUILA_NEVER_INLINE
+#define AQUILA_RESTRICT
+#endif
+
+#if defined(__GNUC__) || defined(__clang__)
+#define AQUILA_LIKELY(x) __builtin_expect(!!(x), 1)
+#define AQUILA_UNLIKELY(x) __builtin_expect(!!(x), 0)
+#else
+#define AQUILA_LIKELY(x) (x)
+#define AQUILA_UNLIKELY(x) (x)
+#endif
+
+#define AQUILA_LOG_TRACE(...) Utility::LogTrace(__VA_ARGS__)
+#define AQUILA_LOG_DEBUG(...) Utility::LogDebug(__VA_ARGS__)
+#define AQUILA_LOG_INFO(...) Utility::LogInfo(__VA_ARGS__)
+#define AQUILA_LOG_WARNING(...) Utility::LogWarning(__VA_ARGS__)
+#define AQUILA_LOG_ERROR(...) Utility::LogError(__VA_ARGS__)
+#define AQUILA_LOG_CRITICAL(...) Utility::LogCritical(__VA_ARGS__)
+
+#if defined(AQUILA_DEBUG)
+#define AQUILA_ASSERT(condition, message)                                      \
+  do {                                                                         \
+    if (AQUILA_UNLIKELY(!(condition))) {                                       \
+      Utility::AssertFailed(#condition, message, __FILE__, __LINE__);          \
+    }                                                                          \
+  } while (0)
+
+#else
+#define AQUILA_ASSERT(condition, message)                                      \
+  do {                                                                         \
+    if (!(condition)) {                                                        \
+      Utility::AssertFailed(#condition, message, __FILE__, __LINE__);          \
+    }                                                                          \
+  } while (false)
+#endif
+
+#define AQUILA_ASSERT_SIMPLE(condition, message)                               \
+  do {                                                                         \
+    if (!(condition)) {                                                        \
+      Utility::AssertFailed(#condition, message, __FILE__, __LINE__);          \
+    }                                                                          \
+  } while (false)
+
 #define AQUILA_VULKAN_CHECK(call)                                              \
   do {                                                                         \
     VkResult result = (call);                                                  \
-    if (result != VK_SUCCESS) {                                                \
-      Aquila::LogError(std::string("[VULKAN] Call failed: ") + #call +         \
-                       " | File: " + __FILE__ +                                \
-                       " | Line: " + std::to_string(__LINE__));                \
-      Aquila::AssertFailed(#call, "Vulkan call failed", __FILE__, __LINE__);   \
+    if (AQUILA_UNLIKELY(result != VK_SUCCESS)) {                               \
+      Utility::LogError(std::string("[VULKAN] Call failed: ") + #call +        \
+                        " | File: " + __FILE__ +                               \
+                        " | Line: " + std::to_string(__LINE__));               \
+      Utility::AssertFailed(#call, "Vulkan call failed", __FILE__, __LINE__);  \
     }                                                                          \
   } while (0)
-#endif

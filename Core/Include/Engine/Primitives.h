@@ -10,15 +10,14 @@
 #include <glm/glm.hpp>
 #include <vector>
 
-
 namespace Engine {
 
 class Primitives {
 public:
   enum class PrimitiveType { Cube, Sphere, Plane };
 
-  static std::vector<Vertex> CreateCube(float size);
-  static std::vector<Vertex> CreateSphere(float radius, int sectorCount,
+  static std::vector<Vertex> CreateCube(f32 size);
+  static std::vector<Vertex> CreateSphere(f32 radius, int sectorCount,
                                           int stackCount);
 };
 } // namespace Engine

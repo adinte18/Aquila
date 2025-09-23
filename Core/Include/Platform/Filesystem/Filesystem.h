@@ -1,9 +1,7 @@
 #ifndef FILESYSTEM_H
 #define FILESYSTEM_H
 
-#include "Platform/PrimitiveTypes.h"
-#include <optional>
-#include <vector>
+#include "AquilaCore.h"
 
 namespace Filesystem {
 struct FileStat {

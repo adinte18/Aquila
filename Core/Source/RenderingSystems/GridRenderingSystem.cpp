@@ -40,8 +40,8 @@ void GridRenderingSystem::RecreatePipeline(VkRenderPass renderPass) {
 }
 
 void GridRenderingSystem::CreatePipeline(VkRenderPass renderPass) {
-  AQUILA_CORE_ASSERT(pipelineLayout != nullptr &&
-                     "Cannot create pipeline before pipeline layout");
+  AQUILA_ASSERT(pipelineLayout != nullptr,
+                "Cannot create pipeline before pipeline layout");
 
   Engine::PipelineConfigInfo pipelineConfig{};
   Engine::Pipeline::vk_DefaultPipelineConfig(pipelineConfig);

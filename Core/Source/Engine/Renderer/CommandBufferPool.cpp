@@ -1,5 +1,4 @@
 #include "Engine/Renderer/CommandBufferPool.h"
-#include "Platform/PrimitiveTypes.h"
 
 namespace Engine {
 CommandBufferPool::CommandBufferPool(Device &device, uint32 framesInFlight)

@@ -23,17 +23,13 @@ public:
   virtual ~AquilaScene();
 
   virtual void OnStart();
-  // virtual void OnClean();
-  // virtual void OnUpdate(const DeltaTime& timeStep);
-  // virtual void OnUpdate(const DeltaTime& timeStep, EditorCamera& camera);
-  // virtual void Render();
 
   entt::registry &GetRegistry();
   EntityManager *GetEntityManager();
   SceneGraph *GetSceneGraph();
   const std::string &GetSceneName();
 
-  const UUID GetHandle() const;
+  const Utility::UUID GetHandle() const;
 
   bool Serialize(const std::string &filepath);
   bool Deserialize(const std::string &filepath);
@@ -44,7 +40,7 @@ protected:
   Unique<SceneGraph> m_SceneGraph;
 
 private:
-  UUID m_SceneID; // scene handle
+  Utility::UUID m_SceneID; // scene handle
 
   friend class Entity;
   friend class EntityManager;
