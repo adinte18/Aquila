@@ -1,8 +1,11 @@
 #include "UI/Panels/Menubar.h"
+#include "Engine/Controller.h"
+#include "Engine/EditorCamera.h"
 #include "Engine/Events/Event.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
 #include "UI/ThemeManager.h"
 #include "UI/UI.h"
+#include "imgui.h"
 
 namespace Editor::Panels {
 
@@ -168,19 +171,15 @@ void Menubar::Draw() {
     ImGui::End();
   }
 
-  // ===========================
-  // WINDOW: EDITOR PREFERENCES
-  // ===========================
   if (m_ShowPreferences) {
     CreatePopup({500, 600});
 
     if (ImGui::Begin("Editor Preferences", &m_ShowPreferences)) {
-      // Appearance Section
+
       if (ImGui::CollapsingHeader("Appearance",
                                   ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::Indent();
 
-        // Font Size
         const char *fontSizes[] = {"12", "14", "16", "18", "20", "24",
                                    "28", "32", "40", "48", "64", "72"};
         ImGui::Text("Font Size:");
@@ -242,7 +241,6 @@ void Menubar::Draw() {
       ImGui::Unindent();
     }
 
-    // Editor Section
     if (ImGui::CollapsingHeader("Editor")) {
       ImGui::Indent();
 
@@ -266,13 +264,103 @@ void Menubar::Draw() {
       ImGui::Unindent();
     }
 
-    // Bottom buttons
+    if (ImGui::CollapsingHeader("Camera")) {
+      ImGui::Indent();
+
+      auto &camera = Engine::Controller::Get()->GetCamera();
+      auto type = camera.GetType();
+      f32 childHeight =
+          camera.GetType() == Engine::EditorCamera::CameraType::Orbit ? 110.0f
+                                                                      : 80.0f;
+      ImGui::Text("Movement and Control");
+      ImGui::Separator();
+
+      ImGui::PushItemWidth(-1);
+
+      ImGui::Text("Rotation Sensitivity");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Controls how fast the camera rotates when moving the mouse.");
+      ImGui::SliderFloat("##rotSens", &camera.GetRotationSpeed(), 0.001f, 0.1f,
+                         "%.3f");
+
+      ImGui::Text("Movement Speed");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Controls how fast the camera moves through the scene.");
+      ImGui::SliderFloat("##moveSpeed", &camera.GetMovementSpeed(), 0.1f, 20.0f,
+                         "%.2f");
+
+      ImGui::PopItemWidth();
+
+      ImGui::Spacing();
+
+      ImGui::Text("Projection");
+      ImGui::Separator();
+
+      bool projectionChanged = false;
+
+      f32 &fov = camera.GetFOV();
+      f32 &nearPlane = camera.GetNearPlane();
+      f32 &farPlane = camera.GetFarPlane();
+      f32 aspectRatio = camera.GetAspectRatio();
+
+      ImGui::Text("Projection Type");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip("Choose between Perspective (3D) or Orthographic "
+                          "(2D-like) projection.");
+
+      ImGui::PushItemWidth(-1);
+
+      ImGui::Text("Field of View (FOV)");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "Controls the vertical field of view angle of the camera.");
+      if (ImGui::SliderFloat("##fov", &fov, 10.0f, 120.0f, "%.1fdeg"))
+        projectionChanged = true;
+
+      ImGui::Text("Near Plane");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "The closest distance from the camera where rendering starts.");
+      if (ImGui::SliderFloat("##near", &nearPlane, 0.01f, 10.0f, "%.2f"))
+        projectionChanged = true;
+
+      ImGui::Text("Far Plane");
+      ImGui::SameLine();
+      ImGui::TextDisabled(ICON_LC_INFO);
+      if (ImGui::IsItemHovered())
+        ImGui::SetTooltip(
+            "The farthest distance from the camera where rendering ends.");
+      if (ImGui::SliderFloat("##far", &farPlane, nearPlane + 1.0f, 1000.0f,
+                             "%.1f"))
+        projectionChanged = true;
+
+      ImGui::PopItemWidth();
+
+      if (projectionChanged) {
+        camera.SetPerspectiveProjection(fov, aspectRatio, nearPlane, farPlane);
+      }
+
+      ImGui::Spacing();
+      ImGui::Unindent();
+    }
+
     ImGui::Separator();
     ImGui::Spacing();
 
     if (ImGui::Button("Apply", ImVec2(100, 0))) {
-      // Apply all settings
-      // TODO: Implement settings application
+
       if (selectedTheme == "Aquila Dark") {
         UI::ThemeManager::Get().ApplyAquilaTheme();
       } else if (selectedTheme == "Aquila Green") {
@@ -291,8 +379,8 @@ void Menubar::Draw() {
 
     if (ImGui::Button("Reset to Defaults", ImVec2(150, 0))) {
       selectedFont = UI::FontManager::Get().GetFonts().Font14;
-      selectedFontSize = 1; // 14px
-      selectedTheme = "Aquila Dark";
+      selectedFontSize = 1;
+      selectedTheme = "Aquila Green";
       selectedThemeIndex = 0;
 
       UI::FontManager::Get().SetCurrentFont(selectedFont);

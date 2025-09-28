@@ -2,6 +2,7 @@
 #define UI_CONFIG_H
 
 #include "imgui.h"
+#include "ImGuizmo.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 #include "lucide.h"

@@ -4,10 +4,8 @@
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "UI/UI.h"
-
 namespace Editor::Panels {
 
-// Helper function to draw component header with menu
 bool Properties::DrawComponentHeader(
     const char *icon, const char *label, const char *menuId,
     const std::vector<ComponentMenuAction> &menuActions) {
@@ -195,6 +193,7 @@ void Properties::DrawComponent_Transform(entt::registry &registry,
                                         "TransformMenu", actions);
 
   if (headerOpen) {
+    ImGui::Indent();
     bool changed = false;
 
     auto DrawVector3Control = [](const char *label, vec3 &values,
@@ -212,7 +211,7 @@ void Properties::DrawComponent_Transform(entt::registry &registry,
                              {0.2f, 0.3f, 0.9f, 1.0f}};
 
       constexpr f32 buttonSize = 20.0f;
-      constexpr f32 inputWidth = 60.0f;
+      constexpr f32 inputWidth = 40.0f;
 
       for (int i = 0; i < 3; i++) {
         ImGui::PushStyleColor(ImGuiCol_Button, axisColors[i]);
@@ -260,6 +259,7 @@ void Properties::DrawComponent_Transform(entt::registry &registry,
       transform.UpdateWorldMatrix(parentWorldMatrix);
       UpdateChildrenTransforms(registry, entity);
     }
+    ImGui::Unindent();
   }
 }
 
@@ -272,7 +272,7 @@ void Properties::DrawComponent_Metadata(entt::registry &registry,
   strncpy_s(buffer, meta.Name.c_str(), sizeof(buffer));
 #elif defined(AQUILA_PLATFORM_LINUX)
   strncpy(buffer, meta.Name.c_str(), sizeof(buffer));
-  buffer[sizeof(buffer) - 1] = '\0'; // ensure null-termination
+  buffer[sizeof(buffer) - 1] = '\0';
 #endif
 
   bool headerOpen =
@@ -305,9 +305,113 @@ void Properties::DrawComponent_Camera(entt::registry &registry,
       DrawComponentHeader(ICON_LC_CAMERA, "CAMERA", "CameraMenu", actions);
 
   if (headerOpen) {
+
+    ImGui::Checkbox("Primary Camera", &component.primary);
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Mark this camera as the main camera for rendering");
+    }
+
+    ImGui::Separator();
+
+    if (ImGui::Checkbox("Orthographic", &component.isOrthographic)) {
+    }
+
+    ImGui::Separator();
+
+    if (component.isOrthographic) {
+
+      ImGui::Text("Orthographic Settings");
+      ImGui::Indent();
+
+      ImGui::DragFloat("Left", &component.orthoLeft, 0.1f, -100.0f, 0.0f,
+                       "%.2f");
+      ImGui::DragFloat("Right", &component.orthoRight, 0.1f, 0.0f, 100.0f,
+                       "%.2f");
+      ImGui::DragFloat("Top", &component.orthoTop, 0.1f, 0.0f, 100.0f, "%.2f");
+      ImGui::DragFloat("Bottom", &component.orthoBottom, 0.1f, -100.0f, 0.0f,
+                       "%.2f");
+
+      if (component.orthoLeft >= component.orthoRight) {
+        component.orthoLeft = component.orthoRight - 0.1f;
+      }
+      if (component.orthoBottom >= component.orthoTop) {
+        component.orthoBottom = component.orthoTop - 0.1f;
+      }
+
+      ImGui::Unindent();
+    } else {
+
+      ImGui::Text("Perspective Settings");
+      ImGui::Indent();
+
+      ImGui::SliderFloat("Field of View", &component.fov, 1.0f, 179.0f,
+                         "%.1f°");
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Vertical field of view in degrees");
+      }
+
+      ImGui::DragFloat("Aspect Ratio", &component.aspectRatio, 0.01f, 0.1f,
+                       10.0f, "%.3f");
+      if (ImGui::IsItemHovered()) {
+        ImGui::SetTooltip("Width / Height ratio (e.g., 1.778 for 16:9)");
+      }
+
+      ImGui::SameLine();
+      if (ImGui::Button("16:9")) {
+        component.aspectRatio = 16.0f / 9.0f;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("4:3")) {
+        component.aspectRatio = 4.0f / 3.0f;
+      }
+      ImGui::SameLine();
+      if (ImGui::Button("1:1")) {
+        component.aspectRatio = 1.0f;
+      }
+
+      ImGui::Unindent();
+    }
+
+    ImGui::Separator();
+
+    ImGui::Text("Clipping Planes");
+    ImGui::Indent();
+
+    ImGui::DragFloat("Near Plane", &component.nearPlane, 0.01f, 0.001f, 10.0f,
+                     "%.3f");
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Objects closer than this distance won't be rendered");
+    }
+
+    ImGui::DragFloat("Far Plane", &component.farPlane, 1.0f, 1.0f, 10000.0f,
+                     "%.1f");
+    if (ImGui::IsItemHovered()) {
+      ImGui::SetTooltip("Objects farther than this distance won't be rendered");
+    }
+
+    if (component.nearPlane >= component.farPlane) {
+      component.nearPlane = component.farPlane - 0.1f;
+    }
+
+    ImGui::Unindent();
+
+    if (ImGui::CollapsingHeader("Debug Info")) {
+      ImGui::Text("Projection Type: %s",
+                  component.isOrthographic ? "Orthographic" : "Perspective");
+      ImGui::Text("Clip Range: %.3f - %.1f", component.nearPlane,
+                  component.farPlane);
+
+      if (!component.isOrthographic) {
+        ImGui::Text("FOV: %.1f°", component.fov);
+        ImGui::Text("Aspect: %.3f", component.aspectRatio);
+      } else {
+        float orthoWidth = component.orthoRight - component.orthoLeft;
+        float orthoHeight = component.orthoTop - component.orthoBottom;
+        ImGui::Text("Ortho Size: %.2f x %.2f", orthoWidth, orthoHeight);
+      }
+    }
   }
 }
-
 void Properties::DrawComponent_Light(entt::registry &registry,
                                      entt::entity entity) {
   auto &component = registry.get<LightComponent>(entity);

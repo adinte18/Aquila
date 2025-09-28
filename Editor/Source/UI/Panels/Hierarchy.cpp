@@ -2,6 +2,7 @@
 #include "AquilaCore.h"
 #include "AquilaPCH.h"
 #include "Engine/Events/Event.h"
+#include "Scene/Components/MetadataComponent.h"
 #include "UI/UI.h"
 #include "imgui_internal.h"
 
@@ -54,7 +55,7 @@ void Hierarchy::DisplayEntityNode(Engine::AquilaScene *scene,
       nodeFlags |= ImGuiTreeNodeFlags_Leaf;
     }
 
-    bool active = data.Enabled;
+    bool active = data.Visible;
     if (!active) {
       ImGui::PushStyleColor(ImGuiCol_Text,
                             ImGui::GetStyleColorVec4(ImGuiCol_TextDisabled));
@@ -88,6 +89,8 @@ void Hierarchy::DisplayEntityNode(Engine::AquilaScene *scene,
 
     if (ImGui::IsMouseReleased(ImGuiMouseButton_Left) &&
         ImGui::IsItemHovered() && !ImGui::IsItemToggledOpen()) {
+      Engine::Entity{entity, scene}.GetComponent<MetadataComponent>().Selected =
+          true;
       UIManager::Get()->SetSelectedEntity(entity);
     } else if (s_DoubleClicked == entity &&
                ImGui::IsMouseClicked(ImGuiMouseButton_Left) &&
@@ -127,6 +130,8 @@ void Hierarchy::DisplayEntityNode(Engine::AquilaScene *scene,
     bool deleteEntity = false;
 
     if (ImGui::BeginPopupContextItem(data.ID.ToString().c_str())) {
+      Engine::Entity{entity, scene}.GetComponent<MetadataComponent>().Selected =
+          true;
       UIManager::Get()->SetSelectedEntity(entity);
       Menu();
       ImGui::EndPopup();
@@ -163,8 +168,8 @@ void Hierarchy::DisplayEntityNode(Engine::AquilaScene *scene,
                     ImGui::CalcTextSize(ICON_LC_EYE).x * 2.0f);
     ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.7f, 0.7f, 0.0f));
     if (ImGui::Button(active ? ICON_LC_EYE : ICON_LC_EYE_CLOSED)) {
-      data.Enabled = !active;
-      ToggleVisibility(registry, entity, data.Enabled);
+      data.Visible = !active;
+      ToggleVisibility(registry, entity, data.Visible);
     }
     ImGui::PopStyleColor();
 
@@ -232,18 +237,25 @@ void Hierarchy::Draw() {
     ImGui::TextUnformatted(ICON_LC_SEARCH);
     ImGui::SameLine();
 
-    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 0.0f);
-    ImGui::PushStyleColor(ImGuiCol_FrameBg, IM_COL32(0, 0, 0, 0));
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameBorderSize, 1.0f);
+    ImGui::PushStyleColor(ImGuiCol_FrameBg,
+                          ImGui::GetColorU32(ImGuiCol_TitleBg));
+    ImGui::PushStyleColor(ImGuiCol_Border, ImGui::GetColorU32(ImGuiCol_Border));
     s_HierarchyFilter.Draw("##HierarchyFilter",
                            ImGui::GetContentRegionAvail().x -
                                ImGui::GetStyle().IndentSpacing);
-    ImGui::PopStyleColor();
+    ImGui::PopStyleColor(2);
     ImGui::PopStyleVar();
 
-    if (!s_HierarchyFilter.IsActive()) {
-      ImGui::SameLine();
-      ImGui::SetCursorPosX(ImGui::GetFontSize() * 4.0f);
-      ImGui::TextUnformatted("Search...");
+    if (!s_HierarchyFilter.IsActive() && !ImGui::IsItemActive()) {
+      ImVec2 pos = ImGui::GetItemRectMin();
+      ImVec2 size = ImGui::GetItemRectSize();
+      ImDrawList *drawList = ImGui::GetWindowDrawList();
+      ImVec2 textPos = pos;
+      textPos.x += ImGui::GetStyle().FramePadding.x + 4.0f;
+      textPos.y += (size.y - ImGui::GetFontSize()) * 0.5f;
+      drawList->AddText(textPos, ImGui::GetColorU32(ImGuiCol_TextDisabled),
+                        "Search...");
     }
 
     ImGui::PopStyleColor();
@@ -267,13 +279,13 @@ void Hierarchy::Draw() {
       }
     }
 
-    ImVec2 min_space = ImGui::GetWindowContentRegionMin();
-    ImVec2 max_space = ImGui::GetWindowContentRegionMax();
-    min_space.x += ImGui::GetWindowPos().x + 1.0f;
-    min_space.y += ImGui::GetWindowPos().y + 1.0f;
-    max_space.x += ImGui::GetWindowPos().x - 1.0f;
-    max_space.y += ImGui::GetWindowPos().y - 1.0f;
-    ImRect windowRect = {min_space, max_space};
+    ImVec2 minSpace = ImGui::GetWindowContentRegionMin();
+    ImVec2 maxSpace = ImGui::GetWindowContentRegionMax();
+    minSpace.x += ImGui::GetWindowPos().x + 1.0f;
+    minSpace.y += ImGui::GetWindowPos().y + 1.0f;
+    maxSpace.x += ImGui::GetWindowPos().x - 1.0f;
+    maxSpace.y += ImGui::GetWindowPos().y - 1.0f;
+    ImRect windowRect = {minSpace, maxSpace};
 
     if (ImGui::BeginDragDropTargetCustom(windowRect,
                                          ImGui::GetCurrentWindow()->ID)) {
@@ -441,10 +453,8 @@ void Hierarchy::Menu() {
 
     if (ImGui::BeginMenu("Cameras")) {
       if (ImGui::MenuItem("Perspective Camera")) {
-        // TODO: Implement perspective camera creation
       }
       if (ImGui::MenuItem("Orthographic Camera")) {
-        // TODO: Implement orthographic camera creation
       }
       ImGui::EndMenu();
     }
@@ -528,8 +538,18 @@ void Hierarchy::Menu() {
 
     if (ImGui::BeginMenu("Cameras")) {
       if (ImGui::MenuItem("Perspective Camera")) {
+        auto addEntityEvent = CreateUnique<Engine::AddEntityEvent>();
+
+        addEntityEvent->entityName = "Perspective Camera";
+        addEntityEvent->preset = Engine::EntityPreset::PerspectiveCamera;
+        Engine::EventBus::Get()->DispatchSync(std::move(addEntityEvent));
       }
       if (ImGui::MenuItem("Orthographic Camera")) {
+        auto addEntityEvent = CreateUnique<Engine::AddEntityEvent>();
+
+        addEntityEvent->entityName = "Orthographic Camera";
+        addEntityEvent->preset = Engine::EntityPreset::OrthographicCamera;
+        Engine::EventBus::Get()->DispatchSync(std::move(addEntityEvent));
       }
       ImGui::EndMenu();
     }
@@ -546,7 +566,7 @@ void Hierarchy::ToggleVisibility(entt::registry &registry, entt::entity &entity,
   if (!node.Children.empty()) {
     for (auto &child : node.Children) {
       auto &meta = registry.get<MetadataComponent>(child);
-      meta.Enabled = value;
+      meta.Visible = value;
       ToggleVisibility(registry, child, value);
     }
   }
