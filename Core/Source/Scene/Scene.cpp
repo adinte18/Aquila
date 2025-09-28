@@ -104,7 +104,7 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
       MetadataComponent metadata;
       metadata.Name = meta.value("Name", "");
       metadata.ID = Utility::UUID::FromString(meta.value("UUID", ""));
-      metadata.Enabled = meta.value("Enabled", true);
+      metadata.Visible = meta.value("Enabled", true);
       registry.emplace<MetadataComponent>(entity, metadata);
 
       uuidToEntity[metadata.ID.ToString()] = entity;
@@ -250,7 +250,7 @@ bool AquilaScene::Serialize(const std::string &filepath) {
     auto &meta = registry.get<MetadataComponent>(entity);
     entityJson["MetadataComponent"] = {{"Name", meta.Name},
                                        {"UUID", meta.ID.ToString()},
-                                       {"Enabled", meta.Enabled}};
+                                       {"Enabled", meta.Visible}};
 
     if (registry.all_of<TransformComponent>(entity)) {
       auto &transform = registry.get<TransformComponent>(entity);

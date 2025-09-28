@@ -54,7 +54,7 @@ void EntityManager::ApplyPreset(Entity &entity, EntityPreset preset) {
 
     auto mesh = CreateRef<Mesh>(Engine::Controller::Get()->GetDevice(),
                                 "procedural_cube");
-    auto meshData = mesh->GenerateCube(5.f);
+    auto meshData = mesh->GenerateCube(1.f);
     mesh->LoadFromData(meshData);
 
     component.data = mesh;

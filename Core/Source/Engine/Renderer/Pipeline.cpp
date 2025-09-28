@@ -97,7 +97,8 @@ void Engine::Pipeline::vk_DefaultPipelineConfig(
   configInfo.depthStencilInfo.back = {};  // Optional
 
   configInfo.dynamicStateEnables = {VK_DYNAMIC_STATE_VIEWPORT,
-                                    VK_DYNAMIC_STATE_SCISSOR};
+                                    VK_DYNAMIC_STATE_SCISSOR,
+                                    VK_DYNAMIC_STATE_LINE_WIDTH};
   configInfo.dynamicStateCreateInfo.sType =
       VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
   configInfo.dynamicStateCreateInfo.pDynamicStates =

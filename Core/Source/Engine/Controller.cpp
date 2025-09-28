@@ -39,7 +39,7 @@ void Controller::OnStart() {
   DescriptorAllocator::Init(*m_Device); // setup global descriptor pool
 
   m_EditorCamera = CreateUnique<EditorCamera>();
-  m_EditorCamera->SetPerspectiveProjection(40.f, 1.778f, 0.1f, 100.f);
+  m_EditorCamera->SetPerspectiveProjection(60.f, 1.778f, 0.1f, 1000.f);
   m_EditorCamera->SetPosition(vec3(0, 1, -10));
   m_EditorCamera->SetViewYXZ(m_EditorCamera->GetPosition(),
                              m_EditorCamera->GetRotation());

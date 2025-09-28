@@ -6,13 +6,14 @@
 struct MetadataComponent {
   Utility::UUID ID;
   std::string Name;
-  bool Enabled = true;
+  bool Visible = true;
+  bool Selected = false;
 
   MetadataComponent() = default;
 
   MetadataComponent(const Utility::UUID &id, const std::string &name,
-                    bool enabled = true)
-      : ID(id), Name(name), Enabled(enabled) {}
+                    bool visible = true, bool selected = false)
+      : ID(id), Name(name), Visible(visible), Selected(selected) {}
 };
 
 #endif

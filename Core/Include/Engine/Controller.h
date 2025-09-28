@@ -30,7 +30,7 @@ public:
   void InvalidatePasses();
   void HandleSceneChange();
 
-  f32 GetDeltaTime();
+  f32 GetDeltaTime() { return m_DeltaTime; };
 
   Device &GetDevice() const { return *m_Device; }
 

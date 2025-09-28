@@ -1,5 +1,7 @@
 #include "Engine/Renderer/Renderer.h"
 #include "Engine/Controller.h"
+#include "RenderingSystems/GizmoRenderingSystem.h"
+#include "Utilities/Singleton.h"
 
 namespace Engine {
 
@@ -40,6 +42,11 @@ void Renderer::Initialize(uint32_t width, uint32_t height) {
   if ((m_SceneRendering = CreateRef<SceneRenderSystem>(
            m_Device, m_GeometryPass->GetRenderPass()))) {
     AQUILA_LOG_INFO("Scene rendering system initialized");
+  }
+
+  if ((m_GizmoRendering = CreateRef<GizmoRenderSystem>(
+           m_Device, m_GeometryPass->GetRenderPass()))) {
+    AQUILA_LOG_INFO("Guizmo rendering system initialized");
   }
 }
 
@@ -181,10 +188,13 @@ bool Renderer::IsPreviousFrameComplete() {
 void Renderer::RenderScene() {
   // Note(A) : Keep in mind to update rendering systems before recording any
   // commands to the command buffer.
+
   GetRenderingSystem<SceneRenderSystem>()->Update(
       Engine::Controller::Get()->GetCamera());
-
+  GetRenderingSystem<GizmoRenderSystem>()->Update(
+      Engine::Controller::Get()->GetCamera());
   GetRenderingSystem<SceneRenderSystem>()->SendDataToGPU(m_CurrentFrameID);
+  GetRenderingSystem<GizmoRenderSystem>()->SendDataToGPU(m_CurrentFrameID);
 
   auto &offscreenCmd = m_OffscreenCommandBuffers[m_CurrentFrameID];
   offscreenCmd->Reset();
@@ -204,6 +214,7 @@ void Renderer::RenderScene() {
 
     BeginRenderPass(offscreenCmd->GetHandle(), config);
     GetRenderingSystem<SceneRenderSystem>()->Render(frameSpec);
+    GetRenderingSystem<GizmoRenderSystem>()->Render(frameSpec);
     EndRenderPass(offscreenCmd->GetHandle());
   }
 

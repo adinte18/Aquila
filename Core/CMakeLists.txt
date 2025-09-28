@@ -1,7 +1,6 @@
-cmake_minimum_required(VERSION 3.16)  # Increased for PCH support
+cmake_minimum_required(VERSION 3.16)
 project(Core)
 
-# C++20 required for modern features and std::format
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
@@ -11,10 +10,9 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_definitions(-DDEBUG)
-    add_definitions(-DAQUILA_DEBUG)  # Your engine's debug flag
+    add_definitions(-DAQUILA_DEBUG)
 endif()
 
-# Platform detection for your engine
 if(WIN32)
     add_definitions(-DAQUILA_PLATFORM_WINDOWS)
 elseif(UNIX AND NOT APPLE)
@@ -89,8 +87,6 @@ target_include_directories(Core
         ${VENDOR_DIR}
 )
 
-# This automatically injects AquilaPCH.h into EVERY .cpp file
-# No manual #include needed in source files!
 target_precompile_headers(Core PRIVATE ${PCH_HEADER})
 
 message(STATUS "Precompiled header enabled: ${PCH_HEADER}")
@@ -115,15 +111,15 @@ target_link_libraries(Core PRIVATE
 # =============  COMPILER-SPECIFIC OPTIMIZATIONS =============
 if(MSVC)
     target_compile_options(Core PRIVATE 
-        /W4          # Warning level 4
-        /bigobj      # Handle large object files (needed for PCH)
-        /MP          # Multi-processor compilation
-        $<$<CONFIG:Release>:/O2>  # Optimize for speed in release
+        /W4          
+        /bigobj      
+        /MP          
+        $<$<CONFIG:Release>:/O2>  
     )
     
-    # MSVC-specific PCH optimizations
+
     set_target_properties(Core PROPERTIES
-        COMPILE_FLAGS "/Zm200"  # Increase compiler memory limit
+        COMPILE_FLAGS "/Zm200"
     )
     
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")

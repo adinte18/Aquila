@@ -38,14 +38,14 @@ public:
     m_LastFrameTime = currentTime;
   }
 
-  f32 GetDeltaTime() const { return m_DeltaTime; }
+  float GetDeltaTime() const { return m_DeltaTime; }
 
-  f32 GetElapsedTime() const { return ElapsedSeconds(m_StartTime, Now()); }
+  float GetElapsedTime() const { return ElapsedSeconds(m_StartTime, Now()); }
 
 private:
   TimePoint m_StartTime;
   TimePoint m_LastFrameTime;
-  f32 m_DeltaTime = 0.0f;
+  float m_DeltaTime = 0.0f;
 };
 
 } // namespace Utility

@@ -57,6 +57,9 @@ public:
     return glm::normalize(vec3(m_ViewMatrix[0]));
   }
   [[nodiscard]] vec3 GetUpVector() const {
+    return glm::normalize(vec3(m_ViewMatrix[1]));
+  }
+  [[nodiscard]] vec3 GetForwardVector() const {
     return glm::normalize(vec3(m_ViewMatrix[2]));
   }
   void SetPosition(const vec3 pos) { m_Position = pos; }
@@ -70,6 +73,9 @@ public:
   void SwitchToType(CameraType newType, vec3 targetPos = vec3{0.f});
 
   void OnResize(f32 width, f32 height);
+  void UpdateFreeModeLookDirection();
+
+  void RecalculateView();
 
 private:
   CameraType m_CameraType{CameraType::Free};
@@ -98,8 +104,6 @@ private:
   f32 m_OrbitPitch{0.0f};
 
   bool m_OrbitAroundEntity{false};
-
-  void RecalculateView();
 };
 } // namespace Engine
 

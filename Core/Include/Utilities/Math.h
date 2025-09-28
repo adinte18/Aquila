@@ -1,3 +1,6 @@
+#ifndef AQUILA_MATH_H
+#define AQUILA_MATH_H
+
 #include "Platform/PrimitiveTypes.h"
 
 namespace Utility {
@@ -10,3 +13,5 @@ constexpr f32 DEG_TO_RAD = PI / 180.0f;
 constexpr f32 RAD_TO_DEG = 180.0f / PI;
 } // namespace Math
 } // namespace Utility
+
+#endif

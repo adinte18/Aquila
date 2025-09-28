@@ -141,11 +141,6 @@ void SceneRenderSystem::Render(const FrameSpec &frameSpec) {
 
   m_Pipeline->Bind(frameSpec.commandBuffer);
 
-  // vkCmdBindDescriptorSets(frameSpec.commandBuffer,
-  // VK_PIPELINE_BIND_POINT_GRAPHICS,
-  //                         m_PipelineLayout, 0, 1,
-  //                         &m_DescriptorSets[ctx.frameIndex], 0, nullptr);
-
   auto view =
       registry.view<MetadataComponent, MeshComponent, TransformComponent>();
 
@@ -162,7 +157,7 @@ void SceneRenderSystem::Render(const FrameSpec &frameSpec) {
                            VK_SHADER_STAGE_FRAGMENT_BIT,
                        0, sizeof(PushConstantData), &push);
 
-    if (meshComp.data != nullptr && metaComp.Enabled) {
+    if (meshComp.data != nullptr && metaComp.Visible) {
       meshComp.data->Bind(frameSpec.commandBuffer);
       meshComp.data->Draw(frameSpec.commandBuffer, m_PipelineLayout,
                           m_DescriptorSets[frameSpec.frameIndex]);

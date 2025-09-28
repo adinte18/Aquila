@@ -1,7 +1,10 @@
 #ifndef AQUILA_RENDERER_H
 #define AQUILA_RENDERER_H
 
+#include "RenderingSystems/GridRenderingSystem.h"
 #include "RenderingSystems/SceneRenderingSystem.h"
+
+#include "RenderingSystems/GizmoRenderingSystem.h"
 
 #include "Renderpasses/GeometryPass.h"
 
@@ -40,6 +43,9 @@ public:
     if constexpr (std::is_same_v<T, SceneRenderSystem>) {
       return m_SceneRendering;
     }
+    if constexpr (std::is_same_v<T, GizmoRenderSystem>) {
+      return m_GizmoRendering;
+    }
     return nullptr;
   }
 
@@ -72,6 +78,7 @@ private:
   Ref<DescriptorSetLayout> m_SharedDescriptorSetLayout;
   Ref<GeometryPass> m_GeometryPass;
   Ref<SceneRenderSystem> m_SceneRendering;
+  Ref<GizmoRenderSystem> m_GizmoRendering;
 
   VkExtent2D m_Extent{};
   uint32_t m_CurrentFrameID = 0;

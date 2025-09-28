@@ -9,8 +9,6 @@
 #include <cstddef>
 #include <glm/glm.hpp>
 #include <vector>
-#include <vulkan/vulkan.h>
-
 
 struct Vertex {
   vec3 pos{};

@@ -5,6 +5,7 @@
 #include "Engine/Renderer/Texture2D.h"
 #include "Scene/Components/SceneNodeComponent.h"
 #include "Scene/Entity.h"
+#include "Utilities/Timer.h"
 
 namespace Engine {
 
@@ -54,8 +55,7 @@ public:
 
   bool handled = false;
   EventCallback callback;
-  std::chrono::steady_clock::time_point timestamp =
-      std::chrono::steady_clock::now();
+  std::chrono::steady_clock::time_point timestamp = Utility::Now();
 };
 
 template <typename EventType> class TypedEvent : public Event {
