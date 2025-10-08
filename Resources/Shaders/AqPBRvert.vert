@@ -6,11 +6,13 @@ layout(location = 2) in vec3 normal;
 layout(location = 3) in vec3 tangent;
 layout(location = 4) in vec2 uv;
 
-layout(location = 0) out vec3 fragPosition;
-layout(location = 1) out vec3 fragColor;
-layout(location = 2) out vec3 fragNormal;
-layout(location = 3) out vec2 fragTangent;
-layout(location = 4) out vec2 fragUV;
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec3 fragPosWorld;
+layout(location = 2) out vec3 fragNormalWorld;
+layout(location = 3) out vec3 fragTangentWorld;
+layout(location = 4) out vec2 fragTexCoord;
+layout(location = 5) out vec4 fragPosLightSpace;
+layout(location = 6) out mat3 TBN;
 
 layout(std140, set = 0, binding = 0) uniform SceneUniformData {
     mat4 cameraProjection;
@@ -26,10 +28,20 @@ layout(push_constant) uniform Push {
 void main() {
     vec4 positionWorld = push.modelMatrix * vec4(position, 1.0);
 
-    fragUV = uv;
-    fragNormal = inverse(transpose(mat3(push.modelMatrix))) * normal;
-    fragPosition = positionWorld.xyz;
+    fragTexCoord = uv;
+    fragNormalWorld = inverse(transpose(mat3(push.modelMatrix))) * normal;
+    fragPosWorld = positionWorld.xyz;
     fragColor = color;
+
+    mat3 normalMatrix = transpose(inverse(mat3(push.modelMatrix)));
+
+    vec3 T = normalize(normalMatrix * tangent);
+    vec3 N = normalize(normalMatrix * normal);
+
+    T = normalize(T - dot(T, N) * N);
+
+    vec3 B = cross(N, T);
+    TBN = mat3(T, B, N);
 
     gl_Position = ubo.cameraProjection * ubo.cameraView * positionWorld;
 }
