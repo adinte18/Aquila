@@ -66,6 +66,8 @@ public:
   void Load(const std::string &filepath);
   void LoadFromData(const MeshData &meshData);
 
+  void CenterMeshAtOrigin();
+
   MeshData GenerateCube(f32 size);
   MeshData GenerateSphere(f32 radius = 1.0f, uint32 segments = 32,
                           uint32 rings = 16);
@@ -75,8 +77,7 @@ public:
                          uint32 widthSegments = 1, uint32 heightSegments = 1);
 
   void Bind(VkCommandBuffer commandBuffer) const;
-  void Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout,
-            VkDescriptorSet descriptorSet);
+  void Draw(VkCommandBuffer commandBuffer);
 
   [[nodiscard]] std::string GetPath() const { return m_Path; }
   [[nodiscard]] std::string GetDebugName() const { return m_DebugName; }

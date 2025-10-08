@@ -1,6 +1,7 @@
 
 #include "Engine/Mesh.h"
 #include "AquilaCore.h"
+#include "Engine/Renderer/Material/Material.h"
 #include "Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Engine {
@@ -36,7 +37,8 @@ void Mesh::Load(const std::string &filepath) {
       aiProcess_Triangulate | aiProcess_GenSmoothNormals |
           aiProcess_GenUVCoords | aiProcess_CalcTangentSpace |
           aiProcess_JoinIdenticalVertices | aiProcess_OptimizeMeshes |
-          aiProcess_ConvertToLeftHanded);
+          aiProcess_ConvertToLeftHanded | aiProcess_PreTransformVertices |
+          aiProcess_ImproveCacheLocality);
 
   if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE ||
       !scene->mRootNode) {
@@ -102,8 +104,33 @@ void Mesh::Load(const std::string &filepath) {
 
   ProcessNode(scene->mRootNode, scene);
 
+  CenterMeshAtOrigin();
+
   CreateVertexBuffer(m_Vertices);
   CreateIndexBuffer(m_Indices);
+}
+
+void Mesh::CenterMeshAtOrigin() {
+  if (m_Vertices.empty())
+    return;
+
+  vec3 minBounds = vec3(m_Vertices[0].pos);
+  vec3 maxBounds = vec3(m_Vertices[0].pos);
+
+  for (const auto &vertex : m_Vertices) {
+    vec3 pos = vec3(vertex.pos);
+    minBounds = glm::min(minBounds, pos);
+    maxBounds = glm::max(maxBounds, pos);
+  }
+
+  vec3 center = (minBounds + maxBounds) * 0.5f;
+
+  for (auto &vertex : m_Vertices) {
+    vertex.pos = vec4(vec3(vertex.pos) - center, 1.0f);
+  }
+
+  AQUILA_LOG_INFO("Centered mesh '{}' by offset: ({}, {}, {})", m_DebugName,
+                  center.x, center.y, center.z);
 }
 
 void Mesh::CreateVertexBuffer(const std::vector<Vertex> &vertices) {
@@ -233,22 +260,18 @@ void Mesh::LoadFromData(const MeshData &meshData) {
                   m_DebugName, m_VertexCount, m_IndexCount);
 }
 
-void Mesh::Draw(VkCommandBuffer commandBuffer, VkPipelineLayout pipelineLayout,
-                VkDescriptorSet descriptorSet) {
-  if (!m_Primitives.empty()) {
-    for (auto &primitive : m_Primitives) {
-      if (m_HasIndexBuffer) {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout, 0, 1, &descriptorSet, 0,
-                                nullptr);
-        vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1,
-                         primitive.firstIndex, primitive.firstVertex, 0);
-      } else {
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
-                                pipelineLayout, 0, 1, &descriptorSet, 0,
-                                nullptr);
-        vkCmdDraw(commandBuffer, primitive.vertexCount, 1, 0, 0);
-      }
+void Mesh::Draw(VkCommandBuffer commandBuffer) {
+  if (m_Primitives.empty()) {
+    return;
+  }
+
+  for (auto &primitive : m_Primitives) {
+    if (m_HasIndexBuffer) {
+      vkCmdDrawIndexed(commandBuffer, primitive.indexCount, 1,
+                       primitive.firstIndex, primitive.firstVertex, 0);
+    } else {
+      vkCmdDraw(commandBuffer, primitive.vertexCount, 1, primitive.firstVertex,
+                0);
     }
   }
 }

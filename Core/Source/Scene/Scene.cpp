@@ -105,6 +105,7 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
       metadata.Name = meta.value("Name", "");
       metadata.ID = Utility::UUID::FromString(meta.value("UUID", ""));
       metadata.Visible = meta.value("Enabled", true);
+      metadata.Selected = meta.value("Selected", false);
       registry.emplace<MetadataComponent>(entity, metadata);
 
       uuidToEntity[metadata.ID.ToString()] = entity;
@@ -177,6 +178,17 @@ bool AquilaScene::Deserialize(const std::string &filepath) {
       mesh.data =
           CreateRef<Engine::Mesh>(Engine::Controller::Get()->GetDevice(),
                                   meshJson.value("DebugName", ""));
+
+      // Note(A) : For now, just skip primitives for scene load. I need a proper
+      // asset manager system for it to be ok-tier ( sorryyyyy i'm lazy:/ )
+      std::string meshPath = meshJson.value("Path", "");
+      if (meshPath == "procedural://cube" ||
+          meshPath == "procedural://sphere" ||
+          meshPath == "procedural://cylinder" ||
+          meshPath == "procedural://plane") {
+        continue;
+      }
+
       mesh.data->Load(meshJson.value("Path", ""));
 
       if (!registry.all_of<MeshComponent>(entity)) {
@@ -250,7 +262,8 @@ bool AquilaScene::Serialize(const std::string &filepath) {
     auto &meta = registry.get<MetadataComponent>(entity);
     entityJson["MetadataComponent"] = {{"Name", meta.Name},
                                        {"UUID", meta.ID.ToString()},
-                                       {"Enabled", meta.Visible}};
+                                       {"Enabled", meta.Visible},
+                                       {"Selected", meta.Selected}};
 
     if (registry.all_of<TransformComponent>(entity)) {
       auto &transform = registry.get<TransformComponent>(entity);

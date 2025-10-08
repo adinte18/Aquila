@@ -3,6 +3,8 @@
 
 #include "Engine/EditorCamera.h"
 #include "Engine/Renderer/Buffer.h"
+#include "Engine/Renderer/Descriptor.h"
+#include "Engine/Renderer/Material/MaterialSystem.h"
 #include "RenderingSystems/RenderingSystemBase.h"
 
 namespace Engine {
@@ -32,7 +34,11 @@ public:
   };
 
   SceneRenderSystem(Device &device, VkRenderPass renderPass);
-  ~SceneRenderSystem() override = default;
+  ~SceneRenderSystem() override {
+    if (m_MaterialSystem) {
+      m_MaterialSystem->Shutdown();
+    }
+  };
 
   SceneRenderSystem(const SceneRenderSystem &) = delete;
   SceneRenderSystem &operator=(const SceneRenderSystem &) = delete;
@@ -40,10 +46,15 @@ public:
   void Render(const FrameSpec &context) override;
   void Update(EditorCamera &camera);
 
+  MaterialSystem *GetMaterialSystem() { return m_MaterialSystem.get(); }
+  DescriptorSetLayout *GetGlobalDescriptorSetLayout() { return m_Layout.get(); }
+
 private:
   void CreateDescriptorSetLayout() override;
   void CreatePipeline(VkRenderPass renderPass) override;
   void CreatePipelineLayout() override;
+
+  Unique<MaterialSystem> m_MaterialSystem;
 
   Unique<Buffer> m_Buffer;
   Unique<Buffer> m_LightBuffer;

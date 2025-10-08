@@ -25,6 +25,7 @@ private:
   void DrawComponent_Mesh(entt::registry &registry, entt::entity entity);
   void DrawComponent_Camera(entt::registry &registry, entt::entity entity);
   void DrawComponent_Light(entt::registry &registry, entt::entity entity);
+  void DrawComponent_Material(entt::registry &registry, entt::entity entity);
 
   bool
   DrawComponentHeader(const char *icon, const char *label, const char *menuId,

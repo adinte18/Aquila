@@ -6,6 +6,7 @@
 #include "Scene/Scene.h"
 
 #include "Scene/Components/LightComponent.h"
+#include "Scene/Components/MaterialComponent.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Components/TransformComponent.h"
@@ -37,9 +38,8 @@ SceneRenderSystem::SceneRenderSystem(Device &device, VkRenderPass renderPass)
 
   SetUniformData(0, &uniformData);
   SetUniformData(1, &lightUBO);
-
-  CreatePipelineLayout();
-  CreatePipeline(renderPass);
+  m_MaterialSystem = CreateUnique<MaterialSystem>(device);
+  m_MaterialSystem->Initialize(renderPass, m_Layout.get());
 }
 
 void SceneRenderSystem::CreateDescriptorSetLayout() {
@@ -48,19 +48,17 @@ void SceneRenderSystem::CreateDescriptorSetLayout() {
                              VK_SHADER_STAGE_ALL_GRAPHICS)
                  .addBinding(1, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                              VK_SHADER_STAGE_FRAGMENT_BIT)
-                 .addBinding(2, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-                             VK_SHADER_STAGE_FRAGMENT_BIT)
                  .build();
 }
 
 void SceneRenderSystem::CreatePipeline(VkRenderPass renderPass) {
-  PipelineConfigInfo pipelineConfig{};
-  Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
-  pipelineConfig.renderPass = renderPass;
-  pipelineConfig.pipelineLayout = m_PipelineLayout;
-  m_Pipeline = CreateUnique<Pipeline>(
-      device, std::string(SHADERS_PATH) + "/AqPBRvert.spv",
-      std::string(SHADERS_PATH) + "/AqPBRfrag.spv", pipelineConfig);
+  // PipelineConfigInfo pipelineConfig{};
+  // Pipeline::vk_DefaultPipelineConfig(pipelineConfig);
+  // pipelineConfig.renderPass = renderPass;
+  // pipelineConfig.pipelineLayout = m_PipelineLayout;
+  // m_Pipeline = CreateUnique<Pipeline>(
+  //     device, std::string(SHADERS_PATH) + "/AqPBRvert.spv",
+  //     std::string(SHADERS_PATH) + "/AqPBRfrag.spv", pipelineConfig);
 }
 
 void SceneRenderSystem::CreatePipelineLayout() {
@@ -121,11 +119,10 @@ void SceneRenderSystem::Update(EditorCamera &camera) {
     lights.push_back(ld);
   }
 
-  // Create the uniform data structure
+  //
   LightUniformData lightUniformData{};
   lightUniformData.lightCount = static_cast<int>(lights.size());
 
-  // Copy lights to the uniform structure
   for (size_t i = 0; i < lights.size() && i < 32; ++i) {
     lightUniformData.lights[i] = lights[i];
   }
@@ -135,32 +132,83 @@ void SceneRenderSystem::Update(EditorCamera &camera) {
 }
 
 void SceneRenderSystem::Render(const FrameSpec &frameSpec) {
-  auto *scene = Engine::Controller::Get()->GetSceneManager().GetActiveScene();
-
+  auto *scene = Controller::Get()->GetSceneManager().GetActiveScene();
   auto &registry = scene->GetRegistry();
 
-  m_Pipeline->Bind(frameSpec.commandBuffer);
+  if (m_MaterialSystem) {
+    m_MaterialSystem->UpdateAllDirtyMaterials(m_Layout.get());
+  }
 
-  auto view =
-      registry.view<MetadataComponent, MeshComponent, TransformComponent>();
+  std::unordered_map<Ref<Material::Material>, std::vector<entt::entity>>
+      materialGroups;
+
+  auto view = registry.view<MetadataComponent, MeshComponent,
+                            TransformComponent, MaterialComponent>();
 
   for (auto entity : view) {
-    auto [metaComp, meshComp, transformComp] =
-        view.get<MetadataComponent, MeshComponent, TransformComponent>(entity);
+    auto &metaComp = view.get<MetadataComponent>(entity);
+    if (!metaComp.Visible)
+      continue;
 
-    PushConstantData push{};
-    push.modelMatrix = transformComp.GetWorldMatrix();
-    push.normalMatrix = transformComp.GetNormalMatrix();
+    auto &matComp = view.get<MaterialComponent>(entity);
+    auto material = matComp.GetMaterial();
 
-    vkCmdPushConstants(frameSpec.commandBuffer, m_PipelineLayout,
-                       VK_SHADER_STAGE_VERTEX_BIT |
-                           VK_SHADER_STAGE_FRAGMENT_BIT,
-                       0, sizeof(PushConstantData), &push);
+    if (!material && m_MaterialSystem) {
+      material = m_MaterialSystem->GetLibrary().GetFallbackMaterial();
+    }
 
-    if (meshComp.data != nullptr && metaComp.Visible) {
-      meshComp.data->Bind(frameSpec.commandBuffer);
-      meshComp.data->Draw(frameSpec.commandBuffer, m_PipelineLayout,
-                          m_DescriptorSets[frameSpec.frameIndex]);
+    if (material) {
+      materialGroups[material].push_back(entity);
+    }
+  }
+
+  for (auto &[material, entities] : materialGroups) {
+    auto pipeline = material->GetPipeline();
+    if (pipeline == VK_NULL_HANDLE) {
+      AQUILA_LOG_WARNING("Material {} has no pipeline, skipping",
+                         material->name);
+      continue;
+    }
+
+    vkCmdBindPipeline(frameSpec.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+                      pipeline);
+
+    auto matDescriptor = material->GetDescriptorSet();
+    if (matDescriptor != VK_NULL_HANDLE) {
+      VkDescriptorSet descriptorSets[2] = {
+          m_DescriptorSets[frameSpec.frameIndex],
+
+          matDescriptor};
+
+      vkCmdBindDescriptorSets(frameSpec.commandBuffer,
+                              VK_PIPELINE_BIND_POINT_GRAPHICS,
+                              material->GetTemplate()->shader->m_Layout, 0, 2,
+                              descriptorSets, 0, nullptr);
+    } else {
+
+      vkCmdBindDescriptorSets(
+          frameSpec.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS,
+          material->GetTemplate()->shader->m_Layout, 0, 1,
+          &m_DescriptorSets[frameSpec.frameIndex], 0, nullptr);
+    }
+
+    for (auto entity : entities) {
+      auto [meshComp, transformComp] =
+          view.get<MeshComponent, TransformComponent>(entity);
+
+      PushConstantData push{};
+      push.modelMatrix = transformComp.GetWorldMatrix();
+      push.normalMatrix = transformComp.GetNormalMatrix();
+
+      vkCmdPushConstants(
+          frameSpec.commandBuffer, material->GetTemplate()->shader->m_Layout,
+          VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0,
+          sizeof(PushConstantData), &push);
+
+      if (meshComp.data) {
+        meshComp.data->Bind(frameSpec.commandBuffer);
+        meshComp.data->Draw(frameSpec.commandBuffer);
+      }
     }
   }
 }

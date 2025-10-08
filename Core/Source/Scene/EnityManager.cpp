@@ -1,7 +1,9 @@
 #include "Engine/Controller.h"
 #include "Engine/Mesh.h"
+#include "RenderingSystems/SceneRenderingSystem.h"
 #include "Scene/Components/CameraComponent.h"
 #include "Scene/Components/LightComponent.h"
+#include "Scene/Components/MaterialComponent.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
 #include "Scene/Components/SceneNodeComponent.h"
@@ -173,6 +175,13 @@ Entity EntityManager::AddEntity(const std::string &name) {
                                          true);
   entity.AddComponent<SceneNodeComponent>();
   entity.AddComponent<TransformComponent>();
+  entity.AddComponent<MaterialComponent>(
+      Engine::Controller::Get()
+          ->GetRenderer()
+          .GetRenderingSystem<SceneRenderSystem>()
+          ->GetMaterialSystem()
+          ->GetLibrary()
+          .GetDefaultMaterial());
 
   return entity;
 }

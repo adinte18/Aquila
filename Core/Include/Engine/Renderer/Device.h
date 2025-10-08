@@ -203,7 +203,7 @@ public:
   AQUILA_NONMOVEABLE(Device);
 
   VkCommandPool GetCommandPool() { return m_CommandPool; };
-  VkDevice GetDevice() { return m_Device; };
+  VkDevice &GetDevice() { return m_Device; };
   VkSurfaceKHR GetSurface() { return m_Surface; };
   VkQueue GetGraphicsQueue() { return m_GraphicsQueue; };
   VkQueue GetPresentQueue() { return m_PresentQueue; };

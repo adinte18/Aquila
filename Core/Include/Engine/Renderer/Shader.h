@@ -1,19 +1,25 @@
-#ifndef VK_APP_SHADER_H_
-#define VK_APP_SHADER_H_
+#ifndef AQUILA_SHADER_H
+#define AQUILA_SHADER_H
 
-#include <fstream>
-#include <vector>
-#include <vulkan/vulkan.h>
-#include <cstdlib>
-#include <iostream>
+#include "AquilaCore.h"
+#include "Engine/Renderer/Device.h"
 
 class Shader {
 public:
-    static std::vector<char> ReadFile(const std::string& filename);
-    // static std::vector<std::uint32_t> CompileShaderGlslang(EShLanguage shaderType, const std::string& filename);
+  static std::vector<char> ReadFile(const std::string &filename);
 
-    static VkShaderModule CreateShaderModule(const std::vector<char>& code, VkDevice device);
-    static VkShaderModule CreateShaderModule(const std::vector<uint32_t> &spirv, VkDevice device);
+  static VkShaderModule CreateShaderModule(const std::vector<char> &code,
+                                           Engine::Device &device,
+                                           const std::string &debugName);
+  static VkShaderModule CreateShaderModule(const std::vector<uint32_t> &spirv,
+                                           Engine::Device &device,
+                                           const std::string &debugName);
+
+  static void DestroyShaderModule(VkShaderModule &module,
+                                  Engine::Device &device);
+
+private:
+  std::string moduleName;
 };
 
 #endif
