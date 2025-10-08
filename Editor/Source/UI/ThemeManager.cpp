@@ -80,7 +80,7 @@ void ThemeManager::ApplyAquila2Theme() {
   colors[ImGuiCol_NavWindowingDimBg] = HEXAtoIV4("#cccccc", 0.2f);
 
   style.WindowPadding = ImVec2(6, 6);
-  style.WindowRounding = 8.0f;
+  style.WindowRounding = 0.0f;
   style.WindowBorderSize = 1.0f;
   style.WindowMinSize = ImVec2(200, 100);
   style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
@@ -92,16 +92,16 @@ void ThemeManager::ApplyAquila2Theme() {
   style.PopupBorderSize = 1.0f;
 
   style.FramePadding = ImVec2(6, 3);
-  style.FrameRounding = 4.0f;
+  style.FrameRounding = 2.0f;
   style.FrameBorderSize = 0.0f;
 
-  style.ItemSpacing = ImVec2(6, 4);
+  style.ItemSpacing = ImVec2(7, 4);
   style.ItemInnerSpacing = ImVec2(4, 2);
   style.CellPadding = ImVec2(6, 3);
   style.IndentSpacing = 18.0f;
 
-  style.ScrollbarSize = 14.0f;
-  style.ScrollbarRounding = 7.0f;
+  style.ScrollbarSize = 10.0f;
+  style.ScrollbarRounding = 4.0f;
   style.GrabMinSize = 10.0f;
   style.GrabRounding = 5.0f;
 
@@ -195,59 +195,43 @@ void ThemeManager::ApplyAquilaTheme() {
   colors[ImGuiCol_NavWindowingHighlight] = HEXAtoIV4("#ffffff", 0.8f);
   colors[ImGuiCol_NavWindowingDimBg] = HEXAtoIV4("#cccccc", 0.2f);
 
-  style.WindowPadding = ImVec2(10, 8);
-  style.WindowRounding = 5.0f;
+  style.WindowPadding = ImVec2(6, 6);
+  style.WindowRounding = 0.0f;
   style.WindowBorderSize = 1.0f;
   style.WindowMinSize = ImVec2(200, 100);
   style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-  style.WindowMenuButtonPosition = ImGuiDir_None;
+  style.WindowMenuButtonPosition = ImGuiDir_Left;
 
-  style.ChildRounding = 4.0f;
+  style.ChildRounding = 6.0f;
   style.ChildBorderSize = 1.0f;
-
-  style.PopupRounding = 4.0f;
+  style.PopupRounding = 6.0f;
   style.PopupBorderSize = 1.0f;
 
-  style.FramePadding = ImVec2(8, 4);
-  style.FrameRounding = 3.0f;
+  style.FramePadding = ImVec2(6, 3);
+  style.FrameRounding = 2.0f;
   style.FrameBorderSize = 0.0f;
 
-  style.ItemSpacing = ImVec2(8, 6);
-  style.ItemInnerSpacing = ImVec2(6, 3);
-  style.CellPadding = ImVec2(8, 4);
-  style.TouchExtraPadding = ImVec2(0, 0);
+  style.ItemSpacing = ImVec2(7, 4);
+  style.ItemInnerSpacing = ImVec2(4, 2);
+  style.CellPadding = ImVec2(6, 3);
+  style.IndentSpacing = 18.0f;
 
-  style.IndentSpacing = 25.0f;
-  style.ColumnsMinSpacing = 8.0f;
+  style.ScrollbarSize = 10.0f;
+  style.ScrollbarRounding = 4.0f;
+  style.GrabMinSize = 10.0f;
+  style.GrabRounding = 5.0f;
 
-  style.ScrollbarSize = 16.0f;
-  style.ScrollbarRounding = 8.0f;
-
-  style.GrabMinSize = 12.0f;
-  style.GrabRounding = 6.0f;
-
-  style.LogSliderDeadzone = 6.0f;
-
-  style.TabRounding = 3.0f;
+  style.TabRounding = 4.0f;
   style.TabBorderSize = 0.0f;
-
-  style.ColorButtonPosition = ImGuiDir_Right;
-
   style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
-
   style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
-
-  style.DisplayWindowPadding = ImVec2(5, 5);
-  style.DisplaySafeAreaPadding = ImVec2(4, 4);
-  style.MouseCursorScale = 1.0f;
-  style.AntiAliasedLines = true;
-  style.AntiAliasedLinesUseTex = true;
-  style.AntiAliasedFill = true;
-  style.CurveTessellationTol = 1.25f;
-  style.CircleTessellationMaxError = 0.3f;
 
   style.Alpha = 1.0f;
   style.DisabledAlpha = 0.4f;
+  style.AntiAliasedLines = true;
+  style.AntiAliasedFill = true;
+  style.CurveTessellationTol = 1.25f;
+  style.CircleTessellationMaxError = 0.3f;
 }
 void ThemeManager::ApplyDarkTheme() { ImGui::StyleColorsDark(); }
 

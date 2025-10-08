@@ -261,6 +261,28 @@ void Menubar::Draw() {
       static bool snapToGrid = false;
       ImGui::Checkbox("Snap to Grid", &snapToGrid);
 
+      ImGuiStyle &style = ImGui::GetStyle();
+
+      ImGui::SliderFloat("Frame Rounding", &style.FrameRounding, 0.0f, 12.0f,
+                         "%.1f");
+      ImGui::SliderFloat("Window Rounding", &style.WindowRounding, 0.0f, 12.0f,
+                         "%.1f");
+      ImGui::SliderFloat("Scrollbar Size", &style.ScrollbarSize, 10.0f, 30.0f,
+                         "%.1f");
+      ImGui::SliderFloat("Window Padding X", &style.WindowPadding.x, 0.0f,
+                         30.0f, "%.1f");
+      ImGui::SliderFloat("Window Padding Y", &style.WindowPadding.y, 0.0f,
+                         30.0f, "%.1f");
+      ImGui::SliderFloat("Item Spacing X", &style.ItemSpacing.x, 0.0f, 20.0f,
+                         "%.1f");
+      ImGui::SliderFloat("Item Spacing Y", &style.ItemSpacing.y, 0.0f, 20.0f,
+                         "%.1f");
+
+      ImGui::ColorEdit3("Window Bg", (float *)&style.Colors[ImGuiCol_WindowBg]);
+      ImGui::ColorEdit3("Button", (float *)&style.Colors[ImGuiCol_Button]);
+      ImGui::ColorEdit3("Header", (float *)&style.Colors[ImGuiCol_Header]);
+      ImGui::ColorEdit3("FrameBg", (float *)&style.Colors[ImGuiCol_FrameBg]);
+
       ImGui::Unindent();
     }
 

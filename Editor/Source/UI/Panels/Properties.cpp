@@ -1,9 +1,13 @@
 #include "UI/Panels/Properties.h"
+#include "RenderingSystems/SceneRenderingSystem.h"
 #include "Scene/Components/CameraComponent.h"
 #include "Scene/Components/LightComponent.h"
+#include "Scene/Components/MaterialComponent.h"
 #include "Scene/Components/MeshComponent.h"
 #include "Scene/Components/MetadataComponent.h"
+
 #include "UI/UI.h"
+#include "lucide.h"
 namespace Editor::Panels {
 
 bool Properties::DrawComponentHeader(
@@ -93,6 +97,9 @@ void Properties::Draw() {
   if (registry.any_of<LightComponent>(selected))
     DrawComponent_Light(registry, selected);
 
+  if (registry.any_of<MaterialComponent>(selected))
+    DrawComponent_Material(registry, selected);
+
   ImGui::Separator();
   ImGui::Spacing();
 
@@ -130,6 +137,13 @@ void Properties::Draw() {
     if (!registry.any_of<CameraComponent>(selected)) {
       if (ImGui::MenuItem(ICON_LC_CAMERA " Camera")) {
         registry.emplace<CameraComponent>(selected);
+        ImGui::CloseCurrentPopup();
+      }
+    }
+
+    if (!registry.any_of<MaterialComponent>(selected)) {
+      if (ImGui::MenuItem(ICON_LC_BRUSH " Material")) {
+        registry.emplace<MaterialComponent>(selected);
         ImGui::CloseCurrentPopup();
       }
     }
@@ -290,6 +304,366 @@ void Properties::DrawComponent_Metadata(entt::registry &registry,
     ImGui::Text("UUID: %s", meta.ID.ToString().c_str());
     ImGui::PopFont();
   }
+}
+
+void Properties::DrawComponent_Material(entt::registry &registry,
+                                        entt::entity entity) {
+  auto &component = registry.get<MaterialComponent>(entity);
+
+  std::vector<ComponentMenuAction> actions = {
+      ComponentMenuAction(ComponentMenuAction::RESET, ICON_LC_REFRESH_CW,
+                          "Reset to Default",
+                          [&component]() {
+                            if (component.material) {
+                              component.material->ResetAllProperties();
+                            }
+                          }),
+      ComponentMenuAction(ComponentMenuAction::REMOVE_COMPONENT,
+                          ICON_LC_TRASH_2, "Remove Component",
+                          [&registry, entity]() {
+                            registry.remove<MaterialComponent>(entity);
+                          })};
+
+  bool headerOpen =
+      DrawComponentHeader(ICON_LC_BRUSH, "MATERIAL", "MaterialMenu", actions);
+
+  if (!headerOpen)
+    return;
+
+  ImGui::Indent();
+
+  // Material Selection/Creation
+  ImGui::SeparatorText("Material");
+
+  std::string materialLabel =
+      component.material ? component.material->name : "None (Using Fallback)";
+
+  ImGui::Text("Current:");
+  ImGui::SameLine();
+  if (ImGui::Button(materialLabel.c_str(), ImVec2(200, 0))) {
+    ImGui::OpenPopup("SelectMaterialPopup");
+  }
+
+  // Material selection popup
+  if (ImGui::BeginPopup("SelectMaterialPopup")) {
+    auto renderSystem = Engine::Controller::Get()
+                            ->GetRenderer()
+                            .GetRenderingSystem<Engine::SceneRenderSystem>();
+    if (renderSystem && renderSystem->GetMaterialSystem()) {
+      auto &matLibrary = renderSystem->GetMaterialSystem()->GetLibrary();
+
+      ImGui::Text(ICON_LC_SEARCH " Select Material");
+      ImGui::Separator();
+
+      // List all available materials
+      for (const auto &[name, mat] : matLibrary.GetAllMaterials()) {
+        bool isSelected = (component.material == mat);
+        if (ImGui::Selectable(name.c_str(), isSelected)) {
+          component.material = mat;
+          ImGui::CloseCurrentPopup();
+        }
+      }
+
+      ImGui::Separator();
+
+      // Create new material
+      if (ImGui::Selectable(ICON_LC_PLUS " Create New Material...")) {
+        ImGui::OpenPopup("CreateMaterialPopup");
+      }
+    }
+    ImGui::EndPopup();
+  }
+
+  // Create material popup
+  static char newMatName[128] = "";
+  static int selectedTemplate = 0;
+  if (ImGui::BeginPopup("CreateMaterialPopup")) {
+    ImGui::Text("Create New Material");
+    ImGui::Separator();
+
+    ImGui::InputText("Name", newMatName, sizeof(newMatName));
+
+    const char *templates[] = {"PBR", "Unlit", "Transparent"};
+    ImGui::Combo("Template", &selectedTemplate, templates,
+                 IM_ARRAYSIZE(templates));
+
+    ImGui::Separator();
+
+    if (ImGui::Button("Create", ImVec2(120, 0))) {
+      if (strlen(newMatName) > 0) {
+        auto renderSystem =
+            Engine::Controller::Get()
+                ->GetRenderer()
+                .GetRenderingSystem<Engine::SceneRenderSystem>();
+        if (renderSystem && renderSystem->GetMaterialSystem()) {
+          auto newMat =
+              renderSystem->GetMaterialSystem()->GetLibrary().CreateMaterial(
+                  newMatName, templates[selectedTemplate]);
+          component.material = newMat;
+          memset(newMatName, 0, sizeof(newMatName));
+          ImGui::CloseCurrentPopup();
+        }
+      }
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+      memset(newMatName, 0, sizeof(newMatName));
+      ImGui::CloseCurrentPopup();
+    }
+
+    ImGui::EndPopup();
+  }
+
+  if (!component.material) {
+    ImGui::TextColored(ImVec4(1.0f, 0.7f, 0.0f, 1.0f),
+                       ICON_LC_TRIANGLE_ALERT " Using fallback material");
+    ImGui::Unindent();
+    return;
+  }
+
+  ImGui::Separator();
+
+  // Material Properties
+  if (ImGui::CollapsingHeader("Properties", ImGuiTreeNodeFlags_DefaultOpen)) {
+    ImGui::Indent();
+
+    auto properties = component.material->GetAllProperties();
+
+    for (auto &[name, prop] : properties) {
+      if (!prop.m_IsEditable)
+        continue;
+
+      if (prop.m_Name.empty())
+        continue;
+
+      ImGui::PushID(name.c_str());
+
+      switch (prop.m_Type) {
+      case Engine::Material::ParameterType::Float: {
+        f32 val = std::get<f32>(prop.m_Value);
+        if (ImGui::SliderFloat(prop.m_DisplayName.c_str(), &val,
+                               prop.m_MinValue, prop.m_MaxValue, "%.3f")) {
+          component.material->SetFloat(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Vec2: {
+        vec2 val = std::get<vec2>(prop.m_Value);
+        if (ImGui::DragFloat2(prop.m_DisplayName.c_str(), glm::value_ptr(val),
+                              0.01f)) {
+          component.material->SetVec2(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Vec3: {
+        vec3 val = std::get<vec3>(prop.m_Value);
+        if (ImGui::DragFloat3(prop.m_DisplayName.c_str(), glm::value_ptr(val),
+                              0.01f)) {
+          component.material->SetVec3(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Vec4: {
+        vec4 val = std::get<vec4>(prop.m_Value);
+        if (ImGui::DragFloat4(prop.m_DisplayName.c_str(), glm::value_ptr(val),
+                              0.01f)) {
+          component.material->SetVec4(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Color: {
+        vec4 color = std::get<vec4>(prop.m_Value);
+        if (ImGui::ColorEdit4(prop.m_DisplayName.c_str(), glm::value_ptr(color),
+                              ImGuiColorEditFlags_AlphaBar)) {
+          component.material->SetColor(name, color);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Bool: {
+        bool val = std::get<bool>(prop.m_Value);
+        if (ImGui::Checkbox(prop.m_DisplayName.c_str(), &val)) {
+          component.material->SetParameter(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Int: {
+        int val = std::get<int>(prop.m_Value);
+        if (ImGui::DragInt(prop.m_DisplayName.c_str(), &val)) {
+          component.material->SetParameter(name, val);
+        }
+        break;
+      }
+
+      case Engine::Material::ParameterType::Texture2D: {
+        auto texture = component.material->GetTexture(name);
+        std::string texLabel = texture ? "Loaded" : "None";
+
+        ImGui::Text("%s:", prop.m_DisplayName.c_str());
+        ImGui::SameLine();
+
+        if (ImGui::Button((texLabel + "##" + name).c_str(), ImVec2(150, 0))) {
+          // TODO: Open texture browser
+        }
+
+        // Drag & drop support
+        if (ImGui::BeginDragDropTarget()) {
+          if (const ImGuiPayload *payload =
+                  ImGui::AcceptDragDropPayload("TEXTURE_ASSET")) {
+            const char *texPath = static_cast<const char *>(payload->Data);
+            if (texPath) {
+              // Load texture
+              auto newTexture = CreateRef<Engine::Texture2D>(
+                  Engine::Controller::Get()->GetDevice(), name);
+              newTexture->CreateTexture(texPath, VK_FORMAT_R8G8B8A8_UNORM);
+              component.material->SetTexture(name, newTexture);
+            }
+          }
+          ImGui::EndDragDropTarget();
+        }
+
+        // Clear texture button
+        if (texture) {
+          ImGui::SameLine();
+          if (ImGui::Button(
+                  (std::string(ICON_LC_X) + "##clear_" + name).c_str())) {
+            component.material->SetTexture(name, nullptr);
+          }
+        }
+        break;
+      }
+      default:
+        break;
+      }
+
+      ImGui::PopID();
+    }
+
+    ImGui::Unindent();
+  }
+
+  // Render State
+  if (ImGui::CollapsingHeader("Render State")) {
+    ImGui::Indent();
+
+    auto renderState = component.material->GetRenderState();
+    bool stateChanged = false;
+
+    // Blend Mode
+    const char *blendModes[] = {"Opaque", "Alpha Blend", "Additive",
+                                "Multiply"};
+    int currentBlend = static_cast<int>(renderState.m_BlendMode);
+    if (ImGui::Combo("Blend Mode", &currentBlend, blendModes,
+                     IM_ARRAYSIZE(blendModes))) {
+      renderState.m_BlendMode =
+          static_cast<Engine::Material::BlendMode>(currentBlend);
+      stateChanged = true;
+    }
+
+    // Cull Mode
+    const char *cullModes[] = {"None", "Front", "Back"};
+    int currentCull = static_cast<int>(renderState.m_CullMode);
+    if (ImGui::Combo("Cull Mode", &currentCull, cullModes,
+                     IM_ARRAYSIZE(cullModes))) {
+      renderState.m_CullMode =
+          static_cast<Engine::Material::CullMode>(currentCull);
+      stateChanged = true;
+    }
+
+    // Depth Test/Write
+    if (ImGui::Checkbox("Depth Test", &renderState.m_DepthTest)) {
+      stateChanged = true;
+    }
+    if (ImGui::Checkbox("Depth Write", &renderState.m_DepthWrite)) {
+      stateChanged = true;
+    }
+
+    // Wireframe
+    if (ImGui::Checkbox("Wireframe", &renderState.m_Wireframe)) {
+      stateChanged = true;
+    }
+
+    if (renderState.m_Wireframe) {
+      if (ImGui::SliderFloat("Line Width", &renderState.m_LineWidth, 1.0f,
+                             10.0f)) {
+        stateChanged = true;
+      }
+    }
+
+    if (stateChanged) {
+      component.material->SetRenderState(renderState);
+    }
+
+    ImGui::Unindent();
+  }
+
+  // // Shader Hot Reload
+  // if (ImGui::CollapsingHeader("Shaders (Advanced)")) {
+  //   ImGui::Indent();
+
+  //   static char vertShaderPath[512] = "";
+  //   static char fragShaderPath[512] = "";
+
+  //   ImGui::Text("Vertex Shader:");
+  //   ImGui::InputText("##VertPath", vertShaderPath, sizeof(vertShaderPath));
+  //   ImGui::SameLine();
+  //   if (ImGui::Button(ICON_LC_UPLOAD "##LoadVert")) {
+  //     // TODO: Load vertex shader from file
+  //     std::string errorLog;
+  //     if (!component.material->LoadShaderFromFile(VK_SHADER_STAGE_VERTEX_BIT,
+  //                                                 vertShaderPath, errorLog))
+  //                                                 {
+  //       AQUILA_LOG_ERROR("Failed to load vertex shader: {}", errorLog);
+  //     }
+  //   }
+
+  //   ImGui::Text("Fragment Shader:");
+  //   ImGui::InputText("##FragPath", fragShaderPath, sizeof(fragShaderPath));
+  //   ImGui::SameLine();
+  //   if (ImGui::Button(ICON_LC_UPLOAD "##LoadFrag")) {
+  //     // TODO: Load fragment shader from file
+  //     std::string errorLog;
+  //     if
+  //     (!component.material->LoadShaderFromFile(VK_SHADER_STAGE_FRAGMENT_BIT,
+  //                                                 fragShaderPath, errorLog))
+  //                                                 {
+  //       AQUILA_LOG_ERROR("Failed to load fragment shader: {}", errorLog);
+  //     }
+  //   }
+
+  //   bool autoReload = false; // TODO: Get from material
+  //   if (ImGui::Checkbox("Auto-Reload on File Change", &autoReload)) {
+  //     component.material->EnableShaderAutoReload(autoReload);
+  //   }
+
+  //   ImGui::Unindent();
+  // }
+
+  // Material Info
+  if (ImGui::CollapsingHeader("Debug Info")) {
+    ImGui::Indent();
+
+    auto tmpl = component.material->GetTemplate();
+    ImGui::Text("Template: %s", tmpl ? tmpl->name.c_str() : "None");
+    ImGui::Text("Is Dirty: %s", component.material->IsDirty() ? "Yes" : "No");
+    ImGui::Text("Pipeline: %s",
+                component.material->GetPipeline() != VK_NULL_HANDLE
+                    ? "Valid"
+                    : "Invalid");
+    ImGui::Text("Descriptor Set: %s",
+                component.material->GetDescriptorSet() != VK_NULL_HANDLE
+                    ? "Valid"
+                    : "Invalid");
+
+    ImGui::Unindent();
+  }
+
+  ImGui::Unindent();
 }
 
 void Properties::DrawComponent_Camera(entt::registry &registry,
