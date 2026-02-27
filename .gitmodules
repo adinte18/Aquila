@@ -1,33 +1,24 @@
-[submodule "Core/Include/External/imgui"]
-	path = Core/Include/External/imgui
+[submodule "Engine/Vendor/imgui"]
+	path = Engine/Vendor/imgui
 	url = https://github.com/ocornut/imgui.git
-[submodule "Core/Include/External/glfw"]
-	path = Core/Include/External/glfw
+[submodule "Engine/Vendor/glfw"]
+	path = Engine/Vendor/glfw
 	url = https://github.com/glfw/glfw.git
-[submodule "Core/Include/External/glm"]
-	path = Core/Include/External/glm
+[submodule "Engine/Vendor/glm"]
+	path = Engine/Vendor/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "Core/Include/External/nativefiledialog"]
-	path = Core/Include/External/nativefiledialog
-	url = https://github.com/mlabbe/nativefiledialog.git
-[submodule "Core/Include/External/ImGuizmo"]
-	path = Core/Include/External/ImGuizmo
+[submodule "Engine/Vendor/ImGuizmo"]
+	path = Engine/Vendor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
-[submodule "Core/Include/External/assimp"]
-	path = Core/Include/External/assimp
+[submodule "Engine/Vendor/assimp"]
+	path = Engine/Vendor/assimp
 	url = https://github.com/assimp/assimp.git
-[submodule "Core/Include/External/shaderc"]
-	path = Core/Include/External/shaderc
-	url = https://github.com/google/shaderc.git
-[submodule "Core/Include/External/glslang"]
-	path = Core/Include/External/glslang
-	url = https://github.com/KhronosGroup/glslang.git
-[submodule "Core/Include/External/SPIRV-Tools"]
-	path = Core/Include/External/SPIRV-Tools
+[submodule "Engine/Vendor/SPIRV-Tools"]
+	path = Engine/Vendor/SPIRV-Tools
 	url = https://github.com/KhronosGroup/SPIRV-Tools.git
-[submodule "Core/Include/External/SPIRV-Headers"]
-	path = Core/Include/External/SPIRV-Headers
+[submodule "Engine/Vendor/SPIRV-Headers"]
+	path = Engine/Vendor/SPIRV-Headers
 	url = https://github.com/KhronosGroup/SPIRV-Headers.git
-[submodule "Core/Vendor/SDL"]
-	path = Core/Vendor/SDL
-	url = https://github.com/libsdl-org/SDL.git
+[submodule "Engine/Vendor/stb"]
+	path = Engine/Vendor/stb
+	url = https://github.com/nothings/stb.git
