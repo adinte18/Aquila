@@ -3,6 +3,7 @@
 .vscode/
 .cache/
 .idea/
+.zed/
 Binaries/
 cmake-build-debug-visual-studio/
 build/
@@ -16,5 +17,8 @@ Assets/
 *.vcxproj.filters
 *.sln
 *.log
+*.o
+*.rc
+*.code-workspace
 Makefile
 tok.txt

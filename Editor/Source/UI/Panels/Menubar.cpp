@@ -1,423 +1,445 @@
 #include "UI/Panels/Menubar.h"
-#include "Engine/Controller.h"
-#include "Engine/EditorCamera.h"
-#include "Engine/Events/Event.h"
-#include "Platform/Filesystem/VirtualFileSystem.h"
-#include "UI/ThemeManager.h"
-#include "UI/UI.h"
-#include "imgui.h"
-
-namespace Editor::Panels {
-
-static int selectedFontSize = 1;
-static ImFont *selectedFont = UI::FontManager::Get().GetFonts().Font12;
-static int selectedThemeIndex = 0;
-static std::string selectedTheme = "Aquila Dark";
-
-void Menubar::Draw() {
-  auto &fontManager = UI::FontManager::Get();
-
-  if (ImGui::BeginMainMenuBar()) {
-
-    if (ImGui::BeginMenu("File")) {
-      if (ImGui::MenuItem(ICON_LC_FILE " New Scene", "Ctrl+N")) {
-        m_NewSceneOpened = true;
-      }
-      if (ImGui::MenuItem(ICON_LC_FOLDER_OPEN " Open scene...", "Ctrl+O")) {
-        nfdchar_t *outPath = nullptr;
-        nfdresult_t result = NFD_OpenDialog("aqscene", nullptr, &outPath);
-        if (result == NFD_OKAY) {
-          std::string path = outPath;
-          std::cout << "Selected scene file: " << path << std::endl;
-          auto openSceneEvent = CreateUnique<Engine::OpenSceneEvent>();
-          openSceneEvent->scenePath = outPath;
-
-          Engine::EventBus::Get()->DispatchSync(std::move(openSceneEvent));
-          NFDi_Free(outPath);
-        } else if (result == NFD_CANCEL) {
-          std::cout << "User cancelled scene open dialog." << std::endl;
-        } else {
-          std::cerr << "Error opening scene file: " << NFD_GetError()
-                    << std::endl;
-        }
-      }
-      if (ImGui::MenuItem(ICON_LC_SAVE_ALL " Save scene...", "Ctrl+S")) {
-        auto saveSceneEvent = CreateUnique<Engine::SaveSceneEvent>();
-
-        Engine::EventBus::Get()->DispatchSync(std::move(saveSceneEvent));
-      }
-      if (ImGui::MenuItem(ICON_LC_SAVE_ALL " Save scene as...", "Ctrl+S")) {
-      }
-      ImGui::Separator();
-      if (ImGui::MenuItem(ICON_LC_CIRCLE_X " Exit", "Ctrl+X")) {
-      }
-      ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("Edit")) {
-      if (ImGui::MenuItem(ICON_LC_COG " Editor preferences", nullptr)) {
-        m_ShowPreferences = true;
-      }
-
-      ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("View")) {
-      ImGui::EndMenu();
-    }
-
-    if (ImGui::BeginMenu("Help")) {
-      if (ImGui::MenuItem(ICON_LC_CIRCLE_HELP " About", nullptr,
-                          &m_AboutOpened)) {
-      }
-      ImGui::EndMenu();
-    }
-
-    ImGui::EndMainMenuBar();
-  }
-
-  if (m_NewSceneOpened) {
-    ImGui::OpenPopup("Create new scene");
-  }
-
-  CreatePopup({500, 170});
-
-  if (ImGui::BeginPopupModal("Create new scene", nullptr,
-                             ImGuiWindowFlags_AlwaysAutoResize |
-                                 ImGuiWindowFlags_NoMove)) {
-    static char sceneName[128] = "";
-
-    ImGui::PushFont(UI::FontManager::Get().GetFonts().Font32);
-    ImGui::Text("Enter new scene name:");
-    ImGui::PopFont();
-
-    auto IsValidSceneName = [](const char *name) {
-      for (const char *p = name; *p; p++) {
-        char c = *p;
-        if (!(isalnum(c) || c == '_')) {
-          return false;
-        }
-      }
-      return strlen(name) > 0;
-    };
-
-    ImGui::InputText("##scenename", sceneName, IM_ARRAYSIZE(sceneName));
-
-    if (ImGui::Button("Create")) {
-      if (IsValidSceneName(sceneName)) {
-        auto newSceneEvent = CreateUnique<Engine::NewSceneEvent>();
-        newSceneEvent->sceneName = sceneName;
-
-        Engine::EventBus::Get()->DispatchSync(std::move(newSceneEvent));
-        sceneName[0] = '\0';
-        m_NewSceneOpened = false;
-        ImGui::CloseCurrentPopup();
-      }
-    }
-
-    ImGui::SameLine();
-    if (ImGui::Button("Cancel")) {
-      sceneName[0] = '\0';
-      m_NewSceneOpened = false;
-      ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::EndPopup();
-  }
-
-  if (m_AboutOpened) {
-    CreatePopup({500, 400});
-
-    ImGui::Begin(ICON_LC_INFO " About Aquila", &m_AboutOpened,
-                 ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
-                     ImGuiWindowFlags_NoDocking);
-
-    ImGui::PushFont(fontManager.GetFonts().Font48);
-    ImGui::Text("Aquila Engine");
-    ImGui::PopFont();
-
-    ImGui::Separator();
-
-    ImGui::PushFont(fontManager.GetFonts().Font32);
-    ImGui::Text("Version 0.1.0 (Dev)");
-    ImGui::PopFont();
-
-    ImGui::Spacing();
-
-    ImGui::PushFont(fontManager.GetFonts().Font24);
-    ImGui::Text("© 2025 Aquila Engine");
-    ImGui::Text("Built with Vulkan, ImGui, and C++");
-
-    ImGui::Spacing();
-    ImGui::Separator();
-
-    ImGui::Text("System Info:");
-    ImGui::BulletText("Platform: %s", Core::Platform::GetPlatformInfo().name);
-    ImGui::BulletText("Backend: Vulkan");
-    ImGui::BulletText("ImGui Version: %s", ImGui::GetVersion());
-
-    ImGui::PopFont();
-
-    ImGui::Spacing();
-    ImGui::Separator();
-
-    ImGui::PushFont(fontManager.GetFonts().Font28);
-    if (ImGui::Button(ICON_LC_CHECK " OK", {100, 40})) {
-      m_AboutOpened = false;
-      ImGui::CloseCurrentPopup();
-    }
-
-    ImGui::PopFont();
-    ImGui::End();
-  }
-
-  if (m_ShowPreferences) {
-    CreatePopup({500, 600});
-
-    if (ImGui::Begin("Editor Preferences", &m_ShowPreferences)) {
-
-      if (ImGui::CollapsingHeader("Appearance",
-                                  ImGuiTreeNodeFlags_DefaultOpen)) {
-        ImGui::Indent();
-
-        const char *fontSizes[] = {"12", "14", "16", "18", "20", "24",
-                                   "28", "32", "40", "48", "64", "72"};
-        ImGui::Text("Font Size:");
-        ImGui::SetNextItemWidth(150);
-        if (ImGui::Combo("##fontsize", &selectedFontSize, fontSizes,
-                         IM_ARRAYSIZE(fontSizes))) {
-          auto &fonts = UI::FontManager::Get().GetFonts();
-
-          switch (selectedFontSize) {
-          case 0:
-            selectedFont = fonts.Font12;
-            break;
-          case 1:
-            selectedFont = fonts.Font14;
-            break;
-          case 2:
-            selectedFont = fonts.Font16;
-            break;
-          case 3:
-            selectedFont = fonts.Font18;
-            break;
-          case 4:
-            selectedFont = fonts.Font20;
-            break;
-          case 5:
-            selectedFont = fonts.Font24;
-            break;
-          case 6:
-            selectedFont = fonts.Font28;
-            break;
-          case 7:
-            selectedFont = fonts.Font32;
-            break;
-          case 8:
-            selectedFont = fonts.Font40;
-            break;
-          case 9:
-            selectedFont = fonts.Font48;
-            break;
-          case 10:
-            selectedFont = fonts.Font64;
-            break;
-          case 11:
-            selectedFont = fonts.Font72;
-            break;
-          }
-        }
-
-        ImGui::Spacing();
-
-        const char *themes[] = {"Aquila Dark", "Aquila Green", "ImGui Dark",
-                                "ImGui Light"};
-        if (ImGui::Combo("##theme", &selectedThemeIndex, themes,
-                         IM_ARRAYSIZE(themes))) {
-          selectedTheme = themes[selectedThemeIndex];
-        }
-      }
-
-      ImGui::Unindent();
-    }
-
-    if (ImGui::CollapsingHeader("Editor")) {
-      ImGui::Indent();
-
-      static bool autoSave = true;
-      static int autoSaveInterval = 300;
-
-      ImGui::Checkbox("Auto Save", &autoSave);
-
-      if (autoSave) {
-        ImGui::Text("Auto Save Interval (seconds):");
-        ImGui::SetNextItemWidth(150);
-        ImGui::InputInt("##autosaveinterval", &autoSaveInterval, 30, 60);
-      }
-
-      static bool showGrid = true;
-      ImGui::Checkbox("Show Grid", &showGrid);
-
-      static bool snapToGrid = false;
-      ImGui::Checkbox("Snap to Grid", &snapToGrid);
-
-      ImGuiStyle &style = ImGui::GetStyle();
-
-      ImGui::SliderFloat("Frame Rounding", &style.FrameRounding, 0.0f, 12.0f,
-                         "%.1f");
-      ImGui::SliderFloat("Window Rounding", &style.WindowRounding, 0.0f, 12.0f,
-                         "%.1f");
-      ImGui::SliderFloat("Scrollbar Size", &style.ScrollbarSize, 10.0f, 30.0f,
-                         "%.1f");
-      ImGui::SliderFloat("Window Padding X", &style.WindowPadding.x, 0.0f,
-                         30.0f, "%.1f");
-      ImGui::SliderFloat("Window Padding Y", &style.WindowPadding.y, 0.0f,
-                         30.0f, "%.1f");
-      ImGui::SliderFloat("Item Spacing X", &style.ItemSpacing.x, 0.0f, 20.0f,
-                         "%.1f");
-      ImGui::SliderFloat("Item Spacing Y", &style.ItemSpacing.y, 0.0f, 20.0f,
-                         "%.1f");
-
-      ImGui::ColorEdit3("Window Bg", (float *)&style.Colors[ImGuiCol_WindowBg]);
-      ImGui::ColorEdit3("Button", (float *)&style.Colors[ImGuiCol_Button]);
-      ImGui::ColorEdit3("Header", (float *)&style.Colors[ImGuiCol_Header]);
-      ImGui::ColorEdit3("FrameBg", (float *)&style.Colors[ImGuiCol_FrameBg]);
-
-      ImGui::Unindent();
-    }
-
-    if (ImGui::CollapsingHeader("Camera")) {
-      ImGui::Indent();
-
-      auto &camera = Engine::Controller::Get()->GetCamera();
-      auto type = camera.GetType();
-      f32 childHeight =
-          camera.GetType() == Engine::EditorCamera::CameraType::Orbit ? 110.0f
-                                                                      : 80.0f;
-      ImGui::Text("Movement and Control");
-      ImGui::Separator();
-
-      ImGui::PushItemWidth(-1);
-
-      ImGui::Text("Rotation Sensitivity");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Controls how fast the camera rotates when moving the mouse.");
-      ImGui::SliderFloat("##rotSens", &camera.GetRotationSpeed(), 0.001f, 0.1f,
-                         "%.3f");
-
-      ImGui::Text("Movement Speed");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Controls how fast the camera moves through the scene.");
-      ImGui::SliderFloat("##moveSpeed", &camera.GetMovementSpeed(), 0.1f, 20.0f,
-                         "%.2f");
-
-      ImGui::PopItemWidth();
-
-      ImGui::Spacing();
-
-      ImGui::Text("Projection");
-      ImGui::Separator();
-
-      bool projectionChanged = false;
-
-      f32 &fov = camera.GetFOV();
-      f32 &nearPlane = camera.GetNearPlane();
-      f32 &farPlane = camera.GetFarPlane();
-      f32 aspectRatio = camera.GetAspectRatio();
-
-      ImGui::Text("Projection Type");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip("Choose between Perspective (3D) or Orthographic "
-                          "(2D-like) projection.");
-
-      ImGui::PushItemWidth(-1);
-
-      ImGui::Text("Field of View (FOV)");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "Controls the vertical field of view angle of the camera.");
-      if (ImGui::SliderFloat("##fov", &fov, 10.0f, 120.0f, "%.1fdeg"))
-        projectionChanged = true;
-
-      ImGui::Text("Near Plane");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "The closest distance from the camera where rendering starts.");
-      if (ImGui::SliderFloat("##near", &nearPlane, 0.01f, 10.0f, "%.2f"))
-        projectionChanged = true;
-
-      ImGui::Text("Far Plane");
-      ImGui::SameLine();
-      ImGui::TextDisabled(ICON_LC_INFO);
-      if (ImGui::IsItemHovered())
-        ImGui::SetTooltip(
-            "The farthest distance from the camera where rendering ends.");
-      if (ImGui::SliderFloat("##far", &farPlane, nearPlane + 1.0f, 1000.0f,
-                             "%.1f"))
-        projectionChanged = true;
-
-      ImGui::PopItemWidth();
-
-      if (projectionChanged) {
-        camera.SetPerspectiveProjection(fov, aspectRatio, nearPlane, farPlane);
-      }
-
-      ImGui::Spacing();
-      ImGui::Unindent();
-    }
-
-    ImGui::Separator();
-    ImGui::Spacing();
-
-    if (ImGui::Button("Apply", ImVec2(100, 0))) {
-
-      if (selectedTheme == "Aquila Dark") {
-        UI::ThemeManager::Get().ApplyAquilaTheme();
-      } else if (selectedTheme == "Aquila Green") {
-        UI::ThemeManager::Get().ApplyAquila2Theme();
-      } else if (selectedTheme == "ImGui Dark") {
-        UI::ThemeManager::Get().ApplyDarkTheme();
-      } else if (selectedTheme == "ImGui Light") {
-        UI::ThemeManager::Get().ApplyLightTheme();
-      }
-
-      if (selectedFont)
-        UI::FontManager::Get().SetCurrentFont(selectedFont);
-    }
-
-    ImGui::SameLine();
-
-    if (ImGui::Button("Reset to Defaults", ImVec2(150, 0))) {
-      selectedFont = UI::FontManager::Get().GetFonts().Font14;
-      selectedFontSize = 1;
-      selectedTheme = "Aquila Green";
-      selectedThemeIndex = 0;
-
-      UI::FontManager::Get().SetCurrentFont(selectedFont);
-      UI::ThemeManager::Get().ApplyAquilaTheme();
-    }
-
-    ImGui::SameLine();
-
-    f32 remaining = ImGui::GetContentRegionAvail().x;
-    ImGui::SetCursorPosX(ImGui::GetCursorPosX() + remaining - 100);
-
-    if (ImGui::Button("Close", ImVec2(100, 0))) {
-      m_ShowPreferences = false;
-    }
-    ImGui::End();
-  }
+#include "UI/Panels/MaterialEditor.h"
+#include "UI/Windows/AboutWindow.h"
+#include "UI/Windows/PreferencesWindow.h"
+#include "UI/Managers/ThemeManager.h"
+#include "Aquila/Assets/AssetManager.h"
+#include "Aquila/Scene/SceneManager.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
+#include "Aquila/Scene/EntityManager.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Scene/Components/TransformComponent.h"
+#include "Aquila/Core/Application.h"
+#include "lucide.h"
+
+namespace Editor {
+
+Menubar::Menubar(Aquila::Core::Application &app) : Layer("Menubar"), m_App(app) {
+	AQUILA_LOG_INFO("Menubar created");
+
+	// Initialize buffers
+	memset(m_NewSceneNameBuffer, 0, sizeof(m_NewSceneNameBuffer));
+	strcpy_s(m_NewSceneNameBuffer, sizeof(m_NewSceneNameBuffer), "Untitled Scene");
+
+	memset(m_SaveSceneNameBuffer, 0, sizeof(m_SaveSceneNameBuffer));
+	memset(m_SaveScenePathBuffer, 0, sizeof(m_SaveScenePathBuffer));
 }
-} // namespace Editor::Panels
+
+void Menubar::OnAttach() {
+	AQUILA_LOG_INFO("Menubar attached");
+}
+
+void Menubar::OnDetach() {
+	AQUILA_LOG_INFO("Menubar detached");
+}
+
+void Menubar::OnUpdate(const f32 deltaTime) {
+	Layer::OnUpdate(deltaTime);
+}
+
+void Menubar::OnImGuiRender() {
+	if (ImGui::BeginMainMenuBar()) {
+		RenderFileMenu();
+		RenderEditMenu();
+		RenderViewMenu();
+		RenderHelpMenu();
+
+		ImGui::EndMainMenuBar();
+	}
+
+	// Open modals when flags are set
+	if (m_ShowNewSceneModal) {
+		ImGui::OpenPopup("NewSceneModal");
+		m_ShowNewSceneModal = false;
+	}
+
+	if (m_ShowSaveSceneAsModal) {
+		ImGui::OpenPopup("SaveSceneAsModal");
+		m_ShowSaveSceneAsModal = false;
+	}
+
+	// Render modals
+	RenderNewSceneModal();
+	RenderSaveSceneAsModal();
+}
+
+void Menubar::OnEvent(Aquila::Events::Event &event) {
+	Layer::OnEvent(event);
+}
+
+void Menubar::RenderFileMenu() {
+	if (ImGui::BeginMenu("File")) {
+		if (ImGui::MenuItem(ICON_LC_FILE " New Scene", "Ctrl+N")) {
+			m_ShowNewSceneModal = true;
+		}
+
+		if (ImGui::MenuItem(ICON_LC_FOLDER_OPEN " Open Scene...", "Ctrl+O")) {
+			OpenSceneDialog();
+		}
+
+		if (ImGui::MenuItem(ICON_LC_SAVE " Save Scene", "Ctrl+S")) {
+			SaveCurrentScene();
+		}
+
+		if (ImGui::MenuItem(ICON_LC_SAVE " Save Scene As...", "Ctrl+Shift+S")) {
+			m_ShowSaveSceneAsModal = true;
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(ICON_LC_X " Exit", "Alt+F4")) {
+			m_App.Close();
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void Menubar::RenderEditMenu() {
+	if (ImGui::BeginMenu("Edit")) {
+		if (ImGui::MenuItem(ICON_LC_COPY " Copy", "Ctrl+C", false, false)) {
+			// TODO: not a priority right now
+		}
+
+		if (ImGui::MenuItem(ICON_LC_CLIPBOARD_PASTE " Paste", "Ctrl+V", false, false)) {
+			// TODO: not a priority right now
+		}
+
+		if (ImGui::MenuItem(ICON_LC_COPY " Duplicate", "Ctrl+D", false, false)) {
+			// TODO: not a priority right now
+		}
+
+		if (ImGui::MenuItem(ICON_LC_TRASH_2 " Delete", "Delete", false, false)) {
+			// TODO: not a priority right now
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(ICON_LC_SETTINGS " Preferences...", "Ctrl+,")) {
+			if (m_PreferencesWindow != nullptr) {
+				m_PreferencesWindow->Show();
+			}
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void Menubar::RenderViewMenu() {
+	if (ImGui::BeginMenu("View")) {
+		if (m_MaterialEditor != nullptr) {
+			bool isOpen = m_MaterialEditor->IsOpen();
+			if (ImGui::MenuItem(ICON_LC_PALETTE " Material Editor", "Ctrl+M", &isOpen)) {
+				m_MaterialEditor->SetOpen(isOpen);
+			}
+		}
+
+		ImGui::Separator();
+
+		ImGui::TextDisabled("Panels:");
+		if (ImGui::MenuItem(ICON_LC_LAYOUT_DASHBOARD " Scene Hierarchy", nullptr, true)) {
+			// TODO: not a priority right now
+		}
+		if (ImGui::MenuItem(ICON_LC_SLIDERS_HORIZONTAL " Properties", nullptr, true)) {
+			// TODO: not a priority right now
+		}
+		if (ImGui::MenuItem(ICON_LC_FOLDER " Content Browser", nullptr, true)) {
+			// TODO: not a priority right now
+		}
+		if (ImGui::MenuItem(ICON_LC_MAXIMIZE_2 " Viewport", nullptr, true)) {
+			// TODO: not a priority right now
+		}
+
+		ImGui::Separator();
+
+		// Theme selector
+		if (ImGui::BeginMenu(ICON_LC_PALETTE " Theme")) {
+			UI::ThemeManager::Get().ShowThemeSelector();
+			ImGui::EndMenu();
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(ICON_LC_LAYOUT_DASHBOARD " Reset Layout")) {
+			// TODO: Reset docking layout
+			AQUILA_LOG_INFO("Reset layout not implemented yet");
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void Menubar::RenderHelpMenu() {
+	if (ImGui::BeginMenu("Help")) {
+		if (ImGui::MenuItem(ICON_LC_BOOK_OPEN " Documentation", "F1")) {
+#if defined(AQUILA_PLATFORM_WINDOWS)
+			ShellExecute(nullptr, "open", "https://github.com/adinte18/Aquila/wiki", NULL, NULL, SW_SHOWNORMAL);
+#elif defined(AQUILA_PLATFORM_LINUX)
+			system("xdg-open https://github.com/adinte18/Aquila/wiki");
+#elif defined(AQUILA_PLATFORM_MACOS)
+			system("open https://github.com/adinte18/Aquila/wiki");
+#endif
+
+			AQUILA_LOG_INFO("Opening documentation...");
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(ICON_LC_GITHUB " GitHub Repository")) {
+#if defined(AQUILA_PLATFORM_WINDOWS)
+			ShellExecute(nullptr, "open", "https://github.com/adinte18/Aquila/", NULL, NULL, SW_SHOWNORMAL);
+#elif defined(AQUILA_PLATFORM_LINUX)
+			system("xdg-open https://github.com/adinte18/Aquila/");
+#elif defined(AQUILA_PLATFORM_MACOS)
+			system("open https://github.com/adinte18/Aquila/");
+#endif
+		}
+
+		if (ImGui::MenuItem(ICON_LC_MESSAGE_CIRCLE " Report Issue")) {
+#if defined(AQUILA_PLATFORM_WINDOWS)
+			ShellExecute(nullptr, "open", "https://github.com/adinte18/Aquila/issues/new", NULL, NULL, SW_SHOWNORMAL);
+#elif defined(AQUILA_PLATFORM_LINUX)
+			system("xdg-open https://github.com/adinte18/Aquila/issues/new");
+#elif defined(AQUILA_PLATFORM_MACOS)
+			system("open https://github.com/adinte18/Aquila/issues/new");
+#endif
+		}
+
+		ImGui::Separator();
+
+		if (ImGui::MenuItem(ICON_LC_INFO " About Aquila Editor")) {
+			if (m_AboutWindow != nullptr) {
+				m_AboutWindow->Show();
+			}
+		}
+
+		ImGui::EndMenu();
+	}
+}
+
+void Menubar::RenderNewSceneModal() {
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(450, 0), ImGuiCond_Appearing);
+
+	if (ImGui::BeginPopupModal("NewSceneModal", nullptr, ImGuiWindowFlags_NoResize)) {
+		ImGui::TextUnformatted(ICON_LC_FILE " Create New Scene");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Scene name input
+		ImGui::TextUnformatted("Scene Name:");
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::IsWindowAppearing()) {
+			ImGui::SetKeyboardFocusHere();
+		}
+		ImGui::InputText("##NewSceneName", m_NewSceneNameBuffer, sizeof(m_NewSceneNameBuffer));
+
+		ImGui::Spacing();
+
+		// Template selection
+		ImGui::TextUnformatted("Template:");
+		ImGui::SetNextItemWidth(-1);
+		const char *templates[] = { "Empty", "Basic (with light)", "Outdoor", "Indoor" };
+		static int selectedTemplate = 0;
+		ImGui::Combo("##Template", &selectedTemplate, templates, IM_ARRAYSIZE(templates));
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Buttons
+		f32 buttonWidth = 100.0f;
+		f32 spacing = ImGui::GetStyle().ItemSpacing.x;
+		f32 totalWidth = (buttonWidth * 2) + spacing;
+		f32 offsetX = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+
+		bool canCreate = strlen(m_NewSceneNameBuffer) > 0;
+
+		if (!canCreate) {
+			ImGui::BeginDisabled();
+		}
+
+		if (ImGui::Button(ICON_LC_CHECK " Create", ImVec2(buttonWidth, 0)) ||
+			(canCreate && ImGui::IsKeyPressed(ImGuiKey_Enter))) {
+			CreateNewScene(m_NewSceneNameBuffer, selectedTemplate);
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (!canCreate) {
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button(ICON_LC_X " Cancel", ImVec2(buttonWidth, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+			strcpy_s(m_NewSceneNameBuffer, sizeof(m_NewSceneNameBuffer), "Untitled Scene");
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void Menubar::RenderSaveSceneAsModal() {
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+	ImGui::SetNextWindowSize(ImVec2(500, 0), ImGuiCond_Appearing);
+
+	if (ImGui::BeginPopupModal("SaveSceneAsModal", nullptr, ImGuiWindowFlags_NoResize)) {
+		ImGui::TextUnformatted(ICON_LC_SAVE " Save Scene As");
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Get current scene name as default
+		if (ImGui::IsWindowAppearing()) {
+			if (auto *scene = m_App.GetAssetManager().GetActiveScene()) {
+				strcpy_s(m_SaveSceneNameBuffer, sizeof(m_SaveSceneNameBuffer), scene->GetSceneName().c_str());
+			}
+			strcpy_s(m_SaveScenePathBuffer, sizeof(m_SaveScenePathBuffer), "assets://scenes/");
+		}
+
+		// Scene name
+		ImGui::TextUnformatted("Scene Name:");
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::IsWindowAppearing()) {
+			ImGui::SetKeyboardFocusHere();
+		}
+		ImGui::InputText("##SaveSceneName", m_SaveSceneNameBuffer, sizeof(m_SaveSceneNameBuffer));
+
+		ImGui::Spacing();
+
+		// File path
+		ImGui::TextUnformatted("Save Location:");
+		ImGui::SetNextItemWidth(-1);
+		ImGui::InputText("##SaveScenePath", m_SaveScenePathBuffer, sizeof(m_SaveScenePathBuffer));
+
+		ImGui::SameLine();
+		if (ImGui::Button(ICON_LC_FOLDER_OPEN)) {
+			// TODO: Open folder browser
+			AQUILA_LOG_INFO("Folder browser not implemented yet");
+		}
+
+		ImGui::Spacing();
+
+		// Preview full path
+		ImGui::TextDisabled("Full path:");
+		std::string fullPath = std::string(m_SaveScenePathBuffer) + std::string(m_SaveSceneNameBuffer) + ".aqscene";
+		ImGui::TextWrapped("%s", fullPath.c_str());
+
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+
+		// Buttons
+		f32 buttonWidth = 100.0f;
+		f32 spacing = ImGui::GetStyle().ItemSpacing.x;
+		f32 totalWidth = (buttonWidth * 2) + spacing;
+		f32 offsetX = (ImGui::GetContentRegionAvail().x - totalWidth) * 0.5f;
+
+		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + offsetX);
+
+		bool canSave = strlen(m_SaveSceneNameBuffer) > 0 && strlen(m_SaveScenePathBuffer) > 0;
+
+		if (!canSave) {
+			ImGui::BeginDisabled();
+		}
+
+		if (ImGui::Button(ICON_LC_SAVE " Save", ImVec2(buttonWidth, 0)) ||
+			(canSave && ImGui::IsKeyPressed(ImGuiKey_Enter))) {
+			SaveSceneAs(fullPath);
+			ImGui::CloseCurrentPopup();
+		}
+
+		if (!canSave) {
+			ImGui::EndDisabled();
+		}
+
+		ImGui::SameLine();
+
+		if (ImGui::Button(ICON_LC_X " Cancel", ImVec2(buttonWidth, 0)) || ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+}
+
+void Menubar::CreateNewScene(const std::string &sceneName, int templateType) const {
+	auto &sceneManager = m_App.GetAssetManager();
+
+	auto *newScene = sceneManager.CreateScene(sceneName);
+	if (!newScene) {
+		AQUILA_LOG_ERROR("Failed to create new scene: {}", sceneName);
+		return;
+	}
+
+	// Apply template
+	switch (templateType) {
+	case 0: // Empty
+		break;
+
+	case 1: { // Basic (with light)
+		auto *entityManager = newScene->GetEntityManager();
+		auto lightEntity = entityManager->CreateEntity("Directional Light");
+		auto &light = lightEntity.AddComponent<Aquila::SceneManagement::Components::LightComponent>();
+		light.m_Type = Aquila::SceneManagement::Components::LightComponent::Type::Directional;
+		light.m_Color = vec3(1.0f, 1.0f, 1.0f);
+		light.m_Intensity = 1.0f;
+
+		auto &lightTransform = lightEntity.GetComponent<Aquila::SceneManagement::Components::TransformComponent>();
+		lightTransform.SetLocalRotation(vec3(-45.0f, 45.0f, 0.0f));
+		break;
+	}
+
+	case 2: // Outdoor
+		// TODO: Add outdoor template
+		break;
+
+	case 3: // Indoor
+		// TODO: Add indoor template
+		break;
+	}
+
+	sceneManager.ActivateScene(newScene);
+	AQUILA_LOG_INFO("Created and activated new scene: {}", sceneName);
+}
+
+void Menubar::SaveCurrentScene() const {
+	auto &sceneManager = m_App.GetAssetManager();
+	auto *scene = sceneManager.GetActiveScene();
+
+	if (!scene) {
+		AQUILA_LOG_WARNING("No active scene to save");
+		return;
+	}
+
+	// For now, just open Save As dialog
+	// TODO: Check if scene has been saved before
+	ImGui::OpenPopup("SaveSceneAsModal");
+}
+
+void Menubar::SaveSceneAs(const std::string &filepath) const {
+	auto &sceneManager = m_App.GetAssetManager();
+	auto *scene = sceneManager.GetActiveScene();
+
+	if (!scene) {
+		AQUILA_LOG_ERROR("No active scene to save");
+		return;
+	}
+
+	if (sceneManager.SaveScene(scene->GetHandle(), filepath)) {
+		AQUILA_LOG_INFO("Scene saved successfully: {}", filepath);
+	} else {
+		AQUILA_LOG_ERROR("Failed to save scene: {}", filepath);
+	}
+}
+
+void Menubar::OpenSceneDialog() {
+	// TODO: should implement file browser dialog
+	AQUILA_LOG_INFO("Open scene dialog not implemented yet");
+}
+
+} // namespace Editor

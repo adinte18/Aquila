@@ -1,1 +1,6 @@
-IDI_ICON1               ICON        DISCARDABLE            "aquila-logo.ico"
+#ifndef _resources_rc
+#define _resources_rc
+
+MAINICON ICON "aquila-logo.ico"
+
+#endif

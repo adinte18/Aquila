@@ -1,0 +1,43 @@
+---
+Checks: >
+  performance-*,
+  bugprone-*,
+  readability-*,
+  portability-*,
+  modernize-*,
+  clang-analyzer-*,
+  misc-*,
+  cppcoreguidelines-*,
+  cppcoreguidelines-owning-memory,
+  cppcoreguidelines-avoid-magic-numbers,
+  cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -modernize-use-trailing-return-type,
+
+
+WarningsAsErrors: ''
+
+HeaderFilterRegex: '.*'
+FormatStyle: none
+
+CheckOptions:
+  - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
+    value:           'true'
+
+  - key:             modernize-use-nullptr.NullMacros
+    value:           'NULL'
+
+  - key:             readability-identifier-naming.MinimumIdentifierLength
+    value:           '3'
+
+  - key:             cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
+    value:           'true'
+
+  - key:             modernize-make-unique.IgnoreMacros
+    value:           'true'
+
+  - key:             modernize-use-auto.RemoveStars
+    value:           'false'
+
+...

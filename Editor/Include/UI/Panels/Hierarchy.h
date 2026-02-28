@@ -1,26 +1,45 @@
-#ifndef HIERARCHY__H
-#define HIERARCHY__H
+#ifndef SCENE_HIERARCHY_PANEL_H
+#define SCENE_HIERARCHY_PANEL_H
 
-#include "Scene/Entity.h"
-#include "Scene/EntityManager.h"
-#include "Scene/Scene.h"
-#include "Scene/SceneGraph.h"
-#include "UI/Panels/IPanel.h"
+#include "Aquila/Core/Layer.h"
+#include "Aquila/Scene/Entity.h"
 
-namespace Editor::Panels {
-class Hierarchy : public IPanel {
-private:
-  void DisplayHierarchy(Engine::AquilaScene *scene);
-  void DisplayEntityNode(Engine::AquilaScene *scene, entt::entity entity);
-  void ToggleVisibility(entt::registry &registry, entt::entity &entity,
-                        bool &value);
+namespace Aquila::Core {
+class Application;
+}
 
-  void PopupMenu();
-  void Menu();
+namespace Editor {
 
-public:
-  void Draw() override;
+class SceneHierarchyPanel : public Aquila::Core::Layer {
+  public:
+	SceneHierarchyPanel(Aquila::Core::Application &app);
+	~SceneHierarchyPanel() override = default;
+
+	void OnAttach() override;
+	void OnDetach() override;
+	void OnUpdate(f32 deltaTime) override;
+	void OnImGuiRender() override;
+	void OnEvent(Aquila::Events::Event &event) override;
+
+	[[nodiscard]] Aquila::SceneManagement::Entity GetSelectedEntity() const { return m_SelectedEntity; }
+	void SetSelectedEntity(Aquila::SceneManagement::Entity entity) { m_SelectedEntity = entity; }
+
+  private:
+	void DrawPopupMenu();
+	void ToggleVisibility(Aquila::SceneManagement::Entity entity, bool value);
+	void DrawEntityNode(Aquila::SceneManagement::Entity entity);
+	void DrawEntityTree(Aquila::SceneManagement::Entity entityHandle);
+	void DrawContextMenu();
+	void HandleEntitySelection(Aquila::SceneManagement::Entity entity);
+
+	void CreateEntity(Aquila::SceneManagement::EntityPreset preset);
+	void CreateChildEntity(Aquila::SceneManagement::Entity parent);
+	void DeleteEntity(Aquila::SceneManagement::Entity entity);
+
+	Aquila::Core::Application &m_App;
+	Aquila::SceneManagement::Entity m_SelectedEntity = Aquila::SceneManagement::Entity::Null();
 };
-} // namespace Editor::Panels
 
-#endif
+} // namespace Editor
+
+#endif // SCENE_HIERARCHY_PANEL_H

@@ -1,12 +1,11 @@
-# Aquila - Vulkan PBR Rendering Engine
+#Aquila - Vulkan PBR Rendering Engine
 
-This project is a **Vulkan-based PBR (Physically-Based Rendering) engine** built entirely from scratch with the primary goal of learning and exploring modern graphics programming, Vulkan API usage, and real-time rendering techniques.
+This project is my personal Vulkan-based engine built entirely from scratch with the primary goal of learning and exploring graphics programming and scalable (and maintanable) project architecture. It is still a work in progress, and its lacking comments and documentation (I am pretty inconsistent with this :/). It should come pretty soon though.
 
-## ⚠️ Disclaimer
+The initial idea was to keep it on Vulkan, but I am really veering towards integrating multiple graphics API support.
 
-> **This project is for educational purposes only.**  
-> It is not designed to compete with existing game engines, commercial or open-source, nor is that its goal. The primary intent is personal growth and experimentation in the field of graphics programming.
-
+> **This project is for educational purposes only.**
+> The current state of the engine is not designed to compete with existing game engines, commercial or open-source, nor is that its goal. The primary intent is personal growth and experimentation in the field of graphics programming.
 
 ## About
 
@@ -14,19 +13,18 @@ This engine serves as a hands-on learning platform to:
 
 - Understand the Vulkan graphics API in depth
 - Implement modern PBR shading workflows
-- Integrate image-based lighting (IBL)
 - Explore efficient rendering pipelines and GPU resource management
-- Experiment with common rendering features like shadow mapping, normal mapping, and post-processing
 
 ## Features
 
-- **Physically-Based Rendering (PBR)** using metallic-roughness workflow
-- **Runtime IBL (Image-Based Lighting)** computation from HDR environment maps
-- **Material editing** at runtime, including base color, metallic, roughness, emissive, and AO control
-- **Model loading** with Assimp (.obj, .gltf, etc.)
-- Real-time viewport rendering
-- Clean and modular C++ architecture focused on learning and extensibility
-- Fallback texture system for missing material maps
+The engine contains some cool features that I am proud of : 
+
+- Physically-Based Rendering using metallic-roughness workflow
+- Runtime IBL computation from HDR environment maps
+- Material editing at runtime
+- Model loading with Assimp, although I am trying to move away from it
+- Clean(-ish) and modular C++ architecture
+
 ---
 
 ## Dependencies
@@ -37,23 +35,14 @@ This project uses a collection of libraries and tools to support Vulkan renderin
 
 - [**GLFW**](https://github.com/glfw/glfw) – Windowing and input
 - [**GLM**](https://github.com/g-truc/glm) – Mathematics for graphics
-- [**Assimp**](https://github.com/assimp/assimp) – Model loading (.obj, .gltf, etc.)
+- [**Assimp**](https://github.com/assimp/assimp) – Model loading
 - [**ImGui**](https://github.com/ocornut/imgui) – Immediate-mode GUI
 - [**ImGuizmo**](https://github.com/CedricGuillemet/ImGuizmo) – Editor gizmo tools
-- [**nativefiledialog**](https://github.com/mlabbe/nativefiledialog) – Native file picker dialogs
-
-### Vulkan Toolchain
-
-- [**glslang**](https://github.com/KhronosGroup/glslang) – GLSL to SPIR-V compilation
-- [**SPIRV-Tools**](https://github.com/KhronosGroup/SPIRV-Tools) – SPIR-V binary tools
-- [**SPIRV-Headers**](https://github.com/KhronosGroup/SPIRV-Headers) – Required SPIR-V header definitions
-- [**shaderc**](https://github.com/google/shaderc) – Shader compiler frontend
-
+- [**SLang**](https://github.com/shader-slang/slang) - Shader language 
 ### Header-only Utilities
 
 - [`entt.h`](https://github.com/skypjack/entt) – Entity-Component-System (ECS) framework (WIP)
 - [`json.hpp`](https://github.com/nlohmann/json) – JSON parsing and serialization
-- [`tiny_gltf.h`](https://github.com/syoyo/tinygltf) – Lightweight GLTF loader (alternative)
 - [`stb_image.h`](https://github.com/nothings/stb) – Image loading
 - [`stb_image_resize2.h`](https://github.com/nothings/stb) – Image resizing
 - [`stb_image_write.h`](https://github.com/nothings/stb) – Image writing
