@@ -2,7 +2,7 @@
 #define AQUILA_MESH_H
 
 #include "Aquila/Graphics/Core/Device.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 #include "Aquila/Graphics/Resources/Buffer.h"
 #include "Aquila/Graphics/Resources/Vertex.h"
 

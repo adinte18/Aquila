@@ -1,9 +1,9 @@
 #ifndef AQUILA_TIMER_H
 #define AQUILA_TIMER_H
 
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
@@ -31,6 +31,7 @@ class Stopwatch {
 	void Start() {
 		m_StartTime = Now();
 		m_LastFrameTime = m_StartTime;
+		m_DeltaTime = 0.0f;
 	}
 
 	void Tick() {
@@ -49,6 +50,6 @@ class Stopwatch {
 	f32 m_DeltaTime = 0.0f;
 };
 
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation
 
 #endif // AQUILA_TIMER_H

@@ -6,7 +6,7 @@
 #include "Aquila/Graphics/Pipeline/Descriptor.h"
 #include "Aquila/Graphics/Pipeline/DynamicRenderingHelper.h"
 #include "Aquila/Graphics/Pipeline/Pipeline.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 #include "Aquila/Scene/Scene.h"
 
 namespace Aquila::Graphics::Material {

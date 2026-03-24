@@ -12,7 +12,7 @@
 #include "Aquila/Graphics/Shader/ShaderCompiler.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
 #include "lucide.h"
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 namespace Editor {
 
 ContentBrowserPanel::ContentBrowserPanel(Aquila::Core::Application &app)

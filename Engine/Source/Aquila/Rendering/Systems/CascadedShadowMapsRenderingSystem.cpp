@@ -1,11 +1,11 @@
 #include "Aquila/Rendering/Systems/CascadedShadowMapsRenderingSystem.h"
 
 #include "Aquila/Core/Defines.h"
-#include "Aquila/Math/Math.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Graphics/Core/Swapchain.h"
 #include "Aquila/Graphics/Pipeline/DynamicRenderingHelper.h"
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 
 #include "Aquila/Scene/EntityManager.h"
 namespace Aquila::Rendering::Systems {

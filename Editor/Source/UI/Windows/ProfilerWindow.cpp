@@ -11,7 +11,7 @@ ProfilerWindow::ProfilerWindow() {
 }
 
 void ProfilerWindow::OnImGuiRender() {
-	using namespace Aquila::Utils;
+	using namespace Aquila::Foundation;
 	auto &profiler = Profiler::Get();
 
 	ImGui::SetNextWindowSize(ImVec2(1000, 700), ImGuiCond_FirstUseEver);
@@ -58,7 +58,7 @@ void ProfilerWindow::OnImGuiRender() {
 	ImGui::End();
 }
 
-void ProfilerWindow::DrawMenuBar(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawMenuBar(Aquila::Foundation::Profiler &profiler) {
 	if (ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("Actions")) {
 			if (ImGui::MenuItem(ICON_LC_REFRESH_CW " Reset Stats", "Ctrl+R")) {
@@ -103,7 +103,7 @@ void ProfilerWindow::DrawMenuBar(Aquila::Utils::Profiler &profiler) {
 	}
 }
 
-void ProfilerWindow::DrawPerformanceOverview(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawPerformanceOverview(Aquila::Foundation::Profiler &profiler) {
 	double frameDuration = profiler.GetFrameDuration();
 	double fps = profiler.GetFPS();
 
@@ -138,7 +138,7 @@ void ProfilerWindow::DrawPerformanceOverview(Aquila::Utils::Profiler &profiler) 
 	drawList->AddLine(ImVec2(graphMin.x, targetY), ImVec2(graphMax.x, targetY), IM_COL32(255, 255, 0, 128), 1.0f);
 }
 
-void ProfilerWindow::DrawCurrentFrameTab(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawCurrentFrameTab(Aquila::Foundation::Profiler &profiler) {
 	const auto &entries = profiler.GetCurrentFrameEntries();
 	double frameDuration = profiler.GetFrameDuration();
 
@@ -192,7 +192,7 @@ void ProfilerWindow::DrawCurrentFrameTab(Aquila::Utils::Profiler &profiler) {
 	}
 }
 
-void ProfilerWindow::DrawStatisticsTab(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawStatisticsTab(Aquila::Foundation::Profiler &profiler) {
 	const auto &stats = profiler.GetStats();
 
 	if (stats.empty()) {
@@ -211,7 +211,7 @@ void ProfilerWindow::DrawStatisticsTab(Aquila::Utils::Profiler &profiler) {
 
 	ImGui::Separator();
 
-	std::vector<Aquila::Utils::ProfilerEntry> sorted;
+	std::vector<Aquila::Foundation::ProfilerEntry> sorted;
 	for (const auto &[name, entry] : stats) {
 		sorted.push_back(entry);
 	}
@@ -294,7 +294,7 @@ void ProfilerWindow::DrawStatisticsTab(Aquila::Utils::Profiler &profiler) {
 	}
 }
 
-void ProfilerWindow::DrawFlameGraphTab(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawFlameGraphTab(Aquila::Foundation::Profiler &profiler) {
 	const auto &entries = profiler.GetCurrentFrameEntries();
 	double frameDuration = profiler.GetFrameDuration();
 
@@ -345,7 +345,7 @@ void ProfilerWindow::DrawFlameGraphTab(Aquila::Utils::Profiler &profiler) {
 	ImGui::Dummy(canvasSize);
 }
 
-void ProfilerWindow::DrawFrameHistoryTab(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawFrameHistoryTab(Aquila::Foundation::Profiler &profiler) {
 	const auto &history = profiler.GetFrameStatsHistory();
 
 	if (history.empty()) {
@@ -391,7 +391,7 @@ void ProfilerWindow::DrawFrameHistoryTab(Aquila::Utils::Profiler &profiler) {
 					 ImVec2(-1, 150));
 }
 
-void ProfilerWindow::DrawBottlenecksTab(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::DrawBottlenecksTab(Aquila::Foundation::Profiler &profiler) {
 	const auto &bottlenecks = profiler.GetBottlenecks();
 	double frameDuration = profiler.GetFrameDuration();
 
@@ -406,7 +406,7 @@ void ProfilerWindow::DrawBottlenecksTab(Aquila::Utils::Profiler &profiler) {
 	ImGui::Separator();
 
 	for (const auto &name : bottlenecks) {
-		Aquila::Utils::ProfilerEntry entry;
+		Aquila::Foundation::ProfilerEntry entry;
 		if (profiler.GetSectionStats(name, entry)) {
 			double percent = (entry.avgDuration / frameDuration) * 100.0;
 
@@ -438,7 +438,7 @@ void ProfilerWindow::DrawBottlenecksTab(Aquila::Utils::Profiler &profiler) {
 	}
 }
 
-void ProfilerWindow::DrawEntry(const Aquila::Utils::ProfilerEntry &entry, double frameDuration) {
+void ProfilerWindow::DrawEntry(const Aquila::Foundation::ProfilerEntry &entry, double frameDuration) {
 	std::string indent(entry.depth * 2, ' ');
 	double percent = (entry.duration / frameDuration) * 100.0;
 
@@ -461,7 +461,7 @@ ImVec4 ProfilerWindow::GetColorForHash(uint32 hash) const {
 	return ImVec4(r, g, b, 1.0f);
 }
 
-void ProfilerWindow::ExportToCSV(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::ExportToCSV(Aquila::Foundation::Profiler &profiler) {
 	const auto &stats = profiler.GetStats();
 
 	std::ofstream file("profiler_export.csv");
@@ -484,7 +484,7 @@ void ProfilerWindow::ExportToCSV(Aquila::Utils::Profiler &profiler) {
 	AQUILA_LOG_INFO("Profiler data exported to profiler_export.csv");
 }
 
-void ProfilerWindow::ExportToJSON(Aquila::Utils::Profiler &profiler) {
+void ProfilerWindow::ExportToJSON(Aquila::Foundation::Profiler &profiler) {
 	const auto &stats = profiler.GetStats();
 
 	std::ofstream file("profiler_export.json");

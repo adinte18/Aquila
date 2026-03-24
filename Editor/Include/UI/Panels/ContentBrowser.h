@@ -2,7 +2,7 @@
 
 #include "Aquila/Core/Layer.h"
 #include "Aquila/Graphics/Resources/Texture2D.h"
-#include "Aquila/Utilities/SharedConstants.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "UI/ImGuiUtils.h"
 #include <unordered_map>
 

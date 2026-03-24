@@ -1,7 +1,7 @@
 #ifndef AQUILA_GEOMETRY_RAY_H
 #define AQUILA_GEOMETRY_RAY_H
 
-#include "Aquila/Math/Math.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::Math::Geometry {
 

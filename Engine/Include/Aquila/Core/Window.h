@@ -4,9 +4,6 @@
 #include "Aquila/Core/AquilaCore.h"
 #include "Aquila/Events/Event.h"
 
-#define GLFW_INCLUDE_VULKAN
-#include "GLFW/glfw3.h"
-
 namespace Aquila::Core {
 
 class Window {

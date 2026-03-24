@@ -2,12 +2,12 @@
 #define BUFFER_H
 
 #include "Aquila/Core/AquilaCore.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 #include "Aquila/Graphics/Core/Device.h"
 
 namespace Aquila::Graphics::Resources {
 
-using namespace Aquila::Utils;
+using namespace Aquila::Foundation;
 
 class Buffer {
   public:

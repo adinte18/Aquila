@@ -1,9 +1,9 @@
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 #include "Aquila/Core/Defines.h"
 #include "Aquila/Graphics/Core/Device.h"
 #include "Aquila/Graphics/Pipeline/DescriptorAllocator.h"
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 
 DeletionManager::DeletionManager(Device &device) : m_Device(device) {}
 
@@ -75,4 +75,4 @@ void DeletionManager::Dispatch(const DeferredDeletion::ResourceVariant &resource
 		resource);
 }
 
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation

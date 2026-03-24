@@ -3,7 +3,7 @@
 
 #include "Aquila/Core/AquilaCore.h"
 #include "Aquila/Core/Window.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 
 namespace Aquila::Graphics {
 struct VkSwapChainSupportDetails {

@@ -3,8 +3,8 @@
 
 #include "Aquila/Graphics/Core/Device.h"
 #include "Aquila/Graphics/Pipeline/Descriptor.h"
-#include "Aquila/Platform/PrimitiveTypes.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 #include "Aquila/Graphics/Resources/Buffer.h"
 
 namespace Aquila::Graphics::Texture {
@@ -14,7 +14,7 @@ class ImageOperations;
 
 namespace Aquila::Graphics::Resources {
 
-using namespace Aquila::Utils;
+using namespace Aquila::Foundation;
 
 enum class TextureType : uint8 { Albedo, Normal, Emissive, MetallicRoughness, AO, Cubemap };
 enum class SourceType : uint8 { None, File, HDRFile, RenderTarget, Cubemap, MipmappedCubemap, Fallback };

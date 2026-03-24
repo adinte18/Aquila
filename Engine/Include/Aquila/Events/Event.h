@@ -1,8 +1,6 @@
 #ifndef AQUILA_EVENT_H
 #define AQUILA_EVENT_H
 
-#include "Aquila/Core/AquilaCore.h"
-
 namespace Aquila::Events {
 
 // Event categories for filtering

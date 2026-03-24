@@ -1,6 +1,6 @@
-#include "Aquila/Utilities/Log.h"
+#include "Aquila/Foundation/Log.h"
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 
 #ifdef AQUILA_DEBUG
 LogLevel Logger::s_currentLevel = LogLevel::Debug;
@@ -10,6 +10,7 @@ LogLevel Logger::s_currentLevel = LogLevel::Info;
 bool Logger::s_showTimestamp = true;
 bool Logger::s_showLocation = false;
 bool Logger::s_useColors = true;
+std::ostream *Logger::s_sink = nullptr;
 
 std::string Logger::GetTimestamp() {
 	auto now = std::chrono::system_clock::now();
@@ -49,4 +50,4 @@ std::string Logger::FormatLocation(const std::source_location &location) {
 	return std::format("({}:{})", filename, location.line());
 }
 
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation

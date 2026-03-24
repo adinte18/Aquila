@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aquila/Core/Layer.h"
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "imgui.h"
 
 namespace Editor::UI {
@@ -14,19 +14,19 @@ class ProfilerWindow : public Aquila::Core::Layer {
 	void OnImGuiRender() override;
 
   private:
-	void DrawMenuBar(Aquila::Utils::Profiler &profiler);
-	void DrawPerformanceOverview(Aquila::Utils::Profiler &profiler);
-	void DrawCurrentFrameTab(Aquila::Utils::Profiler &profiler);
-	void DrawStatisticsTab(Aquila::Utils::Profiler &profiler);
-	void DrawFlameGraphTab(Aquila::Utils::Profiler &profiler);
-	void DrawFrameHistoryTab(Aquila::Utils::Profiler &profiler);
-	void DrawBottlenecksTab(Aquila::Utils::Profiler &profiler);
+	void DrawMenuBar(Aquila::Foundation::Profiler &profiler);
+	void DrawPerformanceOverview(Aquila::Foundation::Profiler &profiler);
+	void DrawCurrentFrameTab(Aquila::Foundation::Profiler &profiler);
+	void DrawStatisticsTab(Aquila::Foundation::Profiler &profiler);
+	void DrawFlameGraphTab(Aquila::Foundation::Profiler &profiler);
+	void DrawFrameHistoryTab(Aquila::Foundation::Profiler &profiler);
+	void DrawBottlenecksTab(Aquila::Foundation::Profiler &profiler);
 
-	void DrawEntry(const Aquila::Utils::ProfilerEntry &entry, double frameDuration);
+	void DrawEntry(const Aquila::Foundation::ProfilerEntry &entry, double frameDuration);
 	ImVec4 GetColorForHash(uint32_t hash) const;
 
-	void ExportToCSV(Aquila::Utils::Profiler &profiler);
-	void ExportToJSON(Aquila::Utils::Profiler &profiler);
+	void ExportToCSV(Aquila::Foundation::Profiler &profiler);
+	void ExportToJSON(Aquila::Foundation::Profiler &profiler);
 
   private:
 	bool m_ShowPercentages = true;

@@ -1,13 +1,8 @@
 #ifndef AQUILA_MATH_H
 #define AQUILA_MATH_H
 
-#include "Aquila/Platform/PrimitiveTypes.h"
-#include <cmath>
-
-#include <array>
-#include <limits>
-#include <algorithm>
-#include <numbers>
+#include "Aquila/Foundation/Math/MathTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
 namespace Aquila::Math {
 

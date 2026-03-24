@@ -1,7 +1,7 @@
 #ifndef EDITOR_FONT_MANAGER_H
 #define EDITOR_FONT_MANAGER_H
 
-#include "Aquila/Platform/PrimitiveTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Core/EditorConfig.h"
 #include <imgui.h>
 

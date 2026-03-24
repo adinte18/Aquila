@@ -3,11 +3,11 @@
 
 #include "Aquila/Graphics/Core/Device.h"
 #include "Aquila/Graphics/Pipeline/Rendertarget.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 
 namespace Aquila::Graphics {
 
-using namespace Aquila::Utils;
+using namespace Aquila::Foundation;
 
 class Swapchain {
   public:

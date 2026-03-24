@@ -12,7 +12,7 @@
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/Components/SceneNodeComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "UI/ImGuiUtils.h"
 #include "UI/Managers/FontManager.h"
 #include "imgui.h"

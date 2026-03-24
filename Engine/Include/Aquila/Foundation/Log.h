@@ -1,15 +1,12 @@
 #ifndef AQUILA_LOG_H
 #define AQUILA_LOG_H
 
-#include <format>
-#include <iostream>
-#include <source_location>
-#include <string>
-#include <string_view>
+#include "Aquila/Foundation/Color.h"
+#include <ostream>
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 
-enum class LogLevel {
+enum class LogLevel : uint8 {
 	Trace = 1 << 2,
 	Debug = 1 << 3,
 	Info = 1 << 4,
@@ -17,30 +14,6 @@ enum class LogLevel {
 	Error = 1 << 6,
 	Critical = 1 << 7
 };
-
-namespace Color {
-constexpr const char *Reset = "\033[0m";
-constexpr const char *Bold = "\033[1m";
-constexpr const char *Dim = "\033[2m";
-
-constexpr const char *Black = "\033[30m";
-constexpr const char *Red = "\033[31m";
-constexpr const char *Green = "\033[32m";
-constexpr const char *Yellow = "\033[33m";
-constexpr const char *Blue = "\033[34m";
-constexpr const char *Magenta = "\033[35m";
-constexpr const char *Cyan = "\033[36m";
-constexpr const char *White = "\033[37m";
-
-constexpr const char *BrightBlack = "\033[90m";
-constexpr const char *BrightRed = "\033[91m";
-constexpr const char *BrightGreen = "\033[92m";
-constexpr const char *BrightYellow = "\033[93m";
-constexpr const char *BrightBlue = "\033[94m";
-constexpr const char *BrightMagenta = "\033[95m";
-constexpr const char *BrightCyan = "\033[96m";
-constexpr const char *BrightWhite = "\033[97m";
-} // namespace Color
 
 class Logger {
   private:
@@ -53,11 +26,14 @@ class Logger {
 	static void SetLogLevel(LogLevel level) { s_currentLevel = level; }
 	static LogLevel GetLogLevel() { return s_currentLevel; }
 
+	static void SetSink(std::ostream *buf) { s_sink = buf; }
+
 	static void EnableTimestamp(bool enable = true) { s_showTimestamp = enable; }
 	static void EnableLocation(bool enable = true) { s_showLocation = enable; }
 	static void EnableColors(bool enable = true) { s_useColors = enable; }
 
   private:
+	static std::ostream *s_sink;
 	static std::string GetTimestamp();
 	static std::string GetLevelString(LogLevel level);
 	static std::string FormatLocation(const std::source_location &location);
@@ -114,7 +90,7 @@ class Logger {
 			prefix = std::format("{} {}{}{}", prefix, dimColor, FormatLocation(location), reset);
 		}
 
-		auto &stream = (level >= LogLevel::Error) ? std::cerr : std::cout;
+		auto &stream = s_sink ? *s_sink : (level >= LogLevel::Error) ? std::cerr : std::cout;
 		stream << std::format("{} {}\n", prefix, message);
 		stream.flush();
 	}
@@ -234,6 +210,6 @@ template <typename... Args>
 	std::terminate();
 }
 
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation
 
 #endif

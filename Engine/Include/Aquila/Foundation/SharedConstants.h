@@ -1,7 +1,7 @@
 #ifndef AQUILA_SHARED_CONSTANTS_H
 #define AQUILA_SHARED_CONSTANTS_H
 
-#include "Aquila/Platform/PrimitiveTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
 namespace Aquila::SharedConstants {
 
@@ -16,12 +16,15 @@ constexpr int MAX_ENTITIES = 10000;
 constexpr int MAX_COMPONENTS = 64;
 constexpr int INVALID_ENTITY_ID = -1;
 
-constexpr size_t NAME_MAX_LEN = 128;
-constexpr size_t PATH_MAX_LEN = 512;
+constexpr usize NAME_MAX_LEN = 128;
+constexpr usize PATH_MAX_LEN = 512;
 constexpr int MAX_LOADED_ASSETS = 1024;
 
 constexpr int MAX_SCENES = 32;
 constexpr int MAX_SCENE_OBJECTS = 5000;
+
+constexpr int MAX_KEY_STATES = 512;
+constexpr int MAX_MOUSE_STATES = 8;
 
 }; // namespace Aquila::SharedConstants
 

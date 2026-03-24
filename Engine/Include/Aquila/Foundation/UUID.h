@@ -1,5 +1,5 @@
 #include <random>
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 struct UUID {
 	uint64_t high;
 	uint64_t low;
@@ -75,11 +75,11 @@ struct UUID {
 
 	bool operator!=(const UUID &other) const { return !(*this == other); }
 };
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation
 
 namespace std {
-template <> struct hash<Aquila::Utils::UUID> {
-	std::size_t operator()(const Aquila::Utils::UUID &uuid) const noexcept {
+template <> struct hash<Aquila::Foundation::UUID> {
+	std::size_t operator()(const Aquila::Foundation::UUID &uuid) const noexcept {
 		std::size_t h1 = std::hash<uint64_t>{}(uuid.high);
 		std::size_t h2 = std::hash<uint64_t>{}(uuid.low);
 		return h1 ^ (h2 << 1);

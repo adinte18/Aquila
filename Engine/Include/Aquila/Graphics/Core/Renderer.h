@@ -16,7 +16,7 @@
 #include "Aquila/Rendering/Systems/LightingRenderingSystem.h"
 #include "Aquila/Rendering/Systems/RenderingSystemBase.h"
 #include "Aquila/Scene/Scene.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 
 #include "Aquila/Graphics/Pipeline/SceneRenderingContext.h"
 #include "Aquila/Rendering/Environment/SkyboxRenderingSystem.h"

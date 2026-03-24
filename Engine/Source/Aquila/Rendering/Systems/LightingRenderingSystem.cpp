@@ -13,7 +13,7 @@
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/Scene/Scene.h"
 
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 
 namespace Aquila::Rendering::Systems {
 

@@ -4,7 +4,7 @@
 #include "Aquila/Graphics/Pipeline/DynamicRenderingHelper.h"
 #include "Core/EditorLayer.h"
 #include "Aquila/Graphics/Core/Renderer.h"
-#include "Aquila/Platform/PrimitiveTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 #include "UI/Managers/FontManager.h"
 #include "UI/Managers/ThemeManager.h"
 #include "UI/Panels/ContentBrowser.h"

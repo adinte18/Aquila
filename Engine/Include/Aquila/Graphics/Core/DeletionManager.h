@@ -8,7 +8,7 @@ namespace Aquila::Graphics {
 class Device;
 }
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 
 using namespace Aquila::Graphics;
 
@@ -55,6 +55,6 @@ class DeletionManager final {
 	std::queue<DeferredDeletion> m_DeletionQueue;
 };
 
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation
 
 #endif

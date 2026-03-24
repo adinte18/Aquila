@@ -1,9 +1,11 @@
 #ifndef SINGLETON_H
 #define SINGLETON_H
 
-#include "Aquila/Core/Defines.h"
+#include "Aquila/Foundation/Log.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Defines.h"
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 template <class T> class Singleton {
   public:
 	static void Init() {
@@ -31,6 +33,6 @@ template <class T> class Singleton {
 	AQUILA_NONMOVEABLE(Singleton);
 	AQUILA_NONCOPYABLE(Singleton);
 };
-} // namespace Aquila::Utils
+} // namespace Aquila::Foundation
 
 #endif // SINGLETON_H

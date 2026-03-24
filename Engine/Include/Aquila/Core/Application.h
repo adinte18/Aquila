@@ -13,7 +13,7 @@
 #include "Aquila/Events/WindowEvent.h"
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
-#include "Aquila/Utilities/Timer.h"
+#include "Aquila/Foundation/Timer.h"
 #include "imgui/imgui.h"
 
 namespace Aquila {
@@ -35,9 +35,6 @@ class DescriptorAllocator;
 } // namespace Graphics
 namespace Rendering {
 class Camera;
-}
-namespace Scene {
-class SceneManager;
 }
 } // namespace Aquila
 

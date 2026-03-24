@@ -6,11 +6,11 @@
 #include "Aquila/Graphics/Shader/Shader.h"
 #include "Aquila/Graphics/Shader/ShaderCompiler.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 
 namespace Aquila::Graphics::RenderingPipeline {
 
-using namespace Aquila::Utils;
+using namespace Aquila::Foundation;
 
 struct PipelineConfigInfo {
 	PipelineConfigInfo() = default;

@@ -1,7 +1,7 @@
 #ifndef EDITOR_CONFIG_H
 #define EDITOR_CONFIG_H
 
-#include "Aquila/Platform/PrimitiveTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
 namespace Editor::Config {
 
