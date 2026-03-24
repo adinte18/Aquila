@@ -76,29 +76,4 @@ const PlatformSpec &GetPlatformInfo() {
 	return s_PlatformInfo;
 }
 
-std::uint64_t GetHighResolutionTime() {
-#ifdef AQUILA_PLATFORM_WINDOWS
-	LARGE_INTEGER counter;
-	QueryPerformanceCounter(&counter);
-	return static_cast<std::uint64_t>(counter.QuadPart);
-#else
-	auto now = std::chrono::high_resolution_clock::now();
-	return static_cast<std::uint64_t>(now.time_since_epoch().count());
-#endif
-}
-
-double GetTimeFrequency() {
-#ifdef AQUILA_PLATFORM_WINDOWS
-	static double frequency = 0.0;
-	if (frequency == 0.0) {
-		LARGE_INTEGER freq;
-		QueryPerformanceFrequency(&freq);
-		frequency = static_cast<double>(freq.QuadPart);
-	}
-	return frequency;
-#else
-	return static_cast<double>(std::chrono::high_resolution_clock::period::den) /
-		   static_cast<double>(std::chrono::high_resolution_clock::period::num);
-#endif
-}
 } // namespace Aquila::Platform

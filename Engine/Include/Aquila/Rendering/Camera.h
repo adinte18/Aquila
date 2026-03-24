@@ -1,7 +1,7 @@
 #ifndef AQUILA_CAMERA_H
 #define AQUILA_CAMERA_H
 
-#include "Aquila/Platform/PrimitiveTypes.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
 namespace Aquila::Rendering {
 class Camera {

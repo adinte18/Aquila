@@ -4,7 +4,7 @@
 #include "Aquila/Graphics/Resources/Buffer.h"
 #include "Aquila/Graphics/Texture/ImageOperations.h"
 #include "Aquila/Graphics/Texture/TextureLoader.h"
-#include "Aquila/Utilities/DeletionManager.h"
+#include "Aquila/Graphics/Core/DeletionManager.h"
 
 namespace Aquila::Graphics::Resources {
 

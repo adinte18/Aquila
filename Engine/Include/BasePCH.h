@@ -1,5 +1,5 @@
-#ifndef AQUILA_PCH_H
-#define AQUILA_PCH_H
+#ifndef AQUILA_STD_PCH
+#define AQUILA_STD_PCH
 
 #ifdef AQUILA_PLATFORM_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
@@ -88,8 +88,6 @@
 #include <stdexcept>
 #include <system_error>
 
-#include "vulkan/vulkan.h"
-
 #define GLM_FORCE_RADIANS
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
@@ -98,4 +96,4 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-#endif // AQUILA_PCH_H
+#endif

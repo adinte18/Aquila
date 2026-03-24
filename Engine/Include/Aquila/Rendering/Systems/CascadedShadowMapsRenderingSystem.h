@@ -10,7 +10,7 @@ namespace Aquila::Rendering {
 class Camera;
 }
 
-namespace Aquila::Utils {
+namespace Aquila::Foundation {
 class DeletionManager;
 }
 namespace Aquila::Rendering::Systems {

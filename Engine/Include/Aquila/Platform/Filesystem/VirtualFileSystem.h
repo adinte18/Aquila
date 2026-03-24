@@ -1,9 +1,9 @@
 #ifndef AQUILA_VFS_H
 #define AQUILA_VFS_H
 
+#include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Platform/Filesystem/IFileSystem.h"
-#include "Aquila/Utilities/Singleton.h"
-#include <shared_mutex> // TODO: add to AquilaCore.h
+#include "Aquila/Foundation/Singleton.h"
 
 namespace Aquila::Platform::Filesystem {
 
@@ -15,12 +15,12 @@ struct MountPoint {
 	bool readOnly = false;
 };
 
-class VirtualFileSystem : public Utils::Singleton<VirtualFileSystem> {
+class VirtualFileSystem : public Foundation::Singleton<VirtualFileSystem> {
 	friend class Singleton;
 
   private:
 	std::vector<MountPoint> m_MountPoints;
-	mutable std::shared_mutex m_MountPointsMutex;
+	mutable Mutex m_MountPointsMutex;
 
 	std::string NormalizePath(const std::string &path);
 	MountPoint *FindMountPoint(const std::string &virtualPath, std::string &relativePath);
@@ -30,7 +30,7 @@ class VirtualFileSystem : public Utils::Singleton<VirtualFileSystem> {
 	bool Unmount(const std::string &virtualPath);
 	void UnmountAll();
 	bool RenameFile(const std::string &oldVirtualPath, const std::string &newVirtualPath);
-	Unique<VirtualFile> OpenFile(const std::string &virtualPath, const std::string &mode = "rb");
+	Unique<VirtualFile> OpenFile(const std::string &virtualPath, AccessMode accessMode, OpenMode openMode);
 	bool Exists(const std::string &virtualPath);
 	std::vector<std::string> ListDirectory(const std::string &virtualPath);
 	bool IsDirectory(const std::string &virtualPath);

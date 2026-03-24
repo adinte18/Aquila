@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(Aquila VERSION 0.0.1 LANGUAGES CXX)
+project(Aquila LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -9,6 +9,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 endif ()
+
+option(AQUILA_BUILD_EDITOR ON)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -241,13 +243,18 @@ mark_as_advanced(
 )
 
 add_subdirectory(Engine)
-add_subdirectory(Editor)
 
-install(TARGETS AquilaEditor
-        RUNTIME DESTINATION bin
-        LIBRARY DESTINATION lib
-        ARCHIVE DESTINATION lib
-)
+if (AQUILA_BUILD_EDITOR)
+    add_subdirectory(Editor)
+endif ()
+
+if (AQUILA_BUILD_EDITOR)
+    install(TARGETS AquilaEditor
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
+            ARCHIVE DESTINATION lib
+    )
+endif ()
 
 install(DIRECTORY ${AQUILA_ASSET_PATH}
         DESTINATION share/aquila/assets

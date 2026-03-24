@@ -4,7 +4,8 @@ namespace Aquila::Platform::Filesystem {
 MemoryFile::MemoryFile(std::vector<uint8_t> *data, bool canWrite) : m_data(data), m_position(0), m_canWrite(canWrite) {}
 
 size_t MemoryFile::Read(void *buffer, size_t size) {
-	if (!m_data || m_position >= m_data->size()) return 0;
+	if (!m_data || m_position >= m_data->size())
+		return 0;
 
 	size_t bytesToRead = std::min(size, m_data->size() - m_position);
 	memcpy(buffer, m_data->data() + m_position, bytesToRead);
@@ -13,7 +14,8 @@ size_t MemoryFile::Read(void *buffer, size_t size) {
 }
 
 size_t MemoryFile::Write(const void *buffer, size_t size) {
-	if (!m_data || !m_canWrite) return 0;
+	if (!m_data || !m_canWrite)
+		return 0;
 
 	// Resize if necessary
 	if (m_position + size > m_data->size()) {
@@ -25,38 +27,34 @@ size_t MemoryFile::Write(const void *buffer, size_t size) {
 	return size;
 }
 
-bool MemoryFile::Seek(int64_t offset, int origin) {
-	if (!m_data) return false;
+bool MemoryFile::Seek(int64 offset, int origin) {
+	if (!m_data)
+		return false;
 
-	int64_t newPos;
+	int64 newPos;
 	switch (origin) {
 	case SEEK_SET:
 		newPos = offset;
 		break;
 	case SEEK_CUR:
-		newPos = static_cast<int64_t>(m_position) + offset;
+		newPos = static_cast<int64>(m_position) + offset;
 		break;
 	case SEEK_END:
-		newPos = static_cast<int64_t>(m_data->size()) + offset;
+		newPos = static_cast<int64>(m_data->size()) + offset;
 		break;
 	default:
 		return false;
 	}
 
-	if (newPos < 0 || newPos > static_cast<int64_t>(m_data->size())) {
-		return false;
-	}
-
-	m_position = static_cast<size_t>(newPos);
-	return true;
+	return !(newPos < 0 || newPos > static_cast<int64>(m_data->size()));
 }
 
-int64_t MemoryFile::Tell() const {
-	return static_cast<int64_t>(m_position);
+int64 MemoryFile::Tell() const {
+	return static_cast<int64>(m_position);
 }
 
-int64_t MemoryFile::Size() const {
-	return m_data ? static_cast<int64_t>(m_data->size()) : 0;
+int64 MemoryFile::Size() const {
+	return (m_data != nullptr) ? static_cast<int64>(m_data->size()) : 0;
 }
 
 bool MemoryFile::IsValid() const {

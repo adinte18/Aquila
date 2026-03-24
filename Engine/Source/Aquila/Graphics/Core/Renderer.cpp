@@ -8,7 +8,7 @@
 #include "Aquila/Graphics/Pipeline/Descriptor.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/Graphics/Pipeline/DynamicRenderingHelper.h"
-#include "Aquila/Utilities/Profiler.h"
+#include "Aquila/Foundation/Profiler.h"
 
 namespace Aquila::Graphics {
 
