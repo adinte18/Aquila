@@ -13,12 +13,9 @@
 [submodule "Engine/Vendor/assimp"]
 	path = Engine/Vendor/assimp
 	url = https://github.com/assimp/assimp.git
-[submodule "Engine/Vendor/SPIRV-Tools"]
-	path = Engine/Vendor/SPIRV-Tools
-	url = https://github.com/KhronosGroup/SPIRV-Tools.git
-[submodule "Engine/Vendor/SPIRV-Headers"]
-	path = Engine/Vendor/SPIRV-Headers
-	url = https://github.com/KhronosGroup/SPIRV-Headers.git
 [submodule "Engine/Vendor/stb"]
 	path = Engine/Vendor/stb
 	url = https://github.com/nothings/stb.git
+[submodule "Engine/Vendor/VulkanMemoryAllocator"]
+	path = Engine/Vendor/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
