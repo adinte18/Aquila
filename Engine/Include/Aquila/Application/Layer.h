@@ -1,10 +1,9 @@
 #ifndef AQUILA_LAYER_H
 #define AQUILA_LAYER_H
 
-#include "AquilaCore.h"
-#include "Aquila/Events/Event.h"
+#include "Aquila/Application/Events/Event.h"
 
-namespace Aquila::Core {
+namespace Aquila::Application {
 
 class Layer {
   public:
@@ -101,6 +100,6 @@ inline void LayerStack::PopOverlay(Layer *overlay) {
 	}
 }
 
-} // namespace Aquila::Core
+} // namespace Aquila::Application
 
 #endif

@@ -10,80 +10,45 @@ using namespace Aquila::Application::Events;
 
 class Input {
   public:
-	Input() = default;
+	Input() = delete;
 
-	[[nodiscard]] bool IsKeyPressed(KeyCode key) const;
-	[[nodiscard]] bool IsMouseButtonPressed(MouseButton button) const;
-	[[nodiscard]] std::pair<f32, f32> GetMousePosition() const;
+	[[nodiscard]] static bool IsKeyPressed(KeyCode key) { return s_KeyStates.at(static_cast<usize>(key)); }
+	[[nodiscard]] static bool IsMouseButtonPressed(MouseButton button) {
+		return s_MouseButtonStates.at(static_cast<usize>(button));
+	}
+	[[nodiscard]] static std::pair<f32, f32> GetMousePosition() { return { s_MouseX, s_MouseY }; }
 
-	void OnEvent(Event &eventvent);
-
-	void Update();
+	static void OnEvent(Event &event) {
+		EventDispatcher dispatcher(event);
+		dispatcher.Dispatch<KeyPressedEvent>([](KeyPressedEvent &e) {
+			s_KeyStates.at(static_cast<usize>(e.GetKeyCode())) = true;
+			return false;
+		});
+		dispatcher.Dispatch<KeyReleasedEvent>([](KeyReleasedEvent &e) {
+			s_KeyStates.at(static_cast<usize>(e.GetKeyCode())) = false;
+			return false;
+		});
+		dispatcher.Dispatch<MouseButtonPressedEvent>([](MouseButtonPressedEvent &e) {
+			s_MouseButtonStates.at(static_cast<usize>(e.GetMouseButton())) = true;
+			return false;
+		});
+		dispatcher.Dispatch<MouseButtonReleasedEvent>([](MouseButtonReleasedEvent &e) {
+			s_MouseButtonStates.at(static_cast<usize>(e.GetMouseButton())) = false;
+			return false;
+		});
+		dispatcher.Dispatch<MouseMovedEvent>([](MouseMovedEvent &e) {
+			s_MouseX = e.GetX();
+			s_MouseY = e.GetY();
+			return false;
+		});
+	}
 
   private:
-	bool OnKeyPressed(KeyPressedEvent &event);
-	bool OnKeyReleased(KeyReleasedEvent &event);
-	bool OnMouseButtonPressed(MouseButtonPressedEvent &event);
-	bool OnMouseButtonReleased(MouseButtonReleasedEvent &event);
-	bool OnMouseMoved(MouseMovedEvent &event);
-
-	std::array<bool, SharedConstants::MAX_KEY_STATES> m_KeyStates{ false };
-	std::array<bool, SharedConstants::MAX_MOUSE_STATES> m_MouseButtonStates{ false };
-	f32 m_MouseX = 0.0F;
-	f32 m_MouseY = 0.0F;
+	inline static std::array<bool, SharedConstants::MAX_KEY_STATES> s_KeyStates{};
+	inline static std::array<bool, SharedConstants::MAX_MOUSE_STATES> s_MouseButtonStates{};
+	inline static f32 s_MouseX = 0.0f;
+	inline static f32 s_MouseY = 0.0f;
 };
 
-AQUILA_FORCE_INLINE bool Input::IsKeyPressed(KeyCode key) const {
-	return m_KeyStates.at(static_cast<usize>(key));
-}
-
-AQUILA_FORCE_INLINE bool Input::IsMouseButtonPressed(MouseButton button) const {
-	return m_MouseButtonStates.at(static_cast<usize>(button));
-}
-
-AQUILA_FORCE_INLINE std::pair<f32, f32> Input::GetMousePosition() const {
-	return { m_MouseX, m_MouseY };
-}
-
-AQUILA_FORCE_INLINE void Input::OnEvent(Event &event) {
-	EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent &event) { return OnKeyPressed(event); });
-	dispatcher.Dispatch<KeyReleasedEvent>([this](KeyReleasedEvent &event) { return OnKeyReleased(event); });
-	dispatcher.Dispatch<MouseButtonPressedEvent>(
-		[this](MouseButtonPressedEvent &event) { return OnMouseButtonPressed(event); });
-	dispatcher.Dispatch<MouseButtonReleasedEvent>(
-		[this](MouseButtonReleasedEvent &event) { return OnMouseButtonReleased(event); });
-	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &event) { return OnMouseMoved(event); });
-}
-
-AQUILA_FORCE_INLINE void Input::Update() {}
-
-AQUILA_FORCE_INLINE bool Input::OnKeyPressed(KeyPressedEvent &event) {
-	m_KeyStates.at(static_cast<usize>(event.GetKeyCode())) = true;
-	return false;
-}
-
-AQUILA_FORCE_INLINE bool Input::OnKeyReleased(KeyReleasedEvent &event) {
-	m_KeyStates.at(static_cast<usize>(event.GetKeyCode())) = false;
-	return false;
-}
-
-AQUILA_FORCE_INLINE bool Input::OnMouseButtonPressed(MouseButtonPressedEvent &event) {
-	m_MouseButtonStates.at(static_cast<usize>(event.GetMouseButton())) = true;
-	return false;
-}
-
-AQUILA_FORCE_INLINE bool Input::OnMouseButtonReleased(MouseButtonReleasedEvent &event) {
-	m_MouseButtonStates.at(static_cast<usize>(event.GetMouseButton())) = false;
-	return false;
-}
-
-AQUILA_FORCE_INLINE bool Input::OnMouseMoved(MouseMovedEvent &event) {
-	m_MouseX = event.GetX();
-	m_MouseY = event.GetY();
-	return false;
-}
-
 } // namespace Aquila::Platform
-
 #endif

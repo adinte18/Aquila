@@ -1,9 +1,8 @@
-#include "Aquila/Core/Window.h"
-#include "Aquila/Events/InputEvent.h"
-#include "Aquila/Events/WindowEvent.h"
-#include "GLFW/glfw3.h"
+#include "Aquila/Application/Window.h"
+#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Application/Events/WindowEvent.h"
 
-namespace Aquila::Core {
+namespace Aquila::Application {
 
 static bool s_GLFWInitialized = false;
 
@@ -41,12 +40,6 @@ void Window::Initialize() {
 	SetupCallbacks();
 
 	AQUILA_LOG_INFO("Window created: {}x{}", m_Data.Width, m_Data.Height);
-}
-
-void Window::CreateWindowSurface(const VkInstance instance, VkSurfaceKHR *surface) const {
-	if (glfwCreateWindowSurface(instance, m_Window, nullptr, surface) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create window surface!");
-	}
 }
 
 void Window::SetTitle(const std::string &text) const {
@@ -141,11 +134,11 @@ void Window::PollEvents() {
 }
 
 bool Window::ShouldClose() const {
-	return glfwWindowShouldClose(m_Window);
+	return glfwWindowShouldClose(m_Window) != 0;
 }
 
 void Window::Shutdown() const {
 	glfwDestroyWindow(m_Window);
 }
 
-} // namespace Aquila::Core
+} // namespace Aquila::Application

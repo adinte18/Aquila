@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Aquila/Events/Event.h"
+#include "Aquila/Application/Events/Event.h"
 
-namespace Aquila::Events {
+namespace Aquila::Application::Events {
 
 class AssetSelectedEvent : public Event {
   public:
@@ -20,4 +20,4 @@ class AssetSelectedEvent : public Event {
 	std::string m_Extension;
 };
 
-} // namespace Aquila::Events
+} // namespace Aquila::Application::Events

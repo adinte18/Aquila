@@ -1,10 +1,19 @@
 #ifndef AQUILA_WINDOW_H
 #define AQUILA_WINDOW_H
 
-#include "Aquila/Core/AquilaCore.h"
-#include "Aquila/Events/Event.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Math/MathTypes.h"
 
-namespace Aquila::Core {
+#include "Aquila/Platform/Platform.h"
+
+#include "Aquila/Application/Events/Event.h"
+#include "Aquila/Application/Events/WindowEvent.h"
+#include "Aquila/Application/Events/InputEvent.h"
+
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+namespace Aquila::Application {
 
 class Window {
   public:
@@ -18,7 +27,6 @@ class Window {
 
 	uint32 GetWidth() const { return m_Data.Width; }
 	uint32 GetHeight() const { return m_Data.Height; }
-	VkExtent2D GetExtent() const { return { m_Data.Width, m_Data.Height }; }
 	void SetTitle(const std::string &text) const;
 
 	void SetEventCallback(const EventCallbackFn &callback) { m_Data.EventCallback = callback; }
@@ -44,6 +52,6 @@ class Window {
 	WindowData m_Data;
 };
 
-} // namespace Aquila::Core
+} // namespace Aquila::Application
 
 #endif // AQUILA_WINDOW_H

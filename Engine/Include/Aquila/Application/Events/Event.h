@@ -1,9 +1,11 @@
 #ifndef AQUILA_EVENT_H
 #define AQUILA_EVENT_H
 
-namespace Aquila::Events {
+#include "Aquila/Foundation/Defines.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 
-// Event categories for filtering
+namespace Aquila::Application::Events {
+
 enum class EventCategory : uint8 {
 	None = 0,
 	Application = BIT(0),
@@ -53,6 +55,6 @@ class EventDispatcher {
 	Event &m_Event;
 };
 
-} // namespace Aquila::Events
+} // namespace Aquila::Application::Events
 
 #endif // AQUILA_EVENT_H
