@@ -1,5 +1,6 @@
 add_subdirectory(Platform)
-#add_subdirectory(Foundation)
+add_subdirectory(Foundation)
+add_subdirectory(Application)
 
 set(TEST_COMMANDS "")
 list(LENGTH ALL_TEST_TARGETS TARGET_COUNT)
@@ -10,9 +11,13 @@ foreach(i RANGE ${LAST_INDEX})
     list(GET ALL_TEST_MODULES ${i} MODULE)
     list(APPEND TEST_COMMANDS
         COMMAND ${CMAKE_COMMAND} -E echo "[AQUILA] Testing module: [${MODULE}]"
-        COMMAND $<TARGET_FILE:${TARGET}> --no-intro
+        COMMAND $<TARGET_FILE:${TARGET}> --no-intro --force-colors=true
     )
 endforeach()
+
+list(APPEND TEST_COMMANDS
+    COMMAND ${CMAKE_COMMAND} -E echo "==============================================================================="
+)
 
 add_custom_target(RunAllTests ALL
     ${TEST_COMMANDS}

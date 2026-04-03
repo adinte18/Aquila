@@ -29,6 +29,7 @@ target_link_libraries(AquilaEditor
     PRIVATE
     Foundation
     Platform
+    Vulkan::Headers
     # GraphicsAPI
     # Renderer
     # Assets
