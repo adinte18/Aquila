@@ -4,6 +4,8 @@
 #include "BasePCH.h"
 
 #include <vulkan/vulkan.h>
-#include <imgui.h>
+
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 
 #endif
