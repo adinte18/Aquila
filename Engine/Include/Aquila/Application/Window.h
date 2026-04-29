@@ -30,6 +30,11 @@ class Window {
 	void SetTitle(const std::string &text) const;
 
 	void SetEventCallback(const EventCallbackFn &callback) { m_Data.EventCallback = callback; }
+
+	// Called from inside the Win32 modal resize loop (WM_PAINT/refresh).
+	// Hook this to render a frame during live resize so the window doesn't go black.
+	void SetRefreshCallback(std::function<void()> callback) { m_Data.RefreshCallback = std::move(callback); }
+
 	bool IsWindowResized() const { return m_Data.Resized; }
 	void ResetResizedFlag() { m_Data.Resized = false; }
 
@@ -47,6 +52,7 @@ class Window {
 		uint32 Width, Height;
 		bool Resized = false;
 		EventCallbackFn EventCallback;
+		std::function<void()> RefreshCallback;
 	};
 
 	WindowData m_Data;

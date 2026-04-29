@@ -28,6 +28,8 @@ target_link_libraries(${MODULE_NAME}
     PUBLIC
     Platform
     Foundation
+    Scene
+    Rendering
     PRIVATE
     glfw
     Vulkan::Headers

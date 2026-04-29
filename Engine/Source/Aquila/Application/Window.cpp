@@ -127,6 +127,17 @@ void Window::SetupCallbacks() const {
 		Events::WindowFocusEvent event(focused == GLFW_TRUE);
 		data.EventCallback(event);
 	});
+
+	// On Windows, glfwPollEvents() is blocked inside Win32's modal resize loop while
+	// the user drags a window border.  The refresh callback fires from inside that loop
+	// whenever the window needs repainting (every mouse move during the drag), giving
+	// us a chance to render a live frame.
+	glfwSetWindowRefreshCallback(m_Window, [](GLFWwindow *window) {
+		WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
+		if (data.RefreshCallback) {
+			data.RefreshCallback();
+		}
+	});
 }
 
 void Window::PollEvents() {
