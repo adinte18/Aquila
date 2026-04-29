@@ -14,6 +14,8 @@ Checks: >
   cppcoreguidelines-avoid-do-while,
   -cppcoreguidelines-pro-type-reinterpret-cast,
   -modernize-use-trailing-return-type,
+  -readability-braces-around-statements,
+  -hicpp-braces-around-statements
 
 
 WarningsAsErrors: ''
@@ -39,5 +41,11 @@ CheckOptions:
 
   - key:             modernize-use-auto.RemoveStars
     value:           'false'
+
+  - key:             readability-uppercase-literal-suffix.NewSuffixes
+    value:           'L;LL;LU;LLU;F'
+    
+  - key:             readability-uppercase-literal-suffix.IgnoreMacros
+    value:           'true'
 
 ...

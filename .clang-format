@@ -6,15 +6,16 @@ TabWidth: 4
 UseTab: Always
 
 BreakBeforeBraces: Attach
+InsertBraces: true
 BraceWrapping:
-  AfterEnum: false
-  AfterStruct: false
-  AfterClass: false
-  AfterFunction: false
-  AfterNamespace: false
-  SplitEmptyFunction: false
-  SplitEmptyRecord: false
-  SplitEmptyNamespace: false
+  AfterEnum: true
+  AfterStruct: true
+  AfterClass: true
+  AfterFunction: true
+  AfterNamespace: true
+  SplitEmptyFunction: true
+  SplitEmptyRecord: true
+  SplitEmptyNamespace: true
 
 AllowShortFunctionsOnASingleLine: Inline
 AllowShortIfStatementsOnASingleLine: Never
