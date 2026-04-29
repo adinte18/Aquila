@@ -2,6 +2,9 @@
 #define AQUILA_CAMERA_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Math/Math.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Defines.h"
 
 namespace Aquila::Rendering {
 class Camera {

@@ -1,6 +1,4 @@
 #include "Aquila/Rendering/Camera.h"
-#include "Aquila/Core/AquilaCore.h"
-#include "Aquila/Core/Defines.h"
 
 namespace Aquila::Rendering {
 
@@ -191,8 +189,9 @@ void Camera::SetOrbitTarget(const vec3 &target) {
 	vec3 offset = m_Position - m_OrbitTarget;
 
 	m_OrbitRadius = Math::Length(offset);
-	if (m_OrbitRadius < 0.1f)
+	if (m_OrbitRadius < 0.1f) {
 		m_OrbitRadius = 5.0f;
+	}
 
 	m_OrbitPitch = std::asin(offset.y / m_OrbitRadius);
 	m_OrbitYaw = std::atan2(offset.x, offset.z);
