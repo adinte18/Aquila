@@ -1,0 +1,35 @@
+#pragma once
+#include "Aquila/Rendering/Renderers/IRenderer.h"
+#include "Aquila/Rendering/Systems/Base/I2DRenderingSystem.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
+
+namespace Aquila::Rendering {
+
+class Scene2DRenderer : public IRenderer {
+  public:
+	Scene2DRenderer() = default;
+	~Scene2DRenderer() override = default;
+
+	AQUILA_NONCOPYABLE(Scene2DRenderer);
+	AQUILA_NONMOVEABLE(Scene2DRenderer);
+
+	void OnInit(GFX::GfxContext &ctx) override;
+	void OnShutdown() override;
+	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+
+	template <typename T, typename... Args> T &AddSystem(Args &&...args) {
+		static_assert(std::is_base_of_v<I2DRenderingSystem, T>);
+		auto sys = CreateUnique<T>(std::forward<Args>(args)...);
+		T &ref = *sys;
+		sys->OnInit(*m_Ctx);
+		m_Systems.push_back(std::move(sys));
+		return ref;
+	}
+
+  private:
+	GFX::GfxContext *m_Ctx = nullptr;
+	Unique<Graphics::Renderer2D> m_Renderer2D;
+	std::vector<Unique<I2DRenderingSystem>> m_Systems;
+};
+
+} // namespace Aquila::Rendering
