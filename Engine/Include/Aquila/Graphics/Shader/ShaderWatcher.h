@@ -1,10 +1,7 @@
 #ifndef AQUILA_SHADER_WATCHER_H
 #define AQUILA_SHADER_WATCHER_H
 
-#include "Aquila/Core/AquilaCore.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
-
-#include <filesystem>
 
 namespace Aquila::Graphics::Shader {
 

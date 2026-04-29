@@ -1,0 +1,133 @@
+#include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
+
+namespace Aquila::Graphics::RG {
+
+RGPassBuilder::RGPassBuilder(std::string_view passName, RGRegistry &registry) : m_Registry(registry) {
+	m_Data.name = passName;
+}
+
+RGTextureHandle RGPassBuilder::ReadTexture(RGTextureHandle handle, ResourceState state) {
+	AQUILA_ASSERT(handle.IsValid(), "ReadTexture: invalid handle");
+	AssertNoDuplicateTextureAccess(handle, /*isWrite=*/false);
+	m_Data.textureReads.push_back({ handle, state });
+	return handle;
+}
+
+RGTextureHandle RGPassBuilder::WriteTexture(RGTextureHandle handle, ResourceState state) {
+	AQUILA_ASSERT(handle.IsValid(), "WriteTexture: invalid handle");
+	AssertNoDuplicateTextureAccess(handle, /*isWrite=*/true);
+
+	// Bump version in the registry — every write produces a new handle.
+	RGTextureHandle newHandle = m_Registry.WriteTexture(handle);
+	m_Data.textureWrites.push_back({ newHandle, state });
+	return newHandle;
+}
+
+RGBufferHandle RGPassBuilder::ReadBuffer(RGBufferHandle handle, ResourceState state) {
+	AQUILA_ASSERT(handle.IsValid(), "ReadBuffer: invalid handle");
+	AssertNoDuplicateBufferAccess(handle, /*isWrite=*/false);
+	m_Data.bufferReads.push_back({ handle, state });
+	return handle;
+}
+
+RGBufferHandle RGPassBuilder::WriteBuffer(RGBufferHandle handle, ResourceState state) {
+	AQUILA_ASSERT(handle.IsValid(), "WriteBuffer: invalid handle");
+	AssertNoDuplicateBufferAccess(handle, /*isWrite=*/true);
+
+	RGBufferHandle newHandle = m_Registry.WriteBuffer(handle);
+	m_Data.bufferWrites.push_back({ newHandle, state });
+	return newHandle;
+}
+
+RGTextureHandle RGPassBuilder::SetDepthAttachment(RGTextureHandle handle, AttachmentLoadOp depthLoad,
+												  AttachmentStoreOp depthStore, AttachmentLoadOp stencilLoad,
+												  AttachmentStoreOp stencilStore, bool readOnly, ClearDepth clear) {
+	AQUILA_ASSERT(handle.IsValid(), "SetDepthAttachment: invalid handle");
+	AQUILA_ASSERT(!m_Data.hasDepthAttachment, "A pass can only have one depth attachment");
+
+	RGTextureHandle resolvedHandle = handle;
+
+	if (readOnly) {
+		// Read-only depth: register as a texture read with DepthRead state.
+		// No version bump the resource isn't modified.
+		resolvedHandle = ReadTexture(handle, ResourceState::DepthRead);
+	} else {
+		// Read-write depth: counts as a write, bumps the version.
+		resolvedHandle = WriteTexture(handle, ResourceState::DepthWrite);
+	}
+
+	m_Data.depthAttachment = RGDepthAttachment{
+		.handle = resolvedHandle,
+		.depthLoadOp = depthLoad,
+		.depthStoreOp = depthStore,
+		.stencilLoadOp = stencilLoad,
+		.stencilStoreOp = stencilStore,
+		.readOnly = readOnly,
+		.clear = clear,
+	};
+	m_Data.hasDepthAttachment = true;
+
+	return resolvedHandle;
+}
+
+RGTextureHandle RGPassBuilder::SetColorAttachment(uint32 slot, RGTextureHandle handle, AttachmentLoadOp loadOp,
+												  AttachmentStoreOp storeOp, ClearColor clear) {
+	AQUILA_ASSERT(handle.IsValid(), "SetColorAttachment: invalid handle");
+
+	// Color attachments are always writes, bump the version.
+	RGTextureHandle newHandle = WriteTexture(handle, ResourceState::ColorAttachment);
+
+	// Grow the slot array to fit.
+	if (slot >= m_Data.colorAttachments.size()) {
+		m_Data.colorAttachments.resize(slot + 1, RGColorAttachment{ .handle = RGTextureHandle{},
+																	.loadOp = AttachmentLoadOp::DontCare,
+																	.storeOp = AttachmentStoreOp::DontCare,
+																	.clear = {} });
+	}
+
+	m_Data.colorAttachments[slot] = RGColorAttachment{
+		.handle = newHandle,
+		.loadOp = loadOp,
+		.storeOp = storeOp,
+		.clear = clear,
+	};
+
+	return newHandle;
+}
+
+// Duplicate access guards
+//
+// Catching these at setup time is cheaper than debugging a mis-ordered barrier
+// at runtime.  We match on the slot index (lower 24 bits) so that a stale
+// handle and a current handle to the same slot are still caught.
+
+static uint32 SlotOf(uint32 id) {
+	return id & 0x00FFFFFFu;
+}
+
+void RGPassBuilder::AssertNoDuplicateTextureAccess(RGTextureHandle handle, bool isWrite) const {
+	const uint32 slot = SlotOf(handle.id);
+
+	auto slotMatches = [slot](const RGTextureAccess &a) { return SlotOf(a.handle.id) == slot; };
+
+	const bool inReads = std::ranges::any_of(m_Data.textureReads, slotMatches);
+	const bool inWrites = std::ranges::any_of(m_Data.textureWrites, slotMatches);
+
+	// Read-after-write within the same pass is a setup error.
+	AQUILA_ASSERT(!inReads && !inWrites, "Texture slot already declared in this pass (read-write or double-declare)");
+	(void)isWrite;
+}
+
+void RGPassBuilder::AssertNoDuplicateBufferAccess(RGBufferHandle handle, bool isWrite) const {
+	const uint32 slot = SlotOf(handle.id);
+
+	auto slotMatches = [slot](const RGBufferAccess &a) { return SlotOf(a.handle.id) == slot; };
+
+	const bool inReads = std::ranges::any_of(m_Data.bufferReads, slotMatches);
+	const bool inWrites = std::ranges::any_of(m_Data.bufferWrites, slotMatches);
+
+	AQUILA_ASSERT(!inReads && !inWrites, "Buffer slot already declared in this pass (read-write or double-declare)");
+	(void)isWrite;
+}
+
+} // namespace Aquila::Graphics::RG

@@ -1,33 +1,31 @@
-#ifndef AQUILA_MATERIAL_PROPERTY_H
-#define AQUILA_MATERIAL_PROPERTY_H
+#pragma once
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/GFX/GfxTexture.h"
 
-#include "Aquila/Graphics/Resources/Texture2D.h"
+namespace Aquila::Graphics {
 
-namespace Aquila::Graphics::Material {
-enum class ParameterType { Float, Int, Bool, Vec2, Vec3, Vec4, Texture2D, Color };
+// Typed enum for all parameter kinds a material can hold.
+enum class ParameterType : uint8 { Float, Int, Bool, Vec2, Vec3, Vec4, Texture2D, Color };
 
-using ParameterValue = std::variant<f32, int, bool, vec2, vec3, vec4, Ref<Resources::Texture2D>>;
+// Variant covering every concrete value a parameter can take.
+// Texture2D entries are bound directly to the descriptor set;
+// all other types are packed into the material UBO.
+using ParameterValue = std::variant<f32, int, bool, vec2, vec3, vec4, Ref<GFX::GfxTexture>>;
+
+// One reflected or manually-registered shader parameter.
 struct MaterialParameter {
-	std::string m_Name;
-	ParameterType m_Type;
-	ParameterValue m_Value;
-	ParameterValue m_DefaultValue;
+	std::string name;
+	ParameterType type = ParameterType::Float;
+	ParameterValue value;
+	ParameterValue defaultValue;
 
-	// stuff for editor to eat
-	f32 m_MinValue = 0.0f;
-	f32 m_MaxValue = 1.0f;
-	bool m_IsEditable = true;
-	std::string m_DisplayName;
+	// Byte offset inside the material UBO (std140 layout).
+	// UINT32_MAX means this parameter is a texture, not in the UBO.
+	uint32 uboOffset = UINT32_MAX;
 
-	uint32 m_BindingIndex = -1;
-
-	MaterialParameter() = default;
-
-	MaterialParameter(const std::string &n, const ParameterType t, const ParameterValue &v)
-		: m_Name(n), m_Type(t), m_Value(v), m_DefaultValue(v), m_DisplayName(n) {}
-
-	void ResetToDefault() { m_Value = m_DefaultValue; }
+	// Descriptor-set binding index for Texture2D parameters.
+	// UINT32_MAX for non-texture parameters.
+	uint32 textureBinding = UINT32_MAX;
 };
-} // namespace Aquila::Graphics::Material
 
-#endif
+} // namespace Aquila::Graphics

@@ -1,443 +1,325 @@
 #include "Aquila/Graphics/Material/Material.h"
+#include "Aquila/Graphics/Shader/ShaderProgram.h"
+#include "Aquila/GFX/GfxContext.h"
+#include <cstring>
 
-namespace Aquila::Graphics::Material {
+namespace Aquila::Graphics {
 
-void Material::SetShaderAsset(const std::string &shaderAssetPath) {
-	m_ShaderAssetPath = shaderAssetPath;
-	MarkPipelineDirty();
+static uint32 Std140Align(ParameterType t) {
+	switch (t) {
+	case ParameterType::Float:
+	case ParameterType::Int:
+	case ParameterType::Bool:
+		return 4;
+	case ParameterType::Vec2:
+		return 8;
+	case ParameterType::Vec3:
+	case ParameterType::Vec4:
+	case ParameterType::Color:
+		return 16;
+	default:
+		return 4;
+	}
 }
 
-void Material::SetShader(const Ref<Shader::ShaderProgram> &shader) {
-	if (!m_Template) {
-		return;
+// Bytes occupied in the UBO stream (vec3 has a 16-byte stride in std140).
+static uint32 Std140Stride(ParameterType t) {
+	switch (t) {
+	case ParameterType::Float:
+	case ParameterType::Int:
+	case ParameterType::Bool:
+		return 4;
+	case ParameterType::Vec2:
+		return 8;
+	case ParameterType::Vec3:
+		return 16; // 12 bytes of data, 4 bytes pad
+	case ParameterType::Vec4:
+	case ParameterType::Color:
+		return 16;
+	default:
+		return 4;
 	}
-
-	m_Template->shader = shader;
-
-	if (shader) {
-		m_Template->shaderType = shader->GetShaderType();
-	}
-
-	SyncPropertiesFromShader();
-	MarkPipelineDirty();
 }
 
-Ref<Shader::ShaderProgram> Material::GetShader() const {
-	return m_Template ? m_Template->shader : nullptr;
+// Bytes actually copied when writing the value (no padding).
+static uint32 ValueSize(ParameterType t) {
+	switch (t) {
+	case ParameterType::Float:
+	case ParameterType::Int:
+	case ParameterType::Bool:
+		return 4;
+	case ParameterType::Vec2:
+		return 8;
+	case ParameterType::Vec3:
+		return 12;
+	case ParameterType::Vec4:
+	case ParameterType::Color:
+		return 16;
+	default:
+		return 4;
+	}
 }
 
-void Material::SyncPropertiesFromShader() {
-	if (!m_Template || !m_Template->shader) {
-		return;
+static ParameterValue DefaultValue(ParameterType t) {
+	switch (t) {
+	case ParameterType::Float:
+		return 0.f;
+	case ParameterType::Int:
+		return 0;
+	case ParameterType::Bool:
+		return false;
+	case ParameterType::Vec2:
+		return vec2{ 0.f, 0.f };
+	case ParameterType::Vec3:
+		return vec3{ 0.f, 0.f, 0.f };
+	case ParameterType::Vec4:
+	case ParameterType::Color:
+		return vec4{ 0.f, 0.f, 0.f, 1.f };
+	default:
+		return 0.f;
+	}
+}
+
+Ref<Material> Material::CreateFromShader(GFX::GfxContext &ctx, Shader::ShaderProgram &shader,
+										 Ref<GFX::GfxPipeline> pipeline) {
+	auto mat = Ref<Material>(new Material());
+	mat->m_Context = &ctx;
+	mat->m_Pipeline = std::move(pipeline);
+	mat->m_Layout = shader.m_DescriptorSetLayout;
+
+	if (mat->m_Layout) {
+		mat->m_Set = ctx.AllocateDescriptorSet(*mat->m_Layout);
 	}
 
-	std::unordered_set<std::string> reflectedNames;
-	for (const auto &binding : m_Template->shader->GetReflectedBindings()) {
-		if (binding.set != 1) {
-			continue;
-		}
-		switch (binding.type) {
-		case Shader::ShaderProgram::ReflectedBindingType::CombinedImageSampler:
-			reflectedNames.insert(binding.name);
-			break;
-		case Shader::ShaderProgram::ReflectedBindingType::UniformBuffer:
+	using RBType = Shader::ShaderProgram::ReflectedBindingType;
+
+	uint32 uboSize = 0;
+
+	for (const auto &binding : shader.GetReflectedBindings()) {
+		if (binding.type == RBType::UniformBuffer) {
+			uint32 offset = 0;
 			for (const auto &field : binding.uboFields) {
-				reflectedNames.insert(field.name);
+				uint32 align = Std140Align(field.paramType);
+				offset = (offset + align - 1) & ~(align - 1);
+
+				MaterialParameter p;
+				p.name = field.name;
+				p.type = field.paramType;
+				p.uboOffset = offset;
+				p.value = DefaultValue(field.paramType);
+				p.defaultValue = p.value;
+				mat->m_Parameters.push_back(std::move(p));
+
+				offset += Std140Stride(field.paramType);
 			}
-			break;
-		default:
-			break;
+			uboSize = std::max(uboSize, offset);
+		} else if (binding.type == RBType::CombinedImageSampler) {
+			MaterialParameter p;
+			p.name = binding.name;
+			p.type = ParameterType::Texture2D;
+			p.textureBinding = binding.bindingIndex;
+			mat->m_Parameters.push_back(std::move(p));
 		}
 	}
 
-	std::vector<std::string> toRemove;
-	for (const auto &[propName, prop] : m_Template->properties) {
-		if (!reflectedNames.contains(propName)) {
-			toRemove.push_back(propName);
+	// std140 struct size must be a multiple of 16.
+	uboSize = (uboSize + 15u) & ~15u;
+
+	if (uboSize > 0 && mat->m_Set) {
+		mat->m_UBOData.assign(uboSize, 0);
+		mat->m_UniformBuffer = ctx.CreateBuffer({
+			.size = uboSize,
+			.usage = RHI::BufferUsage::UniformBuffer,
+			.domain = RHI::MemoryDomain::CPU_TO_GPU,
+			.debugName = "MaterialUBO",
+		});
+		mat->m_UniformDirty = true;
+	}
+
+	return mat;
+}
+
+Ref<Material> Material::Create(GFX::GfxContext &ctx, Ref<GFX::GfxPipeline> pipeline,
+							   Ref<GFX::GfxDescriptorSetLayout> layout) {
+	auto mat = Ref<Material>(new Material());
+	mat->m_Context = &ctx;
+	mat->m_Pipeline = std::move(pipeline);
+	mat->m_Layout = layout;
+
+	if (mat->m_Layout) {
+		mat->m_Set = ctx.AllocateDescriptorSet(*mat->m_Layout);
+	}
+
+	return mat;
+}
+
+void Material::RegisterParameter(std::string paramName, ParameterType type, uint32 uboOffset, uint32 textureBinding) {
+	for (auto &p : m_Parameters) {
+		if (p.name == paramName) {
+			p.type = type;
+			p.uboOffset = uboOffset;
+			p.textureBinding = textureBinding;
+			return;
 		}
 	}
-	for (const auto &propName : toRemove) {
-		m_Template->properties.erase(propName);
-		m_Overrides.erase(propName); // remove stale overrides
+	MaterialParameter p;
+	p.name = std::move(paramName);
+	p.type = type;
+	p.uboOffset = uboOffset;
+	p.textureBinding = textureBinding;
+	p.value = DefaultValue(type);
+	p.defaultValue = p.value;
+	m_Parameters.push_back(std::move(p));
+}
+
+MaterialParameter *Material::FindParameter(const std::string &paramName) {
+	for (auto &p : m_Parameters) {
+		if (p.name == paramName) {
+			return &p;
+		}
 	}
+	return nullptr;
+}
 
-	for (const auto &binding : m_Template->shader->GetReflectedBindings()) {
-		if (binding.set != 1) {
-			continue;
+const MaterialParameter *Material::GetParameter(const std::string &paramName) const {
+	for (const auto &p : m_Parameters) {
+		if (p.name == paramName) {
+			return &p;
 		}
-		if (m_Template->HasProperty(binding.name)) {
-			continue;
+	}
+	return nullptr;
+}
+
+template <typename T> void Material::WriteUBO(uint32 offset, const T &v) {
+	if (m_UBOData.empty()) {
+		// Size not known yet in manual-Create mode; grow on demand.
+		uint32 needed = offset + static_cast<uint32>(sizeof(T));
+		if (needed > m_UBOData.size()) {
+			m_UBOData.resize((needed + 15u) & ~15u, 0);
 		}
-
-		switch (binding.type) {
-		case Shader::ShaderProgram::ReflectedBindingType::CombinedImageSampler: {
-			MaterialParameter param(binding.name, ParameterType::Texture2D, Ref<Resources::Texture2D>());
-			param.m_BindingIndex = binding.bindingIndex;
-			param.m_DisplayName = binding.name;
-			m_Template->AddProperty(param);
-			AQUILA_LOG_DEBUG("Material '{}': registered texture slot '{}' (binding {})", name, binding.name,
-							 binding.bindingIndex);
-			break;
-		}
-		case Shader::ShaderProgram::ReflectedBindingType::UniformBuffer: {
-			if (binding.set == 0) {
-				break;
-			}
-
-			for (const auto &field : binding.uboFields) {
-				if (m_Template->HasProperty(field.name)) {
-					continue;
-				}
-
-				ParameterValue defaultVal;
-				switch (field.paramType) {
-				case ParameterType::Color:
-					defaultVal = glm::vec4(1.f, 1.f, 1.f, 1.f);
-					break;
-				case ParameterType::Float:
-					defaultVal = 0.f;
-					break;
-				case ParameterType::Int:
-					defaultVal = 0;
-					break;
-				case ParameterType::Vec2:
-					defaultVal = glm::vec2(0.f);
-					break;
-				case ParameterType::Vec3:
-					defaultVal = glm::vec4(0.f);
-					break;
-				default:
-					continue;
-				}
-
-				MaterialParameter param(field.name, field.paramType, defaultVal);
-				param.m_DisplayName = field.name;
-				m_Template->AddProperty(param);
-
-				AQUILA_LOG_DEBUG("Material '{}': registered UBO field '{}' from cbuffer '{}'", name, field.name,
-								 binding.name);
-			}
-			break;
-		}
-		default:
-			break;
-		}
+	}
+	if (offset + sizeof(T) <= m_UBOData.size()) {
+		std::memcpy(m_UBOData.data() + offset, &v, sizeof(T));
 	}
 }
 
-// ── UBO ──────────────────────────────────────────────────────────────────────
-
-void Material::DestroyMaterialUBO() {
-	for (auto &[binding, buffer] : m_UBOBuffers) {
-		if (buffer) {
-			buffer->UnMap();
-		}
-	}
-	m_UBOBuffers.clear();
-}
-
-void Material::CreateMaterialUBO() {
-	if (!m_Template || !m_Template->shader) {
+void Material::EnsureUniformBuffer() {
+	if (m_UniformBuffer || m_UBOData.empty() || !m_Context || !m_Set) {
 		return;
 	}
 
-	for (const auto &binding : m_Template->shader->GetReflectedBindings()) {
-		if (binding.type != Shader::ShaderProgram::ReflectedBindingType::UniformBuffer) {
-			continue;
-		}
-		if (binding.set == 0) {
-			continue;
-		}
-		if (m_UBOBuffers.contains(binding.bindingIndex)) {
-			continue;
-		}
-
-		size_t uboSize = ComputeUBOSizeForBinding(binding);
-		if (uboSize == 0) {
-			AQUILA_LOG_WARNING("Material '{}': UBO '{}' at binding {} has no fields", name, binding.name,
-							   binding.bindingIndex);
-			continue;
-		}
-
-		auto buffer =
-			CreateUnique<Resources::Buffer>(m_Device, name + "_UBO_" + std::to_string(binding.bindingIndex), uboSize, 1,
-											VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-											VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		buffer->Map();
-
-		if (buffer->GetBuffer() == VK_NULL_HANDLE) {
-			AQUILA_LOG_ERROR("Material '{}': UBO buffer creation failed for binding {}", name, binding.bindingIndex);
-			continue;
-		}
-
-		m_UBOBuffers[binding.bindingIndex] = std::move(buffer);
-		AQUILA_LOG_DEBUG("Material '{}': created UBO '{}' at binding {} ({} bytes)", name, binding.name,
-						 binding.bindingIndex, uboSize);
-	}
-
-	UpdateMaterialUBO();
+	m_UniformBuffer = m_Context->CreateBuffer({
+		.size = static_cast<uint32>(m_UBOData.size()),
+		.usage = RHI::BufferUsage::UniformBuffer,
+		.domain = RHI::MemoryDomain::CPU_TO_GPU,
+		.debugName = "MaterialUBO",
+	});
 }
 
-size_t Material::ComputeUBOSizeForBinding(const Shader::ShaderProgram::ReflectedBinding &binding) const {
-	size_t size = 0;
-	for (const auto &field : binding.uboFields) {
-		switch (field.paramType) {
-		case ParameterType::Color:
-			size += sizeof(glm::vec4);
-			break;
-		case ParameterType::Float:
-			size += sizeof(float);
-			break;
-		case ParameterType::Int:
-			size += sizeof(int32_t);
-			break;
-		case ParameterType::Vec2:
-			size += sizeof(glm::vec2);
-			break;
-		case ParameterType::Vec3:
-			size += sizeof(glm::vec4);
-			break;
-		default:
-			break;
-		}
+Material &Material::Set(const std::string &paramName, f32 v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		WriteUBO(p->uboOffset, v);
+		m_UniformDirty = true;
 	}
-	return (size + 15) & ~size_t(15);
+	return *this;
 }
 
-void Material::UpdateMaterialUBO() {
-	if (m_UBOBuffers.empty() || !m_Template || !m_Template->shader) {
+Material &Material::Set(const std::string &paramName, int v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		WriteUBO(p->uboOffset, v);
+		m_UniformDirty = true;
+	}
+	return *this;
+}
+
+Material &Material::Set(const std::string &paramName, bool v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		int asInt = v ? 1 : 0;
+		WriteUBO(p->uboOffset, asInt);
+		m_UniformDirty = true;
+	}
+	return *this;
+}
+
+Material &Material::Set(const std::string &paramName, const vec2 &v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		WriteUBO(p->uboOffset, v);
+		m_UniformDirty = true;
+	}
+	return *this;
+}
+
+Material &Material::Set(const std::string &paramName, const vec3 &v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		// Only copy 12 bytes; the 4-byte pad is left as zero.
+		if (p->uboOffset + ValueSize(ParameterType::Vec3) <= m_UBOData.size()) {
+			std::memcpy(m_UBOData.data() + p->uboOffset, &v, ValueSize(ParameterType::Vec3));
+		}
+		m_UniformDirty = true;
+	}
+	return *this;
+}
+
+Material &Material::Set(const std::string &paramName, const vec4 &v) {
+	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
+		p->value = v;
+		WriteUBO(p->uboOffset, v);
+		m_UniformDirty = true;
+	}
+	return *this;
+}
+
+Material &Material::Set(const std::string &paramName, Ref<GFX::GfxTexture> tex) {
+	if (auto *p = FindParameter(paramName); p && p->textureBinding != UINT32_MAX && tex) {
+		p->value = tex;
+		m_PendingTextures.push_back({ p->textureBinding, tex.get() });
+	}
+	return *this;
+}
+
+Material &Material::SetTexture(uint32 binding, GFX::GfxTexture &tex) {
+	for (auto &tb : m_PendingTextures) {
+		if (tb.binding == binding) {
+			tb.tex = &tex;
+			return *this;
+		}
+	}
+	m_PendingTextures.push_back({ binding, &tex });
+	return *this;
+}
+
+void Material::Flush() {
+	if (!m_Set) {
 		return;
 	}
 
-	for (const auto &binding : m_Template->shader->GetReflectedBindings()) {
-		if (binding.type != Shader::ShaderProgram::ReflectedBindingType::UniformBuffer) {
-			continue;
-		}
-		if (binding.set == 0) {
-			continue;
-		}
-
-		auto it = m_UBOBuffers.find(binding.bindingIndex);
-		if (it == m_UBOBuffers.end()) {
-			continue;
-		}
-
-		auto &buffer = it->second;
-		std::vector<uint8_t> staging(buffer->GetBufferSize(), 0);
-		size_t offset = 0;
-
-		for (const auto &field : binding.uboFields) {
-			auto val = GetProperty(field.name);
-			switch (field.paramType) {
-			case ParameterType::Color: {
-				if (offset + sizeof(glm::vec4) > staging.size()) {
-					break;
-				}
-				if (auto *v = std::get_if<glm::vec4>(&val)) {
-					memcpy(staging.data() + offset, v, sizeof(glm::vec4));
-				}
-				offset += sizeof(glm::vec4);
-				break;
-			}
-			case ParameterType::Float: {
-				if (offset + sizeof(float) > staging.size()) {
-					break;
-				}
-				if (auto *v = std::get_if<float>(&val)) {
-					memcpy(staging.data() + offset, v, sizeof(float));
-				}
-				offset += sizeof(float);
-				break;
-			}
-			case ParameterType::Int: {
-				if (offset + sizeof(int32_t) > staging.size()) {
-					break;
-				}
-				if (auto *v = std::get_if<int32_t>(&val)) {
-					memcpy(staging.data() + offset, v, sizeof(int32_t));
-				}
-				offset += sizeof(int32_t);
-				break;
-			}
-			case ParameterType::Vec2: {
-				if (offset + sizeof(glm::vec2) > staging.size()) {
-					break;
-				}
-				if (auto *v = std::get_if<glm::vec2>(&val)) {
-					memcpy(staging.data() + offset, v, sizeof(glm::vec2));
-				}
-				offset += sizeof(glm::vec2);
-				break;
-			}
-			case ParameterType::Vec3: {
-				if (offset + sizeof(glm::vec4) > staging.size()) {
-					break;
-				}
-				if (auto *v = std::get_if<glm::vec4>(&val)) {
-					memcpy(staging.data() + offset, v, sizeof(glm::vec4));
-				}
-				offset += sizeof(glm::vec4);
-				break;
-			}
-			default:
-				break;
-			}
-		}
-
-		buffer->Write(staging.data(), staging.size());
-		AQUILA_VULKAN_CHECK(buffer->Flush());
-	}
-} // ── Parameters ───────────────────────────────────────────────────────────────
-
-void Material::SetParameter(const std::string &name, const ParameterValue &value) {
-	if (!m_Template || !m_Template->HasProperty(name)) {
-		return;
-	}
-
-	if (!m_Overrides.contains(name)) {
-		m_Overrides[name] = *m_Template->GetProperty(name);
-	}
-
-	auto &prop = m_Overrides[name];
-
-	if (prop.m_Type == ParameterType::Texture2D) {
-		auto tex = std::get<Ref<Resources::Texture2D>>(value);
-		if (!tex) {
-			auto iterator = m_FallbackTextures.find(name);
-			if (iterator != m_FallbackTextures.end() && iterator->second) {
-				tex = iterator->second;
-			}
-		}
-		prop.m_Value = tex;
-		MarkDescriptorDirty();
-	} else {
-		prop.m_Value = value;
-		UpdateMaterialUBO();
-		m_IsDirty = true;
-	}
-}
-
-ParameterValue Material::GetProperty(const std::string &name) const {
-	if (auto iterator = m_Overrides.find(name); iterator != m_Overrides.end()) {
-		return iterator->second.m_Value;
-	}
-	const auto *property = m_Template->GetProperty(name);
-	return (property != nullptr) ? property->m_Value : ParameterValue{};
-}
-
-Ref<Resources::Texture2D> Material::GetTexture(const std::string &name) const {
-	if (auto val = GetProperty(name); std::holds_alternative<Ref<Resources::Texture2D>>(val)) {
-		if (auto tex = std::get<Ref<Resources::Texture2D>>(val)) {
-			return tex;
+	if (m_UniformDirty && !m_UBOData.empty()) {
+		EnsureUniformBuffer();
+		if (m_UniformBuffer) {
+			m_UniformBuffer->Write(m_UBOData.data(), static_cast<uint32>(m_UBOData.size()));
+			m_Set->SetBuffer(0, *m_UniformBuffer);
+			m_UniformDirty = false;
 		}
 	}
-	auto iterator = m_FallbackTextures.find(name);
-	return (iterator != m_FallbackTextures.end() && iterator->second) ? iterator->second : nullptr;
-}
 
-void Material::SetFallbackTexture(const std::string &name, Ref<Resources::Texture2D> texture) {
-	m_FallbackTextures[name] = std::move(texture);
-}
-
-bool Material::IsFallbackTexture(const std::string &name, const Ref<Resources::Texture2D> &texture) const {
-	auto iterator = m_FallbackTextures.find(name);
-	return iterator != m_FallbackTextures.end() && iterator->second == texture;
-}
-
-void Material::ReSetParameter(const std::string &name) {
-	m_Overrides.erase(name);
-	m_IsDirty = true;
-}
-
-void Material::ResetAllProperties() {
-	m_Overrides.clear();
-	m_IsDirty = true;
-}
-
-// Template / render state
-
-void Material::SetTemplate(const Ref<MaterialTemplate> &tmpl) {
-	m_Template = tmpl;
-	m_RenderState = tmpl->renderState;
-	if (tmpl->shader) {
-		m_Template->shaderType = tmpl->shader->GetShaderType();
+	for (auto &tb : m_PendingTextures) {
+		m_Set->SetTexture(tb.binding, *tb.tex);
 	}
-	m_IsDirty = true;
+	m_PendingTextures.clear();
+
+	m_Set->Flush();
 }
 
-Ref<MaterialTemplate> Material::GetTemplate() const {
-	return m_Template;
-}
-void Material::SetRenderState(const RenderState &state) {
-	m_RenderState = state;
-	MarkPipelineDirty();
-}
-const RenderState &Material::GetRenderState() const {
-	return m_RenderState;
-}
-
-// Dirty flags
-
-bool Material::IsDirty() const {
-	return m_IsDirty;
-}
-bool Material::IsPipelineDirty() const {
-	return m_PipelineDirty;
-}
-bool Material::IsDescriptorDirty() const {
-	return m_DescriptorDirty;
-}
-
-void Material::MarkClean() {
-	m_IsDirty = m_PipelineDirty = m_DescriptorDirty = false;
-}
-void Material::MarkDirty() {
-	m_IsDirty = true;
-}
-void Material::MarkPipelineDirty() {
-	m_IsDirty = true;
-	m_PipelineDirty = true;
-}
-void Material::MarkDescriptorDirty() {
-	m_IsDirty = true;
-	m_DescriptorDirty = true;
-}
-void Material::MarkPipelineClean() {
-	m_PipelineDirty = false;
-}
-void Material::MarkDescriptorClean() {
-	m_DescriptorDirty = false;
-	if (!m_PipelineDirty) {
-		m_IsDirty = false;
+void Material::Bind(GFX::GfxCommandList &cmd, uint32 setIndex) {
+	cmd.BindPipeline(*m_Pipeline);
+	if (m_Set) {
+		cmd.BindDescriptorSet(setIndex, *m_Set);
 	}
 }
 
-//  Descriptor sets / pipeline
-
-VkDescriptorSet Material::GetDescriptorSet(const uint32 &frameIndex) const {
-	return m_DescriptorSets[frameIndex];
-}
-void Material::SetDescriptorSet(VkDescriptorSet set, const uint32 &frameIndex) {
-	m_DescriptorSets[frameIndex] = set;
-}
-VkPipeline Material::GetPipeline() const {
-	return m_Pipeline;
-}
-void Material::SetPipeline(VkPipeline pipeline) {
-	m_Pipeline = pipeline;
-}
-
-std::unordered_map<std::string, MaterialParameter> Material::GetAllProperties() const {
-	std::unordered_map<std::string, MaterialParameter> props;
-	for (const auto &[n, prop] : m_Template->properties) {
-		props.emplace(n, prop);
-	}
-	for (const auto &[n, prop] : m_Overrides) {
-		if (auto iterator = props.find(n); iterator != props.end()) {
-			iterator->second.m_Value = prop.m_Value;
-		}
-	}
-	return props;
-}
-
-} // namespace Aquila::Graphics::Material
+} // namespace Aquila::Graphics

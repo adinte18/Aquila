@@ -1,8 +1,8 @@
 #ifndef AQUILA_RENDER_PIPELINE_SETTINGS_H
 #define AQUILA_RENDER_PIPELINE_SETTINGS_H
 
-#include "Aquila/Core/Defines.h"
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Math/MathTypes.h"
 
 namespace Aquila::Graphics::Defaults {
 
