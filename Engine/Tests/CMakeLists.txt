@@ -1,5 +1,6 @@
 add_subdirectory(Platform)
 add_subdirectory(Foundation)
+add_subdirectory(RHI)
 add_subdirectory(Application)
 
 set(TEST_COMMANDS "")
