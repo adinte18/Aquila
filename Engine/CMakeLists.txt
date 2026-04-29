@@ -15,7 +15,6 @@ find_library(SLANG_LIBRARY
 )
 message(STATUS "Slang library: ${SLANG_LIBRARY}")
 
-
 set(GLM_INCLUDE_DIRS ${VENDOR_DIR}/glm)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
@@ -38,12 +37,30 @@ add_subdirectory(${VENDOR_DIR}/assimp)
 
 add_subdirectory(${VENDOR_DIR}/VulkanMemoryAllocator)
 
+add_compile_definitions(AQUILA_SHADERS_DIR="${ENGINE_ROOT_DIR}/Shaders/")
+
 add_subdirectory(Source/Aquila/Foundation)
 add_subdirectory(Source/Aquila/Platform)
 add_subdirectory(Source/Aquila/Application)
 add_subdirectory(Source/Aquila/RHI)
 add_subdirectory(Source/Aquila/GFX)
 add_subdirectory(Source/Aquila/Graphics)
+add_subdirectory(Source/Aquila/Scene)
+add_subdirectory(Source/Aquila/Rendering)
 
 enable_testing()
 add_subdirectory(Tests)
+
+add_executable(AquilaEngine
+    ${ENGINE_ROOT_DIR}/main.cpp
+)
+target_precompile_headers(AquilaEngine REUSE_FROM Application)
+target_link_libraries(AquilaEngine PRIVATE
+    Application
+    GFX
+    Graphics
+    Scene
+    Rendering
+    glfw
+    Vulkan::Headers
+)
