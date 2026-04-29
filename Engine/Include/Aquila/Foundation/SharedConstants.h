@@ -2,8 +2,12 @@
 #define AQUILA_SHARED_CONSTANTS_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include <string>
 
 namespace Aquila::SharedConstants {
+
+inline const std::string kShadersDir = AQUILA_SHADERS_DIR;
+
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -25,6 +29,10 @@ constexpr int MAX_SCENE_OBJECTS = 5000;
 
 constexpr int MAX_KEY_STATES = 512;
 constexpr int MAX_MOUSE_STATES = 8;
+
+constexpr uint32 MAX_QUADS = 10000;
+constexpr uint32 VERTS_PER_QUAD = 4;
+constexpr uint32 INDICES_PER_QUAD = 6;
 
 }; // namespace Aquila::SharedConstants
 

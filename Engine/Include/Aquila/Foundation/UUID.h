@@ -1,3 +1,4 @@
+#pragma once
 #include <random>
 namespace Aquila::Foundation {
 struct UUID {
@@ -86,3 +87,5 @@ template <> struct hash<Aquila::Foundation::UUID> {
 	}
 };
 } // namespace std
+
+namespace Utils = Aquila::Foundation;

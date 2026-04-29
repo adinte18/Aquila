@@ -11,6 +11,14 @@
 	ClassName(ClassName &&) = delete; \
 	ClassName &operator=(ClassName &&) = delete
 
+#define AQUILA_DEFAULT_MOVE_CONSTRUCTOR(ClassName) \
+	ClassName(ClassName &&) = default;             \
+	ClassName &operator=(ClassName &&) = default
+
+#define AQUILA_DEFAULT_COPY_CONSTRUCTOR(ClassName) \
+	ClassName(ClassName &) = default;              \
+	ClassName &operator=(ClassName &) = default
+
 // NOTE (Alex) :
 // Note to self, FORCE_INLINE should be reserved for functions that are small, hot,
 // and called frequently in tight loops.

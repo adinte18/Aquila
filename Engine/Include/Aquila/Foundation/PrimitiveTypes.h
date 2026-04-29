@@ -2,6 +2,7 @@
 #define AQUILA_TYPES_H
 
 #include "Aquila/Foundation/Defines.h"
+#include "Aquila/Foundation/Math/MathTypes.h"
 
 using uint8 = std::uint8_t;
 using uint16 = std::uint16_t;
@@ -55,15 +56,15 @@ enum class OpenMode : uint8 {
 	Create = BIT(4),   // create if not exists
 };
 
-inline OpenMode operator|(OpenMode a, OpenMode b) {
+AQUILA_FORCE_INLINE OpenMode operator|(OpenMode a, OpenMode b) {
 	return static_cast<OpenMode>(static_cast<uint8>(a) | static_cast<uint8>(b));
 }
 
-inline OpenMode operator&(OpenMode a, OpenMode b) {
+AQUILA_FORCE_INLINE OpenMode operator&(OpenMode a, OpenMode b) {
 	return static_cast<OpenMode>(static_cast<uint8>(a) & static_cast<uint8>(b));
 }
 
-inline bool HasFlag(OpenMode mode, OpenMode flag) {
+AQUILA_FORCE_INLINE bool HasFlag(OpenMode mode, OpenMode flag) {
 	return (static_cast<uint8>(mode) & static_cast<uint8>(flag)) != 0;
 }
 
