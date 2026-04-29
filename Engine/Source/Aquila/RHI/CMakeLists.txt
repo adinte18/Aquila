@@ -33,10 +33,19 @@ target_link_libraries(${MODULE_NAME}
     GPUOpen::VulkanMemoryAllocator
     ${SLANG_LIBRARY}
 )
+
+# Treat VMA headers as system headers so Clang suppresses their warnings
+# (VMA uses _Nullable/_Nonnull which are Clang extensions not valid on non-Apple targets).
+get_target_property(_VMA_INCLUDES GPUOpen::VulkanMemoryAllocator INTERFACE_INCLUDE_DIRECTORIES)
+if(_VMA_INCLUDES)
+    target_include_directories(${MODULE_NAME} SYSTEM PUBLIC ${_VMA_INCLUDES})
+endif()
+
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${MODULE_NAME} PRIVATE
         -Wall -Wextra -Wpedantic
         -Wno-unused-parameter
+        -Wno-nullability-extension   # VMA uses _Nullable/_Nonnull (Apple Clang extension)
         -fcolor-diagnostics
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer -fno-inline>
         $<$<CONFIG:Release>:-O3>
