@@ -1,26 +1,18 @@
 #pragma once
-#include "Aquila/Graphics/Material/MaterialSerializer.h"
+#include "Aquila/Graphics/Material/Material.h"
+
 namespace Aquila::SceneManagement::Components {
+
 struct MaterialComponent {
-	std::string materialAssetPath;				// Path to .aqmat file
-	Ref<Graphics::Material::Material> material; // Runtime material instance
+	Ref<Graphics::Material> material;
+	std::string materialAssetPath;
 
 	MaterialComponent() = default;
-
-	MaterialComponent(const std::string &assetPath) : materialAssetPath(assetPath), material(nullptr) {}
-
-	MaterialComponent(const Ref<Graphics::Material::Material> &mat) : material(mat) {
-		// Optionally set path if material was loaded from file
-	}
-
-	Ref<Graphics::Material::Material> GetMaterial() const { return material; }
-
-	void SetMaterial(Ref<Graphics::Material::Material> mat) { material = mat; }
+	explicit MaterialComponent(Ref<Graphics::Material> mat) : material(std::move(mat)) {}
 
 	void SetMaterialAsset(const std::string &path) { materialAssetPath = path; }
-
 	const std::string &GetMaterialAssetPath() const { return materialAssetPath; }
-
 	bool HasMaterialAsset() const { return !materialAssetPath.empty(); }
 };
+
 } // namespace Aquila::SceneManagement::Components

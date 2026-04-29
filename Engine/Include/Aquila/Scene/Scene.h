@@ -3,7 +3,9 @@
 
 #include "entt.h"
 #include "json.hpp"
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/Defines.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/UUID.h"
 #include "Components/CameraComponent.h"
 
 namespace Aquila::Assets {
@@ -49,7 +51,7 @@ class Scene final {
 	Unique<EntityManager> m_EntityManager;
 
   private:
-	Utils::UUID m_SceneID; // scene handle
+	Foundation::UUID m_SceneID; // scene handle
 	entt::entity m_ActiveCameraEntity = entt::null;
 	Assets::AssetManager *m_AssetManager = nullptr;
 

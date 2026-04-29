@@ -1,7 +1,8 @@
 #ifndef TRANSFORM_COMPONENT_H
 #define TRANSFORM_COMPONENT_H
 
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
 namespace Aquila::SceneManagement::Components {
 struct TransformComponent {
   public:

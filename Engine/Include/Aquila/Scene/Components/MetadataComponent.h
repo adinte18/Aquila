@@ -1,7 +1,9 @@
 #ifndef METADATA_COMPONENT_H
 #define METADATA_COMPONENT_H
 
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/UUID.h"
 namespace Aquila::SceneManagement::Components {
 struct MetadataComponent {
   public:

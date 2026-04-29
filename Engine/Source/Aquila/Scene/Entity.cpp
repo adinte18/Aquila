@@ -1,5 +1,5 @@
 #include "Aquila/Scene/Entity.h"
-#include "Aquila/Core/Defines.h"
+#include "Aquila/Foundation/Defines.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 
 namespace Aquila::SceneManagement {

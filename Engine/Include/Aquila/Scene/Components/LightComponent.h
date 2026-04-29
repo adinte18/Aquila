@@ -1,7 +1,8 @@
 #ifndef LIGHT_COMPONENT_H
 #define LIGHT_COMPONENT_H
 
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::SceneManagement::Components {
 

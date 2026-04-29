@@ -1,7 +1,8 @@
 #ifndef AQUILA_ENTITY_H
 #define AQUILA_ENTITY_H
 
-#include "Aquila/Core/AquilaCore.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
 #include "Aquila/Scene/Scene.h"
 
 namespace Aquila::SceneManagement {

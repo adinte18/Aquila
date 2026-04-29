@@ -1,8 +1,9 @@
 #ifndef SKYLIGHT_COMPONENT_H
 #define SKYLIGHT_COMPONENT_H
 
-#include "Aquila/Core/AquilaCore.h"
-#include "Aquila/Graphics/Resources/Texture2D.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/GFX/GfxTexture.h"
 
 namespace Aquila::SceneManagement::Components {
 
@@ -17,7 +18,7 @@ struct SHCoefficients {
 };
 
 struct SkyLightComponent {
-	Ref<Graphics::Resources::Texture2D> m_HDRTexture;
+	Ref<GFX::GfxTexture> m_HDRTexture;
 	SHCoefficients m_Irradiance;
 
 	f32 m_Intensity = 1.0f;
@@ -35,7 +36,7 @@ struct SkyLightComponent {
 	[[nodiscard]] bool IsDirty() const noexcept { return m_IsDirty; }
 	[[nodiscard]] bool ShouldRenderSkybox() const noexcept { return m_RenderSkybox && m_IsActive; }
 
-	[[nodiscard]] const Ref<Graphics::Resources::Texture2D> &GetHDRTexture() const noexcept { return m_HDRTexture; }
+	[[nodiscard]] const Ref<GFX::GfxTexture> &GetHDRTexture() const noexcept { return m_HDRTexture; }
 	[[nodiscard]] const SHCoefficients &GetIrradiance() const noexcept { return m_Irradiance; }
 
 	void SetActive(bool active) noexcept { m_IsActive = active; }
@@ -44,7 +45,7 @@ struct SkyLightComponent {
 	void SetTint(const vec3 &tint) noexcept { m_Tint = tint; }
 	void SetRenderSkybox(bool render) noexcept { m_RenderSkybox = render; }
 
-	void SetHDRTexture(const Ref<Graphics::Resources::Texture2D> &texture) {
+	void SetHDRTexture(const Ref<GFX::GfxTexture> &texture) {
 		m_HDRTexture = texture;
 		m_IsDirty = true;
 	}
@@ -55,7 +56,7 @@ struct SkyLightComponent {
 	}
 
 	SkyLightComponent() = default;
-	explicit SkyLightComponent(const Ref<Graphics::Resources::Texture2D> &texture, f32 intensity = 1.0f, int lod = 0.0f)
+	explicit SkyLightComponent(const Ref<GFX::GfxTexture> &texture, f32 intensity = 1.0f, int lod = 0.0f)
 		: m_HDRTexture(texture), m_Intensity(intensity), m_SkyboxLOD(lod) {}
 };
 

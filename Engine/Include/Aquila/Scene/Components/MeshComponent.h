@@ -59,14 +59,14 @@ struct MeshComponent {
 	 * These are INSTANCES - changes only affect this mesh.
 	 * The underlying asset is shared and loaded through AssetManager.
 	 */
-	std::unordered_map<uint32, Ref<Graphics::Material::Material>> materials;
+	std::unordered_map<uint32, Ref<Graphics::Material>> materials;
 
 	/**
 	 * @brief Set material for entire mesh or specific submesh
 	 * @param material Material instance to use
 	 * @param submeshIndex Submesh index (default 0 for whole mesh)
 	 */
-	void SetMaterial(const Ref<Graphics::Material::Material> &material, uint32 submeshIndex = 0) {
+	void SetMaterial(const Ref<Graphics::Material> &material, uint32 submeshIndex = 0) {
 		if (material) {
 			materials[submeshIndex] = material;
 		}
@@ -91,7 +91,7 @@ struct MeshComponent {
 	 * @param submeshIndex Submesh index
 	 * @return Material instance or nullptr if not set
 	 */
-	Ref<Graphics::Material::Material> GetMaterial(uint32 submeshIndex = 0) const {
+	Ref<Graphics::Material> GetMaterial(uint32 submeshIndex = 0) const {
 		auto it = materials.find(submeshIndex);
 		return it != materials.end() ? it->second : nullptr;
 	}
@@ -160,13 +160,13 @@ struct MeshComponent {
 	 * @brief Get the primary material (submesh 0)
 	 * Convenience method for single-material meshes
 	 */
-	Ref<Graphics::Material::Material> GetPrimaryMaterial() const { return GetMaterial(0); }
+	Ref<Graphics::Material> GetPrimaryMaterial() const { return GetMaterial(0); }
 
 	/**
 	 * @brief Set the primary material (submesh 0)
 	 * Convenience method for single-material meshes
 	 */
-	void SetPrimaryMaterial(const Ref<Graphics::Material::Material> &material) { SetMaterial(material, 0); }
+	void SetPrimaryMaterial(const Ref<Graphics::Material> &material) { SetMaterial(material, 0); }
 
 	/**
 	 * @brief Get material for rendering with fallback chain
@@ -174,8 +174,8 @@ struct MeshComponent {
 	 * @param fallbackMaterial Fallback if no material is set
 	 * @return Material to use for rendering
 	 */
-	Ref<Graphics::Material::Material>
-	GetRenderMaterial(uint32_t submeshIndex = 0, Ref<Graphics::Material::Material> fallbackMaterial = nullptr) const {
+	Ref<Graphics::Material> GetRenderMaterial(uint32_t submeshIndex = 0,
+											  Ref<Graphics::Material> fallbackMaterial = nullptr) const {
 		if (HasMaterial(submeshIndex)) {
 			return GetMaterial(submeshIndex);
 		}

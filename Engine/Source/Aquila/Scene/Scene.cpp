@@ -1,8 +1,8 @@
 #include "Aquila/Scene/Scene.h"
 
 #include "Aquila/Assets/AssetManager.h"
-#include "Aquila/Core/AquilaCore.h"
-#include "Aquila/Events/SceneEvent.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Macros.h"
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
@@ -85,12 +85,14 @@ void Scene::UpdateTransformHierarchy() {
 }
 
 void Scene::UpdateTransformRecursive(Entity entity, const glm::mat4 &parentWorld) {
-	if (!entity.IsValid())
+	if (!entity.IsValid()) {
 		return;
+	}
 
 	auto *transform = entity.TryGetComponent<Components::TransformComponent>();
-	if (!transform)
+	if (!transform) {
 		return;
+	}
 
 	// Update this entity's world matrix
 	transform->UpdateWorldMatrix(parentWorld);
@@ -248,16 +250,16 @@ bool Scene::Serialize(const std::string &filepath) {
 		}
 
 		// Serialize SkyLightComponent
-		if (entity.HasComponent<Components::SkyLightComponent>()) {
-			auto &skyLight = entity.GetComponent<Components::SkyLightComponent>();
-			entityJson["SkyLightComponent"] = {
-				{ "Active", skyLight.IsActive() },
-				{ "Intensity", skyLight.GetIntensity() },
-				{ "Tint", { skyLight.GetTint().r, skyLight.GetTint().g, skyLight.GetTint().b } },
-				{ "RenderSkybox", skyLight.ShouldRenderSkybox() },
-				{ "HDRTexturePath", skyLight.GetHDRTexture() ? skyLight.GetHDRTexture()->GetPath() : "" }
-			};
-		}
+		// if (entity.HasComponent<Components::SkyLightComponent>()) {
+		// 	auto &skyLight = entity.GetComponent<Components::SkyLightComponent>();
+		// 	entityJson["SkyLightComponent"] = {
+		// 		{ "Active", skyLight.IsActive() },
+		// 		{ "Intensity", skyLight.GetIntensity() },
+		// 		{ "Tint", { skyLight.GetTint().r, skyLight.GetTint().g, skyLight.GetTint().b } },
+		// 		{ "RenderSkybox", skyLight.ShouldRenderSkybox() },
+		// 		{ "HDRTexturePath", skyLight.GetHDRTexture() ? skyLight.GetHDRTexture()->GetRHI(). : "" }
+		// 	};
+		// }
 
 		// Serialize MaterialComponent
 		if (entity.HasComponent<Components::MaterialComponent>()) {
@@ -273,7 +275,8 @@ bool Scene::Serialize(const std::string &filepath) {
 		sceneJson["Entities"][std::to_string(static_cast<int>(entityHandle))] = entityJson;
 	}
 
-	const auto vfsFile = Aquila::Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filepath, "w");
+	const auto vfsFile =
+		Aquila::Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filepath, AccessMode::Write, OpenMode::Binary);
 	if (!vfsFile->IsValid()) {
 		return false;
 	}
@@ -287,7 +290,8 @@ bool Scene::Serialize(const std::string &filepath) {
 bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &assetManager) {
 	AQUILA_ASSERT(m_EntityManager != nullptr, "EntityManager is nullptr");
 
-	auto vfsFile = Aquila::Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filepath, "r");
+	auto vfsFile =
+		Aquila::Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filepath, AccessMode::Read, OpenMode::Binary);
 	if (!vfsFile->IsValid()) {
 		return false;
 	}
@@ -304,8 +308,9 @@ bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &asset
 	auto &registry = GetRegistry();
 	registry.clear();
 
-	if (!sceneJson.contains("Entities"))
+	if (!sceneJson.contains("Entities")) {
 		return false;
+	}
 
 	const auto &entitiesJson = sceneJson["Entities"];
 
@@ -381,9 +386,9 @@ bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &asset
 			if (std::string meshPath = meshJson.value("Path", ""); !meshPath.empty()) {
 				if (meshPath.starts_with("procedural://")) {
 					std::string type = meshPath.substr(13);
-					meshComp.data = assetManager.CreateProceduralMesh(type);
+					// meshComp.data = assetManager.CreateProceduralMesh(type);
 				} else {
-					meshComp.data = assetManager.LoadMesh(meshPath);
+					// meshComp.data = assetManager.LoadMesh(meshPath);
 				}
 			}
 
@@ -395,28 +400,36 @@ bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &asset
 			const auto &lightJson = entityData["LightComponent"];
 			Components::LightComponent light;
 
-			if (lightJson.contains("Type"))
+			if (lightJson.contains("Type")) {
 				light.m_Type = static_cast<Components::LightComponent::Type>(lightJson["Type"].get<int>());
+			}
 
-			if (lightJson.contains("Color"))
+			if (lightJson.contains("Color")) {
 				light.m_Color = vec3(lightJson["Color"][0].get<f32>(), lightJson["Color"][1].get<f32>(),
 									 lightJson["Color"][2].get<f32>());
+			}
 
-			if (lightJson.contains("Intensity"))
+			if (lightJson.contains("Intensity")) {
 				light.m_Intensity = lightJson["Intensity"].get<f32>();
-			if (lightJson.contains("Range"))
+			}
+			if (lightJson.contains("Range")) {
 				light.m_Range = lightJson["Range"].get<f32>();
-			if (lightJson.contains("InnerConeAngle"))
+			}
+			if (lightJson.contains("InnerConeAngle")) {
 				light.m_InnerConeAngle = lightJson["InnerConeAngle"].get<f32>();
-			if (lightJson.contains("OuterConeAngle"))
+			}
+			if (lightJson.contains("OuterConeAngle")) {
 				light.m_OuterConeAngle = lightJson["OuterConeAngle"].get<f32>();
+			}
 
-			if (lightJson.contains("Direction"))
+			if (lightJson.contains("Direction")) {
 				light.m_Direction = vec3(lightJson["Direction"][0].get<f32>(), lightJson["Direction"][1].get<f32>(),
 										 lightJson["Direction"][2].get<f32>());
+			}
 
-			if (lightJson.contains("IsActive"))
+			if (lightJson.contains("IsActive")) {
 				light.m_IsActive = lightJson["IsActive"].get<bool>();
+			}
 
 			// Deserialize shadow settings for directional lights
 			if (light.m_Type == Components::LightComponent::Type::Directional && lightJson.contains("ShadowSettings")) {
@@ -469,9 +482,9 @@ bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &asset
 			skyLight.SetRenderSkybox(skyLightJson.value("RenderSkybox", true));
 
 			if (std::string hdrPath = skyLightJson.value("HDRTexturePath", ""); !hdrPath.empty()) {
-				if (auto hdrTexture = assetManager.LoadHDRTexture(hdrPath)) {
-					skyLight.SetHDRTexture(hdrTexture);
-				}
+				// if (auto hdrTexture = assetManager.LoadHDRTexture(hdrPath)) {
+				// 	skyLight.SetHDRTexture(hdrTexture);
+				// }
 			}
 		}
 
