@@ -39,9 +39,8 @@ void PropertiesPanel::OnDetach() {
 
 void PropertiesPanel::OnUpdate(f32 deltaTime) {}
 
-// ─────────────────────────────────────────────────────────────────────────────
 // HELPERS: extract filename / stem from a virtual path
-// ─────────────────────────────────────────────────────────────────────────────
+
 static std::string ExtractFilename(const std::string &path) {
 	size_t slash = path.find_last_of("/\\");
 	return (slash != std::string::npos) ? path.substr(slash + 1) : path;
@@ -53,9 +52,8 @@ static std::string ExtractStem(const std::string &path) {
 	return (dot != std::string::npos) ? name.substr(0, dot) : name;
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // MAIN RENDER LOOP
-// ─────────────────────────────────────────────────────────────────────────────
+
 void PropertiesPanel::OnImGuiRender() {
 	if (auto *scene = m_App.GetAssetManager().GetActiveScene(); !scene) {
 		return;
@@ -66,7 +64,6 @@ void PropertiesPanel::OnImGuiRender() {
 				 ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse);
 	ImGui::PopStyleVar();
 
-	// ── Priority: Entity > Asset > Empty ──
 	bool hasEntity = !m_SelectedEntity.IsNull() && m_SelectedEntity.IsValid();
 	bool hasAsset = !m_SelectedAssetPath.empty();
 
@@ -113,7 +110,6 @@ void PropertiesPanel::OnImGuiRender() {
 		return;
 	}
 
-	// ── Otherwise render the normal entity inspector ──
 	ImGui::BeginChild("PropertiesScroll", ImVec2(0, 0), ImGuiChildFlags_None);
 	ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 3));
 	ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 4));
@@ -183,7 +179,6 @@ void PropertiesPanel::DrawAsset_Texture() {
 	std::string stem = ExtractStem(m_SelectedAssetPath);
 	bool isHDR = (m_SelectedAssetExtension == ".hdr");
 
-	// ─── Header ───
 	const char *icon = isHDR ? ICON_LC_SUN : ICON_LC_IMAGE;
 	DrawComponentHeader(icon, isHDR ? "HDR TEXTURE" : "TEXTURE", "TextureAssetMenu");
 
@@ -192,7 +187,6 @@ void PropertiesPanel::DrawAsset_Texture() {
 	ImGui::Indent(8);
 	ImGui::Spacing();
 
-	// ─── Info table ───
 	if (ImGui::BeginTable("TextureInfo", 2, ImGuiTableFlags_SizingStretchProp)) {
 		ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
 		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
@@ -309,16 +303,17 @@ void PropertiesPanel::DrawAsset_Mesh() {
 		ImGui::AlignTextToFramePadding();
 		ImGui::Text("Format");
 		ImGui::TableNextColumn();
-		if (m_SelectedAssetExtension == ".gltf")
+		if (m_SelectedAssetExtension == ".gltf") {
 			ImGui::Text("glTF (JSON)");
-		else if (m_SelectedAssetExtension == ".glb")
+		} else if (m_SelectedAssetExtension == ".glb") {
 			ImGui::Text("glTF (Binary)");
-		else if (m_SelectedAssetExtension == ".obj")
+		} else if (m_SelectedAssetExtension == ".obj") {
 			ImGui::Text("Wavefront OBJ");
-		else if (m_SelectedAssetExtension == ".fbx")
+		} else if (m_SelectedAssetExtension == ".fbx") {
 			ImGui::Text("Autodesk FBX");
-		else
+		} else {
 			ImGui::Text("Unknown");
+		}
 
 		auto &assetManager = m_App.GetAssetManager();
 		auto mesh = assetManager.TryGetMesh(m_SelectedAssetPath);
@@ -360,9 +355,8 @@ void PropertiesPanel::DrawAsset_Mesh() {
 	ImGui::PopStyleVar(2);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
 // MATERIAL ASSET INSPECTOR  (Godot-style: create material, then bind shader)
-// ─────────────────────────────────────────────────────────────────────────────
+
 void PropertiesPanel::DrawAsset_Material() {
 	auto &assetManager = m_App.GetAssetManager();
 	auto &matSystem = m_App.GetMaterialSystem();
@@ -398,7 +392,6 @@ void PropertiesPanel::DrawAsset_Material() {
 	ImGui::Indent(8);
 	ImGui::Spacing();
 
-	// ─── Basic info ───
 	if (ImGui::BeginTable("MatBasicInfo", 2, ImGuiTableFlags_SizingStretchProp)) {
 		ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
 		ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
@@ -438,8 +431,9 @@ void PropertiesPanel::DrawAsset_Material() {
 		hasShader = true;
 		currentShaderName = material->GetTemplate()->shader->m_Name;
 		currentShaderPath = material->GetShaderAssetPath();
-		if (currentShaderPath.empty())
+		if (currentShaderPath.empty()) {
 			currentShaderPath = currentShaderName;
+		}
 	}
 
 	if (ImGui::BeginTable("ShaderSlot", 2, ImGuiTableFlags_SizingStretchProp)) {
@@ -495,14 +489,18 @@ void PropertiesPanel::DrawAsset_Material() {
 			ImGui::TableNextColumn();
 			std::string stageStr;
 			for (auto &stage : shader->m_Stages) {
-				if (!stageStr.empty())
+				if (!stageStr.empty()) {
 					stageStr += " | ";
-				if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT)
+				}
+				if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
 					stageStr += "Vertex";
-				if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+				}
+				if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
 					stageStr += "Fragment";
-				if (stage.stage == VK_SHADER_STAGE_COMPUTE_BIT)
+				}
+				if (stage.stage == VK_SHADER_STAGE_COMPUTE_BIT) {
 					stageStr += "Compute";
+				}
 			}
 			ImGui::TextDisabled("%s", stageStr.c_str());
 
@@ -610,7 +608,6 @@ void PropertiesPanel::DrawAsset_Material() {
 		ImGui::Separator();
 		ImGui::Spacing();
 
-		// ─── Render state ───
 		ImGui::TextColored(ImVec4(0.7f, 0.7f, 0.7f, 1.0f), "Render State");
 		ImGui::Spacing();
 
@@ -656,24 +653,27 @@ void PropertiesPanel::DrawAsset_Material() {
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Depth Test");
 			ImGui::TableNextColumn();
-			if (ImGui::Checkbox("##DepthTest", &renderState.m_DepthTest))
+			if (ImGui::Checkbox("##DepthTest", &renderState.m_DepthTest)) {
 				stateChanged = true;
+			}
 
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Depth Write");
 			ImGui::TableNextColumn();
-			if (ImGui::Checkbox("##DepthWrite", &renderState.m_DepthWrite))
+			if (ImGui::Checkbox("##DepthWrite", &renderState.m_DepthWrite)) {
 				stateChanged = true;
+			}
 
 			ImGui::TableNextRow();
 			ImGui::TableNextColumn();
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Wireframe");
 			ImGui::TableNextColumn();
-			if (ImGui::Checkbox("##Wireframe", &renderState.m_Wireframe))
+			if (ImGui::Checkbox("##Wireframe", &renderState.m_Wireframe)) {
 				stateChanged = true;
+			}
 
 			if (renderState.m_Wireframe) {
 				ImGui::TableNextRow();
@@ -682,8 +682,9 @@ void PropertiesPanel::DrawAsset_Material() {
 				ImGui::Text("Line Width");
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
-				if (ImGui::SliderFloat("##LineWidth", &renderState.m_LineWidth, 1.0f, 10.0f))
+				if (ImGui::SliderFloat("##LineWidth", &renderState.m_LineWidth, 1.0f, 10.0f)) {
 					stateChanged = true;
+				}
 			}
 
 			ImGui::EndTable();
@@ -706,8 +707,9 @@ void PropertiesPanel::DrawAsset_Shader() {
 	std::string slangPath = m_SelectedAssetPath;
 
 	auto shader = assetManager.TryGetShader(slangPath);
-	if (!shader)
+	if (!shader) {
 		shader = assetManager.LoadShader(slangPath);
+	}
 
 	DrawComponentHeader(ICON_LC_CODE, "SHADER", "ShaderAssetMenu");
 
@@ -744,14 +746,18 @@ void PropertiesPanel::DrawAsset_Shader() {
 			{
 				std::string stageStr;
 				for (const auto &stage : shader->m_Stages) {
-					if (!stageStr.empty())
+					if (!stageStr.empty()) {
 						stageStr += " | ";
-					if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT)
+					}
+					if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
 						stageStr += "Vertex";
-					if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT)
+					}
+					if (stage.stage == VK_SHADER_STAGE_FRAGMENT_BIT) {
 						stageStr += "Fragment";
-					if (stage.stage == VK_SHADER_STAGE_COMPUTE_BIT)
+					}
+					if (stage.stage == VK_SHADER_STAGE_COMPUTE_BIT) {
 						stageStr += "Compute";
+					}
 				}
 				ImGui::Text("%s", stageStr.c_str());
 			}
@@ -775,7 +781,6 @@ void PropertiesPanel::DrawAsset_Shader() {
 		ImGui::EndTable();
 	}
 
-	// ─── Reflected bindings — read from ShaderProgram, no manual SPIRV-Reflect ───
 	if (shader && !shader->GetReflectedBindings().empty()) {
 		ImGui::Spacing();
 		ImGui::Separator();
@@ -822,7 +827,6 @@ void PropertiesPanel::DrawAsset_Shader() {
 		}
 	}
 
-	// ─── Quick-create material button ───
 	ImGui::Spacing();
 	ImGui::Separator();
 	ImGui::Spacing();
@@ -856,8 +860,9 @@ void PropertiesPanel::DrawAsset_Shader() {
 			ImGui::Spacing();
 
 			bool canCreate = strlen(m_CreateMatNameBuffer) > 0;
-			if (!canCreate)
+			if (!canCreate) {
 				ImGui::BeginDisabled();
+			}
 
 			if (ImGui::Button("Create", ImVec2(120, 0))) {
 				auto &matLib = m_App.GetMaterialSystem().GetLibrary();
@@ -869,28 +874,32 @@ void PropertiesPanel::DrawAsset_Shader() {
 				std::string savePath = saveDir + matName + ".aqmat";
 
 				auto vfs = Aquila::Platform::Filesystem::VirtualFileSystem::Get();
-				for (int counter = 1; vfs->Exists(savePath) && counter < 1000; ++counter)
+				for (int counter = 1; vfs->Exists(savePath) && counter < 1000; ++counter) {
 					savePath = saveDir + matName + "_" + std::to_string(counter) + ".aqmat";
+				}
 
 				if (shader) {
 					auto mat = matLib.CreateMaterialFromShader(matName, shader);
 					if (mat) {
 						mat->SetShaderAsset(m_CreateMatShaderBasePath);
-						if (assetManager.SaveMaterialAsset(mat, savePath))
+						if (assetManager.SaveMaterialAsset(mat, savePath)) {
 							AQUILA_LOG_INFO("Created material '{}' at '{}'", matName, savePath);
-						else
+						} else {
 							AQUILA_LOG_ERROR("Failed to save material to: {}", savePath);
+						}
 					}
 				}
 				ImGui::CloseCurrentPopup();
 			}
 
-			if (!canCreate)
+			if (!canCreate) {
 				ImGui::EndDisabled();
+			}
 
 			ImGui::SameLine();
-			if (ImGui::Button("Cancel", ImVec2(120, 0)))
+			if (ImGui::Button("Cancel", ImVec2(120, 0))) {
 				ImGui::CloseCurrentPopup();
+			}
 
 			ImGui::EndPopup();
 		}
@@ -1446,8 +1455,9 @@ void PropertiesPanel::DrawComponent_Mesh(Aquila::SceneManagement::Entity entity)
 		ImGui::Spacing();
 
 		uint32 materialSlotCount = component.GetMaterialSlotCount();
-		if (materialSlotCount == 0)
+		if (materialSlotCount == 0) {
 			materialSlotCount = 1;
+		}
 
 		for (uint32 i = 0; i < materialSlotCount; ++i) {
 			ImGui::PushID(i);
@@ -1596,8 +1606,9 @@ void PropertiesPanel::DrawInlineMaterialProperties(Ref<Aquila::Graphics::Materia
 			ImGui::TableSetupColumn("Value", ImGuiTableColumnFlags_WidthStretch);
 
 			for (auto &[name, prop] : properties) {
-				if (!prop.m_IsEditable || prop.m_Name.empty())
+				if (!prop.m_IsEditable || prop.m_Name.empty()) {
 					continue;
+				}
 
 				ImGui::PushID(name.c_str());
 				ImGui::TableNextRow();
@@ -1792,8 +1803,9 @@ void PropertiesPanel::DrawComponent_Camera(Aquila::SceneManagement::Entity entit
 				ImGui::DragFloat("##AspectRatio", &component.aspectRatio, 0.01f, 0.1f, 10.0f, "%.3f");
 				ImGui::SameLine();
 				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 2));
-				if (ImGui::Button("16:9", ImVec2(0, 0)))
+				if (ImGui::Button("16:9", ImVec2(0, 0))) {
 					component.aspectRatio = 16.0f / 9.0f;
+				}
 				ImGui::PopStyleVar();
 
 				ImGui::EndTable();
@@ -1972,8 +1984,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::SliderFloat("##LightSize", &shadowSettings.lightSize, 0.1f, 5.0f, "%.1f");
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("Controls shadow softness. Higher = softer shadows");
+				}
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -1982,8 +1995,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::SliderFloat("##ShadowBias", &shadowSettings.shadowBias, 0.0001f, 0.005f, "%.4f");
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("Base depth bias to prevent shadow acne");
+				}
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -1992,8 +2006,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::SliderFloat("##NormalBias", &shadowSettings.normalBias, 0.0f, 5.0f, "%.2f");
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("Normal-based bias multiplier");
+				}
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -2006,8 +2021,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				if (ImGui::Combo("##PCFSamples", &currentSample, sampleCounts, 3)) {
 					shadowSettings.pcfSamples = (currentSample == 0) ? 3 : (currentSample == 1 ? 9 : 25);
 				}
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("Number of PCF samples. Higher = smoother but slower");
+				}
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -2016,8 +2032,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::SliderFloat("##CascadeLambda", &shadowSettings.cascadeSplitLambda, 0.0f, 1.0f, "%.2f");
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("0.0 = uniform splits, 1.0 = logarithmic splits");
+				}
 
 				ImGui::TableNextRow();
 				ImGui::TableNextColumn();
@@ -2026,8 +2043,9 @@ void PropertiesPanel::DrawComponent_Light(Aquila::SceneManagement::Entity entity
 				ImGui::TableNextColumn();
 				ImGui::SetNextItemWidth(-FLT_MIN);
 				ImGui::SliderInt("##BlockerSamples", &shadowSettings.blockerSearchSamples, 8, 32);
-				if (ImGui::IsItemHovered())
+				if (ImGui::IsItemHovered()) {
 					ImGui::SetTooltip("Samples for contact hardening. Higher = better quality but slower");
+				}
 
 				ImGui::EndTable();
 			}
