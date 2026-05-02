@@ -244,23 +244,26 @@ VkResult VulkanSwapchain::PresentImageRaw(const uint32 *imageIndex, VkSemaphore 
 }
 
 void VulkanSwapchain::DestroyImageResources() {
-	auto &deletionQueue = m_Device.GetDeletionQueue();
+	m_Device.Wait();
+
+	VkDevice dev = m_Device.GetDevice();
+
 	for (auto *view : m_ImageViews) {
 		if (view != VK_NULL_HANDLE) {
-			deletionQueue.QueueDeletion(view);
+			vkDestroyImageView(dev, view, nullptr);
 		}
 	}
 	m_ImageViews.clear();
 
 	for (auto *view : m_DepthImageViews) {
 		if (view != VK_NULL_HANDLE) {
-			deletionQueue.QueueDeletion(view);
+			vkDestroyImageView(dev, view, nullptr);
 		}
 	}
 	m_DepthImageViews.clear();
 
 	for (auto &alloc : m_DepthAllocations) {
-		deletionQueue.QueueDeletion(Deletion::VmaImageDeletion{ .image = alloc.image, .allocation = alloc.allocation });
+		vmaDestroyImage(m_Device.GetAllocator(), alloc.image, alloc.allocation);
 	}
 	m_DepthAllocations.clear();
 
