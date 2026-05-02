@@ -24,10 +24,12 @@
 // and called frequently in tight loops.
 // Slapping it on everything actually hurts performance by bloating instruction cache.
 #ifdef _MSC_VER
+#define AQUILA_INLINE inline
 #define AQUILA_FORCE_INLINE __forceinline
 #define AQUILA_NEVER_INLINE __declspec(noinline)
 #define AQUILA_RESTRICT __restrict
 #elif defined(__GNUC__) || defined(__clang__)
+#define AQUILA_INLINE inline
 #define AQUILA_FORCE_INLINE __attribute__((always_inline)) inline
 #define AQUILA_NEVER_INLINE __attribute__((noinline))
 #define AQUILA_RESTRICT __restrict__

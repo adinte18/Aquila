@@ -9,7 +9,6 @@ cmake-build-debug-visual-studio/
 build/
 Resources/Models/
 Resources/EnvMaps/
-Assets/
 
 # Files
 *.vcxproj

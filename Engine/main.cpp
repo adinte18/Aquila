@@ -9,7 +9,6 @@ int main(int argc, char **argv) {
 	spec.Height = 1080;
 
 	Application::Application app{ spec };
-	app.OnStart();
 	app.Run();
 	return EXIT_SUCCESS;
 }

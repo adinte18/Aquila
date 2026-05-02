@@ -8,9 +8,10 @@
 namespace Aquila::Foundation {
 template <class T> class Singleton {
   public:
-	static void Init() {
+	template <typename... Args>
+	static void Init(Args &&...args) {
 		AQUILA_ASSERT(!s_Instance, "Singleton already initialized!");
-		s_Instance = new T();
+		s_Instance = new T(std::forward<Args>(args)...);
 	}
 
 	static T *Get() {
