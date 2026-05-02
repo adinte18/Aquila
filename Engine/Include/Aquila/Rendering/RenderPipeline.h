@@ -34,19 +34,11 @@ class RenderPipeline {
 		return ref;
 	}
 
-	// Render at the current stored size.
 	void Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime);
-
-	// Render at the given size.  Auto-resizes targets and notifies renderers if
-	// width or height differ from the last call.
 	void Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime, uint32 width, uint32 height);
-
-	// Explicit resize (also called internally when Render dimensions change).
 	void Resize(uint32 width, uint32 height);
 
-	// Final colour output (RGBA16F). Blit or sample this to display the frame.
 	[[nodiscard]] GFX::GfxTexture &GetOutput() const { return *m_SceneColor; }
-
 	[[nodiscard]] uint32 GetWidth() const { return m_Width; }
 	[[nodiscard]] uint32 GetHeight() const { return m_Height; }
 
@@ -58,8 +50,8 @@ class RenderPipeline {
 	Graphics::RG::RenderGraph m_Graph;
 	std::vector<Unique<IRenderer>> m_Renderers;
 
-	Ref<GFX::GfxTexture> m_SceneColor; // RGBA16F
-	Ref<GFX::GfxTexture> m_DepthTex;   // Depth32
+	Ref<GFX::GfxTexture> m_SceneColor;
+	Ref<GFX::GfxTexture> m_DepthTex;
 
 	uint32 m_Width = 0;
 	uint32 m_Height = 0;

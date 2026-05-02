@@ -1,4 +1,4 @@
-#include "Aquila/Graphics/Core/Renderer2D.h"
+#include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
@@ -10,6 +10,7 @@ using namespace Aquila::Graphics;
 
 static constexpr const char *kFlatShader = AQUILA_SHADERS_DIR "2D/Flat2D.slang";
 static constexpr const char *kTextureShader = AQUILA_SHADERS_DIR "2D/Sprite2D.slang";
+static constexpr const char *kGUIShader = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
 
 static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *shaderPath,
 										   const std::vector<GFX::GfxDescriptorSetLayout *> &setLayouts,
@@ -18,7 +19,7 @@ static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *sha
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
 	if (!RHI::VulkanShaderCompiler::CompileFile(shaderPath, stages, err)) {
-		AQUILA_LOG_ERROR("Renderer2D shader failed [{}]: {}", shaderPath, err);
+		AQUILA_LOG_ERROR("QuadBatcher shader failed [{}]: {}", shaderPath, err);
 	}
 
 	RHI::GraphicsPipelineDesc desc{};
@@ -32,11 +33,11 @@ static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *sha
 			desc.fragmentShader = sd;
 		}
 	}
-	std::vector<RHI::IRHIDescriptorSetLayout *> temp;
 
+	std::vector<RHI::IRHIDescriptorSetLayout *> temp;
 	temp.reserve(setLayouts.size());
-	for (const auto &setLayouts : setLayouts) {
-		temp.push_back(&setLayouts->GetRHI());
+	for (const auto &layout : setLayouts) {
+		temp.push_back(&layout->GetRHI());
 	}
 
 	desc.setLayouts = temp;
@@ -56,6 +57,10 @@ static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *sha
 			{ 0, 0, RHI::TextureFormat::RGB32F, offsetof(QuadVertex, position) },
 			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, color) },
 			{ 2, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, uv) },
+			{ 3, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, size) },
+			{ 4, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, radius) },
+			{ 5, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, borderWidth) },
+			{ 6, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, borderColor) },
 		},
 	};
 
@@ -77,12 +82,12 @@ static std::vector<uint32> GenerateQuadIndices(uint32 maxQuads) {
 	return indices;
 }
 
-Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_Ctx(ctx) {
+QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 	m_VertexBuffer = ctx.CreateBuffer({
 		.size = sizeof(QuadVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD,
 		.usage = RHI::BufferUsage::VertexBuffer,
 		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "Renderer2D_VB",
+		.debugName = "QuadBatcher_VB",
 	});
 
 	auto indices = GenerateQuadIndices(SharedConstants::MAX_QUADS);
@@ -90,7 +95,7 @@ Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		.size = static_cast<uint64>(sizeof(uint32) * indices.size()),
 		.usage = RHI::BufferUsage::IndexBuffer | RHI::BufferUsage::TransferDst,
 		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "Renderer2D_IB",
+		.debugName = "QuadBatcher_IB",
 	});
 	m_IndexBuffer->Write(indices.data(), sizeof(uint32) * indices.size());
 
@@ -107,14 +112,14 @@ Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 
 	m_TextureSet = ctx.AllocateDescriptorSet(*m_TextureLayout);
 
-	// Pre-warm common formats with no depth (depth-bearing variants compiled on first Begin)
 	GetOrCreateFlatPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, RHI::TextureFormat::None);
 	GetOrCreateFlatPipeline(RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, RHI::TextureFormat::None);
+	GetOrCreateGUIPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, RHI::TextureFormat::None);
 }
 
-void Renderer2D::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
-					   const mat4 &viewProjection, RHI::TextureFormat depthFormat) {
-	AQUILA_ASSERT(!m_ActiveCmd, "Renderer2D::Begin called while already recording");
+void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
+						const mat4 &viewProjection, RHI::TextureFormat depthFormat) {
+	AQUILA_ASSERT(!m_ActiveCmd, "QuadBatcher::Begin called while already recording");
 	m_ActiveCmd = &cmd;
 	m_ActiveColorFormat = colorFormat;
 	m_ActiveSampleCount = sampleCount;
@@ -123,14 +128,14 @@ void Renderer2D::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat,
 	StartBatch();
 }
 
-void Renderer2D::End() {
-	AQUILA_ASSERT(m_ActiveCmd, "Renderer2D::End called without Begin");
+void QuadBatcher::End() {
+	AQUILA_ASSERT(m_ActiveCmd, "QuadBatcher::End called without Begin");
 	Flush();
 	m_ActiveCmd = nullptr;
 }
 
-GFX::GfxPipeline &Renderer2D::GetOrCreateFlatPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-													  RHI::TextureFormat depthFormat) {
+GFX::GfxPipeline &QuadBatcher::GetOrCreateFlatPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+													   RHI::TextureFormat depthFormat) {
 	PipelineKey key{ .colorFormat = format, .sampleCount = samples, .depthFormat = depthFormat };
 	auto it = m_FlatPipelines.find(key);
 	if (it != m_FlatPipelines.end()) {
@@ -141,8 +146,8 @@ GFX::GfxPipeline &Renderer2D::GetOrCreateFlatPipeline(RHI::TextureFormat format,
 	return *m_FlatPipelines[key];
 }
 
-GFX::GfxPipeline &Renderer2D::GetOrCreateTexturePipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-														 RHI::TextureFormat depthFormat) {
+GFX::GfxPipeline &QuadBatcher::GetOrCreateTexturePipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+														  RHI::TextureFormat depthFormat) {
 	PipelineKey key{ .colorFormat = format, .sampleCount = samples, .depthFormat = depthFormat };
 	auto it = m_TexturePipelines.find(key);
 	if (it != m_TexturePipelines.end()) {
@@ -153,8 +158,22 @@ GFX::GfxPipeline &Renderer2D::GetOrCreateTexturePipeline(RHI::TextureFormat form
 	return *m_TexturePipelines[key];
 }
 
-void Renderer2D::DrawRect(const RectSpec &spec) {
-	if (m_BatchTexture != nullptr) {
+GFX::GfxPipeline &QuadBatcher::GetOrCreateGUIPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+													  RHI::TextureFormat depthFormat) {
+	PipelineKey key{ .colorFormat = format, .sampleCount = samples, .depthFormat = depthFormat };
+	auto it = m_GUIPipelines.find(key);
+	if (it != m_GUIPipelines.end()) {
+		return *it->second;
+	}
+	m_GUIPipelines[key] = BuildPipeline(m_Ctx, kGUIShader, {}, sizeof(QuadPushConstants), format, samples, depthFormat);
+	return *m_GUIPipelines[key];
+}
+
+void QuadBatcher::DrawRect(const RectSpec &spec) {
+	const bool hasRadius = glm::any(glm::greaterThan(spec.radius, vec4(0.F)));
+	const BatchType needed = (hasRadius || spec.borderWidth > 0.F) ? BatchType::GUI : BatchType::Flat;
+
+	if (m_BatchTexture != nullptr || m_BatchType != needed) {
 		Flush();
 		StartBatch();
 	}
@@ -163,8 +182,9 @@ void Renderer2D::DrawRect(const RectSpec &spec) {
 		StartBatch();
 	}
 
-	vec2 center = { spec.position.x - (spec.size.x * 0.5F), spec.position.y - (spec.size.y * 0.5F) };
-	mat4 transform = BuildQuadTransform(center, spec.size, spec.rotation, spec.depth);
+	m_BatchType = needed;
+
+	mat4 transform = BuildQuadTransform(spec.position, spec.size, spec.rotation, spec.depth);
 
 	static constexpr vec4 kLocalCorners[4] = {
 		{ -0.5F, -0.5F, 0.F, 1.F },
@@ -176,13 +196,21 @@ void Renderer2D::DrawRect(const RectSpec &spec) {
 
 	for (uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
 		vec4 worldPos = transform * kLocalCorners[i];
-		m_VertexData.push_back({ vec3(worldPos), spec.color, kUVs[i] });
+		m_VertexData.push_back({
+			.position = vec3(worldPos),
+			.color = spec.color,
+			.uv = kUVs[i],
+			.size = spec.size,
+			.radius = spec.radius,
+			.borderWidth = spec.borderWidth,
+			.borderColor = spec.borderColor,
+		});
 	}
 	++m_QuadCount;
 	++m_Stats.quadCount;
 }
 
-void Renderer2D::DrawSprite(const SpriteSpec &spec) {
+void QuadBatcher::DrawSprite(const SpriteSpec &spec) {
 	if (m_BatchTexture != spec.texture) {
 		Flush();
 		StartBatch();
@@ -216,17 +244,22 @@ void Renderer2D::DrawSprite(const SpriteSpec &spec) {
 	++m_Stats.quadCount;
 }
 
-void Renderer2D::Flush() {
+void QuadBatcher::Flush() {
 	if (m_QuadCount == 0) {
 		return;
 	}
 
 	m_VertexBuffer->Write(m_VertexData.data(), sizeof(QuadVertex) * m_VertexData.size());
 
-	GFX::GfxPipeline &pipeline =
-		(m_BatchTexture != nullptr)
-			? GetOrCreateTexturePipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat)
-			: GetOrCreateFlatPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+	GFX::GfxPipeline &pipeline = [&]() -> GFX::GfxPipeline & {
+		if (m_BatchTexture != nullptr) {
+			return GetOrCreateTexturePipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+		}
+		if (m_BatchType == BatchType::GUI) {
+			return GetOrCreateGUIPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+		}
+		return GetOrCreateFlatPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+	}();
 
 	m_ActiveCmd->BindPipeline(pipeline);
 
@@ -246,13 +279,14 @@ void Renderer2D::Flush() {
 	++m_Stats.drawCalls;
 }
 
-void Renderer2D::StartBatch() {
+void QuadBatcher::StartBatch() {
 	m_QuadCount = 0;
+	m_BatchType = BatchType::Flat;
 	m_BatchTexture = nullptr;
 	m_VertexData.clear();
 }
 
-mat4 Renderer2D::BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const {
+mat4 QuadBatcher::BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const {
 	vec2 center = position + size * 0.5F;
 	mat4 t = glm::translate(mat4(1.F), vec3(center, depth));
 	if (rotation != 0.F) {

@@ -9,7 +9,7 @@ set(MODULE_SOURCES
     ${MODULE_SOURCE_DIR}/Systems/GeometrySystem.cpp
     ${MODULE_SOURCE_DIR}/Systems/DepthPrepassSystem.cpp
     ${MODULE_SOURCE_DIR}/Renderers/Renderer.cpp
-    ${MODULE_SOURCE_DIR}/Renderers/Scene2DRenderer.cpp
+    ${MODULE_SOURCE_DIR}/Renderers/Renderer2D.cpp
 )
 
 add_library(${MODULE_NAME} STATIC ${MODULE_SOURCES})

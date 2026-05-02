@@ -30,6 +30,7 @@ target_link_libraries(${MODULE_NAME}
     Foundation
     Scene
     Rendering
+    UI
     PRIVATE
     glfw
     Vulkan::Headers

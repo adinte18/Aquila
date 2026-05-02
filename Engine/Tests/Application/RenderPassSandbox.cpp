@@ -4,7 +4,7 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxMesh.h"
-#include "Aquila/Graphics/Core/Renderer2D.h"
+#include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
 #include "Aquila/Graphics/Resources/Mesh.h"
@@ -92,7 +92,7 @@ class RenderPassSandbox : public Application::Application {
 										 RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment,
 										 RHI::CullMode::Back, /*depthTest=*/true, /*depthWrite=*/true);
 
-		m_Renderer2D = CreateUnique<Renderer2D>(*m_Ctx);
+		m_QuadBatcher = CreateUnique<QuadBatcher>(*m_Ctx);
 
 		AQUILA_LOG_INFO("RenderPassSandbox ready. Esc = quit.");
 	}
@@ -138,7 +138,7 @@ class RenderPassSandbox : public Application::Application {
 
 	void OnShutdown() override {
 		m_Ctx->WaitIdle();
-		m_Renderer2D.reset();
+		m_QuadBatcher.reset();
 		m_Ctx.reset();
 		RHI::VulkanShaderCompiler::Shutdown();
 	}
@@ -214,16 +214,16 @@ class RenderPassSandbox : public Application::Application {
 										   { vec4(0.08f, 0.08f, 0.10f, 1.0f) });
 			},
 			[this, orthoVP](GFX::GfxCommandList &cmd, RG::RGRegistry & /*reg*/) {
-				// UIPass has no depth attachment — pass depthFormat=None to Renderer2D
+				// UIPass has no depth attachment — pass depthFormat=None to QuadBatcher
 				// so the pipeline it compiles matches this render pass exactly.
-				m_Renderer2D->Begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, orthoVP,
+				m_QuadBatcher->Begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, orthoVP,
 									RHI::TextureFormat::None);
 
 				f32 W = static_cast<f32>(m_Swapchain->GetWidth());
 				f32 H = static_cast<f32>(m_Swapchain->GetHeight());
 
 				// Header bar
-				m_Renderer2D->DrawRect({
+				m_QuadBatcher->DrawRect({
 					.position = { 0.f, 0.f },
 					.size = { W, 40.f },
 					.color = vec4(0.15f, 0.15f, 0.20f, 1.0f),
@@ -231,13 +231,13 @@ class RenderPassSandbox : public Application::Application {
 
 				// Animated fill inside the status bar
 				float fill = (std::sin(m_Time * 0.8f) * 0.5f + 0.5f) * (W - 20.f);
-				m_Renderer2D->DrawRect({
+				m_QuadBatcher->DrawRect({
 					.position = { 10.f, H - 26.f },
 					.size = { fill, 22.f },
 					.color = vec4(0.3f, 0.7f, 1.0f, 0.8f),
 				});
 
-				m_Renderer2D->End();
+				m_QuadBatcher->End();
 			});
 
 		// Reads:  hScene (ShaderRead) <- RAW dependency on CubePass
@@ -398,7 +398,7 @@ class RenderPassSandbox : public Application::Application {
 
 	Unique<GFX::GfxContext> m_Ctx;
 	Unique<RG::RenderGraph> m_Graph;
-	Unique<Renderer2D> m_Renderer2D;
+	Unique<QuadBatcher> m_QuadBatcher;
 
 	Ref<GFX::GfxSwapchain> m_Swapchain;
 

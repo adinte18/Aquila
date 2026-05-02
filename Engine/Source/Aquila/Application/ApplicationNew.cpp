@@ -13,6 +13,8 @@
 
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
+#include "Aquila/UI/Core/ViewSystem.h"
+#include "Aquila/UI/Rendering/ViewRenderingSystem.h"
 
 namespace Aquila::Application {
 
@@ -36,37 +38,12 @@ Application::Application(const ApplicationSpec &spec) : m_Spec(spec) {
 	m_Timer->Start();
 
 	// THIS SHOULD GO, WE SHOULD HAVE A GENERIC SHADER COMPILER
-
-	InitRendering(spec.Width, spec.Height);
-
-	m_Scene = CreateUnique<Scene>("Main");
-
-	auto *entityManager = m_Scene->GetEntityManager();
-	auto cam = entityManager->CreateEntity("Camera");
-	auto &camComp = cam.AddComponent<CameraComponent>();
-	camComp.fov = 60.f;
-	camComp.nearPlane = 0.1f;
-	camComp.farPlane = 500.f;
-	camComp.aspectRatio = static_cast<f32>(spec.Width) / static_cast<f32>(spec.Height);
-	camComp.primary = true;
-	cam.GetComponent<TransformComponent>().SetLocalPosition({ 0.F, 1.5F, -5.F });
-	m_Scene->SetActiveCamera(cam);
-
-	auto addCube = [&](const char *name, vec3 pos) {
-		auto entity = entityManager->CreateEntity(name);
-		auto mesh = CreateRef<Graphics::Resources::Mesh>(name);
-		mesh->LoadFromData(Graphics::Resources::Mesh::GenerateCube(0.5F));
-		entity.AddComponent<MeshComponent>().SetMesh(mesh);
-		entity.GetComponent<TransformComponent>().SetLocalPosition(pos);
-	};
-	addCube("CubeA", { -1.5f, 0.f, 2.f });
-	addCube("CubeB", { 1.5f, 0.f, 2.f });
-
-	SetupScene();
 }
 
 Application::~Application() {
 	m_Ctx->WaitIdle();
+
+	UI::Core::ViewSystem::Shutdown();
 
 	m_RenderPipeline.reset();
 	m_Swapchain.reset();
@@ -89,11 +66,58 @@ void Application::Run() {
 void Application::Close() {
 	m_Running = false;
 }
-void Application::OnStart() {}
+void Application::OnStart() {
+	InitRendering(m_Window->GetWidth(), m_Window->GetHeight());
+
+	m_Scene = CreateUnique<Scene>("Main");
+
+	auto *entityManager = m_Scene->GetEntityManager();
+	auto cam = entityManager->CreateEntity("Camera");
+	auto &camComp = cam.AddComponent<CameraComponent>();
+	camComp.fov = 60.f;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 500.f;
+	camComp.aspectRatio = static_cast<f32>(m_Window->GetWidth()) / static_cast<f32>(m_Window->GetHeight());
+	camComp.primary = true;
+	cam.GetComponent<TransformComponent>().SetLocalPosition({ 0.F, 1.5F, -5.F });
+	m_Scene->SetActiveCamera(cam);
+
+	auto addCube = [&](const char *name, vec3 pos) {
+		auto entity = entityManager->CreateEntity(name);
+		auto mesh = CreateRef<Graphics::Resources::Mesh>(name);
+		mesh->LoadFromData(Graphics::Resources::Mesh::GenerateCube(0.5F));
+		entity.AddComponent<MeshComponent>().SetMesh(mesh);
+		entity.GetComponent<TransformComponent>().SetLocalPosition(pos);
+	};
+	addCube("CubeA", { -1.5f, 0.f, 2.f });
+	addCube("CubeB", { 1.5f, 0.f, 2.f });
+
+	SetupScene();
+}
+
+void Application::SetupScene() {
+	auto &canvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Screen);
+
+	auto box = CreateUnique<UI::Core::View>();
+
+	UI::StyleProperties props{};
+	props.backgroundColor = vec4(0.2f, 0.4f, 0.8f, 1.f);
+	props.borderColor = vec4(1.F);
+	props.borderWidth = 2.0F;
+	props.width = UI::StyleLength::Pixel(300.F);
+	props.height = UI::StyleLength::Pixel(150.F);
+	props.borderRadius = vec4(20.0f, 20.0f, 20.0f, 20.0f);
+	box->SetStyle(props);
+
+	canvas.GetRoot()->AddChild(std::move(box));
+}
+
 void Application::OnShutdown() {}
 
 void Application::InitRendering(uint32 width, uint32 height) {
 	RHI::VulkanShaderCompiler::Initialize();
+	UI::Core::ViewSystem::Init(m_Window->GetWidth(), m_Window->GetHeight());
+
 	m_Ctx = GFX::GfxContext::Create(*GetWindow().GetNativeWindow());
 
 	m_Swapchain = m_Ctx->CreateSwapchain({
@@ -107,10 +131,12 @@ void Application::InitRendering(uint32 width, uint32 height) {
 	m_RenderPipeline = CreateUnique<Rendering::RenderPipeline>(*m_Ctx, width, height);
 
 	m_Renderer = &m_RenderPipeline->Add<Rendering::Renderer>();
+	m_Renderer2D = &m_RenderPipeline->Add<Rendering::Renderer2D>();
 
 	// ! IMPORTANT : Systems go here
 	m_Renderer->AddSystem<Rendering::DepthPrepassSystem>();
 	m_Renderer->AddSystem<Rendering::GeometrySystem>();
+	m_Renderer2D->AddSystem<UI::Rendering::ViewRenderingSystem>();
 	// !
 }
 
@@ -130,8 +156,8 @@ void Application::OnUpdate(f32 deltaTime) {
 		return;
 	}
 
-	// blit image to swapchain
 	m_Renderer->SetSwapchainTarget(*m_Swapchain, imageIndex);
+	m_Renderer2D->SetSwapchainTarget(*m_Swapchain, imageIndex);
 
 	auto cmd = m_Ctx->CreateCommandList(RHI::CommandListType::Graphics, "MainFrame");
 	cmd->Begin();

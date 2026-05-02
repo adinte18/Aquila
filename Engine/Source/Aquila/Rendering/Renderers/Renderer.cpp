@@ -78,7 +78,9 @@ void Renderer::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	for (auto &sys : m_Systems) {
 		sys->AddPasses(graph, ctx);
 	}
+}
 
+void Renderer::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_BlitPipeline || (m_Swapchain == nullptr)) {
 		return;
 	}

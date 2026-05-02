@@ -4,10 +4,11 @@
 
 namespace Aquila::GFX {
 class GfxContext;
+class GfxCommandList;
 }
 
 namespace Aquila::Graphics {
-class Renderer2D;
+class QuadBatcher;
 }
 
 namespace Aquila::Graphics::RG {
@@ -25,7 +26,8 @@ class I2DRenderingSystem {
 	AQUILA_NONMOVEABLE(I2DRenderingSystem);
 
 	virtual void OnInit(GFX::GfxContext &ctx) = 0;
-	virtual void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx, Graphics::Renderer2D &r2d) = 0;
+	virtual void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx, Graphics::QuadBatcher &r2d) {}
+	virtual void Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {}
 	virtual void OnResize(uint32 width, uint32 height) {}
 	virtual void OnShutdown() {}
 

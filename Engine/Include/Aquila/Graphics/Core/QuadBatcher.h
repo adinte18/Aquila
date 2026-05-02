@@ -15,6 +15,10 @@ struct QuadVertex {
 	vec3 position;
 	vec4 color;
 	vec2 uv;
+	vec2 size;
+	vec4 radius;
+	float borderWidth;
+	vec4 borderColor;
 };
 
 struct QuadPushConstants {
@@ -27,6 +31,9 @@ struct RectSpec {
 	vec4 color = { 1.F, 1.F, 1.F, 1.F };
 	float rotation = 0.F;
 	float depth = 0.F;
+	vec4 radius = { 0.F, 0.F, 0.F, 0.F };
+	float borderWidth = 0.F;
+	vec4 borderColor = { 0.F, 0.F, 0.F, 0.F };
 };
 
 struct SpriteSpec {
@@ -40,37 +47,16 @@ struct SpriteSpec {
 	vec2 uvMax = { 1.F, 1.F };
 };
 
-// Renderer2D
-//
-// Stateless-per-pass 2D quad batcher.  Call Begin() once per render pass to
-// establish context, emit draw specs, then End() to flush any remaining batch.
-//
-// The renderer holds no assumptions about frame lifecycle or pass ordering —
-// it is fully compatible with RenderGraph execute callbacks:
-//
-//   graph.AddPass("UI",
-//     [&](RGPassBuilder& b) { hColor = b.SetColorAttachment(0, hColor, ...); },
-//     [&](GfxCommandList& cmd, RGRegistry& reg) {
-//         renderer2D.Begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, orthoVP);
-//         renderer2D.DrawRect({ .position={100,100}, .size={200,50}, .color=kRed });
-//         renderer2D.End();
-//     });
-
-class Renderer2D {
+class QuadBatcher {
   public:
-	explicit Renderer2D(GFX::GfxContext &ctx);
-	~Renderer2D() = default;
-	AQUILA_NONCOPYABLE(Renderer2D);
-	AQUILA_NONMOVEABLE(Renderer2D);
+	explicit QuadBatcher(GFX::GfxContext &ctx);
+	~QuadBatcher() = default;
+	AQUILA_NONCOPYABLE(QuadBatcher);
+	AQUILA_NONMOVEABLE(QuadBatcher);
 
-	/// Begin a new 2D drawing session for the current pass.
-	/// Must be called inside a renderpass (between GfxRenderPass::Begin and End).
-	/// depthFormat must match the depth attachment format active in the render pass
-	/// (even when depth testing is disabled) to satisfy Vulkan pipeline compatibility.
 	void Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
 			   const mat4 &viewProjection, RHI::TextureFormat depthFormat = RHI::TextureFormat::None);
-
-	/// Flush any remaining batch and release the active command list reference.
+	void Flush();
 	void End();
 
 	void DrawRect(const RectSpec &spec);
@@ -84,6 +70,8 @@ class Renderer2D {
 											  RHI::TextureFormat depthFormat);
 	GFX::GfxPipeline &GetOrCreateTexturePipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
 												 RHI::TextureFormat depthFormat);
+	GFX::GfxPipeline &GetOrCreateGUIPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
+											 RHI::TextureFormat depthFormat);
 
   private:
 	struct Stats {
@@ -94,7 +82,7 @@ class Renderer2D {
 	struct PipelineKey {
 		RHI::TextureFormat colorFormat;
 		RHI::SampleCount sampleCount;
-		RHI::TextureFormat depthFormat; // must match active render pass depth attachment
+		RHI::TextureFormat depthFormat;
 		bool operator==(const PipelineKey &o) const {
 			return colorFormat == o.colorFormat && sampleCount == o.sampleCount && depthFormat == o.depthFormat;
 		}
@@ -108,32 +96,31 @@ class Renderer2D {
 		}
 	};
 
-	void Flush();
+	enum class BatchType { Flat, GUI, Texture };
+
 	void StartBatch();
 	[[nodiscard]] mat4 BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const;
 
 	GFX::GfxContext &m_Ctx;
 
-	// GPU resources
 	Ref<GFX::GfxBuffer> m_VertexBuffer;
 	Ref<GFX::GfxBuffer> m_IndexBuffer;
 	Ref<GFX::GfxDescriptorSetLayout> m_TextureLayout;
-	Ref<GFX::GfxDescriptorSet> m_TextureSet; // Updated per textured batch flush
+	Ref<GFX::GfxDescriptorSet> m_TextureSet;
 
-	// Pipeline cache
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_FlatPipelines;
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_TexturePipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_GUIPipelines;
 
-	// Per-Begin state
 	GFX::GfxCommandList *m_ActiveCmd = nullptr;
 	RHI::TextureFormat m_ActiveColorFormat = RHI::TextureFormat::None;
 	RHI::TextureFormat m_ActiveDepthFormat = RHI::TextureFormat::None;
 	RHI::SampleCount m_ActiveSampleCount = RHI::SampleCount::x1;
 	mat4 m_ViewProjection = mat4(1.F);
 
-	// CPU-side batch
 	std::vector<QuadVertex> m_VertexData;
 	uint32 m_QuadCount = 0;
+	BatchType m_BatchType = BatchType::Flat;
 	GFX::GfxTexture *m_BatchTexture = nullptr;
 
 	Stats m_Stats;

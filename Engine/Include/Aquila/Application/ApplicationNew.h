@@ -16,6 +16,7 @@
 // Rendering
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/Renderers/Renderer.h"
+#include "Aquila/Rendering/Renderers/Renderer2D.h"
 
 struct ApplicationSpec {
 	std::string Name = "Aquila";
@@ -46,7 +47,7 @@ class Application {
 	Rendering::RenderPipeline &GetPipeline() { return *m_RenderPipeline; }
 
   protected:
-	virtual void SetupScene() {}
+	virtual void SetupScene();
 
   private:
 	void HandleResize();
@@ -65,6 +66,7 @@ class Application {
 
 	Unique<Rendering::RenderPipeline> m_RenderPipeline;
 	Rendering::Renderer *m_Renderer = nullptr;
+	Rendering::Renderer2D *m_Renderer2D = nullptr;
 };
 
 } // namespace Aquila::Application

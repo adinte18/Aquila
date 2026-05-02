@@ -22,6 +22,7 @@ class IRenderer {
 
 	virtual void OnInit(GFX::GfxContext &ctx) = 0;
 	virtual void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) = 0;
+	virtual void AddFinalPasses(Graphics::RG::RenderGraph & /*graph*/, FrameContext & /*ctx*/) {}
 	virtual void OnResize(uint32 width, uint32 height) {}
 	virtual void OnShutdown() {}
 
