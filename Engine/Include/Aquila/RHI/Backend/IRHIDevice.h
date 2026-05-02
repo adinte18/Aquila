@@ -41,6 +41,7 @@ class IRHIDevice {
 	virtual void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
 							  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
 	virtual void WaitIdle() = 0;
+	virtual void ProcessPendingDeletions() = 0;
 
 	template <typename Func> void ExecuteImmediate(CommandListType type, Func &&func) {
 		auto cmd = CreateCommandList(type, "ImmediateCmd");

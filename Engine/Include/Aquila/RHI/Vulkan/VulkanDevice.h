@@ -56,6 +56,7 @@ class VulkanDevice final : public IRHIDevice {
 	void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
 					  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
 	void WaitIdle() override { vkDeviceWaitIdle(m_Device); }
+	void ProcessPendingDeletions() override;
 
 	void SubmitToGraphicsQueue(const VkSubmitInfo *submitInfo, VkFence fence);
 	void SubmitToComputeQueue(const VkSubmitInfo *submitInfo, VkFence fence);

@@ -77,4 +77,8 @@ void GfxContext::WaitIdle() {
 	m_Device->WaitIdle();
 }
 
+void GfxContext::ProcessPendingDeletions() {
+	m_Device->ProcessPendingDeletions();
+}
+
 } // namespace Aquila::GFX

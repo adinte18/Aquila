@@ -165,6 +165,8 @@ void Application::OnUpdate(f32 deltaTime) {
 	m_RenderPipeline->Render(*cmd, *m_Scene, deltaTime);
 
 	m_Ctx->SubmitFrame(*cmd, m_Swapchain.get(), imageIndex);
+
+	m_Ctx->ProcessPendingDeletions();
 }
 
 void Application::OnEvent(Events::Event &event) {

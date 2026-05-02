@@ -45,8 +45,6 @@ class VulkanBuffer final : public IRHIBuffer {
 	[[nodiscard]] VkDeviceSize GetAlignmentSize() const { return m_AlignmentSize; }
 	[[nodiscard]] VkBufferUsageFlags GetUsageFlags() const { return m_UsageFlags; }
 
-	void DestroyImmediate();
-
 	static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
 
   private:

@@ -45,6 +45,7 @@ class GfxContext {
 		m_Device->SubmitAndWait(cmd->GetRHI());
 	}
 	void WaitIdle();
+	void ProcessPendingDeletions();
 
 	[[nodiscard]] RHI::IRHIDevice &GetDevice() { return *m_Device; }
 

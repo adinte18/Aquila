@@ -42,14 +42,6 @@ VulkanBuffer::~VulkanBuffer() {
 	m_Allocation = VK_NULL_HANDLE;
 }
 
-void VulkanBuffer::DestroyImmediate() {
-	Unmap();
-	m_Device.GetDeletionQueue().DestroyNow(
-		Deletion::VmaBufferDeletion{ .buffer = m_Buffer, .allocation = m_Allocation });
-	m_Buffer = VK_NULL_HANDLE;
-	m_Allocation = VK_NULL_HANDLE;
-}
-
 // IRHIBuffer
 void VulkanBuffer::Write(const void *data, uint64 size, uint64 offset) {
 	AQUILA_ASSERT(m_MappedPtr, "Cannot write to unmapped buffer");

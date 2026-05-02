@@ -246,6 +246,8 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 		WaitForFence(fence);
 		DestroyFence(fence);
 
+		m_DeletionQueue->ProcessDeletions();
+
 		vkFreeCommandBuffers(m_Device, vkCmd.GetPool(), 1, &cmdBuf);
 		vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
 	} else {
@@ -255,12 +257,18 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 		WaitForFence(fence);
 		DestroyFence(fence);
 
+		m_DeletionQueue->ProcessDeletions();
+
 		vkFreeCommandBuffers(m_Device, vkCmd.GetPool(), 1, &cmdBuf);
 	}
 }
 
 RHI::DeletionQueue &VulkanDevice::GetDeletionQueue() const {
 	return *m_DeletionQueue;
+}
+
+void VulkanDevice::ProcessPendingDeletions() {
+	m_DeletionQueue->ProcessDeletions();
 }
 
 void VulkanDevice::CopyBuffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, uint64 size, uint64 srcOffset,
