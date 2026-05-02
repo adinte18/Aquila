@@ -47,6 +47,7 @@ add_subdirectory(Source/Aquila/GFX)
 add_subdirectory(Source/Aquila/Graphics)
 add_subdirectory(Source/Aquila/Scene)
 add_subdirectory(Source/Aquila/Rendering)
+add_subdirectory(Source/Aquila/UI)
 
 enable_testing()
 add_subdirectory(Tests)
@@ -61,6 +62,7 @@ target_link_libraries(AquilaEngine PRIVATE
     Graphics
     Scene
     Rendering
+    UI
     glfw
     Vulkan::Headers
 )
