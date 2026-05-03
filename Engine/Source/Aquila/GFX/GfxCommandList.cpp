@@ -73,6 +73,11 @@ void GfxCommandList::DrawIndexedIndirect(GfxBuffer &buffer, uint64 offset, uint3
 	m_Cmd->DrawIndexedIndirect(buffer.GetRHI(), offset, drawCount, stride);
 }
 
+void GfxCommandList::CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
+										  uint32 dstArrayLayer, uint32 dstMipLevel) {
+	m_Cmd->CopyBufferToTexture(src.GetRHI(), dst.GetRHI(), width, height, dstArrayLayer, dstMipLevel);
+}
+
 void GfxCommandList::PushDebugGroup(const char *name) {
 	m_Cmd->PushDebugGroup(name);
 }

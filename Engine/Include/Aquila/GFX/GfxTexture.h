@@ -12,6 +12,8 @@ class GfxTexture {
 	~GfxTexture() = default;
 	AQUILA_NONCOPYABLE(GfxTexture);
 
+	void DestroyImmediate();
+
 	[[nodiscard]] uint32 GetWidth() const;
 	[[nodiscard]] uint32 GetHeight() const;
 	[[nodiscard]] uint32 GetMipLevels() const;

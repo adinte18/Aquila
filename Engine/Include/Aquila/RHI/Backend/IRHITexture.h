@@ -12,6 +12,8 @@ class IRHITexture {
 	IRHITexture(const IRHITexture &) = delete;
 	IRHITexture &operator=(const IRHITexture &) = delete;
 
+	virtual void DestroyImmediate() = 0;
+
 	[[nodiscard]] virtual uint32 GetWidth() const = 0;
 	[[nodiscard]] virtual uint32 GetHeight() const = 0;
 	[[nodiscard]] virtual uint32 GetMipLevels() const = 0;

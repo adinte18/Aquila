@@ -342,6 +342,26 @@ void VulkanCommandList::DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, u
 	vkCmdDrawIndexedIndirect(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset), drawCount, stride);
 }
 
+void VulkanCommandList::CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
+											uint32 dstArrayLayer, uint32 dstMipLevel) {
+	auto &vkBuf = static_cast<VulkanBuffer &>(src);
+	auto &vkTex = static_cast<VulkanTexture &>(dst);
+
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = dstMipLevel;
+	region.imageSubresource.baseArrayLayer = dstArrayLayer;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = { 0, 0, 0 };
+	region.imageExtent = { width, height, 1 };
+
+	vkCmdCopyBufferToImage(m_CommandBuffer, vkBuf.GetBuffer(), vkTex.GetImage(),
+						   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
 // Debug markers
 
 void VulkanCommandList::PushDebugGroup(const char *name) {

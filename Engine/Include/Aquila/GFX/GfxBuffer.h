@@ -17,6 +17,8 @@ class GfxBuffer {
 	void Unmap();
 	void Flush(uint64 size = 0, uint64 offset = 0);
 
+	void DestroyImmediate();
+
 	[[nodiscard]] uint64 GetSize() const;
 	[[nodiscard]] uint32 GetInstanceCount() const;
 	[[nodiscard]] bool IsMapped() const;

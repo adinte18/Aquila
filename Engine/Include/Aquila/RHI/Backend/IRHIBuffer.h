@@ -17,6 +17,8 @@ class IRHIBuffer {
 	virtual void Unmap() = 0;
 	virtual void Flush(uint64 size = 0, uint64 offset = 0) = 0;
 
+	virtual void DestroyImmediate() = 0;
+
 	[[nodiscard]] virtual uint64 GetSize() const = 0;
 	[[nodiscard]] virtual uint32 GetInstanceCount() const = 0;
 	[[nodiscard]] virtual bool IsMapped() const = 0;

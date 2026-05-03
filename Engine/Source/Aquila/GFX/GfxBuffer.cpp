@@ -14,6 +14,9 @@ void *GfxBuffer::Map() {
 void GfxBuffer::Unmap() {
 	m_Buffer->Unmap();
 }
+void GfxBuffer::DestroyImmediate() {
+	m_Buffer->DestroyImmediate();
+}
 void GfxBuffer::Flush(uint64 size, uint64 offset) {
 	m_Buffer->Flush(size, offset);
 }

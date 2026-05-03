@@ -35,6 +35,16 @@ VulkanTexture::~VulkanTexture() {
 	}
 }
 
+void VulkanTexture::DestroyImmediate() {
+	if (m_ImageView != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_Device.GetDevice(), m_ImageView, nullptr);
+		m_ImageView = VK_NULL_HANDLE;
+	}
+	vmaDestroyImage(m_Device.GetAllocator(), m_ImageAllocation.image, m_ImageAllocation.allocation);
+	m_ImageAllocation.image = VK_NULL_HANDLE;
+	m_ImageAllocation.allocation = VK_NULL_HANDLE;
+}
+
 VkDescriptorImageInfo VulkanTexture::GetDescriptorImageInfo() const {
 	VkDescriptorImageInfo info{};
 	info.imageLayout = IsDepthFormat(m_Desc.format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL

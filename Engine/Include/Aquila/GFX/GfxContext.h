@@ -31,6 +31,10 @@ class GfxContext {
 	[[nodiscard]] Ref<GfxCommandList> CreateCommandList(RHI::CommandListType type, const std::string &name = {});
 
 	void CopyBuffer(GfxBuffer &src, GfxBuffer &dst, uint64 size, uint64 srcOffset = 0, uint64 dstOffset = 0);
+	void UploadTextureData(GfxTexture &dst, const void *data, uint64 byteSize);
+
+	void DestroyImmediateTexture(GfxTexture &texture);
+	void DestroyImmediateBuffer(GfxBuffer &buffer);
 
 	// Records end-of-frame barriers, submits, and presents.
 	// All Vulkan sync (semaphores, fences) is handled inside IRHIDevice.

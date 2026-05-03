@@ -51,6 +51,9 @@ class IRHICommandList {
 	virtual void DrawIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) = 0;
 	virtual void DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) = 0;
 
+	virtual void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
+									 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) = 0;
+
 	virtual void PushDebugGroup(const char *name) = 0;
 	virtual void PopDebugGroup() = 0;
 

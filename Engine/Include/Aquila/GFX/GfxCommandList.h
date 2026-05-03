@@ -48,6 +48,9 @@ class GfxCommandList {
 	void DrawIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride);
 	void DrawIndexedIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride);
 
+	void CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
+							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0);
+
 	void PushDebugGroup(const char *name);
 	void PopDebugGroup();
 

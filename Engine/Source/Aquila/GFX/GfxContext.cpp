@@ -1,4 +1,6 @@
 #include "Aquila/GFX/GfxContext.h"
+#include "Aquila/GFX/GfxBuffer.h"
+#include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/RHI/RHIBackend.h"
 
 namespace Aquila::GFX {
@@ -67,6 +69,28 @@ void GfxContext::SubmitAndWait(GfxCommandList &cmd) {
 	m_Device->SubmitAndWait(cmd.GetRHI());
 }
 
+void GfxContext::UploadTextureData(GfxTexture &dst, const void *data, uint64 byteSize) {
+	RHI::BufferDesc stagingDesc{};
+	stagingDesc.size = byteSize;
+	stagingDesc.usage = RHI::BufferUsage::TransferSrc;
+	stagingDesc.domain = RHI::MemoryDomain::CPU_ONLY;
+	stagingDesc.debugName = "TextureUploadStaging";
+
+	Ref<GfxBuffer> staging = CreateBuffer(stagingDesc);
+	staging->GetRHI().Write(data, byteSize, 0);
+
+	const uint32 w = dst.GetWidth();
+	const uint32 h = dst.GetHeight();
+
+	ExecuteImmediate(RHI::CommandListType::Graphics, [&](GfxCommandList &cmd) {
+		cmd.TransitionTexture(dst, RHI::ResourceState::Undefined, RHI::ResourceState::TransferDst);
+		cmd.CopyBufferToTexture(*staging, dst, w, h);
+		cmd.TransitionTexture(dst, RHI::ResourceState::TransferDst, RHI::ResourceState::ShaderRead);
+	});
+
+	DestroyImmediateBuffer(*staging);
+}
+
 void GfxContext::CopyBuffer(GfxBuffer &src, GfxBuffer &dst, uint64 size, uint64 srcOffset, uint64 dstOffset) {
 	ExecuteImmediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
 		m_Device->CopyBuffer(cmd.GetRHI(), src.GetRHI(), dst.GetRHI(), size, srcOffset, dstOffset);
@@ -79,6 +103,14 @@ void GfxContext::WaitIdle() {
 
 void GfxContext::ProcessPendingDeletions() {
 	m_Device->ProcessPendingDeletions();
+}
+
+void GfxContext::DestroyImmediateBuffer(GfxBuffer &buffer) {
+	buffer.DestroyImmediate();
+}
+
+void GfxContext::DestroyImmediateTexture(GfxTexture &texture) {
+	texture.DestroyImmediate();
 }
 
 } // namespace Aquila::GFX

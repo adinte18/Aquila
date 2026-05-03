@@ -25,6 +25,8 @@ class VulkanBuffer final : public IRHIBuffer {
 	void Unmap() override;
 	void Flush(uint64 size = 0, uint64 offset = 0) override;
 
+	void DestroyImmediate() override;
+
 	[[nodiscard]] uint64 GetSize() const override { return m_BufferSize; }
 	[[nodiscard]] uint32 GetInstanceCount() const override { return m_InstanceCount; }
 	[[nodiscard]] bool IsMapped() const override { return m_MappedPtr != nullptr; }

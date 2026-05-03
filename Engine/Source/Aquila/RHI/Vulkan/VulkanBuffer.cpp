@@ -1,4 +1,5 @@
 #include "Aquila/RHI/Vulkan/VulkanBuffer.h"
+#include "Aquila/Foundation/Macros.h"
 #include "Aquila/RHI/Vulkan/VulkanDeletionQueue.h"
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
 
@@ -69,6 +70,14 @@ void VulkanBuffer::Unmap() {
 		vmaUnmapMemory(m_Device.GetAllocator(), m_Allocation);
 		m_MappedPtr = nullptr;
 	}
+}
+
+void VulkanBuffer::DestroyImmediate() {
+	Unmap();
+	auto *allocator = m_Device.GetAllocator();
+	vmaDestroyBuffer(allocator, m_Buffer, m_Allocation);
+	m_Buffer = VK_NULL_HANDLE;
+	m_Allocation = VK_NULL_HANDLE;
 }
 
 void VulkanBuffer::Flush(uint64 size, uint64 offset) {

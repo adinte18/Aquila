@@ -48,6 +48,9 @@ class VulkanCommandList final : public IRHICommandList {
 	void DrawIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
 	void DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
 
+	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
+							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) override;
+
 	// IRHICommandList
 	void PushDebugGroup(const char *name) override;
 	void PopDebugGroup() override;
