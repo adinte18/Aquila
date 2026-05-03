@@ -24,12 +24,14 @@ class RenderGraph {
 
 	RGBufferHandle DeclareBuffer(const RGBufferDesc &desc) { return m_Registry.DeclareBuffer(desc); }
 
-	RGTextureHandle ImportTexture(GFX::GfxTexture *tex, std::string_view name = {}) {
-		return m_Registry.ImportTexture(tex, name);
+	RGTextureHandle ImportTexture(GFX::GfxTexture *tex, std::string_view name = {},
+								  RG::ResourceState initialState = RG::ResourceState::Undefined) {
+		return m_Registry.ImportTexture(tex, name, initialState);
 	}
 
-	RGBufferHandle ImportBuffer(GFX::GfxBuffer *buf, std::string_view name = {}) {
-		return m_Registry.ImportBuffer(buf, name);
+	RGBufferHandle ImportBuffer(GFX::GfxBuffer *buf, std::string_view name = {},
+								RG::ResourceState initialState = RG::ResourceState::Undefined) {
+		return m_Registry.ImportBuffer(buf, name, initialState);
 	}
 
 	/// Register a pass with a setup lambda and an execute lambda.

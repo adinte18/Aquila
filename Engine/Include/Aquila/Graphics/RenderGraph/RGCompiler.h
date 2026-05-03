@@ -116,7 +116,8 @@ class RGCompiler {
 								   RGCompiledGraph &out);
 
 	static void InferBarriers(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
-							  const std::vector<bool> &alive, uint32 texCount, uint32 bufCount, RGCompiledGraph &out);
+							  const std::vector<bool> &alive, uint32 texCount, uint32 bufCount,
+							  const RGRegistry &registry, RGCompiledGraph &out);
 
 	static void CreateRenderPasses(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
 								   const std::vector<bool> &alive, const RGRegistry &registry, GFX::GfxContext &ctx,

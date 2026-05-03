@@ -16,28 +16,35 @@ RGBufferHandle RGRegistry::DeclareBuffer(const RGBufferDesc &desc) {
 	return RGBufferHandle{ EncodeHandle(index, 0) };
 }
 
-RGTextureHandle RGRegistry::ImportTexture(GFX::GfxTexture *texture, std::string_view debugName) {
+RGTextureHandle RGRegistry::ImportTexture(GFX::GfxTexture *texture, std::string_view debugName,
+										   ResourceState initialState) {
 	AQUILA_ASSERT(texture, "Cannot import a null texture");
 
+	const RHI::TextureDesc &rhiDesc = texture->GetDesc();
+
 	RGTextureDesc desc{};
-	desc.width = texture->GetWidth();
-	desc.height = texture->GetHeight();
-	desc.mipLevels = texture->GetMipLevels();
-	desc.arrayLayers = texture->GetArrayLayers();
-	desc.format = texture->GetFormat();
+	desc.width = rhiDesc.width;
+	desc.height = rhiDesc.height;
+	desc.mipLevels = rhiDesc.mipLevels;
+	desc.arrayLayers = rhiDesc.arrayLayers;
+	desc.format = rhiDesc.format;
+	desc.usage = rhiDesc.usage;
+	desc.samples = rhiDesc.samples;
 	desc.debugName = debugName;
 
 	const auto index = static_cast<uint32>(m_Textures.size());
 	auto &entry = m_Textures.emplace_back();
 	entry.desc = desc;
 	entry.imported = true;
+	entry.initialState = initialState;
 	entry.importedPtr = texture;
 	entry.physical = texture; // Already resolved, no allocation needed.
 
 	return RGTextureHandle{ EncodeHandle(index, 0) };
 }
 
-RGBufferHandle RGRegistry::ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName) {
+RGBufferHandle RGRegistry::ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName,
+										 ResourceState initialState) {
 	AQUILA_ASSERT(buffer, "Cannot import a null buffer");
 
 	RGBufferDesc desc{};
@@ -48,6 +55,7 @@ RGBufferHandle RGRegistry::ImportBuffer(GFX::GfxBuffer *buffer, std::string_view
 	auto &entry = m_Buffers.emplace_back();
 	entry.desc = desc;
 	entry.imported = true;
+	entry.initialState = initialState;
 	entry.importedPtr = buffer;
 	entry.physical = buffer;
 
@@ -164,6 +172,18 @@ uint32 RGRegistry::GetTextureVersion(RGTextureHandle handle) const {
 uint32 RGRegistry::GetBufferVersion(RGBufferHandle handle) const {
 	AQUILA_ASSERT(SlotOf(handle.id) < m_Buffers.size(), "RGBufferHandle out of range");
 	return m_Buffers[SlotOf(handle.id)].version;
+}
+
+ResourceState RGRegistry::GetTextureInitialState(RGTextureHandle handle) const {
+	const uint32 index = SlotOf(handle.id);
+	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle index out of range");
+	return m_Textures[index].initialState;
+}
+
+ResourceState RGRegistry::GetBufferInitialState(RGBufferHandle handle) const {
+	const uint32 index = SlotOf(handle.id);
+	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
+	return m_Buffers[index].initialState;
 }
 
 void RGRegistry::Reset() {

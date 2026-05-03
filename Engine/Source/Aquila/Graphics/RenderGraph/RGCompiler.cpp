@@ -522,9 +522,23 @@ void RGCompiler::AllocateTransients(const std::vector<RGPassData> &passes, RGReg
 // barrier record into the flat table and update current state.
 
 void RGCompiler::InferBarriers(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
-							   const std::vector<bool> &alive, uint32 texCount, uint32 bufCount, RGCompiledGraph &out) {
+							   const std::vector<bool> &alive, uint32 texCount, uint32 bufCount,
+							   const RGRegistry &registry, RGCompiledGraph &out) {
+	// Imported resources start from their declared initial state, not Undefined,
+	// so persistent textures don't get their contents discarded on first use.
 	std::vector<RHI::ResourceState> curTexState(texCount, RHI::ResourceState::Undefined);
+	for (uint32 slot = 0; slot < texCount; ++slot) {
+		if (registry.IsImportedTexture(RGTextureHandle{ slot })) {
+			curTexState[slot] = registry.GetTextureInitialState(RGTextureHandle{ slot });
+		}
+	}
+
 	std::vector<RHI::ResourceState> curBufState(bufCount, RHI::ResourceState::Undefined);
+	for (uint32 slot = 0; slot < bufCount; ++slot) {
+		if (registry.IsImportedBuffer(RGBufferHandle{ slot })) {
+			curBufState[slot] = registry.GetBufferInitialState(RGBufferHandle{ slot });
+		}
+	}
 
 	const uint32 aliveCount = static_cast<uint32>(std::count(alive.begin(), alive.end(), true));
 
@@ -717,7 +731,7 @@ RGCompiledGraph RGCompiler::Compile(const std::vector<RGPassData> &passes, RGReg
 
 	AllocateTransients(passes, registry, texLifetimes, bufLifetimes, ctx, out);
 
-	InferBarriers(passes, sortedOrder, alive, texCount, bufCount, out);
+	InferBarriers(passes, sortedOrder, alive, texCount, bufCount, registry, out);
 
 	CreateRenderPasses(passes, sortedOrder, alive, registry, ctx, out);
 

@@ -24,6 +24,9 @@ struct RGTextureEntry {
 	// The registry holds a non-owning view; lifetime is managed externally.
 	bool imported = false;
 
+	// Frame-start state. Only relevant for imported resources; transients always start at Undefined.
+	ResourceState initialState = ResourceState::Undefined;
+
 	// Physical backing — null until Execute() allocates / imports it.
 	GFX::GfxTexture *physical = nullptr;
 
@@ -36,6 +39,7 @@ struct RGBufferEntry {
 	RGBufferDesc desc;
 	uint32 version = 0;
 	bool imported = false;
+	ResourceState initialState = ResourceState::Undefined;
 	GFX::GfxBuffer *physical = nullptr;
 	GFX::GfxBuffer *importedPtr = nullptr;
 };
@@ -54,9 +58,11 @@ class RGRegistry {
 
 	[[nodiscard]] RGBufferHandle DeclareBuffer(const RGBufferDesc &desc);
 
-	[[nodiscard]] RGTextureHandle ImportTexture(GFX::GfxTexture *texture, std::string_view debugName = {});
+	[[nodiscard]] RGTextureHandle ImportTexture(GFX::GfxTexture *texture, std::string_view debugName = {},
+											    ResourceState initialState = ResourceState::Undefined);
 
-	[[nodiscard]] RGBufferHandle ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName = {});
+	[[nodiscard]] RGBufferHandle ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName = {},
+											  ResourceState initialState = ResourceState::Undefined);
 
 	/// Signal that a pass will write to this texture.
 	/// Returns a NEW handle whose id encodes the incremented version.
@@ -81,6 +87,10 @@ class RGRegistry {
 	/// True if the handle refers to an imported (externally-owned) resource.
 	[[nodiscard]] bool IsImportedTexture(RGTextureHandle handle) const;
 	[[nodiscard]] bool IsImportedBuffer(RGBufferHandle handle) const;
+
+	/// State at import time, used to seed barrier tracking for persistent resources.
+	[[nodiscard]] ResourceState GetTextureInitialState(RGTextureHandle handle) const;
+	[[nodiscard]] ResourceState GetBufferInitialState(RGBufferHandle handle) const;
 
 	/// Current write-version for a slot (0 = never written, 1 after first write).
 	[[nodiscard]] uint32 GetTextureVersion(RGTextureHandle handle) const;

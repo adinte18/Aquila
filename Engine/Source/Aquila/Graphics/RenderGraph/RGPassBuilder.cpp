@@ -2,12 +2,24 @@
 
 namespace Aquila::Graphics::RG {
 
+static uint32 SlotOf(uint32 id) {
+	return id & 0x00FFFFFFu;
+}
+
 RGPassBuilder::RGPassBuilder(std::string_view passName, RGRegistry &registry) : m_Registry(registry) {
 	m_Data.name = passName;
 }
 
 RGTextureHandle RGPassBuilder::ReadTexture(RGTextureHandle handle, ResourceState state) {
 	AQUILA_ASSERT(handle.IsValid(), "ReadTexture: invalid handle");
+
+	// Same slot declared as a read twice is fine, e.g. depth-read attachment + SRV in the same pass.
+	const uint32 slot = SlotOf(handle.id);
+	auto slotMatches = [slot](const RGTextureAccess &a) { return SlotOf(a.handle.id) == slot; };
+	if (std::ranges::any_of(m_Data.textureReads, slotMatches)) {
+		return handle;
+	}
+
 	AssertNoDuplicateTextureAccess(handle, /*isWrite=*/false);
 	m_Data.textureReads.push_back({ handle, state });
 	return handle;
@@ -25,6 +37,13 @@ RGTextureHandle RGPassBuilder::WriteTexture(RGTextureHandle handle, ResourceStat
 
 RGBufferHandle RGPassBuilder::ReadBuffer(RGBufferHandle handle, ResourceState state) {
 	AQUILA_ASSERT(handle.IsValid(), "ReadBuffer: invalid handle");
+
+	const uint32 slot = SlotOf(handle.id);
+	auto slotMatches = [slot](const RGBufferAccess &a) { return SlotOf(a.handle.id) == slot; };
+	if (std::ranges::any_of(m_Data.bufferReads, slotMatches)) {
+		return handle;
+	}
+
 	AssertNoDuplicateBufferAccess(handle, /*isWrite=*/false);
 	m_Data.bufferReads.push_back({ handle, state });
 	return handle;
@@ -101,10 +120,6 @@ RGTextureHandle RGPassBuilder::SetColorAttachment(uint32 slot, RGTextureHandle h
 // at runtime.  We match on the slot index (lower 24 bits) so that a stale
 // handle and a current handle to the same slot are still caught.
 
-static uint32 SlotOf(uint32 id) {
-	return id & 0x00FFFFFFu;
-}
-
 void RGPassBuilder::AssertNoDuplicateTextureAccess(RGTextureHandle handle, bool isWrite) const {
 	const uint32 slot = SlotOf(handle.id);
 
@@ -113,9 +128,14 @@ void RGPassBuilder::AssertNoDuplicateTextureAccess(RGTextureHandle handle, bool 
 	const bool inReads = std::ranges::any_of(m_Data.textureReads, slotMatches);
 	const bool inWrites = std::ranges::any_of(m_Data.textureWrites, slotMatches);
 
-	// Read-after-write within the same pass is a setup error.
-	AQUILA_ASSERT(!inReads && !inWrites, "Texture slot already declared in this pass (read-write or double-declare)");
-	(void)isWrite;
+	if (isWrite) {
+		AQUILA_ASSERT(!inReads, "Texture slot is already declared as a read in this pass — cannot also write it");
+		AQUILA_ASSERT(!inWrites, "Texture slot is already declared as a write in this pass — double-write detected");
+	} else {
+		// Duplicate reads are caught upstream in ReadTexture before reaching here.
+		AQUILA_ASSERT(!inReads, "Texture slot is already declared as a read in this pass");
+		AQUILA_ASSERT(!inWrites, "Texture slot is already declared as a write in this pass — cannot also read it");
+	}
 }
 
 void RGPassBuilder::AssertNoDuplicateBufferAccess(RGBufferHandle handle, bool isWrite) const {
@@ -126,8 +146,13 @@ void RGPassBuilder::AssertNoDuplicateBufferAccess(RGBufferHandle handle, bool is
 	const bool inReads = std::ranges::any_of(m_Data.bufferReads, slotMatches);
 	const bool inWrites = std::ranges::any_of(m_Data.bufferWrites, slotMatches);
 
-	AQUILA_ASSERT(!inReads && !inWrites, "Buffer slot already declared in this pass (read-write or double-declare)");
-	(void)isWrite;
+	if (isWrite) {
+		AQUILA_ASSERT(!inReads, "Buffer slot is already declared as a read in this pass — cannot also write it");
+		AQUILA_ASSERT(!inWrites, "Buffer slot is already declared as a write in this pass — double-write detected");
+	} else {
+		AQUILA_ASSERT(!inReads, "Buffer slot is already declared as a read in this pass");
+		AQUILA_ASSERT(!inWrites, "Buffer slot is already declared as a write in this pass — cannot also read it");
+	}
 }
 
 } // namespace Aquila::Graphics::RG
