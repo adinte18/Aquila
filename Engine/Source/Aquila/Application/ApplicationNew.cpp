@@ -14,7 +14,10 @@
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/UI/Core/ViewSystem.h"
+#include "Aquila/UI/Core/Label.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
+#include "Aquila/UI/Style/StyleLength.h"
+#include "Aquila/UI/Style/StyleTypes.h"
 
 namespace Aquila::Application {
 
@@ -46,6 +49,7 @@ Application::~Application() {
 	UI::Core::ViewSystem::Shutdown();
 
 	m_RenderPipeline.reset();
+	m_Font.reset();
 	m_Swapchain.reset();
 	m_Ctx.reset();
 
@@ -98,7 +102,15 @@ void Application::OnStart() {
 void Application::SetupScene() {
 	auto &canvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Screen);
 
+	UI::StyleProperties rootStyle;
+	rootStyle.width = UI::StyleLength::Grow();
+	rootStyle.height = UI::StyleLength::Grow();
+	rootStyle.alignItems = UI::AlignItems::Center;
+	rootStyle.justifyContent = UI::JustifyContent::Center;
+	canvas.GetRoot()->SetStyle(rootStyle);
+
 	auto box = CreateUnique<UI::Core::View>();
+	box->SetId("blue-box");
 
 	UI::StyleProperties props{};
 	props.backgroundColor = vec4(0.2f, 0.4f, 0.8f, 1.f);
@@ -107,7 +119,23 @@ void Application::SetupScene() {
 	props.width = UI::StyleLength::Pixel(300.F);
 	props.height = UI::StyleLength::Pixel(150.F);
 	props.borderRadius = vec4(20.0f, 20.0f, 20.0f, 20.0f);
+	props.alignItems = UI::AlignItems::Center;
+	props.justifyContent = UI::JustifyContent::Start;
+	props.padding = UI::StyleEdges::All(UI::StyleLength::Pixel(10.f));
 	box->SetStyle(props);
+
+	m_Font = UI::Text::FontAtlas::CreateFromFile(
+		*m_Ctx, "C:/Programming/Aquila/Resources/Engine/Fonts/Lexend-Regular.ttf", 32.f);
+
+	auto *label = box->AddChild(CreateUnique<UI::Core::Label>("Hello World", m_Font.get()));
+	label->SetId("my-label");
+
+	UI::StyleProperties style{};
+	style.color = vec4(1, 1, 1, 1);
+	vec2 measured = dynamic_cast<UI::Core::Label *>(label)->Measure();
+	style.width = UI::StyleLength::Pixel(measured.x);
+	style.height = UI::StyleLength::Pixel(measured.y);
+	label->SetStyle(style);
 
 	canvas.GetRoot()->AddChild(std::move(box));
 }

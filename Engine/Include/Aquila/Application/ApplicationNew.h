@@ -17,6 +17,7 @@
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/Renderers/Renderer.h"
 #include "Aquila/Rendering/Renderers/Renderer2D.h"
+#include "Aquila/UI/Text/FontAtlas.h"
 
 struct ApplicationSpec {
 	std::string Name = "Aquila";
@@ -63,6 +64,8 @@ class Application {
 	Ref<GFX::GfxSwapchain> m_Swapchain;
 
 	Unique<SceneManagement::Scene> m_Scene;
+
+	Unique<UI::Text::FontAtlas> m_Font = nullptr;
 
 	Unique<Rendering::RenderPipeline> m_RenderPipeline;
 	Rendering::Renderer *m_Renderer = nullptr;

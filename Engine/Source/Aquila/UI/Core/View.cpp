@@ -1,6 +1,5 @@
 #include "Aquila/UI/Core/View.h"
 
-
 namespace Aquila::UI::Core {
 View *View::AddChild(Unique<View> child) {
 	View *raw = child.get();

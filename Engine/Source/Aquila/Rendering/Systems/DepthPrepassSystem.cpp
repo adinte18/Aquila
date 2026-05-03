@@ -51,7 +51,6 @@ void DepthPrepassSystem::OnInit(GFX::GfxContext &ctx) {
 	pipelineDescriptor.depthStencil.depthTest = true;
 	pipelineDescriptor.depthStencil.depthWrite = true;
 	pipelineDescriptor.pushConstants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
-
 	m_Pipeline = ctx.CreateGraphicsPipeline(pipelineDescriptor);
 }
 
