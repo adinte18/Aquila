@@ -5,8 +5,14 @@
 
 #include "Aquila/GFX/GfxTexture.h"
 
+#include <string>
+
+namespace Aquila::UI::Text {
+class FontAtlas;
+}
+
 namespace Aquila::UI::Rendering {
-enum class UICommandType : uint8 { Rect, Image, ClipPush, ClipPop };
+enum class UICommandType : uint8 { Rect, Image, Text, ClipPush, ClipPop };
 
 struct DrawCmd {
 	UICommandType type;
@@ -18,5 +24,8 @@ struct DrawCmd {
 	GFX::GfxTexture *texture = nullptr;
 	vec4 textureTint = vec4(0.F);
 	int32 zOrder = 0;
+
+	std::string text;
+	Text::FontAtlas *font = nullptr;
 };
 } // namespace Aquila::UI::Rendering

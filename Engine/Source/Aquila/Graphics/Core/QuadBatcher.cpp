@@ -11,6 +11,7 @@ using namespace Aquila::Graphics;
 static constexpr const char *kFlatShader = AQUILA_SHADERS_DIR "2D/Flat2D.slang";
 static constexpr const char *kTextureShader = AQUILA_SHADERS_DIR "2D/Sprite2D.slang";
 static constexpr const char *kGUIShader = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
+static constexpr const char *kTextShader = AQUILA_SHADERS_DIR "2D/Text2D.slang";
 
 static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *shaderPath,
 										   const std::vector<GFX::GfxDescriptorSetLayout *> &setLayouts,
@@ -125,6 +126,7 @@ void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat
 	m_ActiveSampleCount = sampleCount;
 	m_ActiveDepthFormat = depthFormat;
 	m_ViewProjection = viewProjection;
+	m_VertexOffset = 0;
 	StartBatch();
 }
 
@@ -167,6 +169,18 @@ GFX::GfxPipeline &QuadBatcher::GetOrCreateGUIPipeline(RHI::TextureFormat format,
 	}
 	m_GUIPipelines[key] = BuildPipeline(m_Ctx, kGUIShader, {}, sizeof(QuadPushConstants), format, samples, depthFormat);
 	return *m_GUIPipelines[key];
+}
+
+GFX::GfxPipeline &QuadBatcher::GetOrCreateTextPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+													   RHI::TextureFormat depthFormat) {
+	PipelineKey key{ .colorFormat = format, .sampleCount = samples, .depthFormat = depthFormat };
+	auto it = m_TextPipelines.find(key);
+	if (it != m_TextPipelines.end()) {
+		return *it->second;
+	}
+	m_TextPipelines[key] = BuildPipeline(m_Ctx, kTextShader, { m_TextureLayout.get() }, sizeof(QuadPushConstants),
+										 format, samples, depthFormat);
+	return *m_TextPipelines[key];
 }
 
 void QuadBatcher::DrawRect(const RectSpec &spec) {
@@ -238,7 +252,44 @@ void QuadBatcher::DrawSprite(const SpriteSpec &spec) {
 
 	for (uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
 		vec4 worldPos = transform * kLocalCorners[i];
-		m_VertexData.push_back({ vec3(worldPos), spec.tint, uvs[i] });
+		m_VertexData.push_back({ .position = vec3(worldPos), .color = spec.tint, .uv = uvs[i] });
+	}
+	++m_QuadCount;
+	++m_Stats.quadCount;
+}
+
+void QuadBatcher::DrawGlyph(const GlyphSpec &spec) {
+	if (m_BatchType != BatchType::Text || m_BatchTexture != spec.atlasTexture) {
+		Flush();
+		StartBatch();
+		m_BatchType = BatchType::Text;
+		m_BatchTexture = spec.atlasTexture;
+	}
+	if (m_QuadCount >= SharedConstants::MAX_QUADS) {
+		Flush();
+		StartBatch();
+		m_BatchType = BatchType::Text;
+		m_BatchTexture = spec.atlasTexture;
+	}
+
+	mat4 transform = BuildQuadTransform(spec.position, spec.size, 0.f, spec.depth);
+
+	vec2 uvs[4] = {
+		{ spec.uvMin.x, spec.uvMin.y },
+		{ spec.uvMax.x, spec.uvMin.y },
+		{ spec.uvMax.x, spec.uvMax.y },
+		{ spec.uvMin.x, spec.uvMax.y },
+	};
+	static constexpr vec4 kLocalCorners[4] = {
+		{ -0.5F, -0.5F, 0.F, 1.F },
+		{ 0.5F, -0.5F, 0.F, 1.F },
+		{ 0.5F, 0.5F, 0.F, 1.F },
+		{ -0.5F, 0.5F, 0.F, 1.F },
+	};
+
+	for (uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
+		vec4 worldPos = transform * kLocalCorners[i];
+		m_VertexData.push_back({ .position = vec3(worldPos), .color = spec.color, .uv = uvs[i] });
 	}
 	++m_QuadCount;
 	++m_Stats.quadCount;
@@ -249,9 +300,15 @@ void QuadBatcher::Flush() {
 		return;
 	}
 
-	m_VertexBuffer->Write(m_VertexData.data(), sizeof(QuadVertex) * m_VertexData.size());
+	const uint64 byteOffset = m_VertexOffset * sizeof(QuadVertex);
+	const uint64 byteSize = m_VertexData.size() * sizeof(QuadVertex);
+
+	m_VertexBuffer->Write(m_VertexData.data(), byteSize, byteOffset);
 
 	GFX::GfxPipeline &pipeline = [&]() -> GFX::GfxPipeline & {
+		if (m_BatchType == BatchType::Text) {
+			return GetOrCreateTextPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+		}
 		if (m_BatchTexture != nullptr) {
 			return GetOrCreateTexturePipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
 		}
@@ -266,7 +323,7 @@ void QuadBatcher::Flush() {
 	QuadPushConstants pc{ .viewProjection = m_ViewProjection };
 	m_ActiveCmd->PushConstants(pc, RHI::ShaderStageFlags::Vertex);
 
-	m_ActiveCmd->BindVertexBuffer(*m_VertexBuffer);
+	m_ActiveCmd->BindVertexBuffer(*m_VertexBuffer, 0, byteOffset);
 	m_ActiveCmd->BindIndexBuffer(*m_IndexBuffer);
 
 	if (m_BatchTexture != nullptr) {
@@ -277,6 +334,7 @@ void QuadBatcher::Flush() {
 
 	m_ActiveCmd->DrawIndexed(m_QuadCount * SharedConstants::INDICES_PER_QUAD);
 	++m_Stats.drawCalls;
+	m_VertexOffset += static_cast<uint32>(m_VertexData.size());
 }
 
 void QuadBatcher::StartBatch() {

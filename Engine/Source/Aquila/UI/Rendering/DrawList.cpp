@@ -4,7 +4,7 @@
 
 namespace Aquila::UI::Rendering {
 
-void DrawList::DrawRect(Rect rect, vec4 color, vec4 radius, float borderWidth, vec4 borderColor, int32 z) {
+void DrawList::DrawRect(Rect rect, vec4 color, vec4 radius, f32 borderWidth, vec4 borderColor, int32 z) {
 	DrawCmd command{};
 	command.type = UICommandType::Rect;
 	command.rect = rect;
@@ -16,6 +16,22 @@ void DrawList::DrawRect(Rect rect, vec4 color, vec4 radius, float borderWidth, v
 
 	m_Commands.push_back(command);
 }
+void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, vec4 color, int32 z) {
+	if ((font == nullptr) || text.empty()) {
+		return;
+	}
+
+	DrawCmd command{};
+	command.type = UICommandType::Text;
+	command.rect = bounds;
+	command.color = color;
+	command.zOrder = z;
+	command.text = std::string(text);
+	command.font = font;
+
+	m_Commands.push_back(command);
+}
+
 void DrawList::DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint, int32 z) {
 	DrawCmd command{};
 	command.type = UICommandType::Image;
@@ -71,6 +87,39 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 			spec.texture = command.texture;
 			spec.depth = static_cast<f32>(command.zOrder);
 			r2d.DrawSprite(spec);
+			break;
+		}
+		case UICommandType::Text: {
+			if ((command.font == nullptr) || command.text.empty()) {
+				break;
+			}
+
+			GFX::GfxTexture *atlas = command.font->GetTexture();
+			const auto depth = static_cast<f32>(command.zOrder);
+			f32 cursorX = command.rect.position.x;
+			const f32 baselineY = command.rect.position.y + command.font->GetAscent();
+
+			for (unsigned char ch : command.text) {
+				const Text::GlyphInfo *glyph = command.font->GetGlyph(static_cast<uint32>(ch));
+				if (glyph == nullptr) {
+					continue;
+				}
+
+				const f32 glyphX = cursorX + glyph->bearing.x;
+				const f32 glyphY = baselineY + glyph->bearing.y;
+
+				Graphics::GlyphSpec spec{};
+				spec.position = { glyphX, glyphY };
+				spec.size = glyph->size;
+				spec.color = command.color;
+				spec.depth = depth;
+				spec.atlasTexture = atlas;
+				spec.uvMin = glyph->uvMin;
+				spec.uvMax = glyph->uvMax;
+
+				r2d.DrawGlyph(spec);
+				cursorX += glyph->advance;
+			}
 			break;
 		}
 		case UICommandType::ClipPush: {

@@ -13,11 +13,13 @@ namespace Aquila::Graphics {
 
 struct QuadVertex {
 	vec3 position;
+	f32 _pad0 = 0.f;
 	vec4 color;
 	vec2 uv;
 	vec2 size;
 	vec4 radius;
 	float borderWidth;
+	float _pad1[3]{};
 	vec4 borderColor;
 };
 
@@ -47,6 +49,16 @@ struct SpriteSpec {
 	vec2 uvMax = { 1.F, 1.F };
 };
 
+struct GlyphSpec {
+	vec2 position = { 0.F, 0.F };
+	vec2 size = { 1.F, 1.F };
+	vec4 color = { 1.F, 1.F, 1.F, 1.F };
+	float depth = 0.F;
+	GFX::GfxTexture *atlasTexture = nullptr;
+	vec2 uvMin = { 0.F, 0.F };
+	vec2 uvMax = { 1.F, 1.F };
+};
+
 class QuadBatcher {
   public:
 	explicit QuadBatcher(GFX::GfxContext &ctx);
@@ -61,6 +73,7 @@ class QuadBatcher {
 
 	void DrawRect(const RectSpec &spec);
 	void DrawSprite(const SpriteSpec &spec);
+	void DrawGlyph(const GlyphSpec &spec);
 
 	void ResetStats() { m_Stats = {}; }
 	[[nodiscard]] uint32 GetDrawCallCount() const { return m_Stats.drawCalls; }
@@ -72,6 +85,8 @@ class QuadBatcher {
 												 RHI::TextureFormat depthFormat);
 	GFX::GfxPipeline &GetOrCreateGUIPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
 											 RHI::TextureFormat depthFormat);
+	GFX::GfxPipeline &GetOrCreateTextPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
+											  RHI::TextureFormat depthFormat);
 
   private:
 	struct Stats {
@@ -96,7 +111,7 @@ class QuadBatcher {
 		}
 	};
 
-	enum class BatchType { Flat, GUI, Texture };
+	enum class BatchType { Flat, GUI, Texture, Text };
 
 	void StartBatch();
 	[[nodiscard]] mat4 BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const;
@@ -111,6 +126,7 @@ class QuadBatcher {
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_FlatPipelines;
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_TexturePipelines;
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_GUIPipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_TextPipelines;
 
 	GFX::GfxCommandList *m_ActiveCmd = nullptr;
 	RHI::TextureFormat m_ActiveColorFormat = RHI::TextureFormat::None;
@@ -120,6 +136,7 @@ class QuadBatcher {
 
 	std::vector<QuadVertex> m_VertexData;
 	uint32 m_QuadCount = 0;
+	uint32 m_VertexOffset = 0;
 	BatchType m_BatchType = BatchType::Flat;
 	GFX::GfxTexture *m_BatchTexture = nullptr;
 
