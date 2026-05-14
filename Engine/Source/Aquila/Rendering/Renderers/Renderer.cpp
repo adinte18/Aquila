@@ -7,7 +7,7 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
 
-using Aquila::SharedConstants::kShadersDir;
+using Aquila::SharedConstants::SHADERS_DIR;
 
 namespace Aquila::Rendering {
 
@@ -27,7 +27,7 @@ void Renderer::OnInit(GFX::GfxContext &ctx) {
 	// compile blit shader
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(kShadersDir + "Blit.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "Blit.slang", stages, err)) {
 		AQUILA_LOG_ERROR("Renderer: blit shader compile failed: {}", err);
 		return;
 	}
@@ -50,7 +50,9 @@ void Renderer::OnInit(GFX::GfxContext &ctx) {
 	desc.raster.cullMode = RHI::CullMode::None;
 	desc.setLayouts = { &m_BlitLayout->GetRHI() };
 	m_BlitPipeline = ctx.CreateGraphicsPipeline(desc);
-	m_BlitSet = ctx.AllocateDescriptorSet(*m_BlitLayout);
+	for (auto &set : m_BlitSets) {
+		set = ctx.AllocateDescriptorSet(*m_BlitLayout);
+	}
 
 	// create swapchain pass
 	m_SwapchainPass = ctx.CreateRenderPass({
@@ -72,6 +74,7 @@ void Renderer::OnShutdown() {
 void Renderer::SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex) {
 	m_Swapchain = &swapchain;
 	m_SwapchainImageIndex = imageIndex;
+	m_FrameSlot = (m_FrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 }
 
 void Renderer::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
@@ -88,7 +91,7 @@ void Renderer::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ct
 	auto hSrc = ctx.hSceneColor;
 	auto *swapchain = m_Swapchain;
 	auto imageIndex = m_SwapchainImageIndex;
-	auto *set = m_BlitSet.get();
+	auto *set = m_BlitSets[m_FrameSlot].get();
 	auto *pipeline = m_BlitPipeline.get();
 	auto *renderPass = m_SwapchainPass.get();
 
