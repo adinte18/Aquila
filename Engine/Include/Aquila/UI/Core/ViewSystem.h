@@ -2,28 +2,39 @@
 
 #include "Aquila/Foundation/Singleton.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/UI/Core/Canvas.h"
 
 namespace Aquila::UI::Core {
 
-enum class UILayer : uint8 { World = 0, HUD = 1, Screen = 2, Overlay = 3 };
+enum class UILayer : uint8 {
+	WorldSpace = 0,
+	ScreenCamera = 1,
+	ScreenOverlay = 2,
+	Editor = 3,
+	Count // keep track of how many layers we have
+};
 
 class ViewSystem : public Foundation::Singleton<ViewSystem> {
   public:
 	Canvas &GetLayer(UILayer layer);
 
 	void OnEvent(Application::Events::Event &e);
-	void Update(float deltaTime);
-	void Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void Update(float deltaTime); // Stage 1: animate + resolve styles (CPU)
+	void Compute();				  // Stage 2: layout + build draw list from cache (CPU)
+	// Stage 3: submit canvas draw lists for the given layer range into the provided batcher.
 	void RenderLayers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
 	void Resize(uint32 width, uint32 height);
+
+	bool IsAnyLayerDirty(UILayer from, UILayer to) const;
+	void ClearLayerDirtyFlags(UILayer from, UILayer to);
 
   private:
 	friend class Foundation::Singleton<ViewSystem>;
 
 	ViewSystem(uint32 width, uint32 height);
 
-	std::array<Unique<Canvas>, 4> m_Layers;
+	std::array<Unique<Canvas>, static_cast<size_t>(UILayer::Count)> m_Layers;
 };
 
 } // namespace Aquila::UI::Core

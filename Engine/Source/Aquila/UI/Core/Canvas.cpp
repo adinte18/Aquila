@@ -1,7 +1,10 @@
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/Application/Events/InputEvent.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Math/Math.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "Aquila/Platform/Input.h"
+#include <unordered_set>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-designated-field-initializers"
@@ -15,8 +18,8 @@ namespace Aquila::UI::Core {
 
 using namespace Application::Events;
 
-static Clay_LayoutAlignmentX JustifyToAlignX(JustifyContent j) {
-	switch (j) {
+static Clay_LayoutAlignmentX JustifyToAlignX(JustifyContent justify) {
+	switch (justify) {
 	case JustifyContent::Center:
 		return CLAY_ALIGN_X_CENTER;
 	case JustifyContent::End:
@@ -26,8 +29,8 @@ static Clay_LayoutAlignmentX JustifyToAlignX(JustifyContent j) {
 	}
 }
 
-static Clay_LayoutAlignmentY JustifyToAlignY(JustifyContent j) {
-	switch (j) {
+static Clay_LayoutAlignmentY JustifyToAlignY(JustifyContent justify) {
+	switch (justify) {
 	case JustifyContent::Center:
 		return CLAY_ALIGN_Y_CENTER;
 	case JustifyContent::End:
@@ -37,8 +40,8 @@ static Clay_LayoutAlignmentY JustifyToAlignY(JustifyContent j) {
 	}
 }
 
-static Clay_LayoutAlignmentX AlignToAlignX(AlignItems a) {
-	switch (a) {
+static Clay_LayoutAlignmentX AlignToAlignX(AlignItems align) {
+	switch (align) {
 	case AlignItems::Center:
 		return CLAY_ALIGN_X_CENTER;
 	case AlignItems::End:
@@ -48,8 +51,8 @@ static Clay_LayoutAlignmentX AlignToAlignX(AlignItems a) {
 	}
 }
 
-static Clay_LayoutAlignmentY AlignToAlignY(AlignItems a) {
-	switch (a) {
+static Clay_LayoutAlignmentY AlignToAlignY(AlignItems align) {
+	switch (align) {
 	case AlignItems::Center:
 		return CLAY_ALIGN_Y_CENTER;
 	case AlignItems::End:
@@ -59,15 +62,15 @@ static Clay_LayoutAlignmentY AlignToAlignY(AlignItems a) {
 	}
 }
 
-static Clay_SizingAxis ToCSizing(const StyleLength &len, float flexGrow = 0.f) {
-	switch (len.type) {
-	case Type::Pixel:
+static Clay_SizingAxis ToCSizing(const StyleLength &len, f32 flexGrow = 0.f) {
+	switch (len.unit) {
+	case LengthUnit::Pixel:
 		return CLAY_SIZING_FIXED(len.value);
-	case Type::Percent:
+	case LengthUnit::Percent:
 		return CLAY_SIZING_PERCENT(len.value / 100.f);
-	case Type::Grow:
+	case LengthUnit::Grow:
 		return CLAY_SIZING_GROW(flexGrow);
-	case Type::Auto:
+	case LengthUnit::Auto:
 	default:
 		return CLAY_SIZING_FIT(0, 0);
 	}
@@ -75,119 +78,362 @@ static Clay_SizingAxis ToCSizing(const StyleLength &len, float flexGrow = 0.f) {
 
 static Clay_Padding ToClayPadding(const StyleEdges &edges) {
 	auto px = [](const StyleLength &l) -> uint16_t {
-		return l.type == Type::Pixel ? static_cast<uint16_t>(l.value) : 0u;
+		return l.unit == LengthUnit::Pixel ? static_cast<uint16_t>(l.value) : 0u;
 	};
 	return { .left = px(edges.left), .right = px(edges.right), .top = px(edges.top), .bottom = px(edges.bottom) };
 }
 
 static Clay_LayoutConfig ToClayLayout(const ComputedStyle &cs) {
 	const bool isRow = (cs.flexDirection == FlexDirection::Row || cs.flexDirection == FlexDirection::RowReverse);
-	const Clay_LayoutAlignmentX ax = isRow ? JustifyToAlignX(cs.justify) : AlignToAlignX(cs.align);
-	const Clay_LayoutAlignmentY ay = isRow ? AlignToAlignY(cs.align) : JustifyToAlignY(cs.justify);
+	const Clay_LayoutAlignmentX alignX = isRow ? JustifyToAlignX(cs.justify) : AlignToAlignX(cs.align);
+	const Clay_LayoutAlignmentY alignY = isRow ? AlignToAlignY(cs.align) : JustifyToAlignY(cs.justify);
 
 	return {
 		.sizing = { .width = ToCSizing(cs.width, cs.flexGrow), .height = ToCSizing(cs.height, cs.flexGrow) },
 		.padding = ToClayPadding(cs.padding),
-		.childAlignment = { .x = ax, .y = ay },
+		.childGap = static_cast<uint16_t>(cs.gap),
+		.childAlignment = { .x = alignX, .y = alignY },
 		.layoutDirection = isRow ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
 	};
 }
 
+static Clay_ElementId MakeElementId(View *node) {
+	const std::string &viewId = node->GetId();
+	if (!viewId.empty()) {
+		const Clay_String s{
+			.isStaticallyAllocated = false,
+			.length = static_cast<int32>(viewId.size()),
+			.chars = viewId.c_str(),
+		};
+		return CLAY_SID(s);
+	}
+
+	// shift out alignment bits so nearby objects don't collide.
+	const auto raw = static_cast<uint32>(reinterpret_cast<uintptr_t>(node) >> 4);
+	return Clay_ElementId{ .id = raw != 0 ? raw : 1u };
+}
+
 Canvas::Canvas(uint32 width, uint32 height) : m_Width(width), m_Height(height) {
 	m_Root = CreateUnique<View>();
+	m_Root->SetDirtyCallback([this](View *v) { NotifyStyleDirty(v); });
+	m_Root->SetAnimationCallback([this](View *v) { NotifyAnimationStarted(v); });
+
 	m_DrawList.SetCanvasSize(width, height);
 
-	const uint32_t memSize = Clay_MinMemorySize();
+	const uint32 memSize = Clay_MinMemorySize();
 	m_ClayMemory.resize(memSize);
 	const Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(memSize, m_ClayMemory.data());
-	m_ClayCtx = Clay_Initialize(arena, { static_cast<float>(width), static_cast<float>(height) }, {});
+	m_ClayCtx = Clay_Initialize(arena, { static_cast<f32>(width), static_cast<f32>(height) }, {});
 
 	StyleProperties rootStyle;
 	rootStyle.width = StyleLength::Grow();
 	rootStyle.height = StyleLength::Grow();
 	m_Root->SetStyle(rootStyle);
+	NotifyStyleDirty(m_Root.get());
 }
 
-void Canvas::StylePass(View *node, const ComputedStyle *parentComputed) {
-	ComputedStyle computed = m_StyleSheet.Resolve(*node, parentComputed);
-	node->SetComputedStyle(computed);
+void Canvas::MarkDirty() {
+	m_Dirty = true;
+}
 
+void Canvas::NotifyStyleDirty(View *view) {
+	m_StyleCache.Invalidate(view);
+	m_DirtyViews.MarkDirty(view);
+}
+
+void Canvas::NotifyAnimationStarted(View *view) {
+	for (View *v : m_ActiveAnims) {
+		if (v == view) {
+			return;
+		}
+	}
+	m_ActiveAnims.push_back(view);
+	MarkDirty();
+}
+
+void Canvas::ReloadStyles() {
+	MarkSubtreeDirty(m_Root.get());
+}
+
+void Canvas::MarkSubtreeDirty(View *node) {
+	NotifyStyleDirty(node);
 	for (const auto &child : node->GetChildren()) {
-		StylePass(child.get(), &node->GetComputedStyle());
+		MarkSubtreeDirty(child.get());
+	}
+}
+
+static bool AffectsLayout(const ComputedStyle &a, const ComputedStyle &b) {
+	return a.width != b.width || a.height != b.height || a.minWidth != b.minWidth || a.maxWidth != b.maxWidth ||
+		   a.minHeight != b.minHeight || a.maxHeight != b.maxHeight || a.padding != b.padding || a.gap != b.gap ||
+		   a.flexDirection != b.flexDirection || a.justify != b.justify || a.align != b.align || a.wrap != b.wrap ||
+		   a.flexGrow != b.flexGrow || a.display != b.display || a.overflow != b.overflow || a.position != b.position ||
+		   a.top != b.top || a.bottom != b.bottom || a.left != b.left || a.right != b.right ||
+		   a.fontSize != b.fontSize || a.fontFamily != b.fontFamily || a.zIndex != b.zIndex;
+}
+
+void Canvas::StylePass() {
+	if (m_DirtyViews.IsEmpty()) {
+		return;
+	}
+
+	auto depth = [](View *view) {
+		int result = 0;
+		while (view->GetParent()) {
+			view = view->GetParent();
+			result++;
+		}
+		return result;
+	};
+
+	std::vector<View *> queue = m_DirtyViews.GetOrdered();
+	std::stable_sort(queue.begin(), queue.end(), [&](View *a, View *b) { return depth(a) < depth(b); });
+	std::unordered_set<View *> inQueue(queue.begin(), queue.end());
+
+	for (size_t i = 0; i < queue.size(); i++) {
+		View *node = queue[i];
+
+		const ComputedStyle *parentStyle = nullptr;
+		if (View *parent = node->GetParent()) {
+			parentStyle = m_StyleCache.Peek(parent);
+			if (!parentStyle) {
+				parentStyle = &parent->GetComputedStyle();
+			}
+			m_StyleCache.RegisterDependency(node, parent);
+		}
+
+		const ComputedStyle old = node->GetComputedStyle();
+		const ComputedStyle &resolved =
+			m_StyleCache.Get(node, [&]() { return m_StyleSheet.Resolve(*node, parentStyle); });
+
+		if (resolved != old) {
+			if (!m_LayoutDirty && AffectsLayout(old, resolved)) {
+				m_LayoutDirty = true;
+			}
+			node->SetComputedStyle(resolved);
+			node->OnStyleResolved();
+			MarkNodeDrawDirty(node);
+			MarkDirty();
+
+			for (const auto &child : node->GetChildren()) {
+				View *c = child.get();
+				if (inQueue.insert(c).second) {
+					queue.push_back(c);
+				}
+			}
+		} else {
+			node->SetComputedStyle(resolved);
+			node->OnStyleResolved();
+		}
+	}
+
+	m_DirtyViews.Clear();
+}
+
+void Canvas::AnimationPass(f32 dt) {
+	auto it = m_ActiveAnims.begin();
+	while (it != m_ActiveAnims.end()) {
+		View *v = *it;
+		v->UpdateAnimation(dt);
+		MarkNodeDrawDirty(v); // display style changed — draw commands are stale
+		MarkDirty();		  // m_NeedsSort intentionally NOT set: color/border transitions don't change z-order
+		if (v->IsAnimationFinished()) {
+			it = m_ActiveAnims.erase(it);
+		} else {
+			++it;
+		}
 	}
 }
 
 void Canvas::ClayLayoutPass(View *node) {
-	const uint32_t raw = static_cast<uint32_t>(reinterpret_cast<uintptr_t>(node) >> 4);
-	const uint32_t id = raw != 0 ? raw : 1u;
-	node->SetClayId(id);
+	const ComputedStyle &cs = node->GetDisplayStyle();
 
-	const Clay_ElementId clayId = { .id = id };
-	CLAY(clayId, { .layout = ToClayLayout(node->GetComputedStyle()) }) {
+	if (cs.display == Display::None) {
+		return;
+	}
+
+	const Clay_ElementId clayId = MakeElementId(node);
+	node->SetClayId(clayId.id);
+
+	auto emitChildren = [&]() {
 		for (const auto &child : node->GetChildren()) {
 			ClayLayoutPass(child.get());
 		}
+	};
+
+	// For leaf nodes (e.g. Label) that report an intrinsic size, use it as a
+	// FIXED size on any axis that doesn't have an explicit CSS dimension set.
+	// This lets font-size and text content drive layout automatically.
+	Clay_LayoutConfig layout = ToClayLayout(cs);
+	const vec2 intrinsic = node->GetIntrinsicSize();
+	if (intrinsic.x >= 0.f && cs.width.unit == LengthUnit::Auto) {
+		layout.sizing.width = CLAY_SIZING_FIXED(intrinsic.x);
+	}
+	if (intrinsic.y >= 0.f && cs.height.unit == LengthUnit::Auto) {
+		layout.sizing.height = CLAY_SIZING_FIXED(intrinsic.y);
+	}
+
+	switch (cs.overflow) {
+	case Overflow::Scroll:
+		CLAY(clayId, {
+						 .layout = layout,
+						 .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() },
+					 }) {
+			emitChildren();
+		}
+		break;
+
+	case Overflow::Hidden:
+		CLAY(clayId, {
+						 .layout = layout,
+						 .clip = { .horizontal = true, .vertical = true },
+					 }) {
+			emitChildren();
+		}
+		break;
+
+	default:
+		CLAY(clayId, { .layout = layout }) {
+			emitChildren();
+		}
+		break;
 	}
 }
 
-void Canvas::ClayUpdateRects(View *node, vec2 parentAbsPos) {
-	const Clay_ElementId clayId = { .id = node->GetClayId() };
+bool Canvas::ClayUpdateRects(View *node, vec2 parentAbsPos) {
+	const ComputedStyle &cs = node->GetDisplayStyle();
+	if (cs.display == Display::None) {
+		node->SetLayoutRect({});
+		return false;
+	}
+
+	bool changed = false;
+	const Clay_ElementId clayId = MakeElementId(node);
 	const Clay_ElementData data = Clay_GetElementData(clayId);
+
 	vec2 myAbsPos = parentAbsPos;
 	if (data.found) {
 		const Clay_BoundingBox &bb = data.boundingBox;
 		myAbsPos = { bb.x, bb.y };
-		// Store position relative to parent so OnDraw accumulation is correct
-		node->SetLayoutRect({ .position = myAbsPos - parentAbsPos, .size = { bb.width, bb.height } });
+		const Rect newRect = { .position = myAbsPos - parentAbsPos, .size = { bb.width, bb.height } };
+		if (newRect != node->GetLayoutRect()) {
+			node->SetLayoutRect(newRect);
+			changed = true;
+		}
+		if (myAbsPos != node->GetAbsolutePosition()) {
+			node->SetAbsolutePosition(myAbsPos);
+			MarkNodeDrawDirty(node);
+		}
 	}
 
 	for (const auto &child : node->GetChildren()) {
-		ClayUpdateRects(child.get(), myAbsPos);
+		changed |= ClayUpdateRects(child.get(), myAbsPos);
 	}
+
+	return changed;
 }
 
-void Canvas::DrawPass(View *node, vec2 origin) {
-	node->OnDraw(m_DrawList, origin);
-}
-
-void Canvas::Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
-	if (!m_Root) {
+void Canvas::Compute() {
+	if (!m_Root || !m_Dirty) {
 		return;
 	}
 
-	m_DrawList.Clear();
-	StylePass(m_Root.get(), nullptr);
+	if (m_LayoutDirty) {
+		Clay_SetCurrentContext(static_cast<Clay_Context *>(m_ClayCtx));
+		Clay_SetLayoutDimensions({ static_cast<f32>(m_Width), static_cast<f32>(m_Height) });
+		Clay_SetPointerState({ m_MousePos.x, m_MousePos.y }, m_MouseDown);
+		Clay_UpdateScrollContainers(true, { m_ScrollDelta.x, m_ScrollDelta.y }, m_DeltaTime);
+		m_ScrollDelta = {};
+		Clay_BeginLayout();
+		ClayLayoutPass(m_Root.get());
+		Clay_EndLayout(m_DeltaTime);
+		ClayUpdateRects(m_Root.get()); // sets absolute positions, marks draw-dirty for moved nodes
+		m_LayoutDirty = false;
+		m_NeedsSort = true;
+	}
 
-	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_ClayCtx));
-	Clay_SetLayoutDimensions({ static_cast<float>(m_Width), static_cast<float>(m_Height) });
-	Clay_BeginLayout();
-	ClayLayoutPass(m_Root.get());
-	Clay_EndLayout(0.f);
-	ClayUpdateRects(m_Root.get());
+	if (!m_SubtreeDrawCache.IsValid(m_Root.get())) {
+		m_DrawListDirty = true;
+		m_DrawList.Clear();
+		const std::vector<DrawCmd> &all = BuildSubtreeDrawCmds(m_Root.get());
+		for (const DrawCmd &cmd : all) {
+			m_DrawList.AppendCmd(cmd);
+		}
+		if (m_NeedsSort) {
+			m_DrawList.Sort();
+			m_NeedsSort = false;
+		}
+	}
 
-	DrawPass(m_Root.get(), vec2(0.f));
-	m_DrawList.Sort();
-	m_DrawList.Submit(r2d, cmd);
+	m_Dirty = false;
 }
 
+void Canvas::MarkNodeDrawDirty(View *node) {
+	m_DrawCache.Invalidate(node);
+	View *curr = node;
+	while (curr) {
+		m_SubtreeDrawCache.Invalidate(curr);
+		curr = curr->GetParent();
+	}
+}
+
+const std::vector<DrawCmd> &Canvas::BuildSubtreeDrawCmds(View *node) {
+	return m_SubtreeDrawCache.Get(node, [&]() {
+		std::vector<DrawCmd> result;
+
+		const std::vector<DrawCmd> &self = m_DrawCache.Get(node, [&]() {
+			DrawList capture;
+			capture.SetCanvasSize(m_Width, m_Height);
+			node->OnDrawSelf(capture);
+			return capture.TakeCommands();
+		});
+		result.insert(result.end(), self.begin(), self.end());
+
+		for (const auto &child : node->GetChildren()) {
+			const std::vector<DrawCmd> &childCmds = BuildSubtreeDrawCmds(child.get());
+			result.insert(result.end(), childCmds.begin(), childCmds.end());
+		}
+
+		return result;
+	});
+}
+
+void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
+	if (!m_Root || m_DrawList.IsEmpty()) {
+		return;
+	}
+	m_DrawList.Submit(r2d, cmd);
+}
 void Canvas::OnEvent(Application::Events::Event &e) {
+	PROFILE_SCOPE("Canvas::OnEvent");
+
 	EventDispatcher dispatcher(e);
 
 	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
-		View *hit = m_Root ? m_Root->HitTest({ e.GetX(), e.GetY() }) : nullptr;
-		if (hit != m_HoveredView) {
-			if (m_HoveredView) {
-				m_HoveredView->OnMouseLeave();
+		PROFILE_SCOPE("Canvas::MouseMoved");
+		{
+			m_MousePos = { e.GetX(), e.GetY() };
+
+			View *hit = m_Root ? m_Root->HitTest(m_MousePos) : nullptr;
+			if (hit != m_HoveredView) {
+				PROFILE_SCOPE("Canvas::HoverChange");
+				{
+					if (m_HoveredView) {
+						m_HoveredView->OnMouseLeave();
+					}
+					m_HoveredView = hit;
+					if (m_HoveredView) {
+						m_HoveredView->OnMouseEnter();
+					}
+				}
 			}
-			m_HoveredView = hit;
-			if (m_HoveredView) {
-				m_HoveredView->OnMouseEnter();
-			}
+			return false;
 		}
-		return false;
 	});
 
 	dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent &e) {
+		if (e.GetMouseButton() == MouseButton::Left) {
+			m_MouseDown = true;
+		}
 		if (!m_HoveredView) {
 			return false;
 		}
@@ -196,16 +442,24 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		}
 		m_FocusedView = m_HoveredView;
 		m_FocusedView->OnFocusGained();
-		auto [x, y] = Platform::Input::GetMousePosition();
-		m_FocusedView->OnMousePress(e.GetMouseButton(), { x, y });
+		m_FocusedView->OnMousePress(e.GetMouseButton(), m_MousePos);
 		return false;
 	});
 
 	dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent &e) {
-		if (m_HoveredView) {
-			auto [x, y] = Platform::Input::GetMousePosition();
-			m_HoveredView->OnMouseRelease(e.GetMouseButton(), { x, y });
+		if (e.GetMouseButton() == MouseButton::Left) {
+			m_MouseDown = false;
 		}
+		if (m_HoveredView) {
+			m_HoveredView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
+		}
+		return false;
+	});
+
+	dispatcher.Dispatch<MouseScrolledEvent>([this](MouseScrolledEvent &e) {
+		m_ScrollDelta += vec2(e.GetXOffset(), e.GetYOffset());
+		m_LayoutDirty = true;
+		MarkDirty();
 		return false;
 	});
 
@@ -224,16 +478,20 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	});
 }
 
-void Canvas::Update(float deltaTime) {
-	AQUILA_UNUSED(deltaTime);
+void Canvas::Update(f32 deltaTime) {
+	m_DeltaTime = deltaTime;
+	StylePass();
+	AnimationPass(deltaTime);
 }
 
 void Canvas::Resize(uint32 width, uint32 height) {
 	m_Width = width;
 	m_Height = height;
 	m_DrawList.SetCanvasSize(width, height);
+	m_LayoutDirty = true;
+	MarkDirty();
 	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_ClayCtx));
-	Clay_SetLayoutDimensions({ static_cast<float>(width), static_cast<float>(height) });
+	Clay_SetLayoutDimensions({ static_cast<f32>(width), static_cast<f32>(height) });
 }
 
 StyleSheet &Canvas::GetStyleSheet() {

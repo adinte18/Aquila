@@ -28,15 +28,32 @@ void ViewSystem::Update(float deltaTime) {
 	}
 }
 
-void ViewSystem::Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
-	RenderLayers(r2d, cmd, UILayer::World, UILayer::Overlay);
+void ViewSystem::Compute() {
+	for (auto &layer : m_Layers) {
+		layer->Compute();
+	}
 }
 
 void ViewSystem::RenderLayers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to) {
 	const int first = static_cast<int>(from);
 	const int last = static_cast<int>(to);
 	for (int i = first; i <= last; i++) {
-		m_Layers[i]->Render(r2d, cmd);
+		m_Layers[i]->SubmitToQuadBatcher(r2d, cmd);
+	}
+}
+
+bool ViewSystem::IsAnyLayerDirty(UILayer from, UILayer to) const {
+	for (int i = static_cast<int>(from); i <= static_cast<int>(to); i++) {
+		if (m_Layers[i]->IsDrawListDirty()) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void ViewSystem::ClearLayerDirtyFlags(UILayer from, UILayer to) {
+	for (int i = static_cast<int>(from); i <= static_cast<int>(to); i++) {
+		m_Layers[i]->ClearDrawListDirty();
 	}
 }
 
