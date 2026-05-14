@@ -13,7 +13,7 @@ namespace Aquila::Rendering {
 
 using Aquila::SharedConstants::SHADERS_DIR;
 
-static constexpr uint32 kElementCount = 256;
+static constexpr uint32 kElementCount = 3456; // cluster size so 16x9x24
 
 void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
 	RenderingSystemBase::OnInit(ctx);
@@ -25,13 +25,23 @@ void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
 		return;
 	}
 
+	m_GridData.grid.x = 16;
+	m_GridData.grid.y = 9;
+	m_GridData.grid.z = 24;
+
 	m_StorageLayout = ctx.CreateDescriptorSetLayout({
 		.bindings = { {
-			.binding = 0,
-			.type = RHI::DescriptorType::StorageBuffer,
-			.stages = RHI::ShaderStageFlags::Compute,
-			.count = 1,
-		} },
+						  .binding = 0,
+						  .type = RHI::DescriptorType::StorageBuffer,
+						  .stages = RHI::ShaderStageFlags::Compute,
+						  .count = 1,
+					  },
+					  {
+						  .binding = 1,
+						  .type = RHI::DescriptorType::UniformBuffer,
+						  .stages = RHI::ShaderStageFlags::Compute,
+						  .count = 1,
+					  } },
 	});
 
 	RHI::ComputePipelineDesc pipelineDesc{};
@@ -45,14 +55,24 @@ void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
 	m_Pipeline = ctx.CreateComputePipeline(pipelineDesc);
 
 	m_OutputBuffer = ctx.CreateBuffer({
-		.size = sizeof(uint32) * kElementCount,
+		.size = sizeof(AABB) * kElementCount,
 		.usage = RHI::BufferUsage::StorageBuffer,
 		.domain = RHI::MemoryDomain::GPU_TO_CPU,
 		.debugName = "ComputeTest_Output",
 	});
 
+	m_GridBuffer = ctx.CreateBuffer({
+		.size = sizeof(GridData),
+		.usage = RHI::BufferUsage::UniformBuffer,
+		.domain = RHI::MemoryDomain::CPU_TO_GPU,
+		.debugName = "ComputeTest_GridDAta",
+	});
+
+	m_GridBuffer->Write(&m_GridData);
+
 	m_StorageSet = ctx.AllocateDescriptorSet(*m_StorageLayout);
 	m_StorageSet->SetBuffer(0, *m_OutputBuffer).Flush();
+	m_StorageSet->SetBuffer(1, *m_GridBuffer).Flush();
 }
 
 void ClusterComputeSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
@@ -69,7 +89,8 @@ void ClusterComputeSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameCont
 			cmd.BindPipeline(*m_Pipeline);
 			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
 			cmd.BindDescriptorSet(1, *m_StorageSet);
-			cmd.Dispatch(kElementCount / 64, 1, 1);
+			cmd.Dispatch((m_GridData.grid.x + 4 - 1) / 4, (m_GridData.grid.y + 4 - 1) / 4,
+						 (m_GridData.grid.z + 4 - 1) / 4);
 
 			if (!m_Verified) {
 				auto *data = static_cast<uint32 *>(m_OutputBuffer->Map());

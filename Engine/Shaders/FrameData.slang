@@ -86,6 +86,13 @@ float4 AQ_WorldToClip(float3 worldPos) {
 	return mul(aqFrameData.mainCamera.viewProjection, float4(worldPos, 1.0));
 }
 
+float3 AQ_NDCToView(float4x4 matrix, float2 ndc, float linearDepth) {
+	float4 clip = float4(ndc, 1.0, 1.0);
+	float4 view = mul(matrix, clip);
+	view /= view.w;
+	return view.xyz * (linearDepth / view.z);
+}
+
 // World-space position to view space
 float4 AQ_WorldToView(float3 worldPos) {
 	return mul(aqFrameData.mainCamera.view, float4(worldPos, 1.0));
