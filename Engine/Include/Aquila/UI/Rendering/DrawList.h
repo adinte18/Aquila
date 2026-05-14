@@ -3,14 +3,16 @@
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
+#include "Aquila/UI/Style/StyleTypes.h"
 
 namespace Aquila::UI::Rendering {
 
 class DrawList {
   public:
 	void DrawRect(Rect rect, vec4 color, vec4 radius = vec4(0.F), float borderWidth = 0.F, vec4 borderColor = vec4(0.F), int32 z = 0);
-	void DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint = vec4(1.F), int32 z = 0);
-	void DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, vec4 color, int32 z = 0);
+	void DrawShadow(Rect widgetRect, vec2 offset, float blur, float spread, vec4 color, vec4 radius, int32 z = 0);
+	void DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint = vec4(1.F), vec2 uvMin = vec2(0.F), vec2 uvMax = vec2(1.F), int32 z = 0);
+	void DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, vec4 color, float fontSize = 0.f, TextAlign align = TextAlign::Left, int32 z = 0);
 	void PushClip(Rect clipRect);
 	void PopClip();
 
@@ -20,6 +22,13 @@ class DrawList {
 	// Translates every DrawCmd into Renderer2D calls.
 	// Must be called between Renderer2D::Begin and End.
 	void Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+
+	// Append a pre-built command (used when collecting from per-node draw caches).
+	void AppendCmd(const DrawCmd &cmd);
+
+	// Move the internal command list out, leaving this DrawList empty.
+	// Used by Canvas to capture per-node draw output into a cache entry.
+	[[nodiscard]] std::vector<DrawCmd> TakeCommands();
 
 	void Clear();
 	[[nodiscard]] bool IsEmpty() const;
