@@ -18,6 +18,7 @@
 #include "Aquila/Rendering/Renderers/Renderer.h"
 #include "Aquila/Rendering/Renderers/Renderer2D.h"
 #include "Aquila/UI/Text/FontAtlas.h"
+#include "Aquila/UI/Core/TextureCache.h"
 
 struct ApplicationSpec {
 	std::string Name = "Aquila";
@@ -65,7 +66,8 @@ class Application {
 
 	Unique<SceneManagement::Scene> m_Scene;
 
-	Unique<UI::Text::FontAtlas> m_Font = nullptr;
+	std::vector<Unique<UI::Text::FontAtlas>>    m_Fonts;
+	std::vector<Unique<UI::Core::TextureCache>> m_TextureCaches;
 
 	Unique<Rendering::RenderPipeline> m_RenderPipeline;
 	Rendering::Renderer *m_Renderer = nullptr;

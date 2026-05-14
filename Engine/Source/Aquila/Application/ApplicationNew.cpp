@@ -1,4 +1,5 @@
 #include "Aquila/Application/ApplicationNew.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "Aquila/Platform/Input.h"
 #include "Aquila/Foundation/Macros.h"
 
@@ -13,11 +14,10 @@
 
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
+#include "Aquila/Rendering/Systems/ComputeTestSystem.h"
 #include "Aquila/UI/Core/ViewSystem.h"
-#include "Aquila/UI/Core/Label.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
-#include "Aquila/UI/Style/StyleLength.h"
-#include "Aquila/UI/Style/StyleTypes.h"
+#include "UIWidgetTest.h"
 
 namespace Aquila::Application {
 
@@ -27,7 +27,7 @@ using namespace SceneManagement::Components;
 Application::Application(const ApplicationSpec &spec) : m_Spec(spec) {
 	m_Timer = CreateUnique<Foundation::Stopwatch>();
 	m_Window = CreateUnique<Window>(spec.Width, spec.Height, spec.Name);
-
+	Foundation::Profiler::Profiler::Init();
 	m_Window->SetEventCallback([this](Events::Event &event) {
 		Aquila::Platform::Input::OnEvent(event);
 		OnEvent(event);
@@ -46,10 +46,16 @@ Application::Application(const ApplicationSpec &spec) : m_Spec(spec) {
 Application::~Application() {
 	m_Ctx->WaitIdle();
 
+	Foundation::Profiler::Profiler::Shutdown();
 	UI::Core::ViewSystem::Shutdown();
 
 	m_RenderPipeline.reset();
-	m_Font.reset();
+	for (auto &font : m_Fonts) {
+		font.reset();
+	}
+	for (auto &cache : m_TextureCaches) {
+		cache.reset();
+	}
 	m_Swapchain.reset();
 	m_Ctx.reset();
 
@@ -59,11 +65,15 @@ Application::~Application() {
 
 void Application::Run() {
 	OnStart();
+
 	while (m_Running && !m_Window->ShouldClose()) {
 		m_Timer->Tick();
+		// PROFILE_FRAME_BEGIN();
 		m_Window->PollEvents();
 		OnUpdate(m_Timer->GetDeltaTime());
+		// PROFILE_FRAME_END();
 	}
+
 	OnShutdown();
 }
 
@@ -100,53 +110,17 @@ void Application::OnStart() {
 }
 
 void Application::SetupScene() {
-	auto &canvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Screen);
-
-	UI::StyleProperties rootStyle;
-	rootStyle.width = UI::StyleLength::Grow();
-	rootStyle.height = UI::StyleLength::Grow();
-	rootStyle.alignItems = UI::AlignItems::Center;
-	rootStyle.justifyContent = UI::JustifyContent::Center;
-	canvas.GetRoot()->SetStyle(rootStyle);
-
-	auto box = CreateUnique<UI::Core::View>();
-	box->SetId("blue-box");
-
-	UI::StyleProperties props{};
-	props.backgroundColor = vec4(0.2f, 0.4f, 0.8f, 1.f);
-	props.borderColor = vec4(1.F);
-	props.borderWidth = 2.0F;
-	props.width = UI::StyleLength::Pixel(300.F);
-	props.height = UI::StyleLength::Pixel(150.F);
-	props.borderRadius = vec4(20.0f, 20.0f, 20.0f, 20.0f);
-	props.alignItems = UI::AlignItems::Center;
-	props.justifyContent = UI::JustifyContent::Start;
-	props.padding = UI::StyleEdges::All(UI::StyleLength::Pixel(10.f));
-	box->SetStyle(props);
-
-	m_Font = UI::Text::FontAtlas::CreateFromFile(
-		*m_Ctx, "C:/Programming/Aquila/Resources/Engine/Fonts/Lexend-Regular.ttf", 32.f);
-
-	auto *label = box->AddChild(CreateUnique<UI::Core::Label>("Hello World", m_Font.get()));
-	label->SetId("my-label");
-
-	UI::StyleProperties style{};
-	style.color = vec4(1, 1, 1, 1);
-	vec2 measured = dynamic_cast<UI::Core::Label *>(label)->Measure();
-	style.width = UI::StyleLength::Pixel(measured.x);
-	style.height = UI::StyleLength::Pixel(measured.y);
-	label->SetStyle(style);
-
-	canvas.GetRoot()->AddChild(std::move(box));
+	auto &canvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Editor);
+	SetupWidgetTest(*m_Ctx, canvas, m_Fonts, m_TextureCaches);
 }
 
 void Application::OnShutdown() {}
 
 void Application::InitRendering(uint32 width, uint32 height) {
 	RHI::VulkanShaderCompiler::Initialize();
-	UI::Core::ViewSystem::Init(m_Window->GetWidth(), m_Window->GetHeight());
 
 	m_Ctx = GFX::GfxContext::Create(*GetWindow().GetNativeWindow());
+	UI::Core::ViewSystem::Init(m_Window->GetWidth(), m_Window->GetHeight());
 
 	m_Swapchain = m_Ctx->CreateSwapchain({
 		.width = width,
@@ -164,11 +138,13 @@ void Application::InitRendering(uint32 width, uint32 height) {
 	// ! IMPORTANT : Systems go here
 	m_Renderer->AddSystem<Rendering::DepthPrepassSystem>();
 	m_Renderer->AddSystem<Rendering::GeometrySystem>();
+	m_Renderer->AddSystem<Rendering::ClusterComputeSystem>();
 	m_Renderer2D->AddSystem<UI::Rendering::ViewRenderingSystem>();
 	// !
 }
 
 void Application::OnUpdate(f32 deltaTime) {
+	PROFILE_SCOPE("OnUpdate");
 	if (m_PendingResize || m_Swapchain->NeedsResize()) {
 		m_PendingResize = false;
 		const uint32 width = m_Window->GetWidth();
@@ -180,8 +156,11 @@ void Application::OnUpdate(f32 deltaTime) {
 	}
 
 	uint32 imageIndex = 0;
-	if (!m_Swapchain->AcquireNextImage(imageIndex)) {
-		return;
+	{
+		PROFILE_SCOPE("AcquireNextImage");
+		if (!m_Swapchain->AcquireNextImage(imageIndex)) {
+			return;
+		}
 	}
 
 	m_Renderer->SetSwapchainTarget(*m_Swapchain, imageIndex);
@@ -190,14 +169,45 @@ void Application::OnUpdate(f32 deltaTime) {
 	auto cmd = m_Ctx->CreateCommandList(RHI::CommandListType::Graphics, "MainFrame");
 	cmd->Begin();
 
-	m_RenderPipeline->Render(*cmd, *m_Scene, deltaTime);
+	{
+		PROFILE_SCOPE("ViewSystem::Update");
+		UI::Core::ViewSystem::Get()->Update(deltaTime);
+	}
 
-	m_Ctx->SubmitFrame(*cmd, m_Swapchain.get(), imageIndex);
+	{
+		PROFILE_SCOPE("ViewSystem::Compute");
+		UI::Core::ViewSystem::Get()->Compute();
+	}
 
-	m_Ctx->ProcessPendingDeletions();
+	{
+		const bool uiDirty =
+			UI::Core::ViewSystem::Get()->IsAnyLayerDirty(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
+		m_Renderer2D->SetUIDirty(uiDirty);
+		if (uiDirty) {
+			UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(UI::Core::UILayer::ScreenOverlay,
+															  UI::Core::UILayer::Editor);
+		}
+	}
+
+	{
+		PROFILE_SCOPE("RenderPipeline::Render");
+		m_RenderPipeline->Render(*cmd, *m_Scene, deltaTime);
+	}
+
+	{
+		PROFILE_SCOPE("SubmitFrame");
+		m_Ctx->SubmitFrame(*cmd, m_Swapchain.get(), imageIndex);
+	}
+
+	{
+		PROFILE_SCOPE("ProcessPendingDeletions");
+		m_Ctx->ProcessPendingDeletions();
+	}
 }
 
 void Application::OnEvent(Events::Event &event) {
+	UI::Core::ViewSystem::Get()->OnEvent(event);
+
 	Events::EventDispatcher dispatcher(event);
 
 	dispatcher.Dispatch<Events::WindowCloseEvent>([this](Events::WindowCloseEvent &) {
@@ -224,6 +234,7 @@ void Application::HandleResize() {
 
 	m_Swapchain->Resize(width, height);
 	m_RenderPipeline->Resize(width, height);
+	UI::Core::ViewSystem::Get()->Resize(width, height);
 }
 
 } // namespace Aquila::Application
