@@ -2,12 +2,10 @@
 #define AQUILA_SHARED_CONSTANTS_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
-#include <string>
 
 namespace Aquila::SharedConstants {
 
-inline const std::string kShadersDir = AQUILA_SHADERS_DIR;
-
+AQUILA_INLINE const std::string SHADERS_DIR = AQUILA_SHADERS_DIR;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -27,12 +25,21 @@ constexpr int MAX_LOADED_ASSETS = 1024;
 constexpr int MAX_SCENES = 32;
 constexpr int MAX_SCENE_OBJECTS = 5000;
 
+constexpr uint32 MAX_CAMERAS = 8;
+
 constexpr int MAX_KEY_STATES = 512;
 constexpr int MAX_MOUSE_STATES = 8;
 
 constexpr uint32 MAX_QUADS = 10000;
 constexpr uint32 VERTS_PER_QUAD = 4;
 constexpr uint32 INDICES_PER_QUAD = 6;
+
+constexpr int FONT_FIRST_CODEPOINT = 32;
+constexpr int FONT_GLYPH_COUNT = 96; // ASCII 32-127
+constexpr uint32 FONT_TEX_WIDTH = 4096;
+constexpr uint32 FONT_BAND_COUNT = 16;
+constexpr uint32 FONT_BAND_MAX = FONT_BAND_COUNT - 1;
+constexpr uint32 FONT_TEXELS_PER_CURVE = 2;
 
 }; // namespace Aquila::SharedConstants
 
