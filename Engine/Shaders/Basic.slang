@@ -1,6 +1,8 @@
+import FrameData;
 
 struct PushConstants {
-	column_major float4x4 mvp;
+	column_major float4x4 model;
+	float4 color;
 };
 
 [[vk::push_constant]]
@@ -21,8 +23,8 @@ struct VSOutput {
 
 [shader("vertex")] VSOutput main(VSInput IN) {
 	VSOutput OUT;
-	OUT.sv_position = mul(push.mvp, float4(IN.position, 1.0));
-	OUT.color = IN.color;
+	OUT.sv_position = mul(AQ_GetMainCamera().viewProjection, mul(push.model, float4(IN.position, 1.0)));
+	OUT.color = IN.color * push.color.rgb;
 	return OUT;
 }
 
