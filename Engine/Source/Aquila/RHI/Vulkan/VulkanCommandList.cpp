@@ -3,6 +3,7 @@
 #include "Aquila/RHI/Vulkan/VulkanTexture.h"
 #include "Aquila/RHI/Vulkan/VulkanBuffer.h"
 #include "Aquila/RHI/Vulkan/VulkanPipeline.h"
+#include "Aquila/RHI/Vulkan/VulkanComputePipeline.h"
 #include "Aquila/RHI/Vulkan/VulkanDescriptorSet.h"
 #include "Aquila/RHI/Vulkan/VulkanFormatUtils.h"
 
@@ -278,9 +279,17 @@ void VulkanCommandList::TransitionBuffer(IRHIBuffer &buffer, ResourceState oldSt
 // Pipeline and state
 
 void VulkanCommandList::BindPipeline(IRHIPipeline &pipeline) {
-	auto &vkPipeline = static_cast<VulkanPipeline &>(pipeline);
-	m_BoundPipelineLayout = vkPipeline.GetLayout();
-	vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.GetPipeline());
+	if (pipeline.GetBindPoint() == PipelineBindPoint::Compute) {
+		auto &vkPipeline = static_cast<VulkanComputePipeline &>(pipeline);
+		m_BoundPipelineLayout = vkPipeline.GetLayout();
+		m_BoundBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+		vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline.GetPipeline());
+	} else {
+		auto &vkPipeline = static_cast<VulkanPipeline &>(pipeline);
+		m_BoundPipelineLayout = vkPipeline.GetLayout();
+		m_BoundBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.GetPipeline());
+	}
 }
 
 void VulkanCommandList::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) {
@@ -299,8 +308,7 @@ void VulkanCommandList::BindDescriptorSet(uint32 set, IRHIDescriptorSet &descrip
 	AQUILA_ASSERT(m_BoundPipelineLayout != VK_NULL_HANDLE, "BindDescriptorSet called before BindPipeline");
 	auto &vkSet = static_cast<VulkanDescriptorSet &>(descriptorSet);
 	VkDescriptorSet raw = vkSet.GetDescriptorSet();
-	vkCmdBindDescriptorSets(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_BoundPipelineLayout, set, 1, &raw, 0,
-							nullptr);
+	vkCmdBindDescriptorSets(m_CommandBuffer, m_BoundBindPoint, m_BoundPipelineLayout, set, 1, &raw, 0, nullptr);
 }
 
 void VulkanCommandList::PushConstants(const void *data, uint32 size, ShaderStageFlags stages, uint32 offset) {
@@ -360,6 +368,10 @@ void VulkanCommandList::CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, u
 
 	vkCmdCopyBufferToImage(m_CommandBuffer, vkBuf.GetBuffer(), vkTex.GetImage(),
 						   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
+void VulkanCommandList::Dispatch(uint32 x, uint32 y, uint32 z) {
+	vkCmdDispatch(m_CommandBuffer, x, y, z);
 }
 
 // Debug markers

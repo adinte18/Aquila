@@ -8,7 +8,7 @@ namespace Aquila::RHI {
 
 VulkanComputePipeline::VulkanComputePipeline(VulkanDevice &device, VkShaderModule module, const std::string &entryPoint,
 											 VkPipelineLayout layout)
-	: m_Device(device) {
+	: m_Device(device), m_Layout(layout) {
 	AQUILA_ASSERT(module != VK_NULL_HANDLE, "VulkanComputePipeline requires a valid VkShaderModule");
 	AQUILA_ASSERT(layout != VK_NULL_HANDLE, "VulkanComputePipeline requires a valid VkPipelineLayout");
 
@@ -30,26 +30,23 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice &device, VkShaderModul
 }
 
 VulkanComputePipeline::~VulkanComputePipeline() {
+	auto &dq = m_Device.GetDeletionQueue();
 	if (m_Pipeline != VK_NULL_HANDLE) {
-		m_Device.GetDeletionQueue().QueueDeletion(m_Pipeline);
+		dq.QueueDeletion(m_Pipeline);
 		m_Pipeline = VK_NULL_HANDLE;
 	}
+	if (m_Layout != VK_NULL_HANDLE) {
+		dq.QueueDeletion(m_Layout);
+		m_Layout = VK_NULL_HANDLE;
+	}
 	if (m_PipelineCache != VK_NULL_HANDLE) {
-		m_Device.GetDeletionQueue().QueueDeletion(m_PipelineCache);
+		dq.QueueDeletion(m_PipelineCache);
 		m_PipelineCache = VK_NULL_HANDLE;
 	}
 }
 
 void VulkanComputePipeline::Bind(IRHICommandList &cmd) {
 	vkCmdBindPipeline(static_cast<VulkanCommandList &>(cmd).GetHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_Pipeline);
-}
-
-void VulkanComputePipeline::Bind(VulkanCommandList &cmd) const {
-	vkCmdBindPipeline(cmd.GetHandle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_Pipeline);
-}
-
-void VulkanComputePipeline::Dispatch(VulkanCommandList &cmd, uint32 x, uint32 y, uint32 z) const {
-	vkCmdDispatch(cmd.GetHandle(), x, y, z);
 }
 
 void VulkanComputePipeline::CreatePipelineCache() {

@@ -46,6 +46,7 @@ class VulkanPipeline final : public IRHIPipeline {
 
 	// IRHIPipeline
 	void Bind(IRHICommandList &cmd) override;
+	[[nodiscard]] PipelineBindPoint GetBindPoint() const override { return PipelineBindPoint::Graphics; }
 
 	// Vulkan-specific
 	void Bind(VulkanCommandList &cmd) const;

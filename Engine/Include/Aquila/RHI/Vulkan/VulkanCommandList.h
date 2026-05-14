@@ -51,6 +51,8 @@ class VulkanCommandList final : public IRHICommandList {
 	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
 							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) override;
 
+	void Dispatch(uint32 x, uint32 y, uint32 z) override;
+
 	// IRHICommandList
 	void PushDebugGroup(const char *name) override;
 	void PopDebugGroup() override;
@@ -67,8 +69,9 @@ class VulkanCommandList final : public IRHICommandList {
 	bool m_IsRecording = false;
 	VulkanDevice &m_Device;
 
-	// Captured by BindPipeline; required for BindDescriptorSet and PushConstants.
+	// Captured by BindPipeline; required for BindDescriptorSet, PushConstants, and Dispatch.
 	VkPipelineLayout m_BoundPipelineLayout = VK_NULL_HANDLE;
+	VkPipelineBindPoint m_BoundBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 };
 
 } // namespace Aquila::RHI

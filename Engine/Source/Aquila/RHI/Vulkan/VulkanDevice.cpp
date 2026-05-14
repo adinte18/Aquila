@@ -241,14 +241,12 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 		submitInfo.signalSemaphoreCount = 1;
 		submitInfo.pSignalSemaphores = &renderFinished;
 
-		VkFence fence = CreateFence(false);
+		VkFence fence = vkSwapchain.GetInFlightFence(lastFrame);
 		SubmitToGraphicsQueue(&submitInfo, fence);
-		WaitForFence(fence);
-		DestroyFence(fence);
 
 		m_DeletionQueue->ProcessDeletions();
 
-		vkFreeCommandBuffers(m_Device, vkCmd.GetPool(), 1, &cmdBuf);
+		vkSwapchain.DeferCmdBufFree(lastFrame, cmdBuf, vkCmd.GetPool());
 		vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
 	} else {
 		// Offscreen, just submit and wait, no present
@@ -405,10 +403,18 @@ Unique<IRHIPipeline> VulkanDevice::CreateComputePipeline(const ComputePipelineDe
 		vkLayouts.push_back(static_cast<VulkanDescriptorSetLayout *>(layout)->GetDescriptorSetLayout());
 	}
 
+	std::vector<VkPushConstantRange> pushRanges;
+	pushRanges.reserve(desc.pushConstants.size());
+	for (const auto &pc : desc.pushConstants) {
+		pushRanges.push_back({ ToVkShaderStage(pc.stages), pc.offset, pc.size });
+	}
+
 	VkPipelineLayoutCreateInfo layoutInfo{};
 	layoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	layoutInfo.setLayoutCount = static_cast<uint32>(vkLayouts.size());
 	layoutInfo.pSetLayouts = vkLayouts.data();
+	layoutInfo.pushConstantRangeCount = static_cast<uint32>(pushRanges.size());
+	layoutInfo.pPushConstantRanges = pushRanges.data();
 
 	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
 	AQUILA_VULKAN_CHECK(vkCreatePipelineLayout(m_Device, &layoutInfo, nullptr, &pipelineLayout));
@@ -419,8 +425,8 @@ Unique<IRHIPipeline> VulkanDevice::CreateComputePipeline(const ComputePipelineDe
 	auto pipeline =
 		CreateUnique<VulkanComputePipeline>(*this, compModule, desc.computeShader.entryPoint, pipelineLayout);
 
+	// Layout is owned by VulkanComputePipeline — do not destroy here.
 	vkDestroyShaderModule(m_Device, compModule, nullptr);
-	vkDestroyPipelineLayout(m_Device, pipelineLayout, nullptr);
 
 	return pipeline;
 }

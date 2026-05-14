@@ -21,18 +21,18 @@ class VulkanComputePipeline final : public IRHIPipeline {
 
 	// IRHIPipeline
 	void Bind(IRHICommandList &cmd) override;
+	[[nodiscard]] PipelineBindPoint GetBindPoint() const override { return PipelineBindPoint::Compute; }
 
 	// Vulkan-specific
-	void Bind(VulkanCommandList &cmd) const;
-	void Dispatch(VulkanCommandList &cmd, uint32 x, uint32 y, uint32 z) const;
-
 	[[nodiscard]] VkPipeline GetPipeline() const { return m_Pipeline; }
+	[[nodiscard]] VkPipelineLayout GetLayout() const { return m_Layout; }
 
   private:
 	void CreatePipelineCache();
 
 	VulkanDevice &m_Device;
 	VkPipeline m_Pipeline = VK_NULL_HANDLE;
+	VkPipelineLayout m_Layout = VK_NULL_HANDLE;
 	VkPipelineCache m_PipelineCache = VK_NULL_HANDLE;
 };
 
