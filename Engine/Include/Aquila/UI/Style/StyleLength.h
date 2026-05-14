@@ -5,48 +5,44 @@
 namespace Aquila::UI {
 
 struct StyleLength {
-	Type type = Type::Auto;
-	float value = 0.0F;
+	LengthUnit unit = LengthUnit::Auto;
+	float value = 0.0f;
 
-	constexpr static StyleLength Pixel(float value) { return { .type = Type::Pixel, .value = value }; }
-	constexpr static StyleLength Percent(float value) { return { .type = Type::Percent, .value = value }; }
-	constexpr static StyleLength Auto() { return { .type = Type::Auto, .value = 0 }; }
-	constexpr static StyleLength Grow() { return { .type = Type::Grow, .value = 0 }; }
+	constexpr static StyleLength Pixel(float pixels) { return { .unit = LengthUnit::Pixel, .value = pixels }; }
+	constexpr static StyleLength Percent(float percent) { return { .unit = LengthUnit::Percent, .value = percent }; }
+	constexpr static StyleLength Auto() { return { .unit = LengthUnit::Auto, .value = 0.f }; }
+	constexpr static StyleLength Grow() { return { .unit = LengthUnit::Grow, .value = 0.f }; }
 
-	[[nodiscard]] bool IsAuto() const { return type == Type::Auto; }
-	[[nodiscard]] bool IsGrow() const { return type == Type::Grow; }
-	[[nodiscard]] bool IsAbsolute() const { return type == Type::Pixel; }
-	[[nodiscard]] bool IsRelative() const { return type == Type::Percent; }
+	[[nodiscard]] bool IsAuto() const { return unit == LengthUnit::Auto; }
+	[[nodiscard]] bool IsGrow() const { return unit == LengthUnit::Grow; }
+	[[nodiscard]] bool IsPixel() const { return unit == LengthUnit::Pixel; }
+	[[nodiscard]] bool IsPercent() const { return unit == LengthUnit::Percent; }
 
 	[[nodiscard]] float Resolve(float parentSize) const {
-		switch (type) {
-		case Type::Pixel:
+		switch (unit) {
+		case LengthUnit::Pixel:
 			return value;
-		case Type::Percent:
-			return parentSize * (value / 100.0F);
-			break;
-		case Type::Auto:
-		case Type::Grow:
+		case LengthUnit::Percent:
+			return parentSize * (value / 100.0f);
 		default:
-			return 0.F;
-			break;
+			return 0.f;
 		}
 	}
 
-	bool operator==(const StyleLength &other) const { return type == other.type && value == other.value; }
+	bool operator==(const StyleLength &other) const { return unit == other.unit && value == other.value; }
 	bool operator!=(const StyleLength &other) const { return !(*this == other); }
 };
 
 struct StyleEdges {
 	StyleLength top, right, bottom, left;
 
-	constexpr static StyleEdges All(StyleLength val) {
-		return { .top = val, .right = val, .bottom = val, .left = val };
+	constexpr static StyleEdges All(StyleLength value) {
+		return { .top = value, .right = value, .bottom = value, .left = value };
 	}
 	constexpr static StyleEdges Axes(StyleLength vertical, StyleLength horizontal) {
 		return { .top = vertical, .right = horizontal, .bottom = vertical, .left = horizontal };
 	}
-	constexpr static StyleEdges Zero() { return All(StyleLength::Pixel(0.F)); }
+	constexpr static StyleEdges Zero() { return All(StyleLength::Pixel(0.f)); }
 
 	bool operator==(const StyleEdges &other) const {
 		return top == other.top && right == other.right && bottom == other.bottom && left == other.left;

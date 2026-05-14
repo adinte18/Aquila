@@ -14,23 +14,22 @@ struct StyleRule {
 
 	SelectorType selectorType;
 	std::string selector;
+	std::string pseudoClass; // "", "hover", "pressed", "focus"
 	int32 specificity = 0;
 	StyleProperties properties;
 };
 
 class StyleSheet {
   public:
-	void AddRule(StyleRule::SelectorType type, std::string selector, StyleProperties props);
+	void AddRule(StyleRule::SelectorType type, std::string selector, std::string pseudoClass, StyleProperties props);
 
 	// Returns the resolved ComputedStyle for this view.
 	ComputedStyle Resolve(const Core::View &view, const ComputedStyle *parentComputed) const;
+	usize GetRuleCount() const { return m_Rules.size(); }
 
   private:
 	[[nodiscard]] bool Matches(const StyleRule &rule, const Core::View &view) const;
 
-	// Applies a sparse StyleProperties onto a dense ComputedStyle.
-	// Handles shorthand expansion (min/max → per-axis).
-	// Longhands always override shorthands.
 	void ApplyProperties(ComputedStyle &out, const StyleProperties &props) const;
 
 	std::vector<StyleRule> m_Rules;

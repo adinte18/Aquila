@@ -4,15 +4,48 @@
 
 namespace Aquila::UI {
 
-enum class Type : uint8 { Pixel, Percent, Auto, Grow };
+enum class LengthUnit : uint8 { Pixel, Percent, Auto, Grow };
 
 enum class FlexDirection : uint8 { Row, Column, RowReverse, ColumnReverse };
-enum class JustifyContent : uint8 { Start, End, Center, SpaceBetween, SpaceAround, SpaceEvenly };
+enum class JustifyContent : uint8 { Start, End, Center };
 enum class AlignItems : uint8 { Start, End, Center, Stretch };
 enum class FlexWrap : uint8 { NoWrap, Wrap };
 
-enum class DisplayType : uint8 { Flex, None };
-enum class OverflowType : uint8 { Visible, Hidden, Scroll };
+enum class Display : uint8 { Flex, None };
+enum class Overflow : uint8 { Visible, Hidden, Scroll };
+enum class Position : uint8 { Static, Relative, Absolute };
 
-enum class PositionType : uint8 { Static, Relative, Absolute };
+enum class TransitionEasing : uint8 { Linear, Ease, EaseIn, EaseOut, EaseInOut };
+
+struct BoxShadow {
+	vec2  offset  = { 0.f, 0.f };
+	float blur    = 0.f;
+	float spread  = 0.f;
+	vec4  color   = { 0.f, 0.f, 0.f, 0.75f };
+	bool  inset   = false;
+
+	bool operator==(const BoxShadow &) const = default;
+};
+
+enum class TextAlign : uint8 { Left, Center, Right };
+
+enum class FontSize : uint8 {
+	Tiny = 9,
+	XSmall = 11,
+	Small = 13,
+	Body = 16,
+	BodyLarge = 18,
+	Subtitle = 20,
+	Heading = 24,
+	HeadingLarge = 28,
+	Title = 32,
+	TitleLarge = 40,
+	Display = 48,
+	DisplayLarge = 64,
+};
+
+constexpr float FontSizeToPixels(FontSize size) {
+	return static_cast<float>(static_cast<uint8>(size));
+}
+
 } // namespace Aquila::UI

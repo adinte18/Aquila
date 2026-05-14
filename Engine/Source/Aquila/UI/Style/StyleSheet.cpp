@@ -3,7 +3,8 @@
 
 namespace Aquila::UI {
 
-void StyleSheet::AddRule(StyleRule::SelectorType type, std::string selector, StyleProperties props) {
+void StyleSheet::AddRule(StyleRule::SelectorType type, std::string selector, std::string pseudoClass,
+						 StyleProperties props) {
 	int32 specificity = 0;
 	switch (type) {
 	case StyleRule::SelectorType::Type:
@@ -16,7 +17,13 @@ void StyleSheet::AddRule(StyleRule::SelectorType type, std::string selector, Sty
 		specificity = 100;
 		break;
 	}
-	m_Rules.push_back({ type, std::move(selector), specificity, props });
+	// Pseudo-classes add 10 to specificity (same as CSS).
+	// :pressed > :hover > :focus so they stack naturally when specificity is equal.
+	if (!pseudoClass.empty()) {
+		specificity += 10;
+	}
+
+	m_Rules.push_back({ type, std::move(selector), std::move(pseudoClass), specificity, std::move(props) });
 }
 
 ComputedStyle StyleSheet::Resolve(const Core::View &view, const ComputedStyle *parentComputed) const {
@@ -25,7 +32,8 @@ ComputedStyle StyleSheet::Resolve(const Core::View &view, const ComputedStyle *p
 	// inherited properties from parent
 	if (parentComputed != nullptr) {
 		result.color = parentComputed->color;
-		// fontSize would go here once added to ComputedStyle
+		result.fontSize = parentComputed->fontSize;
+		result.fontFamily = parentComputed->fontFamily;
 	}
 
 	// collect and sort matching rules by specificity (ascending, so highest wins last)
@@ -49,18 +57,40 @@ ComputedStyle StyleSheet::Resolve(const Core::View &view, const ComputedStyle *p
 }
 
 bool StyleSheet::Matches(const StyleRule &rule, const Core::View &view) const {
+	// Check selector
+	bool selectorMatch = false;
 	switch (rule.selectorType) {
 	case StyleRule::SelectorType::Type:
-		return view.GetTypeName() == rule.selector;
-
+		selectorMatch = (view.GetTypeName() == rule.selector);
+		break;
 	case StyleRule::SelectorType::Class: {
 		const auto &classes = view.GetClasses();
-		return std::ranges::find(classes, rule.selector) != classes.end();
+		selectorMatch = (std::ranges::find(classes, rule.selector) != classes.end());
+		break;
+	}
+	case StyleRule::SelectorType::Id:
+		selectorMatch = (view.GetId() == rule.selector);
+		break;
 	}
 
-	case StyleRule::SelectorType::Id:
-		return view.GetId() == rule.selector;
+	if (!selectorMatch) {
+		return false;
 	}
+
+	// Check pseudo-class
+	if (rule.pseudoClass.empty()) {
+		return true;
+	}
+	if (rule.pseudoClass == "hover") {
+		return view.IsHovered();
+	}
+	if (rule.pseudoClass == "pressed") {
+		return view.IsPressed();
+	}
+	if (rule.pseudoClass == "focus") {
+		return view.IsFocused();
+	}
+
 	return false;
 }
 
@@ -119,6 +149,9 @@ void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &prop
 	if (props.padding) {
 		out.padding = *props.padding;
 	}
+	if (props.gap) {
+		out.gap = *props.gap;
+	}
 
 	if (props.flexDirection) {
 		out.flexDirection = *props.flexDirection;
@@ -158,7 +191,24 @@ void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &prop
 	if (props.color) {
 		out.color = *props.color;
 	}
-	// props.fontSize skipped until fontSize added to ComputedStyle
+	if (props.fontSize) {
+		out.fontSize = *props.fontSize;
+	}
+	if (props.fontFamily) {
+		out.fontFamily = *props.fontFamily;
+	}
+	if (props.transitionDuration) {
+		out.transitionDuration = *props.transitionDuration;
+	}
+	if (props.transitionEasing) {
+		out.transitionEasing = *props.transitionEasing;
+	}
+	if (props.textAlign) {
+		out.textAlign = *props.textAlign;
+	}
+	if (props.boxShadows) {
+		out.boxShadows = *props.boxShadows;
+	}
 }
 
 } // namespace Aquila::UI
