@@ -1,11 +1,13 @@
 
 
 #include "Aquila/Foundation/Profiler.h"
+#include <algorithm>
+#include <mutex>
 
 namespace Aquila::Foundation {
 
 void Profiler::BeginFrame() {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	m_FrameStart = Now();
 	m_CurrentDepth = 0;
 	m_CurrentFrameEntries.clear();
@@ -13,9 +15,14 @@ void Profiler::BeginFrame() {
 }
 
 void Profiler::EndFrame() {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 	m_FrameDuration = ElapsedMilliseconds(m_FrameStart, Now());
+
+	// Sort by startTime so parents appear before their children throughout the rest of EndFrame,
+	// PrintLastFrame, and the stored frame history.
+	std::sort(m_CurrentFrameEntries.begin(), m_CurrentFrameEntries.end(),
+			  [](const ProfilerEntry &a, const ProfilerEntry &b) { return a.startTime < b.startTime; });
 	m_FrameCount++;
 	m_FPS = 1000.0 / m_FrameDuration;
 
@@ -24,8 +31,9 @@ void Profiler::EndFrame() {
 
 	f64 cpuTime = 0.0;
 	for (const auto &entry : m_CurrentFrameEntries) {
-		if (entry.depth == 0)
+		if (entry.depth == 0) {
 			cpuTime += entry.duration;
+		}
 	}
 
 	FrameStats frameStats;
@@ -35,8 +43,9 @@ void Profiler::EndFrame() {
 	frameStats.timestamp = Now();
 
 	m_FrameStatsHistory.push_back(frameStats);
-	if (m_FrameStatsHistory.size() > m_MaxHistoryFrames)
+	if (m_FrameStatsHistory.size() > m_MaxHistoryFrames) {
 		m_FrameStatsHistory.erase(m_FrameStatsHistory.begin());
+	}
 
 	for (auto &entry : m_CurrentFrameEntries) {
 		auto &stats = m_Stats[entry.name];
@@ -56,14 +65,15 @@ void Profiler::EndFrame() {
 	}
 
 	m_FrameHistory.push_back(m_CurrentFrameEntries);
-	if (m_FrameHistory.size() > m_MaxHistoryFrames)
+	if (m_FrameHistory.size() > m_MaxHistoryFrames) {
 		m_FrameHistory.erase(m_FrameHistory.begin());
+	}
 
 	DetectBottlenecks();
 }
 
 void Profiler::BeginSection(const std::string &name) {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 	ProfilerEntry entry;
 	entry.name = name;
@@ -78,10 +88,11 @@ void Profiler::BeginSection(const std::string &name) {
 }
 
 void Profiler::EndSection() {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-	if (m_SectionStack.empty())
+	if (m_SectionStack.empty()) {
 		return;
+	}
 
 	auto entry = m_SectionStack.back();
 	m_SectionStack.pop_back();
@@ -92,29 +103,33 @@ void Profiler::EndSection() {
 }
 
 void Profiler::PrintFrameSummary() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 	AQUILA_LOG_INFO("=== Frame Profiler Summary ===");
 	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_FrameDuration, m_FPS);
 	AQUILA_LOG_INFO("Total frames: {}", m_FrameCount);
 	AQUILA_LOG_INFO("");
 
-	std::vector<ProfilerEntry> sorted;
-	sorted.reserve(m_Stats.size());
-	for (const auto &[name, entry] : m_Stats)
-		sorted.push_back(entry);
+	if (m_FrameHistory.empty()) {
+		return;
+	}
 
-	std::ranges::sort(sorted, [](const auto &a, const auto &b) { return a.avgDuration > b.avgDuration; });
+	AQUILA_LOG_INFO("{:<50} {:>10} {:>10} {:>10} {:>9}", "Section", "Avg (ms)", "Min (ms)", "Max (ms)", "% Frame");
+	AQUILA_LOG_INFO("{:-<93}", "");
 
-	AQUILA_LOG_INFO("{:<40} {:>10} {:>10} {:>10} {:>10} {:>10}", "Section", "Avg (ms)", "Min (ms)", "Max (ms)",
-					"% Frame", "Calls/F");
-	AQUILA_LOG_INFO("{:-<90}", "");
-
-	for (const auto &entry : sorted) {
-		f64 percentage = (entry.avgDuration / m_FrameDuration) * 100.0;
-		f64 callsPerFrame = static_cast<f64>(entry.callCount) / entry.frameCount;
-		AQUILA_LOG_INFO("{:<40} {:>10.3f} {:>10.3f} {:>10.3f} {:>9.1f}% {:>10.1f}", entry.name, entry.avgDuration,
-						entry.minDuration, entry.maxDuration, percentage, callsPerFrame);
+	// Walk the last frame in startTime order (sorted in EndFrame) so the tree prints correctly.
+	// Look up aggregated stats by name for the avg/min/max columns.
+	for (const auto &frameEntry : m_FrameHistory.back()) {
+		auto it = m_Stats.find(frameEntry.name);
+		if (it == m_Stats.end()) {
+			continue;
+		}
+		const ProfilerEntry &stats = it->second;
+		std::string label(frameEntry.depth * 2, ' ');
+		label += frameEntry.name;
+		f64 percentage = m_FrameDuration > 0.0 ? (stats.avgDuration / m_FrameDuration) * 100.0 : 0.0;
+		AQUILA_LOG_INFO("{:<50} {:>10.3f} {:>10.3f} {:>10.3f} {:>8.1f}%",
+						label, stats.avgDuration, stats.minDuration, stats.maxDuration, percentage);
 	}
 	AQUILA_LOG_INFO("");
 
@@ -129,10 +144,11 @@ void Profiler::PrintFrameSummary() const {
 }
 
 void Profiler::PrintLastFrame() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
-	if (m_CurrentFrameEntries.empty())
+	if (m_CurrentFrameEntries.empty()) {
 		return;
+	}
 
 	AQUILA_LOG_INFO("=== Last Frame Breakdown ===");
 	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_FrameDuration, m_FPS);
@@ -147,7 +163,7 @@ void Profiler::PrintLastFrame() const {
 }
 
 void Profiler::Reset() {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 
 	m_Stats.clear();
 	m_FrameHistory.clear();
@@ -162,19 +178,19 @@ void Profiler::Reset() {
 }
 
 f64 Profiler::GetFrameDuration() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	return m_FrameDuration;
 }
 f64 Profiler::GetFPS() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	return m_FPS;
 }
 uint32 Profiler::GetFrameCount() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	return m_FrameCount;
 }
 uint32 Profiler::GetFrameNumber() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	return m_FrameNumber;
 }
 bool Profiler::IsEnabled() const {
@@ -204,7 +220,7 @@ const std::vector<std::string> &Profiler::GetBottlenecks() const {
 }
 
 bool Profiler::GetSectionStats(const std::string &name, ProfilerEntry &out) const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
 	auto it = m_Stats.find(name);
 	if (it != m_Stats.end()) {
 		out = it->second;
@@ -226,19 +242,22 @@ void Profiler::DetectBottlenecks() {
 	m_Bottlenecks.clear();
 	constexpr f64 BOTTLENECK_THRESHOLD = 0.20;
 	for (const auto &[name, entry] : m_Stats) {
-		if (entry.avgDuration / m_FrameDuration > BOTTLENECK_THRESHOLD)
+		if (entry.avgDuration / m_FrameDuration > BOTTLENECK_THRESHOLD) {
 			m_Bottlenecks.push_back(name);
+		}
 	}
 }
 
 ProfileSection::ProfileSection(const std::string &name) : m_Name(name) {
-	if (Profiler::Get()->IsEnabled())
+	if (Profiler::Get()->IsEnabled()) {
 		Profiler::Get()->BeginSection(m_Name);
+	}
 }
 
 ProfileSection::~ProfileSection() {
-	if (Profiler::Get()->IsEnabled())
+	if (Profiler::Get()->IsEnabled()) {
 		Profiler::Get()->EndSection();
+	}
 }
 
 } // namespace Aquila::Foundation

@@ -72,7 +72,7 @@ class Profiler : public Singleton<Profiler> {
 	uint32 HashString(const std::string &str) const;
 	void DetectBottlenecks();
 
-	mutable std::mutex m_Mutex;
+	mutable std::recursive_mutex m_Mutex;
 	bool m_Enabled = true;
 
 	TimePoint m_FrameStart;
