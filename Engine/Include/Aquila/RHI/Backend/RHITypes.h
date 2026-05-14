@@ -22,6 +22,7 @@ enum class TextureFormat : uint8 {
 	RGBA8_SRGB,
 	RGBA16F,
 	RGBA32F,
+	RGBA32U,
 	RGB8,
 	RGB16F,
 	RGB32F,
@@ -192,6 +193,35 @@ struct SamplerDesc {
 		return d;
 	}
 
+	static SamplerDesc PointSample() {
+		SamplerDesc d{};
+		d.magFilter  = FilterMode::Nearest;
+		d.minFilter  = FilterMode::Nearest;
+		d.mipmapMode = MipmapMode::Nearest;
+		d.addressU   = AddressMode::ClampToEdge;
+		d.addressV   = AddressMode::ClampToEdge;
+		d.addressW   = AddressMode::ClampToEdge;
+		d.anisotropy = false;
+		return d;
+	}
+
+	static SamplerDesc FontAtlas() {
+		SamplerDesc d{};
+		d.magFilter = FilterMode::Linear;
+		d.minFilter = FilterMode::Linear;
+
+		d.mipmapMode = MipmapMode::Nearest;
+
+		d.addressU = AddressMode::ClampToEdge;
+		d.addressV = AddressMode::ClampToEdge;
+		d.addressW = AddressMode::ClampToEdge;
+
+		d.anisotropy = false;
+		d.minLod = 0.0f;
+		d.maxLod = 0.0f;
+
+		return d;
+	}
 };
 
 struct SamplerDescHash {
@@ -350,6 +380,7 @@ struct GraphicsPipelineDesc {
 struct ComputePipelineDesc {
 	ShaderStageDesc computeShader;
 	std::vector<IRHIDescriptorSetLayout *> setLayouts;
+	std::vector<PushConstantRange> pushConstants;
 	std::string debugName;
 };
 

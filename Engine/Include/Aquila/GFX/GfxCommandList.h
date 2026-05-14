@@ -51,6 +51,8 @@ class GfxCommandList {
 	void CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
 							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0);
 
+	void Dispatch(uint32 x, uint32 y, uint32 z);
+
 	void PushDebugGroup(const char *name);
 	void PopDebugGroup();
 

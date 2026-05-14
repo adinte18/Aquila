@@ -54,6 +54,8 @@ class IRHICommandList {
 	virtual void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
 									 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) = 0;
 
+	virtual void Dispatch(uint32 x, uint32 y, uint32 z) = 0;
+
 	virtual void PushDebugGroup(const char *name) = 0;
 	virtual void PopDebugGroup() = 0;
 
