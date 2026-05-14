@@ -8,44 +8,148 @@ Checks: >
   clang-analyzer-*,
   misc-*,
   cppcoreguidelines-*,
-  cppcoreguidelines-owning-memory,
-  cppcoreguidelines-avoid-magic-numbers,
-  cppcoreguidelines-pro-bounds-array-to-pointer-decay,
-  cppcoreguidelines-avoid-do-while,
+
   -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-vararg,
+
   -modernize-use-trailing-return-type,
+  -modernize-use-nodiscard,
+
   -readability-braces-around-statements,
-  -hicpp-braces-around-statements
+  -hicpp-braces-around-statements,
+  -readability-magic-numbers,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -readability-named-parameter,
+  -readability-identifier-length,
 
+  -misc-non-private-member-variables-in-classes,
+  -misc-no-recursion,
 
-WarningsAsErrors: ''
+  -clang-analyzer-security.insecureAPI.strcpy,
+  -clang-analyzer-security.insecureAPI.rand
 
-HeaderFilterRegex: '.*'
+WarningsAsErrors: >
+  bugprone-use-after-move,
+  bugprone-dangling-handle,
+  bugprone-infinite-loop,
+  bugprone-suspicious-memset-usage,
+  bugprone-undefined-memory-manipulation,
+  cppcoreguidelines-pro-type-member-init,
+  clang-analyzer-core.NullDereference,
+  clang-analyzer-core.UndefinedBinaryOperatorResult,
+  clang-analyzer-cplusplus.NewDelete,
+  clang-analyzer-cplusplus.NewDeleteLeaks,
+  performance-move-const-arg,
+  performance-no-automatic-move
+
+HeaderFilterRegex: '.*(Aquila|Engine)/.*\.(h|hpp)$'
+
 FormatStyle: none
 
 CheckOptions:
-  - key:             cppcoreguidelines-avoid-do-while.IgnoreMacros
-    value:           'true'
+  - key:   readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key:   readability-identifier-naming.StructCase
+    value: CamelCase
+  - key:   readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key:   readability-identifier-naming.EnumConstantCase
+    value: CamelCase
+  - key:   readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key:   readability-identifier-naming.MethodCase
+    value: CamelCase
+  - key:   readability-identifier-naming.MemberPrefix
+    value: 'm_'
+  - key:   readability-identifier-naming.MemberCase
+    value: CamelCase
+  - key:   readability-identifier-naming.StaticMemberPrefix
+    value: 's_'
+  - key:   readability-identifier-naming.StaticMemberCase
+    value: CamelCase
+  - key:   readability-identifier-naming.PrivateMemberPrefix
+    value: 'm_'
+  - key:   readability-identifier-naming.ParameterCase
+    value: camelBack
+  - key:   readability-identifier-naming.LocalVariableCase
+    value: camelBack
+  - key:   readability-identifier-naming.ConstantCase
+    value: UPPER_CASE
+  - key:   readability-identifier-naming.GlobalConstantCase
+    value: UPPER_CASE
+  - key:   readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key:   readability-identifier-naming.TemplateParameterCase
+    value: CamelCase
+  - key:   readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+  - key:   readability-identifier-naming.TypedefCase
+    value: CamelCase
+  - key:   readability-identifier-naming.MinimumIdentifierLength
+    value: '2'
 
-  - key:             modernize-use-nullptr.NullMacros
-    value:           'NULL'
+  - key:   readability-uppercase-literal-suffix.NewSuffixes
+    value: 'L;LL;LU;LLU;F'
+  - key:   readability-uppercase-literal-suffix.IgnoreMacros
+    value: 'true'
 
-  - key:             readability-identifier-naming.MinimumIdentifierLength
-    value:           '3'
+  - key:   modernize-use-nullptr.NullMacros
+    value: 'NULL'
 
-  - key:             cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
-    value:           'true'
+  - key:   modernize-use-auto.RemoveStars
+    value: 'false'
+  - key:   modernize-use-auto.MinTypeNameLength
+    value: '8'
 
-  - key:             modernize-make-unique.IgnoreMacros
-    value:           'true'
+  - key:   modernize-make-unique.IgnoreMacros
+    value: 'true'
+  - key:   modernize-make-shared.IgnoreMacros
+    value: 'true'
 
-  - key:             modernize-use-auto.RemoveStars
-    value:           'false'
+  - key:   modernize-loop-convert.MinConfidence
+    value: 'reasonable'
+  - key:   modernize-loop-convert.NamingStyle
+    value: 'CamelCase'
 
-  - key:             readability-uppercase-literal-suffix.NewSuffixes
-    value:           'L;LL;LU;LLU;F'
-    
-  - key:             readability-uppercase-literal-suffix.IgnoreMacros
-    value:           'true'
+  - key:   modernize-pass-by-value.IncludeStyle
+    value: 'llvm'
 
+  - key:   cppcoreguidelines-avoid-do-while.IgnoreMacros
+    value: 'true'
+
+  - key:   cppcoreguidelines-explicit-virtual-functions.IgnoreDestructors
+    value: 'true'
+
+  - key:   readability-function-cognitive-complexity.Threshold
+    value: '40'
+  - key:   readability-function-size.LineThreshold
+    value: '120'
+  - key:   readability-function-size.StatementThreshold
+    value: '80'
+  - key:   readability-function-size.BranchThreshold
+    value: '20'
+  - key:   readability-function-size.ParameterThreshold
+    value: '8'
+  - key:   readability-function-size.NestingThreshold
+    value: '5'
+
+  - key:   performance-unnecessary-value-param.AllowedTypes
+    value: ''
+  - key:   performance-move-const-arg.CheckTriviallyCopyableMove
+    value: 'true'
+
+  - key:   bugprone-argument-comment.StrictMode
+    value: 'false'
+  - key:   bugprone-easily-swappable-parameters.MinimumLength
+    value: '3'
+  - key:   bugprone-string-integer-assignment.CharTypesLink
+    value: ''
+  - key:   bugprone-signed-char-misuse.DiagnoseSignedUnsignedCharComparisons
+    value: 'true'
+
+  - key:   misc-include-cleaner.IgnoreHeaders
+    value: 'stb/.*;vulkan/.*;slang.*'
 ...
