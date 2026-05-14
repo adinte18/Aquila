@@ -8,6 +8,8 @@ class Scene;
 
 namespace Aquila::Rendering {
 
+class SceneFrameData;
+
 struct FrameContext {
 	SceneManagement::Scene *scene = nullptr;
 
@@ -23,6 +25,11 @@ struct FrameContext {
 	uint32 width = 0;
 	uint32 height = 0;
 	f32 deltaTime = 0.f;
+
+	// Global per-frame GPU data (cameras, time, resolution).
+	// Bind GetDescriptorSet(frameSlot) at set 0 in any pipeline that imports FrameData.slang.
+	SceneFrameData *frameData = nullptr;
+	uint32 frameSlot = 0;
 };
 
 } // namespace Aquila::Rendering

@@ -1,6 +1,7 @@
 #pragma once
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Rendering/Renderers/IRenderer.h"
 #include "Aquila/Rendering/FrameContext.h"
@@ -55,6 +56,9 @@ class RenderPipeline {
 
 	uint32 m_Width = 0;
 	uint32 m_Height = 0;
+
+	// Rotates 0..MAX_FRAMES_IN_FLIGHT-1 each Render() call, matching swapchain fence rotation.
+	uint32 m_FrameSlot = 0;
 };
 
 } // namespace Aquila::Rendering

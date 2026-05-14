@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/RenderPipeline.h"
+#include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/Scene/Scene.h"
@@ -12,6 +13,7 @@ using namespace SceneManagement::Components;
 
 RenderPipeline::RenderPipeline(GFX::GfxContext &ctx, uint32 width, uint32 height)
 	: m_Ctx(ctx), m_Width(width), m_Height(height) {
+	SceneFrameData::Init(ctx, width, height);
 	RebuildTargets();
 }
 
@@ -19,10 +21,14 @@ RenderPipeline::~RenderPipeline() {
 	for (auto &r : m_Renderers) {
 		r->OnShutdown();
 	}
+	SceneFrameData::Shutdown();
 }
 
 void RenderPipeline::Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime) {
 	scene.UpdateTransformHierarchy();
+
+	m_FrameSlot = (m_FrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	SceneFrameData::Get()->Update(scene, deltaTime, m_FrameSlot);
 
 	FrameContext ctx;
 	BuildFrameContext(scene, deltaTime, ctx);
@@ -51,6 +57,7 @@ void RenderPipeline::Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 void RenderPipeline::Resize(uint32 width, uint32 height) {
 	m_Width = width;
 	m_Height = height;
+	SceneFrameData::Get()->OnResize(width, height);
 	RebuildTargets();
 	for (auto &r : m_Renderers) {
 		r->OnResize(width, height);
@@ -62,6 +69,8 @@ void RenderPipeline::BuildFrameContext(SceneManagement::Scene &scene, f32 deltaT
 	out.width = m_Width;
 	out.height = m_Height;
 	out.deltaTime = deltaTime;
+	out.frameData = SceneFrameData::Get();
+	out.frameSlot = m_FrameSlot;
 
 	out.hSceneColor = m_Graph.ImportTexture(m_SceneColor.get(), "SceneColor");
 	out.hDepth = m_Graph.ImportTexture(m_DepthTex.get(), "Depth");
