@@ -251,10 +251,10 @@ TEST_SUITE("Logger tests") {
 
 		const auto &e = Profiler::Get()->GetCurrentFrameEntries();
 		REQUIRE(e.size() == 2u);
-		CHECK(e[0].name == "Inner");
-		CHECK(e[0].depth == 1);
-		CHECK(e[1].name == "Outer");
-		CHECK(e[1].depth == 0);
+		CHECK(e[0].name == "Outer");
+		CHECK(e[0].depth == 0);
+		CHECK(e[1].name == "Inner");
+		CHECK(e[1].depth == 1);
 	}
 
 	TEST_CASE("Stats accumulate correctly over multiple frames") {
