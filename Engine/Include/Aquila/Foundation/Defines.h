@@ -72,12 +72,16 @@
 #define AQUILA_DEPRECATED(msg)
 #endif
 
-#define EVENT_CLASS_TYPE(type)                     \
-	static const char *GetStaticName() {           \
-		return #type;                              \
-	}                                              \
-	virtual const char *GetName() const override { \
-		return GetStaticName();                    \
+#define EVENT_CLASS_TYPE(type)                                    \
+	static const char *GetStaticName() {                          \
+		return #type;                                             \
+	}                                                             \
+	[[nodiscard]] const char *GetName() const override {          \
+		return GetStaticName();                                   \
+	}                                                             \
+	[[nodiscard]] std::type_index GetTypeIndex() const override { \
+		static const std::type_index s_Index(typeid(type));       \
+		return s_Index;                                           \
 	}
 
 #define EVENT_CLASS_CATEGORY(category)                   \

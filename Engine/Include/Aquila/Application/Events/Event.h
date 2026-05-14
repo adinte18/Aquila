@@ -1,8 +1,8 @@
 #ifndef AQUILA_EVENT_H
 #define AQUILA_EVENT_H
-
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Profiler.h"
 
 namespace Aquila::Application::Events {
 
@@ -21,30 +21,28 @@ enum class EventCategory : uint8 {
 inline EventCategory operator|(EventCategory a, EventCategory b) {
 	return static_cast<EventCategory>(static_cast<int>(a) | static_cast<int>(b));
 }
-
 inline bool operator&(EventCategory a, EventCategory b) {
 	return static_cast<int>(a) & static_cast<int>(b);
 }
 
-// Base event class
 class Event {
   public:
 	virtual ~Event() = default;
-
 	[[nodiscard]] virtual const char *GetName() const = 0;
 	[[nodiscard]] virtual EventCategory GetCategory() const = 0;
+	[[nodiscard]] virtual std::type_index GetTypeIndex() const = 0;
 	[[nodiscard]] virtual std::string ToString() const { return GetName(); }
-
 	bool handled = false;
 };
 
-// Event dispatcher for type-safe event handling
 class EventDispatcher {
   public:
 	explicit EventDispatcher(Event &event) : m_Event(event) {}
 
 	template <typename T, typename F> bool Dispatch(const F &func) {
-		if (std::string_view(m_Event.GetName()) == std::string_view(T::GetStaticName())) {
+		PROFILE_SCOPE("EventDispatcher::Dispatch");
+		if (m_Event.GetTypeIndex() == std::type_index(typeid(T))) {
+			PROFILE_SCOPE("EventDispatcher::Handler");
 			m_Event.handled = func(static_cast<T &>(m_Event));
 			return true;
 		}
@@ -56,5 +54,4 @@ class EventDispatcher {
 };
 
 } // namespace Aquila::Application::Events
-
-#endif // AQUILA_EVENT_H
+#endif
