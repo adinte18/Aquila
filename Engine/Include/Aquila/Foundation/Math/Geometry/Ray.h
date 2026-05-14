@@ -68,7 +68,7 @@ struct Ray {
 		h = cross(direction, edge2);
 		a = dot(edge1, h);
 
-		if (a > -EPSILON && a < EPSILON) {
+		if (a > -Aquila::Math::EPSILON && a < Aquila::Math::EPSILON) {
 			return false;
 		}
 
@@ -87,7 +87,7 @@ struct Ray {
 			return false;
 		}
 
-		if (f32 t = f * dot(edge2, q); t > EPSILON) {
+		if (f32 t = f * dot(edge2, q); t > Aquila::Math::EPSILON) {
 			distance = t;
 			return true;
 		}
