@@ -16,6 +16,7 @@ void ViewRenderingSystem::AddPasses(Graphics::RG::RenderGraph &graph, Aquila::Re
 	const uint32 w = ctx.width;
 	const uint32 h = ctx.height;
 
+	// Composite WorldSpace + ScreenCamera canvas draw lists directly into hSceneColor.
 	graph.AddPass(
 		"GameUI",
 		[&](Graphics::RG::RGPassBuilder &builder) {
@@ -25,15 +26,14 @@ void ViewRenderingSystem::AddPasses(Graphics::RG::RenderGraph &graph, Aquila::Re
 		[&r2d, w, h](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
 			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);
 			r2d.Begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, ortho);
-			{
-				Core::ViewSystem::Get()->RenderLayers(r2d, cmd, Core::UILayer::World, Core::UILayer::Screen);
-			}
+			Core::ViewSystem::Get()->RenderLayers(r2d, cmd, Core::UILayer::WorldSpace, Core::UILayer::ScreenCamera);
 			r2d.End();
 		});
 }
 
 void ViewRenderingSystem::Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
-	Core::ViewSystem::Get()->RenderLayers(r2d, cmd, Core::UILayer::Overlay, Core::UILayer::Overlay);
+	// Called inside the UIOverlay render pass (swapchain target) with r2d already begun.
+	Core::ViewSystem::Get()->RenderLayers(r2d, cmd, Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
 }
 
 void ViewRenderingSystem::OnResize(uint32 width, uint32 height) {
