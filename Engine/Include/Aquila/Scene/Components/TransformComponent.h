@@ -3,6 +3,7 @@
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
+#include <functional>
 namespace Aquila::SceneManagement::Components {
 struct TransformComponent {
   public:
@@ -110,8 +111,13 @@ struct TransformComponent {
 
 	[[nodiscard]] bool IsWorldMatrixDirty() const { return m_WorldMatrixDirty; }
 
+	void SetDirtyCallback(std::function<void()> fn) { m_OnDirty = std::move(fn); }
+
   private:
-	void MarkWorldMatrixDirty() { m_WorldMatrixDirty = true; }
+	void MarkWorldMatrixDirty() {
+		m_WorldMatrixDirty = true;
+		if (m_OnDirty) m_OnDirty();
+	}
 
 	vec3 m_LocalPosition{ 0.f };
 	glm::quat m_LocalRotation{ 1.f, 0.f, 0.f, 0.f };
@@ -119,6 +125,7 @@ struct TransformComponent {
 	glm::mat4 m_WorldMatrix{ 1.f };
 	glm::mat4 m_ParentMatrix{ 1.f };
 	bool m_WorldMatrixDirty{ true };
+	std::function<void()> m_OnDirty;
 };
 } // namespace Aquila::SceneManagement::Components
 #endif

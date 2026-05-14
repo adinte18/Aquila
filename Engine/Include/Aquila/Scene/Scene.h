@@ -6,6 +6,7 @@
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/UUID.h"
+#include "Aquila/Foundation/Invalidation/DirtySet.h"
 #include "Components/CameraComponent.h"
 
 namespace Aquila::Assets {
@@ -38,6 +39,7 @@ class Scene final {
 
 	void UpdateTransformHierarchy();
 	void UpdateTransformRecursive(Entity entity, const glm::mat4 &parentWorld);
+	void MarkTransformDirty(entt::entity entity);
 
 	bool Serialize(const std::string &filepath);
 	bool Deserialize(const std::string &filepath, Assets::AssetManager &assetManager);
@@ -51,9 +53,14 @@ class Scene final {
 	Unique<EntityManager> m_EntityManager;
 
   private:
-	Foundation::UUID m_SceneID; // scene handle
+	Foundation::UUID m_SceneID;
 	entt::entity m_ActiveCameraEntity = entt::null;
 	Assets::AssetManager *m_AssetManager = nullptr;
+	Foundation::DirtySet<entt::entity> m_DirtyTransforms;
+
+	void OnTransformConstruct(entt::registry &registry, entt::entity entity);
+	[[nodiscard]] bool HasDirtyAncestor(entt::entity entity) const;
+	[[nodiscard]] int GetEntityDepth(entt::entity entity) const;
 
 	friend class Entity;
 	friend class EntityManager;

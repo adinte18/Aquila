@@ -1,6 +1,7 @@
 #include "Aquila/Scene/Scene.h"
 
 #include "Aquila/Assets/AssetManager.h"
+#include <algorithm>
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Scene/Components/LightComponent.h"
@@ -34,7 +35,43 @@ Scene::~Scene() = default;
  */
 void Scene::OnStart() {
 	m_EntityManager = CreateUnique<EntityManager>(this);
+	// Wire dirty callback on every TransformComponent that gets created.
+	m_EntityManager->GetRegistry().on_construct<Components::TransformComponent>()
+		.connect<&Scene::OnTransformConstruct>(this);
 	m_EntityManager->ConstructSceneGraph();
+}
+
+void Scene::OnTransformConstruct(entt::registry &registry, entt::entity e) {
+	auto &t = registry.get<Components::TransformComponent>(e);
+	t.SetDirtyCallback([this, e]() { MarkTransformDirty(e); });
+	MarkTransformDirty(e); // bootstrap: new entity needs its first world matrix compute
+}
+
+void Scene::MarkTransformDirty(entt::entity entity) {
+	m_DirtyTransforms.MarkDirty(entity);
+}
+
+bool Scene::HasDirtyAncestor(entt::entity e) const {
+	Entity entity(e, const_cast<Scene *>(this));
+	auto *node = entity.TryGetComponent<Components::SceneNodeComponent>();
+	while (node && !node->Parent.IsNull()) {
+		if (m_DirtyTransforms.IsDirty(node->Parent.GetHandle())) {
+			return true;
+		}
+		node = node->Parent.TryGetComponent<Components::SceneNodeComponent>();
+	}
+	return false;
+}
+
+int Scene::GetEntityDepth(entt::entity e) const {
+	int depth = 0;
+	Entity entity(e, const_cast<Scene *>(this));
+	auto *node = entity.TryGetComponent<Components::SceneNodeComponent>();
+	while (node && !node->Parent.IsNull()) {
+		depth++;
+		node = node->Parent.TryGetComponent<Components::SceneNodeComponent>();
+	}
+	return depth;
 }
 
 /**
@@ -71,17 +108,36 @@ const Utils::UUID Scene::GetHandle() const {
 }
 
 void Scene::UpdateTransformHierarchy() {
-	auto view = GetRegistry().view<Components::SceneNodeComponent, Components::TransformComponent>();
-
-	for (auto entityHandle : view) {
-		Entity entity(entityHandle, this);
-		auto &node = entity.GetComponent<Components::SceneNodeComponent>();
-
-		// Only process root entities (no parent)
-		if (node.Parent.IsNull()) {
-			UpdateTransformRecursive(entity, glm::mat4(1.0f));
-		}
+	if (m_DirtyTransforms.IsEmpty()) {
+		return;
 	}
+
+	// Sort dirty entities parent-first so ancestors are always processed before descendants.
+	std::vector<entt::entity> sorted = m_DirtyTransforms.GetOrdered();
+	std::stable_sort(sorted.begin(), sorted.end(), [this](entt::entity a, entt::entity b) {
+		return GetEntityDepth(a) < GetEntityDepth(b);
+	});
+
+	for (entt::entity e : sorted) {
+		// If a dirty ancestor is also in the set, it was (or will be) processed first and its
+		// UpdateTransformRecursive call already covers this entity — skip it.
+		if (HasDirtyAncestor(e)) {
+			continue;
+		}
+
+		Entity entity(e, this);
+		glm::mat4 parentWorld(1.0f);
+		auto *node = entity.TryGetComponent<Components::SceneNodeComponent>();
+		if (node && !node->Parent.IsNull()) {
+			auto *parentTransform = node->Parent.TryGetComponent<Components::TransformComponent>();
+			if (parentTransform) {
+				parentWorld = parentTransform->GetWorldMatrixLazy();
+			}
+		}
+		UpdateTransformRecursive(entity, parentWorld);
+	}
+
+	m_DirtyTransforms.Clear();
 }
 
 void Scene::UpdateTransformRecursive(Entity entity, const glm::mat4 &parentWorld) {
