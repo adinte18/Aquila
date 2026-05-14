@@ -3,6 +3,7 @@
 
 #include "GraphicsPCH.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/RHI/Backend/IRHISwapchain.h"
 #include "Aquila/RHI/Vulkan/VulkanTypes.h"
 
@@ -45,13 +46,17 @@ class VulkanSwapchain final : public IRHISwapchain {
 	[[nodiscard]] VkSemaphore GetRenderFinishedSemaphore(uint32 frameIndex) const {
 		return m_RenderFinishedSemaphores[frameIndex];
 	}
+	[[nodiscard]] VkFence GetInFlightFence(uint32 frameIndex) const { return m_InFlightFences[frameIndex]; }
+
+	// Queue a command buffer for deferred free once frameIndex's fence is waited on next.
+	void DeferCmdBufFree(uint32 frameIndex, VkCommandBuffer cmd, VkCommandPool pool);
 
 	// Raw acquire/present (render loop with explicit semaphore control)
 	VkResult AcquireNextImageRaw(uint32 *imageIndex, VkSemaphore imageAvailableSemaphore) const;
 	VkResult PresentImageRaw(const uint32 *imageIndex, VkSemaphore renderFinishedSemaphore);
 
 	[[nodiscard]] uint32 GetLastAcquiredFrameIndex() const {
-		return (m_CurrentFrame + k_MaxFramesInFlight - 1) % k_MaxFramesInFlight;
+		return (m_CurrentFrame + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	[[nodiscard]] bool IsImageInitialized(uint32 index) const {
@@ -96,10 +101,15 @@ class VulkanSwapchain final : public IRHISwapchain {
 	std::vector<VkImageView> m_DepthImageViews;
 	std::vector<bool> m_ImageInitialized;
 
-	// Frame-indexed sync objects owned by the swapchain
-	static constexpr uint32 k_MaxFramesInFlight = 3;
+	struct PendingCmdBuf {
+		VkCommandBuffer cmd;
+		VkCommandPool pool;
+	};
+
 	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
+	std::vector<VkFence> m_InFlightFences;
+	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_PendingCmdBufs;
 	uint32 m_CurrentFrame = 0;
 	bool m_NeedsResize = false;
 };

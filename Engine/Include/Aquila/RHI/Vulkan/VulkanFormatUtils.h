@@ -17,6 +17,8 @@ AQUILA_FORCE_INLINE VkFormat ToVkFormat(TextureFormat format) {
 		return VK_FORMAT_R16G16B16A16_SFLOAT;
 	case TextureFormat::RGBA32F:
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
+	case TextureFormat::RGBA32U:
+		return VK_FORMAT_R32G32B32A32_UINT;
 	case TextureFormat::RGB8:
 		return VK_FORMAT_R8G8B8_UNORM;
 	case TextureFormat::RGB16F:
@@ -65,6 +67,8 @@ AQUILA_FORCE_INLINE TextureFormat FromVkFormat(VkFormat format) {
 		return TextureFormat::RGBA16F;
 	case VK_FORMAT_R32G32B32A32_SFLOAT:
 		return TextureFormat::RGBA32F;
+	case VK_FORMAT_R32G32B32A32_UINT:
+		return TextureFormat::RGBA32U;
 	case VK_FORMAT_R8G8B8_UNORM:
 		return TextureFormat::RGB8;
 	case VK_FORMAT_R16G16B16_SFLOAT:

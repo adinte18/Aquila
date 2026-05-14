@@ -19,6 +19,17 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, Ref<Vu
 VulkanSwapchain::~VulkanSwapchain() {
 	VkDevice dev = m_Device.GetDevice();
 
+	// Wait for all in-flight fences so we can safely free deferred cmd bufs.
+	if (!m_InFlightFences.empty()) {
+		vkWaitForFences(dev, static_cast<uint32>(m_InFlightFences.size()), m_InFlightFences.data(), VK_TRUE, UINT64_MAX);
+	}
+	for (auto &pending : m_PendingCmdBufs) {
+		for (auto &p : pending) {
+			vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
+		}
+		pending.clear();
+	}
+
 	for (auto *view : m_ImageViews) {
 		if (view != VK_NULL_HANDLE) {
 			vkDestroyImageView(dev, view, nullptr);
@@ -53,6 +64,11 @@ VulkanSwapchain::~VulkanSwapchain() {
 	for (auto *sem : m_RenderFinishedSemaphores) {
 		if (sem != VK_NULL_HANDLE) {
 			deletionQueue.QueueDeletion(sem);
+		}
+	}
+	for (auto *fence : m_InFlightFences) {
+		if (fence != VK_NULL_HANDLE) {
+			vkDestroyFence(dev, fence, nullptr);
 		}
 	}
 }
@@ -165,23 +181,42 @@ void VulkanSwapchain::CreateDepthResources() {
 }
 
 void VulkanSwapchain::CreateSyncObjects() {
-	m_ImageAvailableSemaphores.resize(k_MaxFramesInFlight);
-	m_RenderFinishedSemaphores.resize(k_MaxFramesInFlight);
+	m_ImageAvailableSemaphores.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
+	m_RenderFinishedSemaphores.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
+	m_InFlightFences.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo semInfo{};
 	semInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-	for (uint32 i = 0; i < k_MaxFramesInFlight; ++i) {
+	// Create fences pre-signaled so AcquireNextImage's first wait returns immediately.
+	VkFenceCreateInfo fenceInfo{};
+	fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	fenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
 		AQUILA_VULKAN_CHECK(vkCreateSemaphore(m_Device.GetDevice(), &semInfo, nullptr, &m_ImageAvailableSemaphores[i]));
 		AQUILA_VULKAN_CHECK(vkCreateSemaphore(m_Device.GetDevice(), &semInfo, nullptr, &m_RenderFinishedSemaphores[i]));
+		AQUILA_VULKAN_CHECK(vkCreateFence(m_Device.GetDevice(), &fenceInfo, nullptr, &m_InFlightFences[i]));
 	}
 }
 
 bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
+	VkDevice dev = m_Device.GetDevice();
+
+	// Wait for the previous work that used this frame slot to finish so we can safely
+	// reuse its resources. The fence stays signaled until we successfully acquire —
+	// if acquire fails we leave it signaled so the next call can wait on it again.
+	vkWaitForFences(dev, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
+
+	for (auto &p : m_PendingCmdBufs[m_CurrentFrame]) {
+		vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
+	}
+	m_PendingCmdBufs[m_CurrentFrame].clear();
+
 	VkSemaphore sem = m_ImageAvailableSemaphores[m_CurrentFrame];
 	// UINT64_MAX: block until an image is available (no busy-spin / spurious failure).
 	VkResult result =
-		vkAcquireNextImageKHR(m_Device.GetDevice(), m_Swapchain, UINT64_MAX, sem, VK_NULL_HANDLE, &outImageIndex);
+		vkAcquireNextImageKHR(dev, m_Swapchain, UINT64_MAX, sem, VK_NULL_HANDLE, &outImageIndex);
 
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_NeedsResize = true;
@@ -193,14 +228,17 @@ bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 		m_NeedsResize = true;
 	}
 	if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-		m_CurrentFrame = (m_CurrentFrame + 1) % k_MaxFramesInFlight;
+		// Reset only after a successful acquire so the fence stays signaled on failure
+		// (allowing the next attempt to wait on it without deadlocking).
+		vkResetFences(dev, 1, &m_InFlightFences[m_CurrentFrame]);
+		m_CurrentFrame = (m_CurrentFrame + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 		return true;
 	}
 	return false;
 }
 
 bool VulkanSwapchain::Present(uint32 imageIndex) {
-	uint32 prevFrame = (m_CurrentFrame + k_MaxFramesInFlight - 1) % k_MaxFramesInFlight;
+	uint32 prevFrame = (m_CurrentFrame + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 	VkSemaphore waitSem = m_RenderFinishedSemaphores[prevFrame];
 
 	VkPresentInfoKHR presentInfo{};
@@ -248,6 +286,14 @@ void VulkanSwapchain::DestroyImageResources() {
 
 	VkDevice dev = m_Device.GetDevice();
 
+	// All GPU work is done; free any deferred cmd bufs.
+	for (auto &pending : m_PendingCmdBufs) {
+		for (auto &p : pending) {
+			vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
+		}
+		pending.clear();
+	}
+
 	for (auto *view : m_ImageViews) {
 		if (view != VK_NULL_HANDLE) {
 			vkDestroyImageView(dev, view, nullptr);
@@ -268,6 +314,10 @@ void VulkanSwapchain::DestroyImageResources() {
 	m_DepthAllocations.clear();
 
 	m_ImageInitialized.clear();
+}
+
+void VulkanSwapchain::DeferCmdBufFree(uint32 frameIndex, VkCommandBuffer cmd, VkCommandPool pool) {
+	m_PendingCmdBufs[frameIndex].push_back({ cmd, pool });
 }
 
 void VulkanSwapchain::Resize(uint32 width, uint32 height) {
