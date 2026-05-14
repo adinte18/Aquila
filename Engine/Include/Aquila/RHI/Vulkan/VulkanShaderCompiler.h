@@ -39,9 +39,12 @@ class VulkanShaderCompiler {
 		targetDesc.format = SLANG_SPIRV;
 		targetDesc.profile = s_GlobalSession->findProfile("spirv_1_0");
 
+		const char *searchPaths[] = { AQUILA_SHADERS_DIR };
 		slang::SessionDesc sessionDesc{};
 		sessionDesc.targets = &targetDesc;
 		sessionDesc.targetCount = 1;
+		sessionDesc.searchPaths = searchPaths;
+		sessionDesc.searchPathCount = 1;
 
 		Slang::ComPtr<slang::ISession> session;
 		if (SLANG_FAILED(s_GlobalSession->createSession(sessionDesc, session.writeRef()))) {
@@ -160,9 +163,12 @@ class VulkanShaderCompiler {
 		targetDesc.format = SLANG_SPIRV;
 		targetDesc.profile = s_GlobalSession->findProfile("spirv_1_0");
 
+		const char *searchPaths[] = { AQUILA_SHADERS_DIR };
 		slang::SessionDesc sessionDesc{};
 		sessionDesc.targets = &targetDesc;
 		sessionDesc.targetCount = 1;
+		sessionDesc.searchPaths = searchPaths;
+		sessionDesc.searchPathCount = 1;
 
 		Slang::ComPtr<slang::ISession> session;
 		if (SLANG_FAILED(s_GlobalSession->createSession(sessionDesc, session.writeRef()))) {
