@@ -6,8 +6,10 @@ set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(MODULE_SOURCES
     ${MODULE_SOURCE_DIR}/Camera.cpp
     ${MODULE_SOURCE_DIR}/RenderPipeline.cpp
+    ${MODULE_SOURCE_DIR}/SceneFrameData.cpp
     ${MODULE_SOURCE_DIR}/Systems/GeometrySystem.cpp
     ${MODULE_SOURCE_DIR}/Systems/DepthPrepassSystem.cpp
+    ${MODULE_SOURCE_DIR}/Systems/ClusterComputeSystem.cpp
     ${MODULE_SOURCE_DIR}/Renderers/Renderer.cpp
     ${MODULE_SOURCE_DIR}/Renderers/Renderer2D.cpp
 )
