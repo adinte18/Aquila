@@ -34,4 +34,9 @@ struct Rect {
 	static Rect FromMinMax(vec2 min, vec2 max) { return { .position = min, .size = max - min }; }
 
 	[[nodiscard]] bool IsEmpty() const { return size.x <= 0.f || size.y <= 0.f; }
+
+	[[nodiscard]] AQUILA_FORCE_INLINE bool operator==(const Rect &other) const {
+		return position == other.position && size == other.size;
+	}
+	[[nodiscard]] AQUILA_FORCE_INLINE bool operator!=(const Rect &other) const { return !(*this == other); }
 };
