@@ -39,6 +39,13 @@ void Window::Initialize() {
 	glfwMaximizeWindow(m_Window);
 	SetupCallbacks();
 
+	// Sync dimensions after maximize — the WM_SIZE fires before SetupCallbacks so
+	// the size callback never ran for it; query the actual size directly.
+	int actualW, actualH;
+	glfwGetWindowSize(m_Window, &actualW, &actualH);
+	m_Data.Width  = static_cast<uint32>(actualW);
+	m_Data.Height = static_cast<uint32>(actualH);
+
 	AQUILA_LOG_INFO("Window created: {}x{}", m_Data.Width, m_Data.Height);
 }
 
@@ -116,10 +123,12 @@ void Window::SetupCallbacks() const {
 		data.EventCallback(event);
 	});
 
+	// Store the latest position; PollEvents fires one synthesized event after draining the queue.
 	glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, const double xPos, const double yPos) {
-		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		Events::MouseMovedEvent event(static_cast<f32>(xPos), static_cast<f32>(yPos));
-		data.EventCallback(event);
+		WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
+		data.LastMouseX = static_cast<f32>(xPos);
+		data.LastMouseY = static_cast<f32>(yPos);
+		data.HasPendingMouseMove = true;
 	});
 
 	glfwSetWindowFocusCallback(m_Window, [](GLFWwindow *window, const int focused) {
@@ -142,6 +151,11 @@ void Window::SetupCallbacks() const {
 
 void Window::PollEvents() {
 	glfwPollEvents();
+	if (m_Data.HasPendingMouseMove) {
+		Events::MouseMovedEvent event(m_Data.LastMouseX, m_Data.LastMouseY);
+		m_Data.EventCallback(event);
+		m_Data.HasPendingMouseMove = false;
+	}
 }
 
 bool Window::ShouldClose() const {
