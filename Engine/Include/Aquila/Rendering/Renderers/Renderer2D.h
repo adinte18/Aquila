@@ -24,6 +24,7 @@ class Renderer2D : public IRenderer {
 	void AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
 	void SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex);
+	void SetUIDirty(bool dirty) { m_UIDirty = dirty; }
 
 	template <typename T, typename... Args> T &AddSystem(Args &&...args) {
 		static_assert(std::is_base_of_v<I2DRenderingSystem, T>);
@@ -42,6 +43,7 @@ class Renderer2D : public IRenderer {
 	Ref<GFX::GfxRenderPass> m_SwapchainPass;
 	GFX::GfxSwapchain *m_Swapchain = nullptr;
 	uint32 m_SwapchainImageIndex = 0;
+	bool m_UIDirty = true;
 };
 
 } // namespace Aquila::Rendering

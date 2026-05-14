@@ -51,17 +51,25 @@ void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &
 	const uint32 w = ctx.width;
 	const uint32 h = ctx.height;
 
+	// m_UIDirty is set by the application before Render() via SetUIDirty().
+	const bool uiDirty = m_UIDirty;
+
 	graph.AddPass(
 		"UIOverlay", [](Graphics::RG::RGPassBuilder &builder) { builder.MarkAsSideEffect(); },
-		[swapchain, imageIndex, renderPass, r2d, systems, w, h](GFX::GfxCommandList &cmd,
-																Graphics::RG::RGRegistry & /*reg*/) {
+		[swapchain, imageIndex, renderPass, r2d, systems, w, h, uiDirty](GFX::GfxCommandList &cmd,
+																		  Graphics::RG::RGRegistry & /*reg*/) {
 			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);
 			renderPass->Begin(cmd, swapchain, imageIndex);
-			r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, ortho);
-			for (auto &sys : *systems) {
-				sys->Render(*r2d, cmd);
+			if (uiDirty) {
+				r2d->BeginCapture();
+				r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, ortho);
+				for (auto &sys : *systems) {
+					sys->Render(*r2d, cmd);
+				}
+				r2d->End();
+			} else {
+				r2d->ExecuteReplay(cmd);
 			}
-			r2d->End();
 			renderPass->End(cmd);
 		});
 }

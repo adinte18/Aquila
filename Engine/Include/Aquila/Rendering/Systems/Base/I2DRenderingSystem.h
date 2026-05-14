@@ -5,7 +5,7 @@
 namespace Aquila::GFX {
 class GfxContext;
 class GfxCommandList;
-}
+} // namespace Aquila::GFX
 
 namespace Aquila::Graphics {
 class QuadBatcher;
