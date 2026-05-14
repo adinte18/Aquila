@@ -8,16 +8,3 @@ target_link_libraries(InputTesting
     glfw
     Vulkan::Headers
 )
-
-add_executable(RenderPassSandbox
-    RenderPassSandbox.cpp
-)
-target_precompile_headers(RenderPassSandbox REUSE_FROM Application)
-target_link_libraries(RenderPassSandbox
-    PRIVATE
-    Application
-    GFX
-    Graphics
-    glfw
-    Vulkan::Headers
-)
