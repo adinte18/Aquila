@@ -1,6 +1,7 @@
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/Foundation/Color.h"
 #include "Aquila/Rendering/FrameContext.h"
+#include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
@@ -16,10 +17,10 @@ namespace Aquila::Rendering {
 
 using namespace SceneManagement::Components;
 using namespace Graphics;
-using Aquila::SharedConstants::kShadersDir;
+using Aquila::SharedConstants::SHADERS_DIR;
 
 struct MeshPushConstants {
-	mat4 mvp;
+	mat4 model;
 	vec4 color = vec4(1.F); // per-draw tint; white = no tint
 };
 
@@ -28,7 +29,7 @@ void GeometrySystem::OnInit(GFX::GfxContext &ctx) {
 
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(kShadersDir + "Basic.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "Basic.slang", stages, err)) {
 		AQUILA_LOG_ERROR("GeometrySystem: shader compile failed: {}", err);
 		return;
 	}
@@ -52,6 +53,7 @@ void GeometrySystem::OnInit(GFX::GfxContext &ctx) {
 	pipelineDescriptor.raster.frontFace = RHI::FrontFace::Clockwise;
 	pipelineDescriptor.depthStencil.depthTest = true;
 	pipelineDescriptor.depthStencil.depthWrite = false; // depth prepass already wrote it
+	pipelineDescriptor.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI() };
 	pipelineDescriptor.pushConstants = { { RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment, 0,
 										   sizeof(MeshPushConstants) } };
 
@@ -69,7 +71,7 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 
 	struct DrawCall {
 		Ref<GFX::GfxMesh> gpuMesh;
-		mat4 mvp;
+		mat4 model;
 	};
 
 	std::vector<DrawCall> drawCalls;
@@ -84,14 +86,16 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 
 		drawCalls.push_back({
 			.gpuMesh = GetOrUploadMesh(mesh.data),
-			.mvp = ctx.viewProjection * transform.GetWorldMatrix(),
+			.model = transform.GetWorldMatrix(),
 		});
 	}
+
+	auto *frameData = ctx.frameData;
+	const uint32 frameSlot = ctx.frameSlot;
 
 	graph.AddPass(
 		"Geometry",
 		[&ctx](RG::RGPassBuilder &builder) {
-			// Clear colour on first write; load depth from the prepass (no clear).
 			ctx.hSceneColor =
 				builder.SetColorAttachment(0, ctx.hSceneColor, RG::AttachmentLoadOp::Clear,
 										   RG::AttachmentStoreOp::Store, { Foundation::Color::RGBA::DarkGray });
@@ -100,13 +104,14 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 									   RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
 									   /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
-		[this, drawCalls = std::move(drawCalls)](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+		[this, drawCalls = std::move(drawCalls), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 			if (drawCalls.empty()) {
 				return;
 			}
 			cmd.BindPipeline(*m_Pipeline);
+			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
 			for (const auto &drawCall : drawCalls) {
-				MeshPushConstants pushConstants{ .mvp = drawCall.mvp };
+				MeshPushConstants pushConstants{ .model = drawCall.model };
 				cmd.PushConstants(pushConstants, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
 				cmd.BindVertexBuffer(drawCall.gpuMesh->GetVertexBuffer());
 				cmd.BindIndexBuffer(drawCall.gpuMesh->GetIndexBuffer());

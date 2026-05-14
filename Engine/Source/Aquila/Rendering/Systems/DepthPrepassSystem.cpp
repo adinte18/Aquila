@@ -1,5 +1,6 @@
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/FrameContext.h"
+#include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
@@ -15,10 +16,10 @@ namespace Aquila::Rendering {
 
 using namespace SceneManagement::Components;
 using namespace Graphics;
-using Aquila::SharedConstants::kShadersDir;
+using Aquila::SharedConstants::SHADERS_DIR;
 
 struct DepthPushConstants {
-	mat4 mvp;
+	mat4 model;
 };
 
 void DepthPrepassSystem::OnInit(GFX::GfxContext &ctx) {
@@ -26,7 +27,7 @@ void DepthPrepassSystem::OnInit(GFX::GfxContext &ctx) {
 
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(kShadersDir + "DepthOnly.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "DepthOnly.slang", stages, err)) {
 		AQUILA_LOG_ERROR("DepthPrepassSystem: shader compile failed: {}", err);
 		return;
 	}
@@ -50,6 +51,7 @@ void DepthPrepassSystem::OnInit(GFX::GfxContext &ctx) {
 	pipelineDescriptor.raster.frontFace = RHI::FrontFace::Clockwise;
 	pipelineDescriptor.depthStencil.depthTest = true;
 	pipelineDescriptor.depthStencil.depthWrite = true;
+	pipelineDescriptor.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI() };
 	pipelineDescriptor.pushConstants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
 	m_Pipeline = ctx.CreateGraphicsPipeline(pipelineDescriptor);
 }
@@ -64,7 +66,7 @@ void DepthPrepassSystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 
 	struct DrawCall {
 		Ref<GFX::GfxMesh> gpuMesh;
-		mat4 mvp;
+		mat4 model;
 	};
 
 	std::vector<DrawCall> drawCalls;
@@ -79,9 +81,12 @@ void DepthPrepassSystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 
 		drawCalls.push_back({
 			.gpuMesh = GetOrUploadMesh(mesh.data),
-			.mvp = ctx.viewProjection * transform.GetWorldMatrix(),
+			.model = transform.GetWorldMatrix(),
 		});
 	}
+
+	auto *frameData = ctx.frameData;
+	const uint32 frameSlot = ctx.frameSlot;
 
 	graph.AddPass(
 		"DepthPrepass",
@@ -91,13 +96,14 @@ void DepthPrepassSystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 										   RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
 										   /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
-		[this, drawCalls = std::move(drawCalls)](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+		[this, drawCalls = std::move(drawCalls), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 			if (drawCalls.empty()) {
 				return;
 			}
 			cmd.BindPipeline(*m_Pipeline);
+			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
 			for (const auto &drawCall : drawCalls) {
-				DepthPushConstants pushConstants{ .mvp = drawCall.mvp };
+				DepthPushConstants pushConstants{ .model = drawCall.model };
 				cmd.PushConstants(pushConstants, RHI::ShaderStageFlags::Vertex);
 				cmd.BindVertexBuffer(drawCall.gpuMesh->GetVertexBuffer());
 				cmd.BindIndexBuffer(drawCall.gpuMesh->GetIndexBuffer());
