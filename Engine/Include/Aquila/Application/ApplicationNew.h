@@ -1,6 +1,8 @@
 #ifndef AQUILA_APPLICATION_H
 #define AQUILA_APPLICATION_H
 
+namespace Aquila::UI::Core { class Image; }
+
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/Timer.h"
 #include "Aquila/Platform/Input.h"
@@ -72,6 +74,8 @@ class Application {
 	Unique<Rendering::RenderPipeline> m_RenderPipeline;
 	Rendering::Renderer *m_Renderer = nullptr;
 	Rendering::Renderer2D *m_Renderer2D = nullptr;
+
+	UI::Core::Image *m_ViewportImage = nullptr;
 };
 
 } // namespace Aquila::Application

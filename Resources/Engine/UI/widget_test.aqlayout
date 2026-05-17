@@ -33,6 +33,7 @@
 
         <View id="projects-list">
 
+            <Image id="viewport"/>
 
         </View>
 

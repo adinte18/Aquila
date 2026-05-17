@@ -8,8 +8,10 @@
 
 namespace Aquila::Application {
 
-void SetupWidgetTest(GFX::GfxContext &ctx, UI::Core::Canvas &canvas, std::vector<Unique<UI::Text::FontAtlas>> &fonts,
-					 std::vector<Unique<UI::Core::TextureCache>> &textureCaches) {
+UI::Core::Image *SetupWidgetTest(GFX::GfxContext &ctx, UI::Core::Canvas &canvas,
+								 std::vector<Unique<UI::Text::FontAtlas>> &fonts,
+								 std::vector<Unique<UI::Core::TextureCache>> &textureCaches,
+								 GFX::GfxTexture *viewportTexture) {
 	textureCaches.push_back(CreateUnique<UI::Core::TextureCache>(ctx, "C:/Programming/Aquila/Resources/"));
 	UI::Core::TextureCache &cache = *textureCaches.back();
 
@@ -32,7 +34,7 @@ void SetupWidgetTest(GFX::GfxContext &ctx, UI::Core::Canvas &canvas, std::vector
 	auto root = loader.LoadFile("C:/Programming/Aquila/Resources/Engine/UI/widget_test.aqlayout");
 	if (!root) {
 		AQUILA_LOG_ERROR("SetupWidgetTest: failed to load layout");
-		return;
+		return nullptr;
 	}
 
 	if (auto *view = root->FindById("btn-click")) {
@@ -41,8 +43,17 @@ void SetupWidgetTest(GFX::GfxContext &ctx, UI::Core::Canvas &canvas, std::vector
 		}
 	}
 
+	UI::Core::Image *viewportImage = nullptr;
+	if (auto *view = root->FindById("viewport")) {
+		if (auto *img = dynamic_cast<UI::Core::Image *>(view)) {
+			img->SetTexture(viewportTexture);
+			viewportImage = img;
+		}
+	}
+
 	canvas.GetRoot()->AddChild(std::move(root));
 	canvas.ReloadStyles();
+	return viewportImage;
 }
 
 } // namespace Aquila::Application
