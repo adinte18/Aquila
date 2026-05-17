@@ -2,85 +2,50 @@
 #ifndef AQUILA_GBUFFER_SLANG
 #define AQUILA_GBUFFER_SLANG
 
-// -- set 0
-[[vk::binding(0, 0)]]
-cbuffer CameraData {
-	column_major float4x4 cameraView;
-	column_major float4x4 cameraProjection;
-	column_major float4x4 cameraViewProjection;
-	column_major float4x4 cameraInverseView;
-	column_major float4x4 cameraInverseProjection;
-	float3 cameraPosition;
-	float nearPlane;
-	float farPlane;
-};
-// ------
-[[vk::binding(0, 1)]]
-Sampler2D albedoMap;
-[[vk::binding(1, 1)]]
-Sampler2D normalMap;
-[[vk::binding(2, 1)]]
-Sampler2D aoMap;
-[[vk::binding(3, 1)]]
-Sampler2D emissiveMap;
+import Utility.FrameData;
+import Utility.SurfaceData;
 
-[[vk::binding(4, 1)]]
-cbuffer MaterialUBO {
-	float4 albedoColor;
-	float4 emissiveColor;
-	float metallic;
-	float roughness;
-};
+// set 1: material textures
+[[vk::binding(0, 1)]] Sampler2D albedoMap;
+[[vk::binding(1, 1)]] Sampler2D normalMap;
+[[vk::binding(2, 1)]] Sampler2D aoMap;
+[[vk::binding(3, 1)]] Sampler2D emissiveMap;
 
 struct PushConstants {
 	column_major float4x4 modelMatrix;
 	column_major float4x4 normalMatrix;
+	uint materialIndex;
 };
 
 [[vk::push_constant]]
 PushConstants push;
 
 struct VSInput {
-	[[vk::location(0)]]
-	float3 position : POSITION;
-	[[vk::location(1)]]
-	float3 color : COLOR;
-	[[vk::location(2)]]
-	float3 normal : NORMAL;
-	[[vk::location(3)]]
-	float4 tangent : TANGENT; // w = bitangent sign
-	[[vk::location(4)]]
-	float2 uv : TEXCOORD0;
+	[[vk::location(0)]] float3 position : POSITION;
+	[[vk::location(1)]] float3 color : COLOR;
+	[[vk::location(2)]] float3 normal : NORMAL;
+	[[vk::location(3)]] float4 tangent : TANGENT; // w = bitangent sign
+	[[vk::location(4)]] float2 uv : TEXCOORD0;
 };
 
 struct VSOutput {
 	float4 sv_position : SV_Position;
-	[[vk::location(0)]]
-	float3 fragColor : TEXCOORD0;
-	[[vk::location(1)]]
-	float3 fragPosWorld : TEXCOORD1;
-	[[vk::location(2)]]
-	float3 fragNormal : TEXCOORD2;
-
-	[[vk::location(3)]]
-	float3 fragTangent : TEXCOORD3;
-	[[vk::location(4)]]
-	float3 fragBitangent : TEXCOORD4;
-	[[vk::location(5)]]
-	float2 fragUV : TEXCOORD5;
+	[[vk::location(0)]] float3 fragColor : TEXCOORD0;
+	[[vk::location(1)]] float3 fragPosWorld : TEXCOORD1;
+	[[vk::location(2)]] float3 fragNormal : TEXCOORD2;
+	[[vk::location(3)]] float3 fragTangent : TEXCOORD3;
+	[[vk::location(4)]] float3 fragBitangent : TEXCOORD4;
+	[[vk::location(5)]] float2 fragUV : TEXCOORD5;
 };
 
 struct FSOutput {
-	[[vk::location(0)]]
-	float4 outPosition : SV_Target0;
-	[[vk::location(1)]]
-	float4 outNormal : SV_Target1;
-	[[vk::location(2)]]
-	float4 outAlbedo : SV_Target2;
+	[[vk::location(0)]] float4 outPosition : SV_Target0; // xyz=worldPos,  w=metallic
+	[[vk::location(1)]] float4 outNormal : SV_Target1;	 // xyz=normal,    w=roughness
+	[[vk::location(2)]] float4 outAlbedo : SV_Target2;	 // xyz=albedo,    w=ao
+	[[vk::location(3)]] float4 outEmissive : SV_Target3; // xyz=emissive,  w=emissiveIntensity
 };
 
-[shader("vertex")]
-VSOutput vertexMain(VSInput IN) {
+[shader("vertex")] VSOutput vertexMain(VSInput IN) {
 	VSOutput OUT;
 
 	float4 posWorld = mul(push.modelMatrix, float4(IN.position, 1.0));
@@ -103,29 +68,32 @@ VSOutput vertexMain(VSInput IN) {
 		OUT.fragBitangent = float3(0, 1, 0);
 	}
 
-	OUT.sv_position = mul(cameraProjection, mul(cameraView, posWorld));
-
+	OUT.sv_position = mul(aqFrameData.mainCamera.projection, mul(aqFrameData.mainCamera.view, posWorld));
 	return OUT;
 }
 
-[shader("fragment")]
-FSOutput fragmentMain(VSOutput IN) {
+	[shader("fragment")] FSOutput fragmentMain(VSOutput IN) {
+	AqSurfaceData surf = AQ_GetSurface(push.materialIndex);
+
 	float3x3 TBN = float3x3(normalize(IN.fragTangent), normalize(IN.fragBitangent), normalize(IN.fragNormal));
 
-	float3 sampledAlbedo = pow(albedoMap.Sample(IN.fragUV).rgb, float3(2.2, 2.2, 2.2));
-	float sampledAO = aoMap.Sample(IN.fragUV).r;
-	float3 sampledNormal = normalMap.Sample(IN.fragUV).rgb;
+	// Albedo: texture * material tint; sRGB -> linear
+	float3 texAlbedo = pow(albedoMap.Sample(IN.fragUV).rgb, float3(2.2, 2.2, 2.2));
+	float3 albedo = texAlbedo * surf.albedo.rgb;
 
-	float3 localNormal = sampledNormal * 2.0 - 1.0;
-	float3 worldNormal = normalize(mul(localNormal, TBN));
+	// Normal mapping scaled by normalStrength
+	float3 sampledNormal = normalMap.Sample(IN.fragUV).rgb * 2.0 - 1.0;
+	sampledNormal.xy *= surf.normalStrength;
+	float3 worldNormal = normalize(mul(sampledNormal, TBN));
 
-	float3 albedo = sampledAlbedo * albedoColor.rgb;
+	float ao = aoMap.Sample(IN.fragUV).r * surf.aoStrength;
+	float3 emissive = emissiveMap.Sample(IN.fragUV).rgb * surf.emissive.rgb;
 
 	FSOutput OUT;
-	OUT.outPosition = float4(IN.fragPosWorld, metallic);
-	OUT.outNormal = float4(worldNormal * 0.5 + 0.5, roughness);
-	OUT.outAlbedo = float4(albedo, sampledAO);
-
+	OUT.outPosition = float4(IN.fragPosWorld, surf.metallic);
+	OUT.outNormal = float4(worldNormal * 0.5 + 0.5, surf.roughness);
+	OUT.outAlbedo = float4(albedo, ao);
+	OUT.outEmissive = float4(emissive, surf.emissive.a);
 	return OUT;
 }
 

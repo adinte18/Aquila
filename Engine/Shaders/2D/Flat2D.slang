@@ -1,3 +1,6 @@
+#ifndef AQUILA_FLAT2D_SLANG
+#define AQUILA_FLAT2D_SLANG
+
 struct VSInput {
 	float3 position : POSITION;
 	float4 color : COLOR;
@@ -29,3 +32,5 @@ PushConstants pc;
 	: SV_Target {
 	return input.color;
 }
+
+#endif // AQUILA_FLAT2D_SLANG

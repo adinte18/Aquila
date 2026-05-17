@@ -1,3 +1,5 @@
+#ifndef AQUILA_PROCEDURAL_TRIANGLE_SLANG
+#define AQUILA_PROCEDURAL_TRIANGLE_SLANG
 
 // A hardcoded RGB triangle — no vertex buffer required.
 // Driven entirely by SV_VertexID (draw 3 vertices, no index buffer).
@@ -31,3 +33,5 @@ VSOutput main(uint id : SV_VertexID) {
 float4 main(VSOutput input) : SV_Target {
 	return float4(input.color, 1.0);
 }
+
+#endif // AQUILA_PROCEDURAL_TRIANGLE_SLANG

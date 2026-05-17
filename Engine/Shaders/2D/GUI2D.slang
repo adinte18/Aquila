@@ -1,3 +1,6 @@
+#ifndef AQUILA_GUI2D_SLANG
+#define AQUILA_GUI2D_SLANG
+
 struct VSInput {
 	float3 position : POSITION;
 	float4 color : COLOR;
@@ -59,3 +62,5 @@ float sdRoundBox(float2 point, float2 halfSize, float4 r) {
 	col.a *= outerAlpha;
 	return col;
 }
+
+#endif // AQUILA_GUI2D_SLANG

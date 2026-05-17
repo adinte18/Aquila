@@ -1,3 +1,6 @@
+#ifndef AQUILA_WAVE_SLANG
+#define AQUILA_WAVE_SLANG
+
 struct PushConstants {
 	column_major float4x4 mvp;
 	float time;
@@ -33,3 +36,5 @@ struct VSOutput {
 	: SV_Target {
 	return float4(IN.color, 1.0);
 }
+
+#endif // AQUILA_WAVE_SLANG

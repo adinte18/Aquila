@@ -1,3 +1,6 @@
+#ifndef AQUILA_SHADOW2D_SLANG
+#define AQUILA_SHADOW2D_SLANG
+
 // Box-shadow SDF shader.
 // borderWidth  = blur radius
 // borderColor  = (shadowOffsetX, shadowOffsetY, sdfBoxHalfW, sdfBoxHalfH)
@@ -63,3 +66,5 @@ float sdRoundBox(float2 p, float2 halfSize, float4 r) {
 
 	return float4(input.color.rgb, alpha);
 }
+
+#endif // AQUILA_SHADOW2D_SLANG

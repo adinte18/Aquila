@@ -1,3 +1,5 @@
+#ifndef AQUILA_BLIT_SLANG
+#define AQUILA_BLIT_SLANG
 
 import "Utils.slang";
 
@@ -21,3 +23,5 @@ VSOutput main(uint vertexIndex : SV_VertexID) {
 float4 main(VSOutput input) : SV_Target {
 	return inputTexture.Sample(input.uv);
 }
+
+#endif // AQUILA_BLIT_SLANG

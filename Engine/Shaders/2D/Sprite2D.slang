@@ -1,3 +1,6 @@
+#ifndef AQUILA_SPRITE2D_SLANG
+#define AQUILA_SPRITE2D_SLANG
+
 struct VSInput {
 	float3 position : POSITION;
 	float4 color : COLOR;
@@ -48,3 +51,5 @@ float antialias(float d) {
 
 	return color;
 }
+
+#endif // AQUILA_SPRITE2D_SLANG

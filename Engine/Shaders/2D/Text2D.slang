@@ -1,3 +1,6 @@
+#ifndef AQUILA_TEXT2D_SLANG
+#define AQUILA_TEXT2D_SLANG
+
 // Slug resolution-independent text rendering.
 // MIT License. Original copyright 2017 Eric Lengyel.
 // https://github.com/EricLengyel/Slug
@@ -187,3 +190,5 @@ float CalcCoverage(float xcov, float ycov, float xwgt, float ywgt) {
 	float coverage = CalcCoverage(xcov, ycov, xwgt, ywgt);
 	return input.color * coverage;
 }
+
+#endif // AQUILA_TEXT2D_SLANG
