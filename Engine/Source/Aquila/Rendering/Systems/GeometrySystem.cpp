@@ -1,81 +1,42 @@
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
-#include "Aquila/Foundation/Color.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
-#include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 #include "Aquila/Scene/Scene.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
-#include "Aquila/Foundation/Macros.h"
-#include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Scene/Components/MaterialComponent.h"
+#include "Aquila/Foundation/Color.h"
 
 namespace Aquila::Rendering {
 
 using namespace SceneManagement::Components;
 using namespace Graphics;
-using Aquila::SharedConstants::SHADERS_DIR;
 
 struct MeshPushConstants {
 	mat4 model;
-	vec4 color = vec4(1.F); // per-draw tint; white = no tint
+	vec4 color = vec4(1.F);
+	uint32 materialIndex = 0;
 };
 
 void GeometrySystem::OnInit(GFX::GfxContext &ctx) {
 	RenderingSystemBase::OnInit(ctx);
-
-	std::vector<RHI::VulkanCompiledStage> stages;
-	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "Basic.slang", stages, err)) {
-		AQUILA_LOG_ERROR("GeometrySystem: shader compile failed: {}", err);
-		return;
-	}
-
-	RHI::GraphicsPipelineDesc pipelineDescriptor{};
-	for (auto &stage : stages) {
-		RHI::ShaderStageDesc shaderDescriptor{ .spirv = stage.spirv, .entryPoint = stage.entryPointName };
-		if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			shaderDescriptor.stage = RHI::ShaderStageFlags::Vertex;
-			pipelineDescriptor.vertexShader = shaderDescriptor;
-		} else {
-			shaderDescriptor.stage = RHI::ShaderStageFlags::Fragment;
-			pipelineDescriptor.fragmentShader = shaderDescriptor;
-		}
-	}
-
-	pipelineDescriptor.colorFormats = { RHI::TextureFormat::RGBA16F };
-	pipelineDescriptor.depthFormat = RHI::TextureFormat::Depth32;
-	pipelineDescriptor.topology = RHI::PrimitiveTopology::TriangleList;
-	pipelineDescriptor.raster.cullMode = RHI::CullMode::Back;
-	pipelineDescriptor.raster.frontFace = RHI::FrontFace::Clockwise;
-	pipelineDescriptor.depthStencil.depthTest = true;
-	pipelineDescriptor.depthStencil.depthWrite = false; // depth prepass already wrote it
-	pipelineDescriptor.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI() };
-	pipelineDescriptor.pushConstants = { { RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment, 0,
-										   sizeof(MeshPushConstants) } };
-
-	m_Pipeline = ctx.CreateGraphicsPipeline(pipelineDescriptor);
 }
 
 void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_Pipeline) {
-		return;
-	}
-
-	// Collect draw calls synchronously during setup so the execute lambda is allocation-free.
 	auto &registry = ctx.scene->GetRegistry();
 	auto view = registry.view<TransformComponent, MeshComponent>();
 
 	struct DrawCall {
 		Ref<GFX::GfxMesh> gpuMesh;
 		mat4 model;
+		uint32 materialIndex = 0;
 	};
 
-	std::vector<DrawCall> drawCalls;
-	drawCalls.reserve(view.size_hint());
+	std::unordered_map<Material *, std::vector<DrawCall>> batches;
 
 	for (auto entity : view) {
 		auto &transform = view.get<TransformComponent>(entity);
@@ -84,10 +45,20 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 			continue;
 		}
 
-		drawCalls.push_back({
+		auto *mat = registry.try_get<MaterialComponent>(entity);
+		if (!mat || mat->type != MaterialType::Lit || !mat->material) {
+			continue;
+		}
+
+		batches[mat->material.get()].push_back({
 			.gpuMesh = GetOrUploadMesh(mesh.data),
 			.model = transform.GetWorldMatrix(),
+			.materialIndex = mat->materialIndex,
 		});
+	}
+
+	if (batches.empty()) {
+		return;
 	}
 
 	auto *frameData = ctx.frameData;
@@ -96,6 +67,9 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 	graph.AddPass(
 		"Geometry",
 		[&ctx](RG::RGPassBuilder &builder) {
+			builder.ReadBuffer(ctx.hLightList, RG::ResourceState::ShaderRead);
+			builder.ReadBuffer(ctx.hClusterLightInfo, RG::ResourceState::ShaderRead);
+
 			ctx.hSceneColor =
 				builder.SetColorAttachment(0, ctx.hSceneColor, RG::AttachmentLoadOp::Clear,
 										   RG::AttachmentStoreOp::Store, { Foundation::Color::RGBA::DarkGray });
@@ -104,18 +78,19 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 									   RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
 									   /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
-		[this, drawCalls = std::move(drawCalls), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
-			if (drawCalls.empty()) {
-				return;
-			}
-			cmd.BindPipeline(*m_Pipeline);
-			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
-			for (const auto &drawCall : drawCalls) {
-				MeshPushConstants pushConstants{ .model = drawCall.model };
-				cmd.PushConstants(pushConstants, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
-				cmd.BindVertexBuffer(drawCall.gpuMesh->GetVertexBuffer());
-				cmd.BindIndexBuffer(drawCall.gpuMesh->GetIndexBuffer());
-				cmd.DrawIndexed(drawCall.gpuMesh->GetIndexCount());
+		[batches = std::move(batches), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+			for (auto &[material, drawCalls] : batches) {
+				material->Flush();
+				material->Bind(cmd, 1);
+				cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
+
+				for (const auto &dc : drawCalls) {
+					MeshPushConstants push{ .model = dc.model, .materialIndex = dc.materialIndex };
+					cmd.PushConstants(push, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
+					cmd.BindVertexBuffer(dc.gpuMesh->GetVertexBuffer());
+					cmd.BindIndexBuffer(dc.gpuMesh->GetIndexBuffer());
+					cmd.DrawIndexed(dc.gpuMesh->GetIndexCount());
+				}
 			}
 		});
 }

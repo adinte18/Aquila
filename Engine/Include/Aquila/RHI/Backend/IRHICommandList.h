@@ -24,10 +24,6 @@ class IRHICommandList {
 	[[nodiscard]] virtual CommandListType GetType() const = 0;
 	[[nodiscard]] virtual const std::string &GetName() const = 0;
 
-	// The caller is responsible for tracking old/new states; no internal state is
-	// kept by the command list.  Both states use the engine's ResourceState bitmask.
-	// Emitting oldState == newState is a no-op on all backends.
-
 	virtual void TransitionTexture(IRHITexture &texture, ResourceState oldState, ResourceState newState) = 0;
 	virtual void TransitionBuffer(IRHIBuffer &buffer, ResourceState oldState, ResourceState newState) = 0;
 
@@ -53,6 +49,8 @@ class IRHICommandList {
 
 	virtual void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
 									 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) = 0;
+
+	virtual void FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) = 0;
 
 	virtual void Dispatch(uint32 x, uint32 y, uint32 z) = 0;
 

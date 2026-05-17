@@ -48,8 +48,11 @@ class GfxCommandList {
 	void DrawIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride);
 	void DrawIndexedIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride);
 
-	void CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
-							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0);
+	void CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height, uint32 dstArrayLayer = 0,
+							 uint32 dstMipLevel = 0);
+
+	static constexpr uint64 WholeSize = ~0ULL;
+	void FillBuffer(GfxBuffer &buffer, uint32 value = 0u, uint64 offset = 0, uint64 size = WholeSize);
 
 	void Dispatch(uint32 x, uint32 y, uint32 z);
 

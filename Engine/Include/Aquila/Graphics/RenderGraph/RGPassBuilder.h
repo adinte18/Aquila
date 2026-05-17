@@ -56,6 +56,10 @@ struct RGPassData {
 	// When true the culling step keeps this pass alive even if it has no
 	// graph-tracked outputs (e.g. a swapchain blit that writes to an external image).
 	bool hasSideEffect = false;
+
+	// Set when ReadBuffer/ReadTexture is called with an invalid handle.
+	// The culling step will never mark this pass alive, regardless of downstream demand.
+	bool hasUnsatisfiedDep = false;
 };
 
 class RGPassBuilder {

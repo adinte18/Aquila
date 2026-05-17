@@ -11,23 +11,23 @@ struct alignas(16) GpuCameraData {
 	mat4 inverseView;
 	mat4 inverseProjection;
 	mat4 inverseViewProjection;
-	mat4 prevViewProjection; // reserved for TAA; matches current VP until TAA is wired up
+	mat4 prevViewProjection;
 
-	vec4 position; // .xyz = world-space position, .w unused
-	vec4 forward;  // .xyz = world-space forward direction, .w unused
-	vec4 up;	   // .xyz = world-space up direction, .w unused
-	vec4 right;	   // .xyz = world-space right direction, .w unused
+	vec4 position;
+	vec4 forward;
+	vec4 up;
+	vec4 right;
 
 	float nearPlane;
 	float farPlane;
-	float fov; // vertical FOV in degrees
+	float fov;
 	float aspectRatio;
 
-	vec2 resolution; // viewport resolution in pixels
-	vec2 jitter;	 // sub-pixel TAA jitter offset (unused until TAA)
+	vec2 resolution;
+	vec2 jitter;
 
-	uint32 isOrthographic; // 1 if orthographic, 0 if perspective
-	uint32 cameraIndex;	   // index of this camera in the cameras[] array
+	uint32 isOrthographic;
+	uint32 cameraIndex;
 	uint32 _pad[2];
 };
 
@@ -41,7 +41,8 @@ struct GpuFrameData {
 	uint32 frameIndex;
 
 	vec2 screenResolution;
-	vec2 _pad;
+	uint32 lightCount;
+	uint32 _pad;
 };
 
 } // namespace Aquila::Rendering

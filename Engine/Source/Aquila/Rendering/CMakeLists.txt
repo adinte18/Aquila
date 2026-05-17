@@ -2,7 +2,6 @@ set(MODULE_NAME Rendering)
 set(MODULE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Engine/Include)
 set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Explicit list — old broken systems in Systems/ and Environment/ are excluded intentionally.
 set(MODULE_SOURCES
     ${MODULE_SOURCE_DIR}/Camera.cpp
     ${MODULE_SOURCE_DIR}/RenderPipeline.cpp
@@ -10,6 +9,7 @@ set(MODULE_SOURCES
     ${MODULE_SOURCE_DIR}/Systems/GeometrySystem.cpp
     ${MODULE_SOURCE_DIR}/Systems/DepthPrepassSystem.cpp
     ${MODULE_SOURCE_DIR}/Systems/ClusterComputeSystem.cpp
+    ${MODULE_SOURCE_DIR}/Systems/LightCullingSystem.cpp
     ${MODULE_SOURCE_DIR}/Renderers/Renderer.cpp
     ${MODULE_SOURCE_DIR}/Renderers/Renderer2D.cpp
 )

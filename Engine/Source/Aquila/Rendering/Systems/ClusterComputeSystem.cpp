@@ -58,14 +58,14 @@ void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
 		.size = sizeof(AABB) * kElementCount,
 		.usage = RHI::BufferUsage::StorageBuffer,
 		.domain = RHI::MemoryDomain::GPU_TO_CPU,
-		.debugName = "ComputeTest_Output",
+		.debugName = "ClusterCompute_AABBOutput",
 	});
 
 	m_GridBuffer = ctx.CreateBuffer({
 		.size = sizeof(GridData),
 		.usage = RHI::BufferUsage::UniformBuffer,
 		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "ComputeTest_GridDAta",
+		.debugName = "ClusteCompute_GridData",
 	});
 
 	m_GridBuffer->Write(&m_GridData);
@@ -83,8 +83,11 @@ void ClusterComputeSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameCont
 	auto *frameData = ctx.frameData;
 	const uint32 frameSlot = ctx.frameSlot;
 
+	auto hAABBs =
+		graph.ImportBuffer(m_OutputBuffer.get(), "ClusterAABBs", Graphics::RG::ResourceState::UnorderedAccess);
+
 	graph.AddPass(
-		"ClusterCompute", [](Graphics::RG::RGPassBuilder &builder) { builder.MarkAsSideEffect(); },
+		"ClusterCompute", [&hAABBs](Graphics::RG::RGPassBuilder &builder) { hAABBs = builder.WriteBuffer(hAABBs); },
 		[this, frameData, frameSlot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
 			cmd.BindPipeline(*m_Pipeline);
 			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
@@ -95,13 +98,13 @@ void ClusterComputeSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameCont
 			if (!m_Verified) {
 				auto *data = static_cast<uint32 *>(m_OutputBuffer->Map());
 				if (data) {
-					AQUILA_LOG_INFO("ClusterCompute: output[0]={} output[1]={} output[63]={}", data[0], data[1],
-									data[63]);
 					m_OutputBuffer->Unmap();
 				}
 				m_Verified = true;
 			}
 		});
+
+	ctx.hClusterAABBs = hAABBs;
 }
 
 } // namespace Aquila::Rendering

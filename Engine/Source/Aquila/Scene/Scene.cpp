@@ -320,12 +320,9 @@ bool Scene::Serialize(const std::string &filepath) {
 		// Serialize MaterialComponent
 		if (entity.HasComponent<Components::MaterialComponent>()) {
 			auto &matComp = entity.GetComponent<Components::MaterialComponent>();
-			entityJson["MaterialComponent"] = { { "MaterialAssetPath", matComp.GetMaterialAssetPath() },
-												{ "HasMaterialAsset", matComp.HasMaterialAsset() } };
-
-			if (matComp.material) {
-				entityJson["MaterialComponent"]["MaterialName"] = matComp.material->name;
-			}
+			entityJson["MaterialComponent"] = {
+				{ "Type", static_cast<int>(matComp.type) },
+			};
 		}
 
 		sceneJson["Entities"][std::to_string(static_cast<int>(entityHandle))] = entityJson;
@@ -548,14 +545,7 @@ bool Scene::Deserialize(const std::string &filepath, Assets::AssetManager &asset
 		if (entityData.contains("MaterialComponent")) {
 			const auto &matJson = entityData["MaterialComponent"];
 			auto &matComp = entity.GetOrEmplace<Components::MaterialComponent>();
-
-			if (matJson.value("HasMaterialAsset", false)) {
-				std::string assetPath = matJson.value("MaterialAssetPath", "");
-				if (!assetPath.empty()) {
-					matComp.SetMaterialAsset(assetPath);
-					// TODO: Load actual material from asset path
-				}
-			}
+			matComp.type = static_cast<Graphics::MaterialType>(matJson.value("Type", 0));
 		}
 	}
 

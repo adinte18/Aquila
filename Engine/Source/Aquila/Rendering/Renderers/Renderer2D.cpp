@@ -55,7 +55,13 @@ void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &
 	const bool uiDirty = m_UIDirty;
 
 	graph.AddPass(
-		"UIOverlay", [](Graphics::RG::RGPassBuilder &builder) { builder.MarkAsSideEffect(); },
+		"UIOverlay",
+		[&ctx](Graphics::RG::RGPassBuilder &builder) {
+			builder.MarkAsSideEffect();
+			// Ensure hSceneColor is in ShaderRead by the time UIOverlay executes
+			// so Image widgets that sample it don't race with geometry writes.
+			builder.ReadTexture(ctx.hSceneColor, Graphics::RG::ResourceState::ShaderRead);
+		},
 		[swapchain, imageIndex, renderPass, r2d, systems, w, h, uiDirty](GFX::GfxCommandList &cmd,
 																		  Graphics::RG::RGRegistry & /*reg*/) {
 			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);

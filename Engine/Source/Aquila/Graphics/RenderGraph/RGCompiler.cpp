@@ -238,8 +238,12 @@ std::vector<bool> RGCompiler::CullPasses(const std::vector<RGPassData> &passes, 
 
 	// Passes with an external side effect (e.g. swapchain blit) are always sinks.
 	// Passes that write to an imported resource are also always sinks.
+	// Passes with an unsatisfied read dependency are never sinks and can never be made alive.
 	for (uint32 pi = 0; pi < n; ++pi) {
 		const RGPassData &p = passes[pi];
+		if (p.hasUnsatisfiedDep) {
+			continue;
+		}
 		bool isSink = p.hasSideEffect;
 		if (!isSink) {
 			for (const RGTextureAccess &a : p.textureWrites) {
@@ -274,7 +278,7 @@ std::vector<bool> RGCompiler::CullPasses(const std::vector<RGPassData> &passes, 
 		uint32 cur = work.front();
 		work.pop();
 		for (uint32 pred : radj[cur]) {
-			if (!alive[pred]) {
+			if (!alive[pred] && !passes[pred].hasUnsatisfiedDep) {
 				alive[pred] = true;
 				work.push(pred);
 			}

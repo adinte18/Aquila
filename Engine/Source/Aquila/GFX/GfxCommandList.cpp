@@ -78,6 +78,10 @@ void GfxCommandList::CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32
 	m_Cmd->CopyBufferToTexture(src.GetRHI(), dst.GetRHI(), width, height, dstArrayLayer, dstMipLevel);
 }
 
+void GfxCommandList::FillBuffer(GfxBuffer &buffer, uint32 value, uint64 offset, uint64 size) {
+	m_Cmd->FillBuffer(buffer.GetRHI(), offset, size, value);
+}
+
 void GfxCommandList::Dispatch(uint32 x, uint32 y, uint32 z) {
 	m_Cmd->Dispatch(x, y, z);
 }

@@ -370,6 +370,12 @@ void VulkanCommandList::CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, u
 						   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 }
 
+void VulkanCommandList::FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) {
+	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
+	vkCmdFillBuffer(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset),
+					static_cast<VkDeviceSize>(size), value);
+}
+
 void VulkanCommandList::Dispatch(uint32 x, uint32 y, uint32 z) {
 	vkCmdDispatch(m_CommandBuffer, x, y, z);
 }

@@ -11,7 +11,10 @@ RGPassBuilder::RGPassBuilder(std::string_view passName, RGRegistry &registry) : 
 }
 
 RGTextureHandle RGPassBuilder::ReadTexture(RGTextureHandle handle, ResourceState state) {
-	AQUILA_ASSERT(handle.IsValid(), "ReadTexture: invalid handle");
+	if (!handle.IsValid()) {
+		m_Data.hasUnsatisfiedDep = true;
+		return handle;
+	}
 
 	// Same slot declared as a read twice is fine, e.g. depth-read attachment + SRV in the same pass.
 	const uint32 slot = SlotOf(handle.id);
@@ -36,7 +39,10 @@ RGTextureHandle RGPassBuilder::WriteTexture(RGTextureHandle handle, ResourceStat
 }
 
 RGBufferHandle RGPassBuilder::ReadBuffer(RGBufferHandle handle, ResourceState state) {
-	AQUILA_ASSERT(handle.IsValid(), "ReadBuffer: invalid handle");
+	if (!handle.IsValid()) {
+		m_Data.hasUnsatisfiedDep = true;
+		return handle;
+	}
 
 	const uint32 slot = SlotOf(handle.id);
 	auto slotMatches = [slot](const RGBufferAccess &a) { return SlotOf(a.handle.id) == slot; };

@@ -26,6 +26,14 @@ constexpr int MAX_SCENES = 32;
 constexpr int MAX_SCENE_OBJECTS = 5000;
 
 constexpr uint32 MAX_CAMERAS = 8;
+constexpr uint32 MAX_LIGHTS = 256;	   // max punctual lights uploaded to GPU per frame
+constexpr uint32 MAX_MATERIALS = 4096; // max entities with MaterialComponent per frame
+
+constexpr uint32 CLUSTER_GRID_X = 16;
+constexpr uint32 CLUSTER_GRID_Y = 9;
+constexpr uint32 CLUSTER_GRID_Z = 24;
+constexpr uint32 CLUSTER_COUNT = CLUSTER_GRID_X * CLUSTER_GRID_Y * CLUSTER_GRID_Z; // 3456
+constexpr uint32 MAX_LIGHTS_PER_CLUSTER = 256;
 
 constexpr int MAX_KEY_STATES = 512;
 constexpr int MAX_MOUSE_STATES = 8;

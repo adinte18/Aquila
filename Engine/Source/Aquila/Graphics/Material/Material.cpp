@@ -192,7 +192,6 @@ const MaterialParameter *Material::GetParameter(const std::string &paramName) co
 
 template <typename T> void Material::WriteUBO(uint32 offset, const T &v) {
 	if (m_UBOData.empty()) {
-		// Size not known yet in manual-Create mode; grow on demand.
 		uint32 needed = offset + static_cast<uint32>(sizeof(T));
 		if (needed > m_UBOData.size()) {
 			m_UBOData.resize((needed + 15u) & ~15u, 0);
@@ -319,6 +318,19 @@ void Material::Bind(GFX::GfxCommandList &cmd, uint32 setIndex) {
 	cmd.BindPipeline(*m_Pipeline);
 	if (m_Set) {
 		cmd.BindDescriptorSet(setIndex, *m_Set);
+	}
+}
+
+void Material::ReplacePipeline(Ref<GFX::GfxPipeline> newPipeline, Ref<GFX::GfxDescriptorSetLayout> newLayout) {
+	m_Pipeline = std::move(newPipeline);
+
+	if (newLayout && m_Context) {
+		m_Layout = std::move(newLayout);
+		m_Set = m_Context->AllocateDescriptorSet(*m_Layout);
+		if (m_UniformBuffer) {
+			m_Set->SetBuffer(0, *m_UniformBuffer);
+			m_UniformDirty = true;
+		}
 	}
 }
 

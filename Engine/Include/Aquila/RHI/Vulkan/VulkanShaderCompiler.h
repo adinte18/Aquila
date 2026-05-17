@@ -132,7 +132,7 @@ class VulkanShaderCompiler {
 
 			VulkanCompiledStage result;
 			result.stage = vkStage;
-			result.entryPointName = epName;
+			result.entryPointName = "main"; // Slang always emits "main" in the SPIR-V binary
 			result.linkedComponent = linked;
 			result.session = session;
 			const auto *data = static_cast<const uint32 *>(spirvBlob->getBufferPointer());
@@ -237,7 +237,7 @@ class VulkanShaderCompiler {
 
 			VulkanCompiledStage result;
 			result.stage = vkStage;
-			result.entryPointName = epName;
+			result.entryPointName = "main"; // Slang always emits "main" in the SPIR-V binary
 			result.linkedComponent = linked;
 			result.session = session;
 			const auto *data = static_cast<const uint32 *>(spirvBlob->getBufferPointer());

@@ -16,7 +16,7 @@ struct ShadowQualitySettings {
 };
 
 struct LightComponent {
-	enum class Type { Point, Directional, Spot };
+	enum class Type { Point, Directional, Spot, Area };
 
 	Type m_Type = Type::Directional;
 
@@ -28,6 +28,8 @@ struct LightComponent {
 	f32 m_OuterConeAngle = 45.0f;
 
 	vec3 m_Direction = vec3(0.0f, -1.0f, 0.0f);
+
+	vec2 m_AreaSize = vec2(1.0f, 1.0f);
 
 	ShadowQualitySettings m_ShadowSettings;
 

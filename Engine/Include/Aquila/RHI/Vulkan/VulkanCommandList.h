@@ -51,6 +51,8 @@ class VulkanCommandList final : public IRHICommandList {
 	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
 							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) override;
 
+	void FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) override;
+
 	void Dispatch(uint32 x, uint32 y, uint32 z) override;
 
 	// IRHICommandList
