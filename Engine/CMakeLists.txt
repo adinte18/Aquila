@@ -4,13 +4,25 @@ set(ENGINE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(VENDOR_DIR ${ENGINE_ROOT_DIR}/Vendor)
 set(ENGINE_INCLUDE_DIR ${ENGINE_ROOT_DIR}/Include)
 
+set(VULKAN_SDK $ENV{VULKAN_SDK} CACHE PATH "Vulkan SDK path")
+
 find_package(Vulkan REQUIRED)
-message(STATUS "Vulkan SDK found at: $ENV{VULKAN_SDK}")
+if (NOT Vulkan_FOUND OR NOT EXISTS ${VULKAN_SDK})
+    message(FATAL_ERROR "Vulkan SDK not found.")
+endif ()
+
+message(STATUS "Vulkan SDK found at: ${VULKAN_SDK}")
 message(STATUS "Vulkan includes: ${Vulkan_INCLUDE_DIRS}")
 
+set(SLANG_INCLUDE_DIR "${VULKAN_SDK}/include")
+
 find_library(SLANG_LIBRARY
-    NAMES slang
-    PATHS "$ENV{VULKAN_SDK}/Lib"
+    NAMES libslang slang
+    PATHS "${VULKAN_SDK}/lib"
+    # This is needed otherwise CMake may find the library for the S-Lang interpreted language.
+    NO_DEFAULT_PATH
+    NO_SYSTEM_ENVIRONMENT_PATH
+    NO_CMAKE_SYSTEM_PATH
     REQUIRED
 )
 message(STATUS "Slang library: ${SLANG_LIBRARY}")
@@ -33,6 +45,11 @@ set(ASSIMP_BUILD_DOCS OFF)
 set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
 set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
+
+if(UNIX)
+    set(ASSIMP_BUILD_MINIZIP ON CACHE BOOL "" FORCE)
+endif()
+
 add_subdirectory(${VENDOR_DIR}/assimp)
 
 add_subdirectory(${VENDOR_DIR}/VulkanMemoryAllocator)

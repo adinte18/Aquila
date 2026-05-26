@@ -3,6 +3,13 @@
 
 #include <algorithm>
 
+#ifdef AQUILA_PLATFORM_LINUX
+#include <sys/types.h>
+#include <dirent.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#endif
+
 namespace Aquila::Platform::Filesystem {
 using std::string;
 
