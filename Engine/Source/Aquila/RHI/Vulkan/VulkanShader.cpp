@@ -1,21 +1,18 @@
 #include "Aquila/RHI/Vulkan/VulkanShader.h"
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Aquila::RHI {
 
 std::vector<char> VulkanShader::ReadFile(const std::string &filename) {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-	if (!file.is_open()) {
+	auto file = Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filename, AccessMode::Read, OpenMode::Binary);
+	if (!file || !file->IsValid()) {
 		throw std::runtime_error("Failed to open file: " + filename);
 	}
 
-	size_t fileSize = (size_t)file.tellg();
-	std::vector<char> buffer(fileSize);
-
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-
+	const int64 size = file->Size();
+	std::vector<char> buffer(static_cast<size_t>(size));
+	file->Read(buffer.data(), static_cast<size_t>(size));
 	return buffer;
 }
 

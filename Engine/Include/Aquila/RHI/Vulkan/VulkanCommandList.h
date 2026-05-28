@@ -12,6 +12,8 @@ class VulkanDevice;
 class VulkanCommandList final : public IRHICommandList {
   public:
 	VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, CommandListType type, const std::string &name);
+	VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, VkCommandBuffer existingCmd,
+					  CommandListType type, const std::string &name);
 	~VulkanCommandList() override;
 
 	AQUILA_NONCOPYABLE(VulkanCommandList);
@@ -48,8 +50,8 @@ class VulkanCommandList final : public IRHICommandList {
 	void DrawIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
 	void DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
 
-	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
-							 uint32 dstArrayLayer = 0, uint32 dstMipLevel = 0) override;
+	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height, uint32 dstArrayLayer = 0,
+							 uint32 dstMipLevel = 0) override;
 
 	void FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) override;
 

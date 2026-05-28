@@ -28,12 +28,15 @@ VulkanCommandListPool::~VulkanCommandListPool() {
 	Reset();
 
 	VkDevice dev = m_Device.GetDevice();
-	if (m_GraphicsPool != VK_NULL_HANDLE)
+	if (m_GraphicsPool != VK_NULL_HANDLE) {
 		vkDestroyCommandPool(dev, m_GraphicsPool, nullptr);
-	if (m_ComputePool != VK_NULL_HANDLE)
+	}
+	if (m_ComputePool != VK_NULL_HANDLE) {
 		vkDestroyCommandPool(dev, m_ComputePool, nullptr);
-	if (m_TransferPool != VK_NULL_HANDLE)
+	}
+	if (m_TransferPool != VK_NULL_HANDLE) {
 		vkDestroyCommandPool(dev, m_TransferPool, nullptr);
+	}
 }
 
 VkCommandPool VulkanCommandListPool::GetVkPool(CommandListType type) const {
@@ -58,8 +61,9 @@ IRHICommandList *VulkanCommandListPool::Allocate(CommandListType type, const std
 void VulkanCommandListPool::Free(IRHICommandList *cmd) {
 	auto it = std::find_if(m_Allocated.begin(), m_Allocated.end(),
 						   [cmd](const Unique<VulkanCommandList> &c) { return c.get() == cmd; });
-	if (it == m_Allocated.end())
+	if (it == m_Allocated.end()) {
 		return;
+	}
 
 	auto &vkCmd = static_cast<VulkanCommandList &>(**it);
 	VkCommandBuffer handle = vkCmd.GetHandle();
@@ -78,12 +82,15 @@ void VulkanCommandListPool::Reset() {
 	}
 	m_Allocated.clear();
 
-	if (m_GraphicsPool != VK_NULL_HANDLE)
+	if (m_GraphicsPool != VK_NULL_HANDLE) {
 		vkResetCommandPool(m_Device.GetDevice(), m_GraphicsPool, 0);
-	if (m_ComputePool != VK_NULL_HANDLE)
+	}
+	if (m_ComputePool != VK_NULL_HANDLE) {
 		vkResetCommandPool(m_Device.GetDevice(), m_ComputePool, 0);
-	if (m_TransferPool != VK_NULL_HANDLE)
+	}
+	if (m_TransferPool != VK_NULL_HANDLE) {
 		vkResetCommandPool(m_Device.GetDevice(), m_TransferPool, 0);
+	}
 }
 
 } // namespace Aquila::RHI

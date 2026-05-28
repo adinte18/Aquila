@@ -2,6 +2,7 @@
 #include "GraphicsPCH.h"
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/SharedConstants.h"
 
 namespace Aquila::RHI {
 
@@ -30,19 +31,21 @@ class DeletionQueue {
 	AQUILA_NONCOPYABLE(DeletionQueue);
 
 	void QueueDeletion(const Deletion::ResourceVariant &resource);
+
 	void DestroyNow(const Deletion::ResourceVariant &resource);
-	void ProcessDeletions();
-	void Flush();
+
+	void SetCurrentSlot(uint32 slot);
+
+	void Flush(uint32 slot);
+
+	void FlushAll();
 
   private:
 	void Dispatch(const Deletion::ResourceVariant &resource);
 
 	VulkanDevice &m_Device;
-
-	struct PendingDeletion {
-		Deletion::ResourceVariant resource;
-	};
-	std::queue<PendingDeletion> m_PendingDeletions;
+	uint32 m_CurrentSlot = 0;
+	std::array<std::vector<Deletion::ResourceVariant>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_Buckets;
 };
 
 } // namespace Aquila::RHI

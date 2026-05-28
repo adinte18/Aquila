@@ -245,11 +245,11 @@ void VulkanRenderPass::Begin(IRHICommandList &cmd, IRHISwapchain *swapchain, uin
 	}
 
 	VulkanDynamicRendering::Begin(vkCmd, {
-										 .width = width,
-										 .height = height,
-										 .colorAttachments = colorDescs,
-										 .depthAttachment = depthDesc,
-									 });
+											 .width = width,
+											 .height = height,
+											 .colorAttachments = colorDescs,
+											 .depthAttachment = depthDesc,
+										 });
 
 	m_Width = width;
 	m_Height = height;

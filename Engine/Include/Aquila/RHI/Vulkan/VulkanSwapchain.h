@@ -13,15 +13,14 @@ class VulkanDevice;
 
 class VulkanSwapchain final : public IRHISwapchain {
   public:
-	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent);
-	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, Ref<VulkanSwapchain> previous);
+	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync);
+	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, Ref<VulkanSwapchain> previous);
 	~VulkanSwapchain() override;
 
 	AQUILA_NONCOPYABLE(VulkanSwapchain);
 
 	// IRHISwapchain semaphores managed internally per frame
 	bool AcquireNextImage(uint32 &outImageIndex) override;
-	bool Present(uint32 imageIndex) override;
 	[[nodiscard]] bool NeedsResize() const override { return m_NeedsResize; }
 	void Resize(uint32 width, uint32 height) override;
 
@@ -51,12 +50,10 @@ class VulkanSwapchain final : public IRHISwapchain {
 	// Queue a command buffer for deferred free once frameIndex's fence is waited on next.
 	void DeferCmdBufFree(uint32 frameIndex, VkCommandBuffer cmd, VkCommandPool pool);
 
-	// Raw acquire/present (render loop with explicit semaphore control)
-	VkResult AcquireNextImageRaw(uint32 *imageIndex, VkSemaphore imageAvailableSemaphore) const;
 	VkResult PresentImageRaw(const uint32 *imageIndex, VkSemaphore renderFinishedSemaphore);
 
-	[[nodiscard]] uint32 GetLastAcquiredFrameIndex() const {
-		return (m_CurrentFrame + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	[[nodiscard]] uint32 GetCurrentFrameSlot() const override {
+		return (m_NextFrameSlot + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 	}
 
 	[[nodiscard]] bool IsImageInitialized(uint32 index) const {
@@ -87,6 +84,7 @@ class VulkanSwapchain final : public IRHISwapchain {
 
 	VulkanDevice &m_Device;
 	VkExtent2D m_WindowExtent;
+	bool m_VSyncEnabled = false;
 	VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 	Ref<VulkanSwapchain> m_OldSwapchain;
 
@@ -110,7 +108,7 @@ class VulkanSwapchain final : public IRHISwapchain {
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
 	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_PendingCmdBufs;
-	uint32 m_CurrentFrame = 0;
+	uint32 m_NextFrameSlot = 0; // index of the frame slot to acquire on the NEXT call to AcquireNextImage
 	bool m_NeedsResize = false;
 };
 

@@ -26,6 +26,7 @@ class IRHIDevice {
 	[[nodiscard]] virtual Unique<IRHITexture> CreateTexture(const TextureDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHICommandList> CreateCommandList(CommandListType type,
 																	const std::string &name = "") = 0;
+	[[nodiscard]] virtual Unique<IRHICommandList> CreateFrameCommandList(uint32 slot) = 0;
 	[[nodiscard]] virtual Unique<IRHISwapchain> CreateSwapchain(const SwapchainDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIRenderPass> CreateRenderPass(const RHI::RenderPassDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) = 0;
@@ -41,7 +42,6 @@ class IRHIDevice {
 	virtual void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
 							  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
 	virtual void WaitIdle() = 0;
-	virtual void ProcessPendingDeletions() = 0;
 
 	template <typename Func> void ExecuteImmediate(CommandListType type, Func &&func) {
 		auto cmd = CreateCommandList(type, "ImmediateCmd");

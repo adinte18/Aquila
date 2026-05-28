@@ -1,17 +1,19 @@
 #include "Aquila/RHI/Vulkan/VulkanSwapchain.h"
 #include "Aquila/RHI/DeletionQueue.h"
+#include "Aquila/Foundation/Log.h"
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
 #include "Aquila/RHI/Vulkan/VulkanDeletionQueue.h"
 #include "Aquila/RHI/Vulkan/VulkanFormatUtils.h"
 
 namespace Aquila::RHI {
 
-VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent) : m_Device(device), m_WindowExtent(extent) {
+VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync)
+	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync) {
 	Initialize();
 }
 
-VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, Ref<VulkanSwapchain> previous)
-	: m_Device(device), m_WindowExtent(extent), m_OldSwapchain(std::move(previous)) {
+VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, Ref<VulkanSwapchain> previous)
+	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync), m_OldSwapchain(std::move(previous)) {
 	Initialize();
 	m_OldSwapchain = nullptr;
 }
@@ -19,10 +21,8 @@ VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, Ref<Vu
 VulkanSwapchain::~VulkanSwapchain() {
 	VkDevice dev = m_Device.GetDevice();
 
-	// Wait for all in-flight fences so we can safely free deferred cmd bufs.
-	if (!m_InFlightFences.empty()) {
-		vkWaitForFences(dev, static_cast<uint32>(m_InFlightFences.size()), m_InFlightFences.data(), VK_TRUE, UINT64_MAX);
-	}
+	// Application::~Application calls WaitIdle() (vkDeviceWaitIdle) before destroying the
+	// swapchain, so all queues are already drained and all fences are in the signaled state.
 	for (auto &pending : m_PendingCmdBufs) {
 		for (auto &p : pending) {
 			vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
@@ -203,66 +203,46 @@ void VulkanSwapchain::CreateSyncObjects() {
 bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 	VkDevice dev = m_Device.GetDevice();
 
-	// Wait for the previous work that used this frame slot to finish so we can safely
-	// reuse its resources. The fence stays signaled until we successfully acquire —
-	// if acquire fails we leave it signaled so the next call can wait on it again.
-	vkWaitForFences(dev, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
+	if (vkGetFenceStatus(dev, m_InFlightFences[m_NextFrameSlot]) == VK_NOT_READY) {
+		Aquila::Foundation::LogWarning("AcquireNextImage: fence NOT_READY for slot {}", m_NextFrameSlot);
+		return false;
+	}
 
-	for (auto &p : m_PendingCmdBufs[m_CurrentFrame]) {
+	m_Device.GetDeletionQueue().Flush(m_NextFrameSlot);
+
+	for (auto &p : m_PendingCmdBufs[m_NextFrameSlot]) {
 		vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
 	}
-	m_PendingCmdBufs[m_CurrentFrame].clear();
+	m_PendingCmdBufs[m_NextFrameSlot].clear();
 
-	VkSemaphore sem = m_ImageAvailableSemaphores[m_CurrentFrame];
-	// UINT64_MAX: block until an image is available (no busy-spin / spurious failure).
-	VkResult result =
-		vkAcquireNextImageKHR(dev, m_Swapchain, UINT64_MAX, sem, VK_NULL_HANDLE, &outImageIndex);
+	m_Device.ResetFrameCommandPool(m_NextFrameSlot);
 
+	m_Device.GetDeletionQueue().SetCurrentSlot(m_NextFrameSlot);
+
+	VkSemaphore sem = m_ImageAvailableSemaphores[m_NextFrameSlot];
+	VkResult result = vkAcquireNextImageKHR(dev, m_Swapchain, 0, sem, VK_NULL_HANDLE, &outImageIndex);
+
+	if (result == VK_NOT_READY) {
+		Aquila::Foundation::LogWarning("AcquireNextImage: image acquisition NOT_READY for slot {}", m_NextFrameSlot);
+		return false;
+	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_NeedsResize = true;
 		return false;
 	}
 	if (result == VK_SUBOPTIMAL_KHR) {
-		// Image is usable but the swapchain no longer matches the surface exactly.
-		// Finish this frame normally and resize at the start of the next one.
 		m_NeedsResize = true;
 	}
 	if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-		// Reset only after a successful acquire so the fence stays signaled on failure
-		// (allowing the next attempt to wait on it without deadlocking).
-		vkResetFences(dev, 1, &m_InFlightFences[m_CurrentFrame]);
-		m_CurrentFrame = (m_CurrentFrame + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+		vkResetFences(dev, 1, &m_InFlightFences[m_NextFrameSlot]);
+		m_NextFrameSlot = (m_NextFrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 		return true;
 	}
 	return false;
 }
 
-bool VulkanSwapchain::Present(uint32 imageIndex) {
-	uint32 prevFrame = (m_CurrentFrame + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
-	VkSemaphore waitSem = m_RenderFinishedSemaphores[prevFrame];
-
-	VkPresentInfoKHR presentInfo{};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = &waitSem;
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = &m_Swapchain;
-	presentInfo.pImageIndices = &imageIndex;
-
-	VkResult result = vkQueuePresentKHR(m_Device.GetPresentQueue(), &presentInfo);
-	if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
-		m_NeedsResize = true;
-	}
-	return result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR;
-}
-
 TextureFormat VulkanSwapchain::GetFormat() const {
 	return FromVkFormat(m_ImageFormat);
-}
-
-VkResult VulkanSwapchain::AcquireNextImageRaw(uint32 *imageIndex, VkSemaphore imageAvailableSemaphore) const {
-	return vkAcquireNextImageKHR(m_Device.GetDevice(), m_Swapchain, std::numeric_limits<uint64_t>::max(),
-								 imageAvailableSemaphore, VK_NULL_HANDLE, imageIndex);
 }
 
 VkResult VulkanSwapchain::PresentImageRaw(const uint32 *imageIndex, VkSemaphore renderFinishedSemaphore) {
@@ -282,11 +262,12 @@ VkResult VulkanSwapchain::PresentImageRaw(const uint32 *imageIndex, VkSemaphore 
 }
 
 void VulkanSwapchain::DestroyImageResources() {
-	m_Device.Wait();
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_Device.GetDeletionQueue().Flush(i);
+	}
 
 	VkDevice dev = m_Device.GetDevice();
 
-	// All GPU work is done; free any deferred cmd bufs.
 	for (auto &pending : m_PendingCmdBufs) {
 		for (auto &p : pending) {
 			vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
@@ -334,7 +315,7 @@ void VulkanSwapchain::Resize(uint32 width, uint32 height) {
 	CreateDepthResources();
 
 	m_NeedsResize = false;
-	m_CurrentFrame = 0;
+	m_NextFrameSlot = 0;
 }
 
 VkFormat VulkanSwapchain::FindDepthFormat() {
@@ -353,11 +334,24 @@ VkSurfaceFormatKHR VulkanSwapchain::ChooseSwapSurfaceFormat(const std::vector<Vk
 }
 
 VkPresentModeKHR VulkanSwapchain::ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
+	if (m_VSyncEnabled) {
+		Aquila::Foundation::LogInfo("VulkanSwapchain: present_mode=FIFO (vsync=true)");
+		return VK_PRESENT_MODE_FIFO_KHR;
+	}
 	for (const auto &mode : availablePresentModes) {
 		if (mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+			Aquila::Foundation::LogInfo("VulkanSwapchain: present_mode=MAILBOX (vsync=false)");
 			return mode;
 		}
 	}
+	for (const auto &mode : availablePresentModes) {
+		if (mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+			Aquila::Foundation::LogInfo("VulkanSwapchain: present_mode=IMMEDIATE (vsync=false, MAILBOX unavailable)");
+			return mode;
+		}
+	}
+	Aquila::Foundation::LogWarning(
+		"VulkanSwapchain: present_mode=FIFO (vsync=false requested but MAILBOX/IMMEDIATE unavailable — vsync active)");
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 

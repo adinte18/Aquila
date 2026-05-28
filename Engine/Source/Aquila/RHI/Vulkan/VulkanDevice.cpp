@@ -1,5 +1,6 @@
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
 #include "Aquila/RHI/Vulkan/VulkanDeletionQueue.h"
+#include "Aquila/Foundation/Profiler.h"
 
 #include "Aquila/RHI/Vulkan/VulkanBuffer.h"
 #include "Aquila/RHI/Vulkan/VulkanCommandList.h"
@@ -29,14 +30,29 @@ VulkanDevice::VulkanDevice(GLFWwindow &nativeWindow) : m_WindowHandle(nativeWind
 	CreateGraphicsCommandPool();
 	CreateComputeCommandPool();
 	CreateTransferCommandPool();
+	CreateFrameCommandPools();
 	CreateGlobalDescriptorPool();
 
 	SetupDebugMessenger();
 	LogDeviceInfo();
+
+	VkFenceCreateInfo offscreenFenceInfo{};
+	offscreenFenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+	offscreenFenceInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		AQUILA_VULKAN_CHECK(vkCreateFence(m_Device, &offscreenFenceInfo, nullptr, &m_OffscreenFences[i]));
+	}
 }
 
 VulkanDevice::~VulkanDevice() {
 	Wait(); // before killing device wait for it, be gentle
+
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		for (auto &p : m_OffscreenPendingCmdBufs[i]) {
+			vkFreeCommandBuffers(m_Device, p.pool, 1, &p.cmd);
+		}
+		vkDestroyFence(m_Device, m_OffscreenFences[i], nullptr);
+	}
 
 	m_DeletionQueue.reset();
 
@@ -49,6 +65,10 @@ VulkanDevice::~VulkanDevice() {
 		if (threadPool.pool != VK_NULL_HANDLE) {
 			vkDestroyCommandPool(m_Device, threadPool.pool, nullptr);
 		}
+	}
+
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		vkDestroyCommandPool(m_Device, m_FrameSlots[i].pool, nullptr);
 	}
 
 	vkDestroyCommandPool(m_Device, m_GraphicsCommandPool, nullptr);
@@ -98,7 +118,7 @@ Unique<IRHICommandList> VulkanDevice::CreateCommandList(CommandListType type, co
 
 Unique<IRHISwapchain> VulkanDevice::CreateSwapchain(const SwapchainDesc &desc) {
 	VkExtent2D extent{ desc.width, desc.height };
-	return CreateUnique<VulkanSwapchain>(*this, extent);
+	return CreateUnique<VulkanSwapchain>(*this, extent, desc.vsync);
 }
 
 Unique<IRHIRenderPass> VulkanDevice::CreateRenderPass(const RHI::RenderPassDesc &desc) {
@@ -144,7 +164,7 @@ void VulkanDevice::SubmitAndWait(IRHICommandList &cmd) {
 
 void VulkanDevice::PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex, vec4 clearColor) {
 	auto &vkSwapchain = static_cast<VulkanSwapchain &>(swapchain);
-	uint32 lastFrame = vkSwapchain.GetLastAcquiredFrameIndex();
+	uint32 lastFrame = vkSwapchain.GetCurrentFrameSlot();
 	VkSemaphore imageAvailable = vkSwapchain.GetImageAvailableSemaphore(lastFrame);
 	VkSemaphore renderFinished = vkSwapchain.GetRenderFinishedSemaphore(lastFrame);
 	VkImage image = vkSwapchain.GetImage(imageIndex);
@@ -207,12 +227,9 @@ void VulkanDevice::PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex, vec
 	submitInfo.signalSemaphoreCount = 1;
 	submitInfo.pSignalSemaphores = &renderFinished;
 
-	VkFence fence = CreateFence(false);
+	VkFence fence = vkSwapchain.GetInFlightFence(lastFrame);
 	SubmitToGraphicsQueue(&submitInfo, fence);
-	WaitForFence(fence);
-	DestroyFence(fence);
-
-	vkFreeCommandBuffers(m_Device, pool, 1, &cmd);
+	vkSwapchain.DeferCmdBufFree(lastFrame, cmd, pool);
 
 	vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
 }
@@ -221,7 +238,10 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 	auto &vkCmd = static_cast<VulkanCommandList &>(cmd);
 	VkCommandBuffer cmdBuf = vkCmd.GetHandle();
 
-	cmd.End();
+	{
+		PROFILE_SCOPE("EndCommandBuffer");
+		cmd.End();
+	}
 
 	VkSubmitInfo submitInfo{};
 	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -230,7 +250,7 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 
 	if (swapchain != nullptr) {
 		auto &vkSwapchain = static_cast<VulkanSwapchain &>(*swapchain);
-		uint32 lastFrame = vkSwapchain.GetLastAcquiredFrameIndex();
+		uint32 lastFrame = vkSwapchain.GetCurrentFrameSlot();
 		VkSemaphore imageAvailable = vkSwapchain.GetImageAvailableSemaphore(lastFrame);
 		VkSemaphore renderFinished = vkSwapchain.GetRenderFinishedSemaphore(lastFrame);
 
@@ -242,31 +262,46 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 		submitInfo.pSignalSemaphores = &renderFinished;
 
 		VkFence fence = vkSwapchain.GetInFlightFence(lastFrame);
-		SubmitToGraphicsQueue(&submitInfo, fence);
+		{
+			PROFILE_SCOPE("QueueSubmit");
+			SubmitToGraphicsQueue(&submitInfo, fence);
+		}
+		bool isFrameManaged = false;
+		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+			if (vkCmd.GetPool() == m_FrameSlots[i].pool) {
+				isFrameManaged = true;
+				break;
+			}
+		}
+		if (!isFrameManaged) {
+			vkSwapchain.DeferCmdBufFree(lastFrame, cmdBuf, vkCmd.GetPool());
+		}
 
-		m_DeletionQueue->ProcessDeletions();
-
-		vkSwapchain.DeferCmdBufFree(lastFrame, cmdBuf, vkCmd.GetPool());
-		vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
+		{
+			PROFILE_SCOPE("QueuePresent");
+			vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
+		}
 	} else {
-		// Offscreen, just submit and wait, no present
-		VkFence fence = CreateFence(false);
-		SubmitToGraphicsQueue(&submitInfo, fence);
-		WaitForFence(fence);
-		DestroyFence(fence);
+		uint32 slot = m_OffscreenFrameIndex;
+		vkWaitForFences(m_Device, 1, &m_OffscreenFences[slot], VK_TRUE, UINT64_MAX);
+		for (auto &p : m_OffscreenPendingCmdBufs[slot]) {
+			vkFreeCommandBuffers(m_Device, p.pool, 1, &p.cmd);
+		}
+		m_OffscreenPendingCmdBufs[slot].clear();
 
-		m_DeletionQueue->ProcessDeletions();
+		m_DeletionQueue->Flush(slot);
 
-		vkFreeCommandBuffers(m_Device, vkCmd.GetPool(), 1, &cmdBuf);
+		vkResetFences(m_Device, 1, &m_OffscreenFences[slot]);
+		SubmitToGraphicsQueue(&submitInfo, m_OffscreenFences[slot]);
+		m_OffscreenPendingCmdBufs[slot].push_back({ cmdBuf, vkCmd.GetPool() });
+
+		m_OffscreenFrameIndex = (slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+		m_DeletionQueue->SetCurrentSlot(m_OffscreenFrameIndex);
 	}
 }
 
 RHI::DeletionQueue &VulkanDevice::GetDeletionQueue() const {
 	return *m_DeletionQueue;
-}
-
-void VulkanDevice::ProcessPendingDeletions() {
-	m_DeletionQueue->ProcessDeletions();
 }
 
 void VulkanDevice::CopyBuffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, uint64 size, uint64 srcOffset,
@@ -283,7 +318,6 @@ void VulkanDevice::CopyBuffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer 
 }
 
 Unique<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) {
-	// Collect set layouts
 	std::vector<VkDescriptorSetLayout> vkLayouts;
 	vkLayouts.reserve(desc.setLayouts.size());
 	for (auto *layout : desc.setLayouts) {
@@ -322,7 +356,6 @@ Unique<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(const GraphicsPipeline
 						   VK_SHADER_STAGE_FRAGMENT_BIT, fragModule, desc.fragmentShader.entryPoint.c_str(), nullptr });
 	}
 
-	// Build config from desc
 	VulkanPipelineConfig config{};
 	VulkanPipeline::DefaultPipelineConfig(config);
 
@@ -493,6 +526,40 @@ void VulkanDevice::CreateTransferCommandPool() {
 	poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
 	AQUILA_VULKAN_CHECK(vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_TransferCommandPool));
+}
+
+void VulkanDevice::CreateFrameCommandPools() {
+	const VkQueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+
+	VkCommandPoolCreateInfo poolInfo{};
+	poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolInfo.queueFamilyIndex = indices.m_GraphicsFamily.value();
+	poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+
+	VkCommandBufferAllocateInfo allocInfo{};
+	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	allocInfo.commandBufferCount = 1;
+
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		AQUILA_VULKAN_CHECK(vkCreateCommandPool(m_Device, &poolInfo, nullptr, &m_FrameSlots[i].pool));
+		allocInfo.commandPool = m_FrameSlots[i].pool;
+		AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_Device, &allocInfo, &m_FrameSlots[i].cmd));
+
+		std::string name = "FrameCmd_" + std::to_string(i);
+		SetObjectDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64>(m_FrameSlots[i].cmd), name.c_str());
+	}
+}
+
+void VulkanDevice::ResetFrameCommandPool(uint32 slot) {
+	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
+	vkResetCommandPool(m_Device, m_FrameSlots[slot].pool, 0);
+}
+
+Unique<IRHICommandList> VulkanDevice::CreateFrameCommandList(uint32 slot) {
+	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
+	return CreateUnique<VulkanCommandList>(*this, m_FrameSlots[slot].pool, m_FrameSlots[slot].cmd,
+										   CommandListType::Graphics, "FrameCmd_" + std::to_string(slot));
 }
 
 void VulkanDevice::SubmitToComputeQueue(const VkSubmitInfo *submitInfo, VkFence fence) {

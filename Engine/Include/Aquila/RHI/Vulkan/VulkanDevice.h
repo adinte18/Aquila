@@ -7,6 +7,7 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/SharedConstants.h"
 
 #include "Aquila/RHI/Backend/IRHIDevice.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
@@ -40,6 +41,7 @@ class VulkanDevice final : public IRHIDevice {
 	[[nodiscard]] Unique<IRHITexture> CreateTexture(const TextureDesc &desc) override;
 	[[nodiscard]] Unique<IRHICommandList> CreateCommandList(CommandListType type,
 															const std::string &name = "") override;
+	[[nodiscard]] Unique<IRHICommandList> CreateFrameCommandList(uint32 slot) override;
 	[[nodiscard]] Unique<IRHISwapchain> CreateSwapchain(const SwapchainDesc &desc) override;
 	[[nodiscard]] Unique<IRHIPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) override;
 	[[nodiscard]] Unique<IRHIPipeline> CreateComputePipeline(const ComputePipelineDesc &desc) override;
@@ -56,13 +58,14 @@ class VulkanDevice final : public IRHIDevice {
 	void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
 					  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
 	void WaitIdle() override { vkDeviceWaitIdle(m_Device); }
-	void ProcessPendingDeletions() override;
 
 	void SubmitToGraphicsQueue(const VkSubmitInfo *submitInfo, VkFence fence);
 	void SubmitToComputeQueue(const VkSubmitInfo *submitInfo, VkFence fence);
 	void SubmitToTransferQueue(const VkSubmitInfo *submitInfo, VkFence fence);
 	void WaitGraphicsQueueIdle();
 	void WaitTransferQueueIdle();
+
+	void ResetFrameCommandPool(uint32 slot);
 	void Wait() const { vkDeviceWaitIdle(m_Device); }
 
 	VkCommandPool GetOrCreateThreadLocalGraphicsPool();
@@ -92,6 +95,7 @@ class VulkanDevice final : public IRHIDevice {
 	void CreateGraphicsCommandPool();
 	void CreateComputeCommandPool();
 	void CreateTransferCommandPool();
+	void CreateFrameCommandPools();
 
 	template <MemoryDomain Domain>
 	BufferAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const char *debugName = nullptr) {
@@ -259,8 +263,6 @@ class VulkanDevice final : public IRHIDevice {
 		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		vkBeginCommandBuffer(cmd, &beginInfo);
 
-		// The lambda may take a VkCommandBuffer or a VulkanCommandList (via wrapper).
-		// We wrap it temporarily so callers can do either.
 		std::forward<Func>(func)(cmd);
 
 		vkEndCommandBuffer(cmd);
@@ -270,11 +272,13 @@ class VulkanDevice final : public IRHIDevice {
 		submitInfo.commandBufferCount = 1;
 		submitInfo.pCommandBuffers = &cmd;
 
+		VkFence fence = CreateFence(false);
 		{
 			std::lock_guard<std::mutex> lock(queueMutex);
-			vkQueueSubmit(queue, 1, &submitInfo, VK_NULL_HANDLE);
-			vkQueueWaitIdle(queue);
+			vkQueueSubmit(queue, 1, &submitInfo, fence);
 		}
+		WaitForFence(fence);
+		DestroyFence(fence);
 
 		vkFreeCommandBuffers(m_Device, pool, 1, &cmd);
 	}
@@ -321,6 +325,12 @@ class VulkanDevice final : public IRHIDevice {
 	std::mutex m_TransferCommandPoolMutex;
 	std::mutex m_GraphicsCommandPoolMutex;
 
+	struct FrameCommandSlot {
+		VkCommandPool pool = VK_NULL_HANDLE;
+		VkCommandBuffer cmd = VK_NULL_HANDLE;
+	};
+	std::array<FrameCommandSlot, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_FrameSlots{};
+
 	Unique<RHI::DeletionQueue> m_DeletionQueue;
 
 	std::unordered_map<SamplerDesc, VkSampler, SamplerDescHash> m_SamplerCache;
@@ -336,6 +346,14 @@ class VulkanDevice final : public IRHIDevice {
 	std::mutex m_ThreadPoolMapMutex;
 
 	GLFWwindow &m_WindowHandle;
+
+	struct OffscreenPendingCmdBuf {
+		VkCommandBuffer cmd;
+		VkCommandPool pool;
+	};
+	std::array<VkFence, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_OffscreenFences{};
+	std::array<std::vector<OffscreenPendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_OffscreenPendingCmdBufs;
+	uint32 m_OffscreenFrameIndex = 0;
 
 	const std::vector<const char *> validationLayers = { "VK_LAYER_KHRONOS_validation" };
 	const std::vector<const char *> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,

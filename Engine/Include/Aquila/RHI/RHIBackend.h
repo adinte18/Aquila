@@ -8,7 +8,6 @@ struct GLFWwindow;
 
 namespace Aquila::RHI {
 
-
 // Creates a Vulkan backend device. The window is used to create the surface.
 [[nodiscard]] Unique<IRHIDevice> CreateVulkanBackend(GLFWwindow &nativeWindow);
 

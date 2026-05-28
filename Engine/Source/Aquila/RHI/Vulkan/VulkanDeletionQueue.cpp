@@ -6,32 +6,35 @@ namespace Aquila::RHI {
 DeletionQueue::DeletionQueue(VulkanDevice &device) : m_Device(device) {}
 
 DeletionQueue::~DeletionQueue() {
-	Flush();
+	FlushAll();
+}
+
+void DeletionQueue::SetCurrentSlot(uint32 slot) {
+	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "DeletionQueue slot out of range");
+	m_CurrentSlot = slot;
 }
 
 void DeletionQueue::QueueDeletion(const Deletion::ResourceVariant &resource) {
-	m_PendingDeletions.push({ resource });
+	m_Buckets[m_CurrentSlot].push_back(resource);
 }
 
 void DeletionQueue::DestroyNow(const Deletion::ResourceVariant &resource) {
 	Dispatch(resource);
 }
 
-void DeletionQueue::ProcessDeletions() {
-	while (!m_PendingDeletions.empty()) {
-		Dispatch(m_PendingDeletions.front().resource);
-		m_PendingDeletions.pop();
+void DeletionQueue::Flush(uint32 slot) {
+	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "DeletionQueue slot out of range");
+	for (auto &resource : m_Buckets[slot]) {
+		Dispatch(resource);
 	}
+	m_Buckets[slot].clear();
 }
 
-void DeletionQueue::Flush() {
-	AQUILA_ASSERT(m_Device.GetDevice() != VK_NULL_HANDLE, "DeletionQueue::Flush — device is null");
-
+void DeletionQueue::FlushAll() {
+	AQUILA_ASSERT(m_Device.GetDevice() != VK_NULL_HANDLE, "DeletionQueue::FlushAll — device is null");
 	m_Device.Wait();
-
-	while (!m_PendingDeletions.empty()) {
-		Dispatch(m_PendingDeletions.front().resource);
-		m_PendingDeletions.pop();
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		Flush(i);
 	}
 }
 

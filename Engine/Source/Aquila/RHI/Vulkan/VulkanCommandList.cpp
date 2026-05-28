@@ -195,6 +195,12 @@ VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool command
 	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64>(m_CommandBuffer), name.c_str());
 }
 
+VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, VkCommandBuffer existingCmd,
+									 CommandListType type, const std::string &name)
+	: m_CommandBuffer(existingCmd), m_CommandPool(commandPool), m_Type(type), m_Name(name), m_Device(device) {
+	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64>(m_CommandBuffer), name.c_str());
+}
+
 VulkanCommandList::~VulkanCommandList() {
 	// Freed automatically when the command pool is destroyed
 }
@@ -366,8 +372,8 @@ void VulkanCommandList::CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, u
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { width, height, 1 };
 
-	vkCmdCopyBufferToImage(m_CommandBuffer, vkBuf.GetBuffer(), vkTex.GetImage(),
-						   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+	vkCmdCopyBufferToImage(m_CommandBuffer, vkBuf.GetBuffer(), vkTex.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+						   1, &region);
 }
 
 void VulkanCommandList::FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) {

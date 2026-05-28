@@ -195,12 +195,12 @@ struct SamplerDesc {
 
 	static SamplerDesc PointSample() {
 		SamplerDesc d{};
-		d.magFilter  = FilterMode::Nearest;
-		d.minFilter  = FilterMode::Nearest;
+		d.magFilter = FilterMode::Nearest;
+		d.minFilter = FilterMode::Nearest;
 		d.mipmapMode = MipmapMode::Nearest;
-		d.addressU   = AddressMode::ClampToEdge;
-		d.addressV   = AddressMode::ClampToEdge;
-		d.addressW   = AddressMode::ClampToEdge;
+		d.addressU = AddressMode::ClampToEdge;
+		d.addressV = AddressMode::ClampToEdge;
+		d.addressW = AddressMode::ClampToEdge;
 		d.anisotropy = false;
 		return d;
 	}
