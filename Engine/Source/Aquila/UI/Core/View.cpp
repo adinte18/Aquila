@@ -196,13 +196,16 @@ void View::OnMouseLeave() {
 		m_OnDirty(this);
 	}
 }
-void View::OnMousePress(Platform::MouseButton btn, vec2) {
+void View::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
 		m_IsPressed = true;
 		m_IsDirty = true;
 		if (m_OnDirty) {
 			m_OnDirty(this);
 		}
+	}
+	if (btn == Platform::MouseButton::Right && m_OnContextMenu) {
+		m_OnContextMenu(pos);
 	}
 }
 void View::OnMouseRelease(Platform::MouseButton btn, vec2) {

@@ -531,7 +531,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		m_ScrollDelta += vec2(e.GetXOffset(), e.GetYOffset());
 		m_LayoutDirty = true;
 		MarkDirty();
-		return false;
+		return m_HoveredView != nullptr && !m_HoveredView->GetPassThroughScroll();
 	});
 
 	dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent &e) {

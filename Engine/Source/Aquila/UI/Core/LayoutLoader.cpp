@@ -7,6 +7,7 @@
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Slider.h"
 #include "Aquila/UI/Widgets/Popup.h"
+#include "Aquila/UI/Widgets/ContextMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
@@ -459,6 +460,9 @@ void LayoutLoader::RegisterBuiltins() {
 		return CreateUnique<TextInput>();
 	};
 	m_Factories["Popup"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Popup>(); };
+	m_Factories["ContextMenu"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<ContextMenu>();
+	};
 }
 
 } // namespace Aquila::UI::Core

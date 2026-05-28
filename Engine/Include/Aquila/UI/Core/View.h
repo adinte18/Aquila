@@ -41,6 +41,9 @@ class View {
 	void SetAbsolutePosition(vec2 pos) { m_AbsolutePosition = pos; }
 	void SetClayId(uint32 id) { m_ClayId = id; }
 	void SetCapturesInput(bool v) { m_CapturesInput = v; }
+	void SetPassThroughScroll(bool v) { m_PassThroughScroll = v; }
+	[[nodiscard]] bool GetPassThroughScroll() const { return m_PassThroughScroll; }
+	void SetContextView(Delegate<void(vec2)> cb) { m_OnContextMenu = std::move(cb); }
 	bool IsAnimationFinished() const { return m_IsAnimationFinished; }
 
 	[[nodiscard]] bool IsHovered() const { return m_IsHovered; }
@@ -113,6 +116,8 @@ class View {
 	bool m_Visible = true;
 	bool m_Enabled = true;
 	bool m_CapturesInput = false;
+	bool m_PassThroughScroll = false;
+	Delegate<void(vec2)> m_OnContextMenu;
 	uint32 m_ClayId = 0;
 
 	Option<FloatingConfig> m_Floating;
