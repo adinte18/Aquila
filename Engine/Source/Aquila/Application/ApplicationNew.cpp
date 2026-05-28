@@ -8,41 +8,33 @@
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 
 #include "Aquila/Rendering/Systems/LightCullingSystem.h"
-#include "Aquila/Scene/EntityManager.h"
-#include "Aquila/Scene/Components/TransformComponent.h"
-#include "Aquila/Scene/Components/CameraComponent.h"
-#include "Aquila/Scene/Components/MeshComponent.h"
-#include "Aquila/Scene/Components/MaterialComponent.h"
-#include "Aquila/Scene/Components/LightComponent.h"
-#include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
 #include "Aquila/Foundation/SharedConstants.h"
 
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
-#include "Aquila/UI/Core/ViewSystem.h"
-#include "Aquila/UI/Rendering/ViewRenderingSystem.h"
-#include "UIWidgetTest.h"
+#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Platform/Filesystem/NativeFileSystem.h"
 
 namespace Aquila::Application {
 
 using namespace SceneManagement;
-using namespace SceneManagement::Components;
 
 Application::Application(const ApplicationSpec &spec) : m_Spec(spec) {
 	m_Timer = CreateUnique<Foundation::Stopwatch>();
 	m_Window = CreateUnique<Window>(spec.Width, spec.Height, spec.Name);
 	Foundation::Profiler::Profiler::Init();
 	Platform::Filesystem::VirtualFileSystem::Init();
+
 	m_Window->SetEventCallback([this](Events::Event &event) {
 		Aquila::Platform::Input::OnEvent(event);
-		OnEvent(event);
+		InternalOnEvent(event);
 	});
 
 	m_Window->SetRefreshCallback([this]() {
 		m_Timer->Tick();
-		OnUpdate(m_Timer->GetDeltaTime());
+		InternalUpdate(m_Timer->GetDeltaTime());
 	});
 
 	m_Timer->Start();
@@ -53,122 +45,55 @@ Application::~Application() {
 
 	Platform::Filesystem::VirtualFileSystem::Shutdown();
 	Foundation::Profiler::Profiler::Shutdown();
-	UI::Core::ViewSystem::Shutdown();
 	Graphics::MaterialFactory::Shutdown();
+	Rendering::FrameScheduler::Shutdown();
 
 	m_Scene.reset();
 	m_RenderPipeline.reset();
-	for (auto &font : m_Fonts) {
-		font.reset();
-	}
-	for (auto &cache : m_TextureCaches) {
-		cache.reset();
-	}
 	m_Swapchain.reset();
 	m_Ctx.reset();
 
-	// This should go aswell, bleeds vulkan stuff in Application
+	// TODO: move to a generic shader compiler abstraction
 	RHI::VulkanShaderCompiler::Shutdown();
 }
 
 void Application::Run() {
-	OnStart();
+	InitRendering(m_Window->GetWidth(), m_Window->GetHeight());
+	m_Scene = CreateUnique<Scene>("Main");
+	OnInit();
 
 	while (m_Running && !m_Window->ShouldClose()) {
-		m_Timer->Tick();
-		// PROFILE_FRAME_BEGIN();
-		m_Window->PollEvents();
-		OnUpdate(m_Timer->GetDeltaTime());
-		// PROFILE_FRAME_END();
+		if (Rendering::FrameScheduler::Get()->Consume()) {
+			m_Window->PollEvents();
+			m_Timer->Tick();
+			PROFILE_FRAME_BEGIN();
+			InternalUpdate(m_Timer->GetDeltaTime());
+			PROFILE_FRAME_END();
+			PROFILE_PRINT_SUMMARY_EVERY_N_FRAMES(1000);
+		} else {
+			m_Window->WaitEvents();
+		}
 	}
 
+	m_Ctx->WaitIdle();
 	OnShutdown();
 }
 
 void Application::Close() {
 	m_Running = false;
 }
-void Application::OnStart() {
-	InitRendering(m_Window->GetWidth(), m_Window->GetHeight());
-
-	m_Scene = CreateUnique<Scene>("Main");
-
-	auto *entityManager = m_Scene->GetEntityManager();
-	auto cam = entityManager->CreateEntity("Camera");
-	auto &camComp = cam.AddComponent<CameraComponent>();
-	camComp.fov = 60.f;
-	camComp.nearPlane = 0.1f;
-	camComp.farPlane = 500.f;
-	camComp.aspectRatio = static_cast<f32>(m_Window->GetWidth()) / static_cast<f32>(m_Window->GetHeight());
-	camComp.primary = true;
-	cam.GetComponent<TransformComponent>().SetLocalPosition({ 0.F, 1.5F, -5.F });
-	m_Scene->SetActiveCamera(cam);
-
-	Graphics::MaterialFactory::Get()->EnableHotReload(true);
-
-	auto litMat = Graphics::MaterialFactory::Get()->Create(*m_Ctx, SharedConstants::SHADERS_DIR + "Basic.slang",
-														   {
-															   .type = Graphics::MaterialType::Lit,
-															   .colorFormats = { RHI::TextureFormat::RGBA16F },
-															   .depthTest = true,
-															   .depthWrite = false,
-														   });
-
-	auto addCube = [&](const char *name, vec3 pos, Ref<Graphics::Material> mat) {
-		auto entity = entityManager->CreateEntity(name);
-		auto mesh = CreateRef<Graphics::Resources::Mesh>(name);
-		mesh->LoadFromData(Graphics::Resources::Mesh::GenerateCube(0.5F));
-		entity.AddComponent<MeshComponent>().SetMesh(mesh);
-		entity.GetComponent<TransformComponent>().SetLocalPosition(pos);
-
-		auto &comp = entity.AddComponent<MaterialComponent>(mat);
-		comp.surfaceProperties.albedo = vec4(0.8f, 0.6f, 0.4f, 1.f);
-		comp.surfaceProperties.metallic = 0.0f;
-		comp.surfaceProperties.roughness = 0.6f;
-	};
-	addCube("CubeA", { -1.5f, 0.f, 2.f }, litMat);
-	addCube("CubeB", { 1.5f, 0.f, 2.f }, litMat);
-	addCube("Floor", { 0.0f, 0.5f, 2.f }, litMat);
-
-	{
-		auto e = entityManager->CreateEntity("SunLight");
-		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Directional, vec3(1.0f, 0.95f, 0.8f), 2.0f);
-		light.SetDirection(glm::normalize(vec3(0.4f, -1.0f, 0.6f)));
-	}
-
-	{
-		auto e = entityManager->CreateEntity("PointA");
-		e.GetComponent<TransformComponent>().SetLocalPosition({ -1.5f, -0.5f, 1.5f });
-		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Point, vec3(1.0f, 0.4f, 0.1f), 5.0f);
-		light.SetRange(6.0f);
-	}
-
-	{
-		auto e = entityManager->CreateEntity("PointB");
-		e.GetComponent<TransformComponent>().SetLocalPosition({ 1.5f, -0.5f, 1.5f });
-		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Point, vec3(0.2f, 0.5f, 1.0f), 5.0f);
-		light.SetRange(6.0f);
-	}
-
-	SetupScene();
-}
-
-void Application::SetupScene() {
-	auto &editorCanvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Editor);
-	m_ViewportImage = SetupWidgetTest(*m_Ctx, editorCanvas, m_Fonts, m_TextureCaches,
-									  &m_RenderPipeline->GetOutput());
-}
-
-void Application::OnShutdown() {}
 
 void Application::InitRendering(uint32 width, uint32 height) {
-	// THIS SHOULD GO, WE SHOULD HAVE A GENERIC SHADER COMPILER
-
+	// TODO: replace with a generic shader compiler abstraction
 	RHI::VulkanShaderCompiler::Initialize();
 	Graphics::MaterialFactory::Init();
+	Rendering::FrameScheduler::Init();
+
+	using namespace Platform::Filesystem;
+	VirtualFileSystem::Get()->Mount("/resources", CreateRef<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
+	VirtualFileSystem::Get()->Mount("/shaders", CreateRef<NativeFileSystem>(SharedConstants::SHADERS_DIR));
 
 	m_Ctx = GFX::GfxContext::Create(*GetWindow().GetNativeWindow());
-	UI::Core::ViewSystem::Init(m_Window->GetWidth(), m_Window->GetHeight());
 
 	m_Swapchain = m_Ctx->CreateSwapchain({
 		.width = width,
@@ -179,21 +104,18 @@ void Application::InitRendering(uint32 width, uint32 height) {
 	});
 
 	m_RenderPipeline = CreateUnique<Rendering::RenderPipeline>(*m_Ctx, width, height);
-
 	m_Renderer = &m_RenderPipeline->Add<Rendering::Renderer>();
 	m_Renderer2D = &m_RenderPipeline->Add<Rendering::Renderer2D>();
 
-	// ! IMPORTANT : Systems go here
 	m_Renderer->AddSystem<Rendering::DepthPrepassSystem>();
 	m_Renderer->AddSystem<Rendering::ClusterComputeSystem>();
 	m_Renderer->AddSystem<Rendering::LightCullingSystem>();
 	m_Renderer->AddSystem<Rendering::GeometrySystem>();
-	m_Renderer2D->AddSystem<UI::Rendering::ViewRenderingSystem>();
-	// !
 }
 
-void Application::OnUpdate(f32 deltaTime) {
+void Application::InternalUpdate(f32 deltaTime) {
 	PROFILE_SCOPE("OnUpdate");
+
 	if (m_PendingResize || m_Swapchain->NeedsResize()) {
 		m_PendingResize = false;
 		const uint32 width = m_Window->GetWidth();
@@ -215,28 +137,11 @@ void Application::OnUpdate(f32 deltaTime) {
 	m_Renderer->SetSwapchainTarget(*m_Swapchain, imageIndex);
 	m_Renderer2D->SetSwapchainTarget(*m_Swapchain, imageIndex);
 
-	auto cmd = m_Ctx->CreateCommandList(RHI::CommandListType::Graphics, "MainFrame");
-	cmd->Begin();
+	uint32 frameSlot = m_Swapchain->GetCurrentFrameSlot();
+	auto &cmd = m_Ctx->AcquireFrameCommandList(frameSlot);
+	cmd.Begin();
 
-	{
-		PROFILE_SCOPE("ViewSystem::Update");
-		UI::Core::ViewSystem::Get()->Update(deltaTime);
-	}
-
-	{
-		PROFILE_SCOPE("ViewSystem::Compute");
-		UI::Core::ViewSystem::Get()->Compute();
-	}
-
-	{
-		const bool uiDirty =
-			UI::Core::ViewSystem::Get()->IsAnyLayerDirty(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
-		m_Renderer2D->SetUIDirty(uiDirty);
-		if (uiDirty) {
-			UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(UI::Core::UILayer::ScreenOverlay,
-															  UI::Core::UILayer::Editor);
-		}
-	}
+	OnPreRender(deltaTime);
 
 	{
 		Graphics::MaterialFactory::Get()->Tick(*m_Ctx);
@@ -244,22 +149,23 @@ void Application::OnUpdate(f32 deltaTime) {
 
 	{
 		PROFILE_SCOPE("RenderPipeline::Render");
-		m_RenderPipeline->Render(*cmd, *m_Scene, deltaTime);
+		m_RenderPipeline->Render(cmd, *m_Scene, deltaTime);
 	}
 
 	{
 		PROFILE_SCOPE("SubmitFrame");
-		m_Ctx->SubmitFrame(*cmd, m_Swapchain.get(), imageIndex);
-	}
-
-	{
-		PROFILE_SCOPE("ProcessPendingDeletions");
-		m_Ctx->ProcessPendingDeletions();
+		m_Ctx->SubmitFrame(cmd, m_Swapchain.get(), imageIndex);
 	}
 }
 
-void Application::OnEvent(Events::Event &event) {
-	UI::Core::ViewSystem::Get()->OnEvent(event);
+void Application::InternalOnEvent(Events::Event &event) {
+	const bool isCursorEvent = (event.GetCategory() & Events::EventCategory::Mouse) &&
+							   !(event.GetCategory() & Events::EventCategory::MouseButton);
+	if (!isCursorEvent) {
+		Rendering::FrameScheduler::Get()->RequestFrame();
+	}
+
+	OnEvent(event);
 
 	Events::EventDispatcher dispatcher(event);
 
@@ -268,8 +174,8 @@ void Application::OnEvent(Events::Event &event) {
 		return true;
 	});
 
-	dispatcher.Dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &event) {
-		if (event.GetWidth() > 0 && event.GetHeight() > 0) {
+	dispatcher.Dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &ev) {
+		if (ev.GetWidth() > 0 && ev.GetHeight() > 0) {
 			m_PendingResize = true;
 		}
 		return true;
@@ -284,15 +190,10 @@ void Application::HandleResize() {
 	}
 
 	m_Ctx->WaitIdle();
-
 	m_Swapchain->Resize(width, height);
 	m_RenderPipeline->Resize(width, height);
-	UI::Core::ViewSystem::Get()->Resize(width, height);
 
-	// RebuildTargets() creates a new GfxTexture — re-bind the raw pointer.
-	if (m_ViewportImage) {
-		m_ViewportImage->SetTexture(&m_RenderPipeline->GetOutput());
-	}
+	OnResize(width, height);
 }
 
 } // namespace Aquila::Application

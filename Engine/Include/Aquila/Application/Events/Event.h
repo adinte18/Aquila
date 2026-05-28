@@ -40,9 +40,7 @@ class EventDispatcher {
 	explicit EventDispatcher(Event &event) : m_Event(event) {}
 
 	template <typename T, typename F> bool Dispatch(const F &func) {
-		PROFILE_SCOPE("EventDispatcher::Dispatch");
 		if (m_Event.GetTypeIndex() == std::type_index(typeid(T))) {
-			PROFILE_SCOPE("EventDispatcher::Handler");
 			m_Event.handled = func(static_cast<T &>(m_Event));
 			return true;
 		}

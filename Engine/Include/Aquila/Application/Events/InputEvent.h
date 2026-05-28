@@ -35,43 +35,52 @@ enum class KeyCode : uint16 {
 	Y = 89,
 	Z = 90,
 	Escape = 256,
-	Enter = 1,
+	Enter = 257,
 	Tab = 258,
-	Backspace = 3,
-	Delete = 4,
-	Right = 5,
-	Left = 6,
-	Down = 7,
-	Up = 8,
-	F1 = 9,
-	F2 = 10,
-	F3 = 11,
-	F4 = 12,
-	F5 = 13,
-	F6 = 14,
-	F7 = 15,
-	F8 = 16,
-	F9 = 17,
-	F10 = 18,
-	F11 = 19,
-	F12 = 20,
-	LeftShift = 21,
-	LeftControl = 22,
-	LeftAlt = 23,
-	RightShift = 24,
-	RightControl = 25,
-	RightAlt = 26
+	Backspace = 259,
+	Delete = 261,
+	Right = 262,
+	Left = 263,
+	Down = 264,
+	Up = 265,
+	F1 = 290,
+	F2 = 291,
+	F3 = 292,
+	F4 = 293,
+	F5 = 294,
+	F6 = 295,
+	F7 = 296,
+	F8 = 297,
+	F9 = 298,
+	F10 = 299,
+	F11 = 300,
+	F12 = 301,
+	LeftShift = 340,
+	LeftControl = 341,
+	LeftAlt = 342,
+	RightShift = 344,
+	RightControl = 345,
+	RightAlt = 346,
 };
 
 enum class MouseButton : uint8 { Left = 0, Right = 1, Middle = 2 };
 
+static constexpr int ModShift = 0x0001;
+static constexpr int ModControl = 0x0002;
+static constexpr int ModAlt = 0x0004;
+
 class KeyPressedEvent final : public Event {
   public:
-	KeyPressedEvent(const KeyCode keycode, const int repeatCount) : m_KeyCode(keycode), m_RepeatCount(repeatCount) {}
+	KeyPressedEvent(const KeyCode keycode, const int repeatCount, const int mods = 0)
+		: m_KeyCode(keycode), m_RepeatCount(repeatCount), m_Mods(mods) {}
 
 	[[nodiscard]] KeyCode GetKeyCode() const { return m_KeyCode; }
 	[[nodiscard]] int GetRepeatCount() const { return m_RepeatCount; }
 	[[nodiscard]] bool IsRepeat() const { return m_RepeatCount > 0; }
+	[[nodiscard]] int GetMods() const { return m_Mods; }
+	[[nodiscard]] bool IsCtrl() const { return (m_Mods & ModControl) != 0; }
+	[[nodiscard]] bool IsShift() const { return (m_Mods & ModShift) != 0; }
+	[[nodiscard]] bool IsAlt() const { return (m_Mods & ModAlt) != 0; }
 
 	[[nodiscard]] std::string ToString() const override {
 		return std::string("KeyPressedEvent: ") + std::to_string(static_cast<int>(m_KeyCode)) + " (" +
@@ -84,6 +93,7 @@ class KeyPressedEvent final : public Event {
   private:
 	KeyCode m_KeyCode;
 	int m_RepeatCount;
+	int m_Mods;
 };
 
 class KeyReleasedEvent final : public Event {

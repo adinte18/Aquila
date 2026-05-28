@@ -1,14 +1,15 @@
 #include "Aquila/Application/ApplicationNew.h"
 
-using namespace Aquila;
+// Headless engine runner — starts with an empty scene, no editor UI.
+// For the full editor experience build and run AquilaEditor instead.
 
-int main(int argc, char **argv) {
+int main() {
 	ApplicationSpec spec;
-	spec.Name = "Aquila";
+	spec.Name = "Aquila Runtime";
 	spec.Width = 1920;
 	spec.Height = 1080;
 
-	Application::Application app{ spec };
+	Aquila::Application::Application app{ spec };
 	app.Run();
 	return EXIT_SUCCESS;
 }

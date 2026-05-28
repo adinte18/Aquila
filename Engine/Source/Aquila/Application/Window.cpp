@@ -43,7 +43,7 @@ void Window::Initialize() {
 	// the size callback never ran for it; query the actual size directly.
 	int actualW, actualH;
 	glfwGetWindowSize(m_Window, &actualW, &actualH);
-	m_Data.Width  = static_cast<uint32>(actualW);
+	m_Data.Width = static_cast<uint32>(actualW);
 	m_Data.Height = static_cast<uint32>(actualH);
 
 	AQUILA_LOG_INFO("Window created: {}x{}", m_Data.Width, m_Data.Height);
@@ -75,7 +75,7 @@ void Window::SetupCallbacks() const {
 
 		switch (action) {
 		case GLFW_PRESS: {
-			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 0);
+			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 0, mods);
 			data.EventCallback(event);
 			break;
 		}
@@ -85,7 +85,7 @@ void Window::SetupCallbacks() const {
 			break;
 		}
 		case GLFW_REPEAT: {
-			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 1);
+			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 1, mods);
 			data.EventCallback(event);
 			break;
 		}
@@ -151,6 +151,15 @@ void Window::SetupCallbacks() const {
 
 void Window::PollEvents() {
 	glfwPollEvents();
+	if (m_Data.HasPendingMouseMove) {
+		Events::MouseMovedEvent event(m_Data.LastMouseX, m_Data.LastMouseY);
+		m_Data.EventCallback(event);
+		m_Data.HasPendingMouseMove = false;
+	}
+}
+
+void Window::WaitEvents() {
+	glfwWaitEvents();
 	if (m_Data.HasPendingMouseMove) {
 		Events::MouseMovedEvent event(m_Data.LastMouseX, m_Data.LastMouseY);
 		m_Data.EventCallback(event);

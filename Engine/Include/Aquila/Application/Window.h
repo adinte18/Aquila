@@ -23,6 +23,7 @@ class Window {
 	~Window();
 
 	void PollEvents();
+	void WaitEvents();
 	bool ShouldClose() const;
 
 	uint32 GetWidth() const { return m_Data.Width; }
