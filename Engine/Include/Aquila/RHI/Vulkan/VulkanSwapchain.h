@@ -64,6 +64,7 @@ class VulkanSwapchain final : public IRHISwapchain {
 			m_ImageInitialized[index] = true;
 		}
 	}
+	void MarkSlotSubmitted(uint32 slot) { m_SlotSubmitted[slot] = true; }
 
 	[[nodiscard]] f32 AspectRatio() const {
 		return static_cast<f32>(m_Extent.width) / static_cast<f32>(m_Extent.height);
@@ -108,7 +109,11 @@ class VulkanSwapchain final : public IRHISwapchain {
 	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
 	std::vector<VkFence> m_InFlightFences;
 	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_PendingCmdBufs;
-	uint32 m_NextFrameSlot = 0; // index of the frame slot to acquire on the NEXT call to AcquireNextImage
+	std::array<bool, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_SlotSubmitted{};
+
+	uint32 m_NextFrameSlot = 0;	   // index of the frame slot to acquire on the NEXT call to AcquireNextImage
+	uint32 m_CurrentFrameSlot = 0; // slot locked in by AcquireNextImage
+
 	bool m_NeedsResize = false;
 };
 

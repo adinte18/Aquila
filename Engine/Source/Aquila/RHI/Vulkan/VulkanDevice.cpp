@@ -228,7 +228,9 @@ void VulkanDevice::PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex, vec
 	submitInfo.pSignalSemaphores = &renderFinished;
 
 	VkFence fence = vkSwapchain.GetInFlightFence(lastFrame);
+	vkResetFences(m_Device, 1, &fence);
 	SubmitToGraphicsQueue(&submitInfo, fence);
+	vkSwapchain.MarkSlotSubmitted(lastFrame);
 	vkSwapchain.DeferCmdBufFree(lastFrame, cmd, pool);
 
 	vkSwapchain.PresentImageRaw(&imageIndex, renderFinished);
@@ -263,8 +265,10 @@ void VulkanDevice::SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, u
 
 		VkFence fence = vkSwapchain.GetInFlightFence(lastFrame);
 		{
+			vkResetFences(m_Device, 1, &fence);
 			PROFILE_SCOPE("QueueSubmit");
 			SubmitToGraphicsQueue(&submitInfo, fence);
+			vkSwapchain.MarkSlotSubmitted(lastFrame);
 		}
 		bool isFrameManaged = false;
 		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {

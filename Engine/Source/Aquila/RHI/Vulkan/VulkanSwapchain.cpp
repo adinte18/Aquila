@@ -203,11 +203,10 @@ void VulkanSwapchain::CreateSyncObjects() {
 bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 	VkDevice dev = m_Device.GetDevice();
 
-	if (vkGetFenceStatus(dev, m_InFlightFences[m_NextFrameSlot]) == VK_NOT_READY) {
-		Aquila::Foundation::LogWarning("AcquireNextImage: fence NOT_READY for slot {}", m_NextFrameSlot);
-		return false;
+	if (m_SlotSubmitted[m_NextFrameSlot]) {
+		vkWaitForFences(dev, 1, &m_InFlightFences[m_NextFrameSlot], VK_TRUE, UINT64_MAX);
+		m_SlotSubmitted[m_NextFrameSlot] = false;
 	}
-
 	m_Device.GetDeletionQueue().Flush(m_NextFrameSlot);
 
 	for (auto &p : m_PendingCmdBufs[m_NextFrameSlot]) {
@@ -220,7 +219,9 @@ bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 	m_Device.GetDeletionQueue().SetCurrentSlot(m_NextFrameSlot);
 
 	VkSemaphore sem = m_ImageAvailableSemaphores[m_NextFrameSlot];
-	VkResult result = vkAcquireNextImageKHR(dev, m_Swapchain, 0, sem, VK_NULL_HANDLE, &outImageIndex);
+	// we should use 0 for non blocking poll and UINT64_MAX for render on demand
+	// maybe for future option
+	VkResult result = vkAcquireNextImageKHR(dev, m_Swapchain, UINT64_MAX, sem, VK_NULL_HANDLE, &outImageIndex);
 
 	if (result == VK_NOT_READY) {
 		Aquila::Foundation::LogWarning("AcquireNextImage: image acquisition NOT_READY for slot {}", m_NextFrameSlot);
@@ -234,7 +235,8 @@ bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 		m_NeedsResize = true;
 	}
 	if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-		vkResetFences(dev, 1, &m_InFlightFences[m_NextFrameSlot]);
+		m_CurrentFrameSlot = m_NextFrameSlot;
+		// vkResetFences(dev, 1, &m_InFlightFences[m_NextFrameSlot]);
 		m_NextFrameSlot = (m_NextFrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 		return true;
 	}
@@ -316,6 +318,7 @@ void VulkanSwapchain::Resize(uint32 width, uint32 height) {
 
 	m_NeedsResize = false;
 	m_NextFrameSlot = 0;
+	m_SlotSubmitted.fill(false);
 }
 
 VkFormat VulkanSwapchain::FindDepthFormat() {
