@@ -19,6 +19,7 @@
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Image.h"
 #include "Aquila/UI/Widgets/ColorPicker.h"
+#include "Aquila/UI/Widgets/ContextMenu.h"
 
 namespace Editor {
 
@@ -167,20 +168,25 @@ void EditorApplication::SetupEditorUI() {
 		return;
 	}
 
-	if (auto *view = root->FindById("btn-click")) {
-		if (auto *btn = dynamic_cast<UI::Core::Button *>(view)) {
-			btn->SetOnClick([]() { AQUILA_LOG_INFO("Button clicked!"); });
-		}
-	}
-
 	if (auto *view = root->FindById("viewport")) {
 		if (auto *img = dynamic_cast<UI::Core::Image *>(view)) {
 			img->SetTexture(&GetRenderOutput());
+			img->SetPassThroughScroll(true);
 			m_ViewportImage = img;
 		}
 	}
 
-	editorCanvas.GetRoot()->AddChild(std::move(root));
+	UI::Core::View *layoutRoot = editorCanvas.GetRoot()->AddChild(std::move(root));
+
+	auto ctxMenuUniq = CreateUnique<UI::Core::ContextMenu>();
+	auto *ctxMenu = static_cast<UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(ctxMenuUniq)));
+	ctxMenu->AddItem("Create Empty", [] { AQUILA_LOG_INFO("Create Empty entity"); });
+	ctxMenu->AddItem("Create Cube", [] { AQUILA_LOG_INFO("Create Cube entity"); });
+
+	if (auto *hierarchy = layoutRoot->FindById("panel-hierarchy")) {
+		hierarchy->SetContextView([ctxMenu](vec2 pos) { ctxMenu->OpenAt(pos); });
+	}
+
 	editorCanvas.ReloadStyles();
 }
 
