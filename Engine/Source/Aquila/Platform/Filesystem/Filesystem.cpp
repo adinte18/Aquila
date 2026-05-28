@@ -202,11 +202,13 @@ std::string PathExtension(const std::string &path) {
 	const size_t pos = path.find_last_of('.');
 	// pos == 0 catches ".hidden", pos == npos catches no dot,
 	// check no separator after dot to avoid "dir.name/file" false positives
-	if (pos == std::string::npos || pos == 0)
+	if (pos == std::string::npos || pos == 0) {
 		return {};
+	}
 	const size_t sep = path.find_last_of("/\\");
-	if (sep != std::string::npos && sep > pos)
+	if (sep != std::string::npos && sep > pos) {
 		return {};
+	}
 	return path.substr(pos); // includes the dot, e.g. ".txt"
 }
 

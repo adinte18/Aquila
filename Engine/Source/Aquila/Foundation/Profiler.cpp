@@ -128,8 +128,8 @@ void Profiler::PrintFrameSummary() const {
 		std::string label(frameEntry.depth * 2, ' ');
 		label += frameEntry.name;
 		f64 percentage = m_FrameDuration > 0.0 ? (stats.avgDuration / m_FrameDuration) * 100.0 : 0.0;
-		AQUILA_LOG_INFO("{:<50} {:>10.3f} {:>10.3f} {:>10.3f} {:>8.1f}%",
-						label, stats.avgDuration, stats.minDuration, stats.maxDuration, percentage);
+		AQUILA_LOG_INFO("{:<50} {:>10.3f} {:>10.3f} {:>10.3f} {:>8.1f}%", label, stats.avgDuration, stats.minDuration,
+						stats.maxDuration, percentage);
 	}
 	AQUILA_LOG_INFO("");
 

@@ -6,6 +6,7 @@
 namespace Aquila::SharedConstants {
 
 AQUILA_INLINE const std::string SHADERS_DIR = AQUILA_SHADERS_DIR;
+AQUILA_INLINE const std::string RESOURCES_DIR = AQUILA_RESOURCES_DIR;
 
 constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 

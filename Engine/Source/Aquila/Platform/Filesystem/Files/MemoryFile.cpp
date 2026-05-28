@@ -4,8 +4,9 @@ namespace Aquila::Platform::Filesystem {
 MemoryFile::MemoryFile(std::vector<uint8_t> *data, bool canWrite) : m_data(data), m_position(0), m_canWrite(canWrite) {}
 
 size_t MemoryFile::Read(void *buffer, size_t size) {
-	if (!m_data || m_position >= m_data->size())
+	if (!m_data || m_position >= m_data->size()) {
 		return 0;
+	}
 
 	size_t bytesToRead = std::min(size, m_data->size() - m_position);
 	memcpy(buffer, m_data->data() + m_position, bytesToRead);
@@ -14,8 +15,9 @@ size_t MemoryFile::Read(void *buffer, size_t size) {
 }
 
 size_t MemoryFile::Write(const void *buffer, size_t size) {
-	if (!m_data || !m_canWrite)
+	if (!m_data || !m_canWrite) {
 		return 0;
+	}
 
 	// Resize if necessary
 	if (m_position + size > m_data->size()) {
@@ -28,8 +30,9 @@ size_t MemoryFile::Write(const void *buffer, size_t size) {
 }
 
 bool MemoryFile::Seek(int64 offset, int origin) {
-	if (!m_data)
+	if (!m_data) {
 		return false;
+	}
 
 	int64 newPos;
 	switch (origin) {

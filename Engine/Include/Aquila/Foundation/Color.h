@@ -8,18 +8,18 @@ namespace Aquila::Foundation::Color {
 
 // RGBA clear colors
 namespace RGBA {
-constexpr vec4 Black     = { 0.0F, 0.0F, 0.0F, 1.0F };
-constexpr vec4 White     = { 1.0F, 1.0F, 1.0F, 1.0F };
-constexpr vec4 Red       = { 1.0F, 0.0F, 0.0F, 1.0F };
-constexpr vec4 Green     = { 0.0F, 1.0F, 0.0F, 1.0F };
-constexpr vec4 Blue      = { 0.0F, 0.0F, 1.0F, 1.0F };
-constexpr vec4 Yellow    = { 1.0F, 1.0F, 0.0F, 1.0F };
-constexpr vec4 Cyan      = { 0.0F, 1.0F, 1.0F, 1.0F };
-constexpr vec4 Magenta   = { 1.0F, 0.0F, 1.0F, 1.0F };
-constexpr vec4 Orange    = { 1.0F, 0.5F, 0.0F, 1.0F };
-constexpr vec4 Gray      = { 0.5F, 0.5F, 0.5F, 1.0F };
+constexpr vec4 Black = { 0.0F, 0.0F, 0.0F, 1.0F };
+constexpr vec4 White = { 1.0F, 1.0F, 1.0F, 1.0F };
+constexpr vec4 Red = { 1.0F, 0.0F, 0.0F, 1.0F };
+constexpr vec4 Green = { 0.0F, 1.0F, 0.0F, 1.0F };
+constexpr vec4 Blue = { 0.0F, 0.0F, 1.0F, 1.0F };
+constexpr vec4 Yellow = { 1.0F, 1.0F, 0.0F, 1.0F };
+constexpr vec4 Cyan = { 0.0F, 1.0F, 1.0F, 1.0F };
+constexpr vec4 Magenta = { 1.0F, 0.0F, 1.0F, 1.0F };
+constexpr vec4 Orange = { 1.0F, 0.5F, 0.0F, 1.0F };
+constexpr vec4 Gray = { 0.5F, 0.5F, 0.5F, 1.0F };
 constexpr vec4 LightGray = { 0.75F, 0.75F, 0.75F, 1.0F };
-constexpr vec4 DarkGray  = { 0.25F, 0.25F, 0.25F, 1.0F };
+constexpr vec4 DarkGray = { 0.25F, 0.25F, 0.25F, 1.0F };
 } // namespace RGBA
 
 // RGB colors

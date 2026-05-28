@@ -109,5 +109,10 @@ class ProfileSection {
 #define PROFILE_FRAME_END() Aquila::Foundation::Profiler::Get()->EndFrame()
 #define PROFILE_SCOPE(name) Aquila::Foundation::ProfileSection _profile_##__LINE__(name)
 #define PROFILE_FUNCTION() PROFILE_SCOPE(__FUNCTION__)
-
+#define PROFILE_PRINT_SUMMARY_EVERY_N_FRAMES(n)                                 \
+	do {                                                                        \
+		if (Aquila::Foundation::Profiler::Get()->GetFrameNumber() % (n) == 0) { \
+			Aquila::Foundation::Profiler::Get()->PrintFrameSummary();           \
+		}                                                                       \
+	} while (0)
 #endif
