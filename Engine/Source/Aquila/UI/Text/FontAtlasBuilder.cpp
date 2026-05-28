@@ -6,8 +6,9 @@
 
 namespace Aquila::UI::Text::Internal {
 
-std::vector<std::array<f32, 4>> BuildCurveTextureData(const std::vector<GlyphBuild> &builds, const std::vector<uint32> &glyphCurveStart, uint32 curveTexelCount, uint32 count)
-{
+std::vector<std::array<f32, 4>> BuildCurveTextureData(const std::vector<GlyphBuild> &builds,
+													  const std::vector<uint32> &glyphCurveStart,
+													  uint32 curveTexelCount, uint32 count) {
 	const uint32 texH = (curveTexelCount + SharedConstants::FONT_TEX_WIDTH - 1) / SharedConstants::FONT_TEX_WIDTH;
 	std::vector<std::array<f32, 4>> data(texH * SharedConstants::FONT_TEX_WIDTH, { 0.f, 0.f, 0.f, 0.f });
 
@@ -24,8 +25,8 @@ std::vector<std::array<f32, 4>> BuildCurveTextureData(const std::vector<GlyphBui
 	return data;
 }
 
-GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f32 scaleX, f32 scaleY, f32 offsetX, f32 offsetY)
-{
+GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f32 scaleX, f32 scaleY, f32 offsetX,
+									f32 offsetY) {
 	GlyphBandData result{};
 
 	for (uint32 c = 0; c < static_cast<uint32>(build.curves.size()); ++c) {
@@ -65,8 +66,7 @@ GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f
 }
 
 void WriteGlyphBandEntries(std::vector<std::array<uint32, 4>> &bandTexData, uint32 bandStart,
-						   const GlyphBandData &bands)
-{
+						   const GlyphBandData &bands) {
 	auto ensureSize = [&](uint32 needed) {
 		if (bandTexData.size() < needed) {
 			bandTexData.resize(needed, { 0u, 0u, 0u, 0u });

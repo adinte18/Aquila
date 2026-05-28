@@ -34,12 +34,12 @@ struct GlyphBandData {
 // Packs curve p0/p1/p2 data into a flat RGBA32F texel array.
 // count = number of builds to process (may be less than builds.size()).
 std::vector<std::array<f32, 4>> BuildCurveTextureData(const std::vector<GlyphBuild> &builds,
-													   const std::vector<uint32> &glyphCurveStart,
-													   uint32 curveTexelCount, uint32 count);
+													  const std::vector<uint32> &glyphCurveStart,
+													  uint32 curveTexelCount, uint32 count);
 
 // Buckets the curves of a single glyph/icon into horizontal and vertical bands.
-GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f32 scaleX, f32 scaleY,
-									 f32 offsetX, f32 offsetY);
+GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f32 scaleX, f32 scaleY, f32 offsetX,
+									f32 offsetY);
 
 // Writes one glyph/icon's band data (headers + index lists) into the flat RGBA32U texel vector.
 void WriteGlyphBandEntries(std::vector<std::array<uint32, 4>> &bandTexData, uint32 bandStart,

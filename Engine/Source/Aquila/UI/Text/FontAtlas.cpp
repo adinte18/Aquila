@@ -1,6 +1,7 @@
 #include "Aquila/UI/Text/FontAtlas.h"
 #include "Aquila/UI/Text/FontAtlasBuilder.h"
 #include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Aquila::UI::Text {
 
@@ -218,16 +219,19 @@ Unique<FontAtlas> FontAtlas::Create(GFX::GfxContext &ctx, const uint8 *ttfData, 
 }
 
 Unique<FontAtlas> FontAtlas::CreateFromFile(GFX::GfxContext &ctx, const std::string &path, f32 pixelHeight) {
-	std::ifstream file(path, std::ios::binary | std::ios::ate);
-	if (!file.is_open()) {
+	auto file = Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(path, AccessMode::Read, OpenMode::Binary);
+	if (!file || !file->IsValid()) {
+		AQUILA_LOG_ERROR("FontAtlas: cannot open '{}'", path);
 		return nullptr;
 	}
 
-	const auto size = static_cast<uint64>(file.tellg());
-	file.seekg(0);
-	std::vector<uint8> data(size);
-	file.read(reinterpret_cast<char *>(data.data()), static_cast<std::streamsize>(size));
-	return Create(ctx, data.data(), size, pixelHeight);
+	const int64 size = file->Size();
+	if (size <= 0) {
+		return nullptr;
+	}
+	std::vector<uint8> data(static_cast<usize>(size));
+	file->Read(data.data(), static_cast<usize>(size));
+	return Create(ctx, data.data(), static_cast<uint64>(size), pixelHeight);
 }
 
 const GlyphInfo *FontAtlas::GetGlyph(uint32 codepoint) const {

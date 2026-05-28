@@ -38,7 +38,6 @@ struct SlugGlyphData {
 	vec2 emMax; // (glyphW, glyphH) at bake scale
 };
 
-
 class FontAtlas {
   public:
 	~FontAtlas() = default;
