@@ -299,8 +299,9 @@ bool SceneManager::HasPendingSceneChange() const {
 }
 
 void SceneManager::ProcessSceneChange() {
-	if (!m_HasPendingSceneChange)
+	if (!m_HasPendingSceneChange) {
 		return;
+	}
 
 	ChangeScene(m_PendingSceneChangeHandle);
 	m_PendingSceneChangeHandle = Utils::UUID::Null();

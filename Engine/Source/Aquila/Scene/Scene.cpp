@@ -36,8 +36,8 @@ Scene::~Scene() = default;
 void Scene::OnStart() {
 	m_EntityManager = CreateUnique<EntityManager>(this);
 	// Wire dirty callback on every TransformComponent that gets created.
-	m_EntityManager->GetRegistry().on_construct<Components::TransformComponent>()
-		.connect<&Scene::OnTransformConstruct>(this);
+	m_EntityManager->GetRegistry().on_construct<Components::TransformComponent>().connect<&Scene::OnTransformConstruct>(
+		this);
 	m_EntityManager->ConstructSceneGraph();
 }
 
@@ -114,9 +114,8 @@ void Scene::UpdateTransformHierarchy() {
 
 	// Sort dirty entities parent-first so ancestors are always processed before descendants.
 	std::vector<entt::entity> sorted = m_DirtyTransforms.GetOrdered();
-	std::stable_sort(sorted.begin(), sorted.end(), [this](entt::entity a, entt::entity b) {
-		return GetEntityDepth(a) < GetEntityDepth(b);
-	});
+	std::stable_sort(sorted.begin(), sorted.end(),
+					 [this](entt::entity a, entt::entity b) { return GetEntityDepth(a) < GetEntityDepth(b); });
 
 	for (entt::entity e : sorted) {
 		// If a dirty ancestor is also in the set, it was (or will be) processed first and its

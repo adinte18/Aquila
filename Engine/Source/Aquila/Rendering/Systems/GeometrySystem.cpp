@@ -80,8 +80,8 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 		},
 		[batches = std::move(batches), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 			for (auto &[material, drawCalls] : batches) {
-				material->Flush();
-				material->Bind(cmd, 1);
+				material->Flush(frameSlot);
+				material->Bind(cmd, 1, frameSlot);
 				cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
 
 				for (const auto &dc : drawCalls) {

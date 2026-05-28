@@ -1,5 +1,6 @@
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/SceneFrameData.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/Scene/Scene.h"
@@ -25,24 +26,42 @@ RenderPipeline::~RenderPipeline() {
 }
 
 void RenderPipeline::Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime) {
-	scene.UpdateTransformHierarchy();
+	{
+		PROFILE_SCOPE("RenderPipeline::UpdateTransforms");
+		scene.UpdateTransformHierarchy();
+	}
 
 	m_FrameSlot = (m_FrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
-	SceneFrameData::Get()->Update(scene, deltaTime, m_FrameSlot);
+	{
+		PROFILE_SCOPE("RenderPipeline::FrameDataUpdate");
+		SceneFrameData::Get()->Update(scene, deltaTime, m_FrameSlot);
+	}
 
 	FrameContext ctx;
 	BuildFrameContext(scene, deltaTime, ctx);
 
-	for (auto &renderer : m_Renderers) {
-		renderer->AddPasses(m_Graph, ctx);
+	{
+		PROFILE_SCOPE("RenderPipeline::AddPasses");
+		for (auto &renderer : m_Renderers) {
+			renderer->AddPasses(m_Graph, ctx);
+		}
 	}
 
-	for (auto &renderer : m_Renderers) {
-		renderer->AddFinalPasses(m_Graph, ctx);
+	{
+		PROFILE_SCOPE("RenderPipeline::AddFinalPasses");
+		for (auto &renderer : m_Renderers) {
+			renderer->AddFinalPasses(m_Graph, ctx);
+		}
 	}
 
-	m_Graph.Compile(m_Ctx);
-	m_Graph.Execute(cmd);
+	{
+		PROFILE_SCOPE("RenderPipeline::GraphCompile");
+		m_Graph.Compile(m_Ctx);
+	}
+	{
+		PROFILE_SCOPE("RenderPipeline::GraphExecute");
+		m_Graph.Execute(cmd);
+	}
 	m_Graph.Reset();
 }
 

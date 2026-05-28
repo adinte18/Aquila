@@ -212,8 +212,9 @@ void EntityManager::OnSceneNodeDestroy(entt::registry &registry, entt::entity en
 	Entity entity(entityHandle, m_Scene);
 
 	auto *node = entity.TryGetComponent<Components::SceneNodeComponent>();
-	if (!node)
+	if (!node) {
 		return;
+	}
 
 	for (auto child : node->Children) {
 		if (child.IsValid()) {
@@ -240,13 +241,15 @@ void EntityManager::OnSceneNodeDestroy(entt::registry &registry, entt::entity en
  * @param child The child entity to be added.
  */
 void EntityManager::AddChild(Entity parent, Entity child) {
-	if (!parent.IsValid() || !child.IsValid())
+	if (!parent.IsValid() || !child.IsValid()) {
 		return;
+	}
 
 	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
 	auto *childNode = child.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !childNode)
+	if (!parentNode || !childNode) {
 		return;
+	}
 
 	childNode->Parent = parentNode->Ent;
 
@@ -262,18 +265,21 @@ void EntityManager::AddChild(Entity parent, Entity child) {
  * @param node The node entity to be attached.
  */
 void EntityManager::AttachTo(Entity parent, Entity node) {
-	if (!parent.IsValid() || !node.IsValid())
+	if (!parent.IsValid() || !node.IsValid()) {
 		return;
+	}
 
 	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
 	auto *nodeToAttach = node.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !nodeToAttach)
+	if (!parentNode || !nodeToAttach) {
 		return;
+	}
 
 	auto *nodeTransform = node.TryGetComponent<Components::TransformComponent>();
 	auto *parentTransform = parent.TryGetComponent<Components::TransformComponent>();
-	if (!nodeTransform || !parentTransform)
+	if (!nodeTransform || !parentTransform) {
 		return;
+	}
 
 	// Store the current world transform before reparenting
 	vec3 worldPos = nodeTransform->GetWorldPosition();
@@ -323,14 +329,17 @@ void EntityManager::AttachTo(Entity parent, Entity node) {
  */
 bool EntityManager::IsDescendant(Entity potentialParent, Entity entityToCheck) {
 	auto *node = potentialParent.TryGetComponent<Components::SceneNodeComponent>();
-	if (!node)
+	if (!node) {
 		return false;
+	}
 
 	for (const auto &child : node->Children) {
-		if (child == entityToCheck)
+		if (child == entityToCheck) {
 			return true;
-		if (IsDescendant(child, entityToCheck))
+		}
+		if (IsDescendant(child, entityToCheck)) {
 			return true;
+		}
 	}
 	return false;
 }
@@ -342,13 +351,15 @@ bool EntityManager::IsDescendant(Entity potentialParent, Entity entityToCheck) {
  * @param child The child entity to be removed.
  */
 void EntityManager::RemoveChild(Entity parent, Entity child) {
-	if (!parent.IsValid() || !child.IsValid())
+	if (!parent.IsValid() || !child.IsValid()) {
 		return;
+	}
 
 	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
 	auto *childNode = child.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !childNode)
+	if (!parentNode || !childNode) {
 		return;
+	}
 
 	auto &siblings = parentNode->Children;
 	siblings.erase(std::remove(siblings.begin(), siblings.end(), child), siblings.end());

@@ -116,7 +116,9 @@ struct TransformComponent {
   private:
 	void MarkWorldMatrixDirty() {
 		m_WorldMatrixDirty = true;
-		if (m_OnDirty) m_OnDirty();
+		if (m_OnDirty) {
+			m_OnDirty();
+		}
 	}
 
 	vec3 m_LocalPosition{ 0.f };

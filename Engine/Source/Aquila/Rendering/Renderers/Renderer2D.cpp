@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Renderers/Renderer2D.h"
+#include "Aquila/Foundation/Profiler.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
 #include "Aquila/Rendering/FrameContext.h"
@@ -63,10 +64,11 @@ void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &
 			builder.ReadTexture(ctx.hSceneColor, Graphics::RG::ResourceState::ShaderRead);
 		},
 		[swapchain, imageIndex, renderPass, r2d, systems, w, h, uiDirty](GFX::GfxCommandList &cmd,
-																		  Graphics::RG::RGRegistry & /*reg*/) {
+																		 Graphics::RG::RGRegistry & /*reg*/) {
 			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);
 			renderPass->Begin(cmd, swapchain, imageIndex);
 			if (uiDirty) {
+				PROFILE_SCOPE("UIOverlay::DirtyRebuild");
 				r2d->BeginCapture();
 				r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, ortho);
 				for (auto &sys : *systems) {
@@ -74,6 +76,7 @@ void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &
 				}
 				r2d->End();
 			} else {
+				PROFILE_SCOPE("UIOverlay::Replay");
 				r2d->ExecuteReplay(cmd);
 			}
 			renderPass->End(cmd);
