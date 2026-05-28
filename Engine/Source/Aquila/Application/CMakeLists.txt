@@ -2,7 +2,10 @@ set(MODULE_NAME Application)
 set(MODULE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Engine/Include)
 set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-file(GLOB_RECURSE MODULE_SOURCES ${MODULE_SOURCE_DIR}/*.cpp)
+set(MODULE_SOURCES
+    ${MODULE_SOURCE_DIR}/ApplicationNew.cpp
+    ${MODULE_SOURCE_DIR}/Window.cpp
+)
 
 add_library(${MODULE_NAME} STATIC ${MODULE_SOURCES})
 
@@ -30,7 +33,6 @@ target_link_libraries(${MODULE_NAME}
     Foundation
     Scene
     Rendering
-    UI
     PRIVATE
     glfw
     Vulkan::Headers

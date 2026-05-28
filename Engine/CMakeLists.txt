@@ -37,7 +37,6 @@ add_subdirectory(${VENDOR_DIR}/assimp)
 
 add_subdirectory(${VENDOR_DIR}/VulkanMemoryAllocator)
 
-add_compile_definitions(AQUILA_SHADERS_DIR="${ENGINE_ROOT_DIR}/Shaders/")
 
 add_subdirectory(Source/Aquila/Foundation)
 add_subdirectory(Source/Aquila/Platform)
@@ -62,7 +61,6 @@ target_link_libraries(AquilaEngine PRIVATE
     Graphics
     Scene
     Rendering
-    UI
     glfw
     Vulkan::Headers
 )

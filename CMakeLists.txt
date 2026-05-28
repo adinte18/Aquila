@@ -10,7 +10,7 @@ if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type" FORCE)
 endif ()
 
-option(AQUILA_BUILD_EDITOR ON)
+option(AQUILA_BUILD_EDITOR "Build the Aquila editor" ON)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
@@ -240,6 +240,11 @@ mark_as_advanced(
         ASSIMP_BUILD_TESTS ASSIMP_BUILD_ASSIMP_TOOLS ASSIMP_INSTALL
         SPIRV_SKIP_EXECUTABLES SPIRV_SKIP_TESTS
         ENABLE_SPVREMAPPER BUILD_EXTERNAL ENABLE_CTEST
+)
+
+add_compile_definitions(
+    AQUILA_SHADERS_DIR="${CMAKE_SOURCE_DIR}/Engine/Shaders/"
+    AQUILA_RESOURCES_DIR="${CMAKE_SOURCE_DIR}/Resources/"
 )
 
 add_subdirectory(Engine)
