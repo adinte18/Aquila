@@ -12,12 +12,9 @@ class Image : public View {
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Image"; }
 
-	void SetTexture(GFX::GfxTexture *texture) { m_Texture = texture; }
-	void SetTint(vec4 tint) { m_Tint = tint; }
-	void SetUVRegion(vec2 uvMin, vec2 uvMax) {
-		m_UVMin = uvMin;
-		m_UVMax = uvMax;
-	}
+	void SetTexture(GFX::GfxTexture *texture);
+	void SetTint(vec4 tint);
+	void SetUVRegion(vec2 uvMin, vec2 uvMax);
 
 	[[nodiscard]] GFX::GfxTexture *GetTexture() const { return m_Texture; }
 	[[nodiscard]] vec4 GetTint() const { return m_Tint; }

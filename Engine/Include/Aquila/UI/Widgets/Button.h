@@ -23,11 +23,8 @@ class Button : public View {
 	void OnStyleResolved() override;
 
   private:
-	void RefreshLabelSize();
-
 	Label *m_Label = nullptr; // owned by m_Children
 	Delegate<void()> m_OnClick;
-	float m_LastResolvedFontSize = -1.f;
 };
 
 } // namespace Aquila::UI::Core

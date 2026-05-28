@@ -14,8 +14,8 @@ class Label : public View {
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Label"; }
 
-	void SetText(std::string text) { m_Text = std::move(text); }
-	void SetFont(Text::FontAtlas *font) { m_Font = font; }
+	void SetText(std::string text);
+	void SetFont(Text::FontAtlas *font);
 
 	// Measures the text at the label's own computed fontSize.
 	// Pass overrideFontSize > 0 to use a different size (e.g. from a parent that

@@ -6,8 +6,23 @@ namespace Aquila::UI::Core {
 
 Label::Label(std::string text, Text::FontAtlas *font) : m_Text(std::move(text)), m_Font(font) {}
 
+void Label::SetText(std::string text) {
+	if (text == m_Text) {
+		return;
+	}
+	m_Text = std::move(text);
+	InvalidateLayout();
+}
+
+void Label::SetFont(Text::FontAtlas *font) {
+	if (font == m_Font) {
+		return;
+	}
+	m_Font = font;
+	InvalidateLayout();
+}
+
 Text::FontAtlas *Label::ResolveFont() const {
-	// CSS font-family takes priority over the constructor-provided default font.
 	const std::string &family = GetComputedStyle().fontFamily;
 	if (!family.empty()) {
 		if (Text::FontAtlas *resolved = FontRegistry::Resolve(family)) {
