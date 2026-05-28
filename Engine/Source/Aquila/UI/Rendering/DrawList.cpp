@@ -143,7 +143,10 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 
 			// Single pass: collect glyph pointers and measure width simultaneously.
 			// This avoids a second GetGlyph loop for center/right alignment.
-			struct CharEntry { const Text::GlyphInfo *glyph; const Text::SlugGlyphData *slug; };
+			struct CharEntry {
+				const Text::GlyphInfo *glyph;
+				const Text::SlugGlyphData *slug;
+			};
 			CharEntry glyphCache[512];
 			uint32 cacheCount = 0;
 			f32 textWidth = 0.f;
@@ -152,7 +155,9 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 			for (size_t ci = 0; ci < textLen; ++ci) {
 				const auto ch = static_cast<unsigned char>(command.text[ci]);
 				const Text::GlyphInfo *g = command.font->GetGlyph(static_cast<uint32>(ch));
-				if (!g) continue;
+				if (!g) {
+					continue;
+				}
 				textWidth += g->advance * scale;
 				glyphCache[cacheCount++] = { g, atlas->GetSlugData(g->glyphID) };
 			}

@@ -1,8 +1,13 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 #include "Aquila/UI/Widgets/Button.h"
+#include "Aquila/UI/Widgets/Checkbox.h"
 #include "Aquila/UI/Widgets/Image.h"
 #include "Aquila/UI/Widgets/Label.h"
+#include "Aquila/UI/Widgets/Slider.h"
+#include "Aquila/UI/Widgets/Popup.h"
+#include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 
@@ -223,7 +228,7 @@ struct Parser {
 		for (auto &cls : classes) {
 			view->AddClass(cls);
 		}
-		view->SetStyle(props);
+		view->MergeStyle(props);
 
 		// Apply Image-specific attributes after construction.
 		if (auto *img = dynamic_cast<Image *>(view.get())) {
@@ -425,14 +430,12 @@ Unique<View> LayoutLoader::CreateWidget(const std::string &type, std::string_vie
 }
 
 Unique<View> LayoutLoader::LoadFile(const std::string &path) {
-	std::ifstream f(path);
-	if (!f.is_open()) {
+	const std::string src = Platform::Filesystem::VirtualFileSystem::Get()->ReadTextFile(path);
+	if (src.empty()) {
 		AQUILA_LOG_ERROR("LayoutLoader: cannot open '{}'", path);
 		return nullptr;
 	}
-	std::ostringstream ss;
-	ss << f.rdbuf();
-	return LoadString(ss.str());
+	return LoadString(src);
 }
 
 Unique<View> LayoutLoader::LoadString(std::string_view xml) {
@@ -441,22 +444,21 @@ Unique<View> LayoutLoader::LoadString(std::string_view xml) {
 }
 
 void LayoutLoader::RegisterBuiltins() {
-	// Plain container
 	m_Factories["View"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<View>(); };
-
-	// Label, text content is applied by the parser after construction.
 	m_Factories["Label"] = [](std::string_view text, Text::FontAtlas *font) -> Unique<View> {
 		auto lbl = CreateUnique<Label>(std::string(text), font);
 		return lbl;
 	};
-
-	// Button — label is created lazily via SetText() so <Button><Image/>...</Button> works.
-	m_Factories["Button"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Button>();
-	};
-
-	// Image — texture/UV/tint are applied by the parser after construction.
+	m_Factories["Button"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Button>(); };
 	m_Factories["Image"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Image>(); };
+	m_Factories["Checkbox"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Checkbox>();
+	};
+	m_Factories["Slider"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Slider>(); };
+	m_Factories["TextInput"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<TextInput>();
+	};
+	m_Factories["Popup"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Popup>(); };
 }
 
 } // namespace Aquila::UI::Core

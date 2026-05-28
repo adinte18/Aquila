@@ -26,16 +26,16 @@ class View {
 	[[nodiscard]] const std::vector<std::string> &GetClasses() const { return m_Classes; }
 	[[nodiscard]] const StyleProperties &GetStyle() const { return m_Style; }
 	[[nodiscard]] const ComputedStyle &GetComputedStyle() const { return m_ComputedStyle; }
-	// The interpolated style used for rendering — lerps toward GetComputedStyle() over transition-duration.
 	[[nodiscard]] const ComputedStyle &GetDisplayStyle() const { return m_DisplayStyle; }
 	[[nodiscard]] const Rect &GetLayoutRect() const { return m_LayoutRect; }
-	// Canvas-space (absolute) top-left of this node — set by Canvas after layout.
 	[[nodiscard]] vec2 GetAbsolutePosition() const { return m_AbsolutePosition; }
 
 	void AddClass(std::string cls) { m_Classes.push_back(std::move(cls)); }
 
 	void SetId(std::string id) { m_Id = std::move(id); }
-	void SetStyle(StyleProperties props) { m_Style = props; }
+	void SetStyle(StyleProperties props) { m_Style = std::move(props); }
+	// Overlay only the fields that are explicitly set in |overlay|, leaving everything else unchanged.
+	void MergeStyle(const StyleProperties &overlay);
 	void SetComputedStyle(ComputedStyle style); // detects changes and starts transitions
 	void SetLayoutRect(Rect rect) { m_LayoutRect = rect; }
 	void SetAbsolutePosition(vec2 pos) { m_AbsolutePosition = pos; }
@@ -43,7 +43,6 @@ class View {
 	void SetCapturesInput(bool v) { m_CapturesInput = v; }
 	bool IsAnimationFinished() const { return m_IsAnimationFinished; }
 
-	// Interaction state — read by StyleSheet to match :hover / :pressed / :focus rules.
 	[[nodiscard]] bool IsHovered() const { return m_IsHovered; }
 	[[nodiscard]] bool IsPressed() const { return m_IsPressed; }
 	[[nodiscard]] bool IsFocused() const { return m_IsFocused; }
@@ -55,21 +54,38 @@ class View {
 	virtual vec2 GetIntrinsicSize() const { return { -1.f, -1.f }; }
 
 	virtual void OnDraw(Rendering::DrawList &drawList, vec2 originOffset);
-	// Generates draw commands for THIS node only (no child traversal).
-	// Canvas drives the tree traversal and caches per-node output via OnDrawSelf.
 	virtual void OnDrawSelf(Rendering::DrawList &drawList);
 	virtual void OnMouseEnter();
 	virtual void OnMouseLeave();
 	virtual void OnMousePress(Platform::MouseButton btn, vec2 pos);
 	virtual void OnMouseRelease(Platform::MouseButton btn, vec2 pos);
-	virtual void OnKeyPress(Platform::KeyCode key) {}
+	virtual void OnKeyPress(Platform::KeyCode key, int mods = 0) {}
 	virtual void OnKeyRelease(Platform::KeyCode key) {}
+	virtual void OnMouseMove(vec2 pos) {}
+	virtual void OnCharInput(uint32 codepoint) {}
 	virtual void OnFocusGained();
 	virtual void OnFocusLost();
 	virtual void OnStyleResolved() {}
 
+	void QueueRedraw();
+
+	void SetFloating(FloatingConfig cfg) { m_Floating = cfg; }
+	void ClearFloating() { m_Floating.reset(); }
+	bool HasFloating() const { return m_Floating.has_value(); }
+	const FloatingConfig &GetFloating() const { return *m_Floating; }
+
+	virtual View *HitTestAbsolute(vec2 canvasPos);
+
+	void SetDrawDirty() { m_DrawDirty = true; }
+	void ClearDrawDirty() { m_DrawDirty = false; }
+	[[nodiscard]] bool IsDrawDirty() const { return m_DrawDirty; }
+
+	void InvalidateLayout();
+
 	void SetDirtyCallback(Delegate<void(View *)> cb) { m_OnDirty = std::move(cb); }
 	void SetAnimationCallback(Delegate<void(View *)> cb) { m_OnAnimationStarted = std::move(cb); }
+	void SetDrawDirtyCallback(Delegate<void(View *)> cb) { m_OnDrawDirty = std::move(cb); }
+	void SetLayoutDirtyCallback(Delegate<void(View *)> cb) { m_OnLayoutDirty = std::move(cb); }
 
 	void UpdateAnimation(float deltaTime);
 	virtual ~View() = default;
@@ -99,9 +115,14 @@ class View {
 	bool m_CapturesInput = false;
 	uint32 m_ClayId = 0;
 
+	Option<FloatingConfig> m_Floating;
+
 	bool m_IsDirty = true;
 	bool m_IsAnimationFinished = false;
+	bool m_DrawDirty = true;
 	Delegate<void(View *)> m_OnDirty;
 	Delegate<void(View *)> m_OnAnimationStarted;
+	Delegate<void(View *)> m_OnDrawDirty;
+	Delegate<void(View *)> m_OnLayoutDirty;
 };
 } // namespace Aquila::UI::Core

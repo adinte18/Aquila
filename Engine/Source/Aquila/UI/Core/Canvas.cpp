@@ -1,4 +1,5 @@
 #include "Aquila/UI/Core/Canvas.h"
+#include "Aquila/Rendering/FrameScheduler.h"
 #include "Aquila/Application/Events/InputEvent.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Math/Math.h"
@@ -117,6 +118,11 @@ Canvas::Canvas(uint32 width, uint32 height) : m_Width(width), m_Height(height) {
 	m_Root = CreateUnique<View>();
 	m_Root->SetDirtyCallback([this](View *v) { NotifyStyleDirty(v); });
 	m_Root->SetAnimationCallback([this](View *v) { NotifyAnimationStarted(v); });
+	m_Root->SetDrawDirtyCallback([this](View *v) { MarkNodeDrawDirty(v); });
+	m_Root->SetLayoutDirtyCallback([this](View *v) {
+		m_LayoutDirty = true;
+		MarkNodeDrawDirty(v);
+	});
 
 	m_DrawList.SetCanvasSize(width, height);
 
@@ -134,11 +140,13 @@ Canvas::Canvas(uint32 width, uint32 height) : m_Width(width), m_Height(height) {
 
 void Canvas::MarkDirty() {
 	m_Dirty = true;
+	Aquila::Rendering::FrameScheduler::Get()->RequestFrame();
 }
 
 void Canvas::NotifyStyleDirty(View *view) {
 	m_StyleCache.Invalidate(view);
 	m_DirtyViews.MarkDirty(view);
+	MarkDirty();
 }
 
 void Canvas::NotifyAnimationStarted(View *view) {
@@ -175,6 +183,7 @@ void Canvas::StylePass() {
 	if (m_DirtyViews.IsEmpty()) {
 		return;
 	}
+	PROFILE_SCOPE("Canvas::StylePass");
 
 	auto depth = [](View *view) {
 		int result = 0;
@@ -234,8 +243,7 @@ void Canvas::AnimationPass(f32 dt) {
 	while (it != m_ActiveAnims.end()) {
 		View *v = *it;
 		v->UpdateAnimation(dt);
-		MarkNodeDrawDirty(v); // display style changed — draw commands are stale
-		MarkDirty();		  // m_NeedsSort intentionally NOT set: color/border transitions don't change z-order
+		MarkNodeDrawDirty(v); // display style changed — m_NeedsSort intentionally not set (color/border only)
 		if (v->IsAnimationFinished()) {
 			it = m_ActiveAnims.erase(it);
 		} else {
@@ -270,6 +278,63 @@ void Canvas::ClayLayoutPass(View *node) {
 	}
 	if (intrinsic.y >= 0.f && cs.height.unit == LengthUnit::Auto) {
 		layout.sizing.height = CLAY_SIZING_FIXED(intrinsic.y);
+	}
+
+	if (node->HasFloating()) {
+		const FloatingConfig &fc = node->GetFloating();
+
+		auto toPoint = [](FloatingAttachPoint p) -> Clay_FloatingAttachPointType {
+			switch (p) {
+			case FloatingAttachPoint::LeftTop:
+				return CLAY_ATTACH_POINT_LEFT_TOP;
+			case FloatingAttachPoint::LeftCenter:
+				return CLAY_ATTACH_POINT_LEFT_CENTER;
+			case FloatingAttachPoint::LeftBottom:
+				return CLAY_ATTACH_POINT_LEFT_BOTTOM;
+			case FloatingAttachPoint::CenterTop:
+				return CLAY_ATTACH_POINT_CENTER_TOP;
+			case FloatingAttachPoint::Center:
+				return CLAY_ATTACH_POINT_CENTER_CENTER;
+			case FloatingAttachPoint::CenterBottom:
+				return CLAY_ATTACH_POINT_CENTER_BOTTOM;
+			case FloatingAttachPoint::RightTop:
+				return CLAY_ATTACH_POINT_RIGHT_TOP;
+			case FloatingAttachPoint::RightCenter:
+				return CLAY_ATTACH_POINT_RIGHT_CENTER;
+			case FloatingAttachPoint::RightBottom:
+				return CLAY_ATTACH_POINT_RIGHT_BOTTOM;
+			}
+			return CLAY_ATTACH_POINT_LEFT_TOP;
+		};
+
+		const Clay_FloatingElementConfig floatCfg = {
+			.offset = { fc.offset.x, fc.offset.y },
+			.zIndex = fc.zIndex,
+			.attachTo = fc.attachTo == FloatingAttachTo::Root ? CLAY_ATTACH_TO_ROOT : CLAY_ATTACH_TO_PARENT,
+			.attachPoints = { .element = toPoint(fc.elementPoint), .parent = toPoint(fc.parentPoint) },
+			.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
+		};
+
+		switch (cs.overflow) {
+		case Overflow::Scroll:
+			CLAY(clayId, { .layout = layout,
+						   .floating = floatCfg,
+						   .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
+				emitChildren();
+			}
+			break;
+		case Overflow::Hidden:
+			CLAY(clayId, { .layout = layout, .floating = floatCfg, .clip = { .horizontal = true, .vertical = true } }) {
+				emitChildren();
+			}
+			break;
+		default:
+			CLAY(clayId, { .layout = layout, .floating = floatCfg }) {
+				emitChildren();
+			}
+			break;
+		}
+		return;
 	}
 
 	switch (cs.overflow) {
@@ -346,55 +411,61 @@ void Canvas::Compute() {
 		Clay_BeginLayout();
 		ClayLayoutPass(m_Root.get());
 		Clay_EndLayout(m_DeltaTime);
-		ClayUpdateRects(m_Root.get()); // sets absolute positions, marks draw-dirty for moved nodes
+		ClayUpdateRects(m_Root.get());
 		m_LayoutDirty = false;
 		m_NeedsSort = true;
+
+		m_FlatViews.clear();
+		CollectFlatViews(m_Root.get());
+		m_PerNodeCmds.resize(m_FlatViews.size());
+		for (View *v : m_FlatViews) {
+			v->SetDrawDirty();
+		}
 	}
 
-	if (!m_SubtreeDrawCache.IsValid(m_Root.get())) {
-		m_DrawListDirty = true;
+	bool anyRebuilt = false;
+	for (size_t i = 0; i < m_FlatViews.size(); ++i) {
+		View *v = m_FlatViews[i];
+		if (v->IsDrawDirty()) {
+			DrawList capture;
+			capture.SetCanvasSize(m_Width, m_Height);
+			v->OnDrawSelf(capture);
+			m_PerNodeCmds[i] = capture.TakeCommands();
+			v->ClearDrawDirty();
+			anyRebuilt = true;
+		}
+	}
+
+	if (anyRebuilt || m_NeedsSort) {
 		m_DrawList.Clear();
-		const std::vector<DrawCmd> &all = BuildSubtreeDrawCmds(m_Root.get());
-		for (const DrawCmd &cmd : all) {
-			m_DrawList.AppendCmd(cmd);
+		for (const std::vector<DrawCmd> &cmds : m_PerNodeCmds) {
+			for (const DrawCmd &cmd : cmds) {
+				m_DrawList.AppendCmd(cmd);
+			}
 		}
 		if (m_NeedsSort) {
 			m_DrawList.Sort();
 			m_NeedsSort = false;
 		}
+		m_DrawListDirty = true;
 	}
 
 	m_Dirty = false;
 }
 
 void Canvas::MarkNodeDrawDirty(View *node) {
-	m_DrawCache.Invalidate(node);
-	View *curr = node;
-	while (curr) {
-		m_SubtreeDrawCache.Invalidate(curr);
-		curr = curr->GetParent();
-	}
+	node->SetDrawDirty();
+	MarkDirty();
 }
 
-const std::vector<DrawCmd> &Canvas::BuildSubtreeDrawCmds(View *node) {
-	return m_SubtreeDrawCache.Get(node, [&]() {
-		std::vector<DrawCmd> result;
-
-		const std::vector<DrawCmd> &self = m_DrawCache.Get(node, [&]() {
-			DrawList capture;
-			capture.SetCanvasSize(m_Width, m_Height);
-			node->OnDrawSelf(capture);
-			return capture.TakeCommands();
-		});
-		result.insert(result.end(), self.begin(), self.end());
-
-		for (const auto &child : node->GetChildren()) {
-			const std::vector<DrawCmd> &childCmds = BuildSubtreeDrawCmds(child.get());
-			result.insert(result.end(), childCmds.begin(), childCmds.end());
-		}
-
-		return result;
-	});
+void Canvas::CollectFlatViews(View *node) {
+	if (node->GetDisplayStyle().display == Display::None) {
+		return;
+	}
+	m_FlatViews.push_back(node);
+	for (const auto &child : node->GetChildren()) {
+		CollectFlatViews(child.get());
+	}
 }
 
 void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
@@ -404,30 +475,26 @@ void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList
 	m_DrawList.Submit(r2d, cmd);
 }
 void Canvas::OnEvent(Application::Events::Event &e) {
-	PROFILE_SCOPE("Canvas::OnEvent");
-
 	EventDispatcher dispatcher(e);
 
 	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
-		PROFILE_SCOPE("Canvas::MouseMoved");
-		{
-			m_MousePos = { e.GetX(), e.GetY() };
-
-			View *hit = m_Root ? m_Root->HitTest(m_MousePos) : nullptr;
-			if (hit != m_HoveredView) {
-				PROFILE_SCOPE("Canvas::HoverChange");
-				{
-					if (m_HoveredView) {
-						m_HoveredView->OnMouseLeave();
-					}
-					m_HoveredView = hit;
-					if (m_HoveredView) {
-						m_HoveredView->OnMouseEnter();
-					}
-				}
+		m_MousePos = { e.GetX(), e.GetY() };
+		View *hit = m_Root ? m_Root->HitTestAbsolute(m_MousePos) : nullptr;
+		if (hit != m_HoveredView) {
+			if (m_HoveredView) {
+				m_HoveredView->OnMouseLeave();
 			}
-			return false;
+			m_HoveredView = hit;
+			if (m_HoveredView) {
+				m_HoveredView->OnMouseEnter();
+			}
+			MarkDirty();
 		}
+		// Route drag to the focused+pressed view even when the cursor leaves its bounds.
+		if (m_FocusedView && m_FocusedView->IsPressed()) {
+			m_FocusedView->OnMouseMove(m_MousePos);
+		}
+		return false;
 	});
 
 	dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent &e) {
@@ -453,6 +520,10 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		if (m_HoveredView) {
 			m_HoveredView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
 		}
+		// Clear pressed state on the focused view even when the mouse released outside its bounds.
+		if (m_FocusedView && m_FocusedView != m_HoveredView) {
+			m_FocusedView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
+		}
 		return false;
 	});
 
@@ -465,7 +536,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 
 	dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent &e) {
 		if (m_FocusedView) {
-			m_FocusedView->OnKeyPress(e.GetKeyCode());
+			m_FocusedView->OnKeyPress(e.GetKeyCode(), e.GetMods());
 		}
 		return false;
 	});
@@ -473,6 +544,13 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	dispatcher.Dispatch<KeyReleasedEvent>([this](KeyReleasedEvent &e) {
 		if (m_FocusedView) {
 			m_FocusedView->OnKeyRelease(e.GetKeyCode());
+		}
+		return false;
+	});
+
+	dispatcher.Dispatch<KeyTypedEvent>([this](KeyTypedEvent &e) {
+		if (m_FocusedView) {
+			m_FocusedView->OnCharInput(static_cast<uint32>(e.GetKeyCode()));
 		}
 		return false;
 	});

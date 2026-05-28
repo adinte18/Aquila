@@ -1,20 +1,19 @@
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 
 #include "stb/stb_image.h"
-
-#include <filesystem>
 
 namespace Aquila::UI::Core {
 
 TextureCache::TextureCache(GFX::GfxContext &ctx, std::string basePath) : m_Ctx(ctx), m_BasePath(std::move(basePath)) {}
 
 std::string TextureCache::Resolve(const std::string &path) const {
-	if (m_BasePath.empty() || std::filesystem::path(path).is_absolute()) {
+	if (m_BasePath.empty() || path.find("://") != std::string::npos || (!path.empty() && path[0] == '/')) {
 		return path;
 	}
-	return (std::filesystem::path(m_BasePath) / path).string();
+	return m_BasePath + "/" + path;
 }
 
 GFX::GfxTexture *TextureCache::Load(const std::string &path) {
@@ -25,8 +24,18 @@ GFX::GfxTexture *TextureCache::Load(const std::string &path) {
 		return it->second.get();
 	}
 
+	auto vfile = Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(resolved, AccessMode::Read, OpenMode::Binary);
+	if (!vfile || !vfile->IsValid()) {
+		AQUILA_LOG_ERROR("TextureCache: cannot open '{}'", resolved);
+		return nullptr;
+	}
+	const int64 fileSize = vfile->Size();
+	std::vector<uint8> fileData(static_cast<usize>(fileSize));
+	vfile->Read(fileData.data(), static_cast<usize>(fileSize));
+
 	int width = 0, height = 0, channels = 0;
-	stbi_uc *pixels = stbi_load(resolved.c_str(), &width, &height, &channels, STBI_rgb_alpha);
+	stbi_uc *pixels =
+		stbi_load_from_memory(fileData.data(), static_cast<int>(fileSize), &width, &height, &channels, STBI_rgb_alpha);
 	if (pixels == nullptr) {
 		AQUILA_LOG_ERROR("TextureCache: failed to load '{}': {}", resolved, stbi_failure_reason());
 		return nullptr;

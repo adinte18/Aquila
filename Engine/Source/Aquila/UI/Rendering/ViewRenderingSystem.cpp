@@ -32,7 +32,6 @@ void ViewRenderingSystem::AddPasses(Graphics::RG::RenderGraph &graph, Aquila::Re
 }
 
 void ViewRenderingSystem::Render(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
-	// Called inside the UIOverlay render pass (swapchain target) with r2d already begun.
 	Core::ViewSystem::Get()->RenderLayers(r2d, cmd, Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
 }
 

@@ -30,15 +30,16 @@ class LayoutLoader {
 	Unique<View> LoadString(std::string_view xml);
 
 	[[nodiscard]] Text::FontAtlas *ResolveFont(const std::string &name) const;
-	[[nodiscard]] Unique<View> CreateWidget(const std::string &type, std::string_view text, Text::FontAtlas *font) const;
+	[[nodiscard]] Unique<View> CreateWidget(const std::string &type, std::string_view text,
+											Text::FontAtlas *font) const;
 
   private:
-	std::unordered_map<std::string, Text::FontAtlas *>   m_Fonts;
-	Text::FontAtlas                                     *m_DefaultFont = nullptr;
-	std::unordered_map<std::string, WidgetFactory>       m_Factories;
+	std::unordered_map<std::string, Text::FontAtlas *> m_Fonts;
+	Text::FontAtlas *m_DefaultFont = nullptr;
+	std::unordered_map<std::string, WidgetFactory> m_Factories;
 
-	TextureCache                                        *m_TextureCache = nullptr;
-	std::unordered_map<std::string, TextureIconBank *>   m_IconBanks;
+	TextureCache *m_TextureCache = nullptr;
+	std::unordered_map<std::string, TextureIconBank *> m_IconBanks;
 
 	void RegisterBuiltins();
 };

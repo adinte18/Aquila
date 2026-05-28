@@ -36,7 +36,7 @@ class Canvas {
 	void ClayLayoutPass(View *node);
 	bool ClayUpdateRects(View *node, vec2 parentAbsPos = {});
 	void MarkNodeDrawDirty(View *node);
-	const std::vector<Rendering::DrawCmd> &BuildSubtreeDrawCmds(View *node);
+	void CollectFlatViews(View *node);
 
 	Unique<View> m_Root;
 	StyleSheet m_StyleSheet;
@@ -55,8 +55,8 @@ class Canvas {
 
 	Foundation::DirtySet<View *> m_DirtyViews;
 	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
-	Foundation::ComputedCache<View *, std::vector<Rendering::DrawCmd>> m_DrawCache;
-	Foundation::ComputedCache<View *, std::vector<Rendering::DrawCmd>> m_SubtreeDrawCache;
+	std::vector<View *> m_FlatViews;
+	std::vector<std::vector<DrawCmd>> m_PerNodeCmds; // parallel to m_FlatViews
 	std::vector<View *> m_ActiveAnims;
 
 	bool m_LayoutDirty = true;

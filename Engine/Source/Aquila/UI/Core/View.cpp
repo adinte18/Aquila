@@ -20,7 +20,6 @@ static float ApplyEasing(float t, UI::TransitionEasing easing) {
 
 void View::SetComputedStyle(UI::ComputedStyle style) {
 	if (!m_DisplayStyleInitialized) {
-		// First frame — snap display style directly, no animation.
 		m_DisplayStyle = style;
 		m_AnimationFrom = style;
 		m_DisplayStyleInitialized = true;
@@ -54,10 +53,8 @@ void View::UpdateAnimation(float dt) {
 	const float raw = m_TransitionTimer / durationSec;
 	const float alpha = ApplyEasing(raw, m_ComputedStyle.transitionEasing);
 
-	// Copy everything from computed first so layout/display/overflow/etc are always current.
 	m_DisplayStyle = m_ComputedStyle;
 
-	// Then overwrite animatable paint properties with lerped values.
 	m_DisplayStyle.backgroundColor = glm::mix(m_AnimationFrom.backgroundColor, m_ComputedStyle.backgroundColor, alpha);
 	m_DisplayStyle.borderColor = glm::mix(m_AnimationFrom.borderColor, m_ComputedStyle.borderColor, alpha);
 	m_DisplayStyle.borderRadius = glm::mix(m_AnimationFrom.borderRadius, m_ComputedStyle.borderRadius, alpha);
@@ -67,6 +64,53 @@ void View::UpdateAnimation(float dt) {
 
 	if (m_TransitionTimer >= durationSec) {
 		m_IsAnimationFinished = true;
+	}
+}
+
+void View::MergeStyle(const StyleProperties &o) {
+	StyleProperties &s = m_Style;
+#define MERGE(f) \
+	if (o.f)     \
+	s.f = o.f
+	MERGE(backgroundColor);
+	MERGE(borderColor);
+	MERGE(borderWidth);
+	MERGE(borderRadius);
+	MERGE(opacity);
+	MERGE(overflow);
+	MERGE(display);
+	MERGE(width);
+	MERGE(height);
+	MERGE(min);
+	MERGE(max);
+	MERGE(minWidth);
+	MERGE(maxWidth);
+	MERGE(minHeight);
+	MERGE(maxHeight);
+	MERGE(padding);
+	MERGE(gap);
+	MERGE(flexDirection);
+	MERGE(justifyContent);
+	MERGE(alignItems);
+	MERGE(flexWrap);
+	MERGE(flexGrow);
+	MERGE(position);
+	MERGE(top);
+	MERGE(right);
+	MERGE(bottom);
+	MERGE(left);
+	MERGE(zIndex);
+	MERGE(color);
+	MERGE(fontSize);
+	MERGE(fontFamily);
+	MERGE(textAlign);
+	MERGE(boxShadows);
+	MERGE(transitionDuration);
+	MERGE(transitionEasing);
+#undef MERGE
+	m_IsDirty = true;
+	if (m_OnDirty) {
+		m_OnDirty(this);
 	}
 }
 
@@ -81,9 +125,23 @@ View *View::AddChild(Unique<View> child) {
 	return raw;
 }
 
+void View::QueueRedraw() {
+	if (m_OnDrawDirty) {
+		m_OnDrawDirty(this);
+	}
+}
+
+void View::InvalidateLayout() {
+	if (m_OnLayoutDirty) {
+		m_OnLayoutDirty(this);
+	}
+}
+
 void View::PropagateCallbacks(View *node) {
 	node->m_OnDirty = m_OnDirty;
 	node->m_OnAnimationStarted = m_OnAnimationStarted;
+	node->m_OnDrawDirty = m_OnDrawDirty;
+	node->m_OnLayoutDirty = m_OnLayoutDirty;
 	for (const auto &child : node->GetChildren()) {
 		PropagateCallbacks(child.get());
 	}
@@ -119,7 +177,7 @@ View *View::FindById(std::string_view id) {
 
 void View::OnMouseEnter() {
 	if (m_IsHovered) {
-		return; // already hovered, nothing changed
+		return;
 	}
 	m_IsHovered = true;
 	m_IsDirty = true;
@@ -129,7 +187,7 @@ void View::OnMouseEnter() {
 }
 void View::OnMouseLeave() {
 	if (!m_IsHovered) {
-		return; // already not hovered
+		return;
 	}
 	m_IsHovered = false;
 	m_IsPressed = false;
@@ -183,14 +241,42 @@ View *View::HitTest(vec2 screenPos) {
 	if (!m_CapturesInput) {
 		// m_LayoutRect.position is parent-relative, so translate into our local space before recursing.
 		vec2 localPos = screenPos - m_LayoutRect.position;
-		for (int i = static_cast<int>(m_Children.size()) - 1; i >= 0; i--) {
-			if (View *hit = m_Children[i]->HitTest(localPos)) {
-				return hit;
+
+		const bool clips = m_ComputedStyle.overflow == Overflow::Hidden || m_ComputedStyle.overflow == Overflow::Scroll;
+		const Rect localBounds = { .position = { 0.f, 0.f }, .size = m_LayoutRect.size };
+		if (!clips || localBounds.Contains(localPos)) {
+			for (int i = static_cast<int>(m_Children.size()) - 1; i >= 0; i--) {
+				if (View *hit = m_Children[i]->HitTest(localPos)) {
+					return hit;
+				}
 			}
 		}
 	}
 
 	return this;
+}
+
+View *View::HitTestAbsolute(vec2 canvasPos) {
+	if (m_ComputedStyle.display == Display::None || !m_Visible) {
+		return nullptr;
+	}
+
+	// Capturing views stop child recursion and win the hit test if their rect matches.
+	if (m_CapturesInput) {
+		const Rect r = { m_AbsolutePosition, m_LayoutRect.size };
+		return r.Contains(canvasPos) ? this : nullptr;
+	}
+
+	// Non-capturing: always recurse children first (floating children may extend outside
+	// our layout rect, so we can't gate on parent-rect containment).
+	for (int i = static_cast<int>(m_Children.size()) - 1; i >= 0; --i) {
+		if (View *hit = m_Children[i]->HitTestAbsolute(canvasPos)) {
+			return hit;
+		}
+	}
+
+	const Rect r = { m_AbsolutePosition, m_LayoutRect.size };
+	return r.Contains(canvasPos) ? this : nullptr;
 }
 
 void View::OnDrawSelf(Rendering::DrawList &drawList) {

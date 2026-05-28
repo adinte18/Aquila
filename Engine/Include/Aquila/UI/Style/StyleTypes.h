@@ -18,16 +18,38 @@ enum class Position : uint8 { Static, Relative, Absolute };
 enum class TransitionEasing : uint8 { Linear, Ease, EaseIn, EaseOut, EaseInOut };
 
 struct BoxShadow {
-	vec2  offset  = { 0.f, 0.f };
-	float blur    = 0.f;
-	float spread  = 0.f;
-	vec4  color   = { 0.f, 0.f, 0.f, 0.75f };
-	bool  inset   = false;
+	vec2 offset = { 0.f, 0.f };
+	float blur = 0.f;
+	float spread = 0.f;
+	vec4 color = { 0.f, 0.f, 0.f, 0.75f };
+	bool inset = false;
 
 	bool operator==(const BoxShadow &) const = default;
 };
 
 enum class TextAlign : uint8 { Left, Center, Right };
+
+enum class FloatingAttachTo : uint8 { Parent, Root };
+enum class FloatingAttachPoint : uint8 {
+	LeftTop,
+	LeftCenter,
+	LeftBottom,
+	CenterTop,
+	Center,
+	CenterBottom,
+	RightTop,
+	RightCenter,
+	RightBottom,
+};
+
+struct FloatingConfig {
+	vec2 offset = {};
+	int16_t zIndex = 10;
+	FloatingAttachTo attachTo = FloatingAttachTo::Parent;
+	FloatingAttachPoint elementPoint = FloatingAttachPoint::LeftTop;
+	FloatingAttachPoint parentPoint = FloatingAttachPoint::LeftBottom;
+	bool operator==(const FloatingConfig &) const = default;
+};
 
 enum class FontSize : uint8 {
 	Tiny = 9,
