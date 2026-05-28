@@ -259,8 +259,9 @@ TEST_SUITE("Logger tests") {
 
 	TEST_CASE("Stats accumulate correctly over multiple frames") {
 		RESET();
-		for (int i = 0; i < 5; ++i)
+		for (int i = 0; i < 5; ++i) {
 			RunFrame("Loop");
+		}
 
 		ProfilerEntry stats;
 		REQUIRE(Profiler::Get()->GetSectionStats("Loop", stats));
@@ -285,8 +286,9 @@ TEST_SUITE("Logger tests") {
 
 	TEST_CASE("FrameStatsHistory size matches FrameHistory size") {
 		RESET();
-		for (int i = 0; i < 7; ++i)
+		for (int i = 0; i < 7; ++i) {
 			RunFrame();
+		}
 		CHECK(Profiler::Get()->GetFrameStatsHistory().size() == Profiler::Get()->GetFrameHistory().size());
 	}
 
@@ -297,20 +299,24 @@ TEST_SUITE("Logger tests") {
 
 	TEST_CASE("FrameTimeHistory records non-zero values after frames") {
 		RESET();
-		for (int i = 0; i < 3; ++i)
+		for (int i = 0; i < 3; ++i) {
 			RunFrame("W", std::chrono::milliseconds(1));
+		}
 
 		int nonzero = 0;
-		for (float v : Profiler::Get()->GetFrameTimeHistory())
-			if (v > 0.0f)
+		for (float v : Profiler::Get()->GetFrameTimeHistory()) {
+			if (v > 0.0f) {
 				++nonzero;
+			}
+		}
 		CHECK(nonzero == 3);
 	}
 
 	TEST_CASE("Reset clears all accumulated state") {
 		RESET();
-		for (int i = 0; i < 10; ++i)
+		for (int i = 0; i < 10; ++i) {
 			RunFrame("X");
+		}
 
 		Profiler::Get()->Reset();
 
@@ -322,8 +328,9 @@ TEST_SUITE("Logger tests") {
 		CHECK(Profiler::Get()->GetCurrentFrameEntries().empty());
 		CHECK(Profiler::Get()->GetBottlenecks().empty());
 
-		for (float v : Profiler::Get()->GetFrameTimeHistory())
+		for (float v : Profiler::Get()->GetFrameTimeHistory()) {
 			CHECK(v == doctest::Approx(0.0f));
+		}
 	}
 
 	TEST_CASE("EndSection on empty stack does not crash") {
