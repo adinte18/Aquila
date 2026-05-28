@@ -108,10 +108,12 @@ void ProfilerWindow::DrawPerformanceOverview(Aquila::Foundation::Profiler &profi
 	double fps = profiler.GetFPS();
 
 	ImVec4 fpsColor = ImVec4(0.0f, 1.0f, 0.0f, 1.0f);
-	if (fps < 60.0)
+	if (fps < 60.0) {
 		fpsColor = ImVec4(1.0f, 1.0f, 0.0f, 1.0f);
-	if (fps < 30.0)
+	}
+	if (fps < 30.0) {
 		fpsColor = ImVec4(1.0f, 0.0f, 0.0f, 1.0f);
+	}
 
 	ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[1]);
 	ImGui::TextColored(fpsColor, "%.1f FPS", fps);
@@ -231,10 +233,12 @@ void ProfilerWindow::DrawStatisticsTab(Aquila::Foundation::Profiler &profiler) {
 	}
 
 	int columns = 5;
-	if (m_ShowSparklines)
+	if (m_ShowSparklines) {
 		columns++;
-	if (m_ShowCallCounts)
+	}
+	if (m_ShowCallCounts) {
 		columns++;
+	}
 
 	if (ImGui::BeginTable("Stats", columns,
 						  ImGuiTableFlags_Resizable | ImGuiTableFlags_RowBg | ImGuiTableFlags_ScrollY |
@@ -501,8 +505,9 @@ void ProfilerWindow::ExportToJSON(Aquila::Foundation::Profiler &profiler) {
 
 	bool first = true;
 	for (const auto &[name, entry] : stats) {
-		if (!first)
+		if (!first) {
 			file << ",\n";
+		}
 		first = false;
 
 		double percent = (entry.avgDuration / profiler.GetFrameDuration()) * 100.0;

@@ -1,73 +1,34 @@
-#ifndef EDITOR_APPLICATION_H
-#define EDITOR_APPLICATION_H
+#pragma once
 
-#include "Aquila/Core/Application.h"
-#include "UI/Windows/AboutWindow.h"
-#include "UI/Windows/PreferencesWindow.h"
-#include "UI/Windows/ProfilerWindow.h"
+#include "Aquila/Application/ApplicationNew.h"
+#include "Aquila/UI/Text/FontAtlas.h"
+#include "Aquila/UI/Core/TextureCache.h"
 
-namespace Editor {
-class EditorLayer;
-class Menubar;
-class ViewportPanel;
-class ContentBrowserPanel;
-class PropertiesPanel;
-class SceneHierarchyPanel;
-class MaterialEditorPanel;
-} // namespace Editor
+namespace Aquila::UI::Core {
+class Image;
+}
 
 namespace Editor {
 
-/**
- * @brief Main editor application class
- *
- * Manages the editor's lifecycle, initializes all systems,
- * and coordinates between different editor components.
- */
-class Application : public Aquila::Core::Application {
+class EditorApplication : public Aquila::Application::Application {
   public:
-	explicit Application(const Aquila::Core::ApplicationConfig &config);
-	~Application() override;
+	explicit EditorApplication(const ApplicationSpec &spec);
+	~EditorApplication() override = default;
 
+  protected:
 	void OnInit() override;
-	void OnUpdate(f32 deltaTime) override;
-	void OnRender(VkCommandBuffer commandBuffer) override;
 	void OnShutdown() override;
-
-	void BeginUIFrame() override;
-	void EndUIFrame(VkCommandBuffer commandBuffer) override;
-
-	UI::AboutWindow *GetAboutWindow() { return m_AboutWindow.get(); }
-	UI::PreferencesWindow *GetPreferencesWindow() { return m_PreferencesWindow.get(); }
-	void RequestFontReload() { m_FontReloadRequested = true; }
+	void OnPreRender(f32 deltaTime) override;
+	void OnEvent(Aquila::Application::Events::Event &event) override;
+	void OnResize(uint32 width, uint32 height) override;
 
   private:
-	void InitializeEditor();
-	void InitializeImGui();
-	void InitializeManagers();
-	void ShutdownImGui();
-	void ShutdownManagers();
+	void SetupScene();
+	void SetupEditorUI();
 
-	void LoadEditorPreferences();
-	void ProcessDeferredOperations();
-
-	Unique<Menubar> m_MenubarLayer;
-	Unique<EditorLayer> m_EditorLayer;
-	Unique<ViewportPanel> m_ViewportLayer;
-	Unique<ContentBrowserPanel> m_ContentBrowserLayer;
-	Unique<PropertiesPanel> m_PropertiesLayer;
-	Unique<SceneHierarchyPanel> m_SceneHierarchyLayer;
-	Unique<MaterialEditorPanel> m_MaterialEditorLayer;
-
-	Unique<UI::AboutWindow> m_AboutWindow;
-	Unique<UI::PreferencesWindow> m_PreferencesWindow;
-	Unique<UI::ProfilerWindow> m_ProfilerWindow;
-
-	bool m_FontReloadRequested = false;
-
-	VkFormat m_ImGuiColorFormat;
+	std::vector<Unique<Aquila::UI::Text::FontAtlas>> m_Fonts;
+	std::vector<Unique<Aquila::UI::Core::TextureCache>> m_TextureCaches;
+	Aquila::UI::Core::Image *m_ViewportImage = nullptr;
 };
 
 } // namespace Editor
-
-#endif

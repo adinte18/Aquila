@@ -150,8 +150,9 @@ void ContentBrowserPanel::RefreshDirectoryCache() {
 
 	for (const auto &entryName : entryNames) {
 		std::string fullPath = m_CurrentPath;
-		if (fullPath.back() != '/')
+		if (fullPath.back() != '/') {
 			fullPath += "/";
+		}
 		fullPath += entryName;
 
 		DirectoryEntry entry;
@@ -1044,8 +1045,9 @@ void ContentBrowserPanel::HandlePopups() {
 		if (ImGui::Button("Create", ImVec2(120, 0)) || enterPressed) {
 			if (strlen(m_NewFolderBuffer) > 0) {
 				std::string newPath = m_CurrentPath;
-				if (newPath.back() != '/')
+				if (newPath.back() != '/') {
 					newPath += "/";
+				}
 				newPath += m_NewFolderBuffer;
 
 				auto vfs = Aquila::Platform::Filesystem::VirtualFileSystem::Get();
@@ -1104,8 +1106,9 @@ void ContentBrowserPanel::HandlePopups() {
 			ImGuiUtils::ScopedDisable disable(!canCreate);
 			if (ImGui::Button("Create", ImVec2(120, 0)) || (enterPressed && canCreate)) {
 				std::string savePath = m_CurrentPath;
-				if (savePath.back() != '/')
+				if (savePath.back() != '/') {
 					savePath += "/";
+				}
 				savePath += std::string(m_NewSlangNameBuffer) + ".slang";
 
 				auto vfs = Aquila::Platform::Filesystem::VirtualFileSystem::Get();
@@ -1751,8 +1754,9 @@ void ContentBrowserPanel::PasteFromClipboard(const std::string &destinationPath)
 		std::string itemName = (lastSlash != std::string::npos) ? clipboardPath.substr(lastSlash + 1) : clipboardPath;
 
 		std::string destPath = destinationPath;
-		if (destPath.back() != '/')
+		if (destPath.back() != '/') {
 			destPath += "/";
+		}
 		destPath += itemName;
 
 		if (vfs->Exists(destPath)) {
@@ -1768,8 +1772,9 @@ void ContentBrowserPanel::PasteFromClipboard(const std::string &destinationPath)
 			int counter = 1;
 			do {
 				destPath = destinationPath;
-				if (destPath.back() != '/')
+				if (destPath.back() != '/') {
 					destPath += "/";
+				}
 				destPath += baseName + " (" + std::to_string(counter) + ")" + extension;
 				counter++;
 			} while (vfs->Exists(destPath) && counter < 1000);
@@ -1831,13 +1836,15 @@ bool ContentBrowserPanel::CopyDirectoryRecursive(const std::string &srcPath, con
 
 	for (const auto &entryName : entries) {
 		std::string srcFullPath = srcPath;
-		if (srcFullPath.back() != '/')
+		if (srcFullPath.back() != '/') {
 			srcFullPath += "/";
+		}
 		srcFullPath += entryName;
 
 		std::string dstFullPath = dstPath;
-		if (dstFullPath.back() != '/')
+		if (dstFullPath.back() != '/') {
 			dstFullPath += "/";
+		}
 		dstFullPath += entryName;
 
 		if (vfs->IsDirectory(srcFullPath)) {

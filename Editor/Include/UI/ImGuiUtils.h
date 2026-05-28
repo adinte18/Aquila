@@ -30,8 +30,9 @@ inline void TextCenteredFormatted(const char *fmt, ...) {
 template <typename Func>
 inline void AlignedWidget(AlignX alignX, AlignY alignY, const ImVec2 &padding, const ImVec2 &size, Func &&drawFunc) {
 	ImGuiWindow *window = ImGui::GetCurrentWindow();
-	if (window->SkipItems)
+	if (window->SkipItems) {
 		return;
+	}
 
 	ImVec2 cursor = ImGui::GetCursorPos();
 
@@ -41,19 +42,21 @@ inline void AlignedWidget(AlignX alignX, AlignY alignY, const ImVec2 &padding, c
 	ImVec2 contentMax = ImGui::GetWindowContentRegionMax();
 	ImVec2 contentSize = { contentMax.x - contentMin.x, contentMax.y - contentMin.y };
 
-	if (alignX == AlignX::Left)
+	if (alignX == AlignX::Left) {
 		finalPos.x = contentMin.x + padding.x;
-	else if (alignX == AlignX::Center)
+	} else if (alignX == AlignX::Center) {
 		finalPos.x = contentMin.x + (contentSize.x - size.x) * 0.5f;
-	else if (alignX == AlignX::Right)
+	} else if (alignX == AlignX::Right) {
 		finalPos.x = contentMax.x - size.x - padding.x;
+	}
 
-	if (alignY == AlignY::Top)
+	if (alignY == AlignY::Top) {
 		finalPos.y = contentMin.y + padding.y;
-	else if (alignY == AlignY::Center)
+	} else if (alignY == AlignY::Center) {
 		finalPos.y = cursor.y + (contentSize.y - size.y) * 0.5f;
-	else if (alignY == AlignY::Bottom)
+	} else if (alignY == AlignY::Bottom) {
 		finalPos.y = contentMax.y - size.y - padding.y;
+	}
 
 	ImGui::SetCursorPos(finalPos);
 	drawFunc();
@@ -254,8 +257,9 @@ enum class TextAlign {
 };
 
 inline void TextAligned(const char *text, TextAlign align, const ImVec2 &padding = ImVec2(0, 0)) {
-	if (!text)
+	if (!text) {
 		return;
+	}
 
 	switch (align) {
 	case TextAlign::TopLeft:
@@ -289,8 +293,9 @@ inline void TextAligned(const char *text, TextAlign align, const ImVec2 &padding
 }
 
 inline void TextAlignedFmt(TextAlign align, const ImVec2 &padding, const char *fmt, ...) {
-	if (!fmt)
+	if (!fmt) {
 		return;
+	}
 
 	char buffer[Internal::MAX_TEXT_BUFFER];
 	va_list args;
@@ -496,8 +501,9 @@ inline bool BeginCenteredWindow(const char *name, bool *p_open = nullptr, ImGuiW
 inline void LoadingSpinner(const char *label, f32 radius = 15.0f, f32 thickness = 3.0f,
 						   const ImVec4 &color = ImVec4(1, 1, 1, 1)) {
 	ImGuiWindow *window = ImGui::GetCurrentWindow();
-	if (window->SkipItems)
+	if (window->SkipItems) {
 		return;
+	}
 
 	ImGuiContext &g = *GImGui;
 	const ImGuiStyle &style = g.Style;
@@ -508,8 +514,9 @@ inline void LoadingSpinner(const char *label, f32 radius = 15.0f, f32 thickness 
 
 	const ImRect bb(pos, ImVec2(pos.x + size.x, pos.y + size.y));
 	ImGui::ItemSize(bb, style.FramePadding.y);
-	if (!ImGui::ItemAdd(bb, id))
+	if (!ImGui::ItemAdd(bb, id)) {
 		return;
+	}
 
 	window->DrawList->PathClear();
 

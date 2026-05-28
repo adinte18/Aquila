@@ -392,14 +392,18 @@ void ThemeManager::ShowThemeEditorWindow(bool *open) {
 
 	// Theme selector
 	if (ImGui::BeginCombo("Theme Preset", "Select...")) {
-		if (ImGui::Selectable("Aquila"))
+		if (ImGui::Selectable("Aquila")) {
 			ApplyTheme(Editor::Config::Theme::Aquila);
-		if (ImGui::Selectable("Aquila 2"))
+		}
+		if (ImGui::Selectable("Aquila 2")) {
 			ApplyTheme(Editor::Config::Theme::Aquila2);
-		if (ImGui::Selectable("Dark"))
+		}
+		if (ImGui::Selectable("Dark")) {
 			ApplyTheme(Editor::Config::Theme::Dark);
-		if (ImGui::Selectable("Light"))
+		}
+		if (ImGui::Selectable("Light")) {
 			ApplyTheme(Editor::Config::Theme::Light);
+		}
 		ImGui::EndCombo();
 	}
 

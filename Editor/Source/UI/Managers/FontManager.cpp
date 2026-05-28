@@ -153,24 +153,33 @@ ImFont *FontManager::GetFont(const std::string &name) const {
 
 ImFont *FontManager::GetFontAtSize(f32 size) const {
 	// Find closest matching size
-	if (size <= 13.0f)
+	if (size <= 13.0f) {
 		return m_Font12;
-	if (size <= 15.0f)
+	}
+	if (size <= 15.0f) {
 		return m_Font14;
-	if (size <= 17.0f)
+	}
+	if (size <= 17.0f) {
 		return m_Font16;
-	if (size <= 19.0f)
+	}
+	if (size <= 19.0f) {
 		return m_Font18;
-	if (size <= 22.0f)
+	}
+	if (size <= 22.0f) {
 		return m_Font20;
-	if (size <= 26.0f)
+	}
+	if (size <= 26.0f) {
 		return m_Font24;
-	if (size <= 30.0f)
+	}
+	if (size <= 30.0f) {
 		return m_Font28;
-	if (size <= 36.0f)
+	}
+	if (size <= 36.0f) {
 		return m_Font32;
-	if (size <= 44.0f)
+	}
+	if (size <= 44.0f) {
 		return m_Font40;
+	}
 	return m_Font48;
 }
 

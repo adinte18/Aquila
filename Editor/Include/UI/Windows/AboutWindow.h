@@ -11,7 +11,7 @@ namespace Editor::UI {
  * Shows version info, credits, system information, and links
  */
 class AboutWindow : public Aquila::Core::Layer {
-public:
+  public:
 	AboutWindow();
 	~AboutWindow() override = default;
 
@@ -22,7 +22,7 @@ public:
 	bool IsOpen() const { return m_IsOpen; }
 	void SetOpen(bool open) { m_IsOpen = open; }
 
-private:
+  private:
 	void RenderSystemInfo();
 	void RenderCredits();
 	void RenderLicenses();

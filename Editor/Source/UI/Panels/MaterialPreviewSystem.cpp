@@ -14,8 +14,9 @@ namespace Editor {
 MaterialPreviewSystem::~MaterialPreviewSystem() {}
 
 void MaterialPreviewSystem::Initialize(Aquila::Core::Application &app) {
-	if (m_Initialized)
+	if (m_Initialized) {
 		return;
+	}
 
 	m_App = &app;
 
@@ -31,8 +32,9 @@ void MaterialPreviewSystem::Initialize(Aquila::Core::Application &app) {
 }
 
 void MaterialPreviewSystem::Shutdown() {
-	if (!m_Initialized)
+	if (!m_Initialized) {
 		return;
+	}
 
 	if (m_PreviewEntity.IsValid()) {
 		m_PreviewEntity.Kill();

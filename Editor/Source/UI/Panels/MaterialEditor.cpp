@@ -55,8 +55,9 @@ void MaterialEditorPanel::OnUpdate(f32 deltaTime) {
 }
 
 void MaterialEditorPanel::OnImGuiRender() {
-	if (!m_IsOpen)
+	if (!m_IsOpen) {
 		return;
+	}
 
 	ImGui::SetNextWindowSize(ImVec2(1600, 900), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowPos(ImVec2(100, 100), ImGuiCond_FirstUseEver);
@@ -169,22 +170,25 @@ void MaterialEditorPanel::RenderToolbar() {
 	if (ImGui::Button(ICON_LC_PLUS " New")) {
 		m_ShowCreateDialog = true;
 	}
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("Create New Material (Ctrl+N)");
+	}
 
 	ImGui::SameLine();
 	if (ImGui::Button(ICON_LC_COPY " Duplicate")) {
 		DuplicateMaterial();
 	}
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("Duplicate Material (Ctrl+D)");
+	}
 
 	ImGui::SameLine();
 	if (ImGui::Button(ICON_LC_SAVE " Save")) {
 		SaveMaterial();
 	}
-	if (ImGui::IsItemHovered())
+	if (ImGui::IsItemHovered()) {
 		ImGui::SetTooltip("Save Material (Ctrl+S)");
+	}
 
 	ImGui::PopStyleVar();
 
@@ -353,8 +357,9 @@ void MaterialEditorPanel::RenderPropertiesPanel() {
 		auto properties = m_SelectedMaterial->GetAllProperties();
 
 		for (auto &[propName, param] : properties) {
-			if (!param.m_IsEditable)
+			if (!param.m_IsEditable) {
 				continue;
+			}
 
 			ImGui::PushID(propName.c_str());
 
@@ -672,12 +677,15 @@ void MaterialEditorPanel::RenderRenderStateSection() {
 		stateChanged = true;
 	}
 
-	if (ImGui::Checkbox("Depth Test", &renderState.m_DepthTest))
+	if (ImGui::Checkbox("Depth Test", &renderState.m_DepthTest)) {
 		stateChanged = true;
-	if (ImGui::Checkbox("Depth Write", &renderState.m_DepthWrite))
+	}
+	if (ImGui::Checkbox("Depth Write", &renderState.m_DepthWrite)) {
 		stateChanged = true;
-	if (ImGui::Checkbox("Wireframe", &renderState.m_Wireframe))
+	}
+	if (ImGui::Checkbox("Wireframe", &renderState.m_Wireframe)) {
 		stateChanged = true;
+	}
 
 	if (renderState.m_Wireframe) {
 		if (ImGui::SliderFloat("Line Width", &renderState.m_LineWidth, 1.0f, 10.0f)) {
@@ -794,12 +802,15 @@ void MaterialEditorPanel::RenderFloatProperty(const std::string &name,
 }
 
 const char *MaterialEditorPanel::GetMaterialIcon(const std::string &templateName) {
-	if (templateName == "PBR")
+	if (templateName == "PBR") {
 		return ICON_LC_SPARKLES;
-	if (templateName == "Unlit")
+	}
+	if (templateName == "Unlit") {
 		return ICON_LC_SUN;
-	if (templateName == "Transparent")
+	}
+	if (templateName == "Transparent") {
 		return ICON_LC_DROPLET;
+	}
 	return ICON_LC_PALETTE;
 }
 
@@ -940,14 +951,16 @@ void MaterialEditorPanel::DuplicateMaterial() {
 }
 
 void MaterialEditorPanel::DeleteMaterial() {
-	if (!m_SelectedMaterial)
+	if (!m_SelectedMaterial) {
 		return;
+	}
 	ImGui::OpenPopup("DeleteMaterialConfirm");
 }
 
 void MaterialEditorPanel::SaveMaterial() {
-	if (!m_SelectedMaterial)
+	if (!m_SelectedMaterial) {
 		return;
+	}
 
 	std::string fullPath = "assets://materials/" + m_SelectedMaterial->name + ".aqmat";
 
@@ -963,16 +976,19 @@ void MaterialEditorPanel::LoadMaterial() {
 }
 
 bool MaterialEditorPanel::IsPropertyOverridden(const std::string &propName) {
-	if (!m_SelectedMaterial)
+	if (!m_SelectedMaterial) {
 		return false;
+	}
 
 	auto tmpl = m_SelectedMaterial->GetTemplate();
-	if (!tmpl)
+	if (!tmpl) {
 		return false;
+	}
 
 	const auto *templateProp = tmpl->GetProperty(propName);
-	if (!templateProp)
+	if (!templateProp) {
 		return false;
+	}
 
 	auto currentValue = m_SelectedMaterial->GetProperty(propName);
 	return currentValue != templateProp->m_DefaultValue;

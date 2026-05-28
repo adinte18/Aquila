@@ -1,226 +1,187 @@
-#include "Aquila/Assets/AssetManager.h"
 #include "Core/EditorApplication.h"
-#include "Aquila/Core/Defines.h"
-#include "Aquila/Graphics/Pipeline/DynamicRenderingHelper.h"
-#include "Core/EditorLayer.h"
-#include "Aquila/Graphics/Core/Renderer.h"
-#include "Aquila/Foundation/PrimitiveTypes.h"
-#include "UI/Managers/FontManager.h"
-#include "UI/Managers/ThemeManager.h"
-#include "UI/Panels/ContentBrowser.h"
-#include "UI/Panels/Hierarchy.h"
-#include "UI/Panels/MaterialEditor.h"
-#include "UI/Panels/Properties.h"
-#include "UI/Panels/Viewport.h"
-#include "UI/Panels/Menubar.h"
-#include "UI/Windows/ProfilerWindow.h"
-#include "imgui.h"
+
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Scene/EntityManager.h"
+#include "Aquila/Scene/Components/TransformComponent.h"
+#include "Aquila/Scene/Components/CameraComponent.h"
+#include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/MaterialComponent.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Graphics/Resources/Mesh.h"
+#include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/UI/Core/ViewSystem.h"
+#include "Aquila/UI/Core/Clipboard.h"
+#include "Aquila/UI/Core/FontRegistry.h"
+#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/UI/Style/StyleParser.h"
+#include "Aquila/UI/Rendering/ViewRenderingSystem.h"
+#include "Aquila/UI/Widgets/Button.h"
+#include "Aquila/UI/Widgets/Image.h"
+#include "Aquila/UI/Widgets/ColorPicker.h"
 
 namespace Editor {
 
-Application::Application(const Aquila::Core::ApplicationConfig &config) : Aquila::Core::Application(config) {
-	AQUILA_LOG_INFO("Editor Application constructed");
+using namespace Aquila;
+using namespace Aquila::SceneManagement;
+using namespace Aquila::SceneManagement::Components;
+using namespace Aquila::Application;
+
+EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(spec) {}
+
+void EditorApplication::OnInit() {
+	UI::Core::ViewSystem::Init(GetWindow().GetWidth(), GetWindow().GetHeight());
+	GetRenderer2D().AddSystem<UI::Rendering::ViewRenderingSystem>();
+
+	{
+		GLFWwindow *nativeWin = GetWindow().GetNativeWindow();
+		UI::Core::Clipboard::Init(
+			[nativeWin]() -> std::string {
+				const char *s = glfwGetClipboardString(nativeWin);
+				return s ? s : "";
+			},
+			[nativeWin](const std::string &t) { glfwSetClipboardString(nativeWin, t.c_str()); });
+	}
+
+	Graphics::MaterialFactory::Get()->EnableHotReload(true);
+
+	SetupScene();
+	SetupEditorUI();
 }
 
-Application::~Application() {
-	AQUILA_LOG_INFO("Editor Application destroyed");
-}
-
-void Application::OnInit() {
-	AQUILA_LOG_INFO("    Initializing Aquila Editor");
-
-	LoadEditorPreferences();
-
-	InitializeImGui();
-	InitializeManagers();
-
-	InitializeEditor();
-
-	AQUILA_LOG_INFO("Starting background asset preload...");
-	GetAssetManager().PreloadDirectory("assets://", true, Aquila::Core::JobPriority::High);
-
-	AQUILA_LOG_INFO("    Editor initialized successfully");
-}
-
-void Application::LoadEditorPreferences() {
-	AQUILA_LOG_INFO("Loading editor preferences...");
-
-	auto &prefs = Config::GetPreferences();
-	prefs.LoadFromFile();
-
-	AQUILA_LOG_INFO("Editor preferences loaded");
-}
-
-void Application::InitializeManagers() {
-	AQUILA_LOG_INFO("Initializing editor managers...");
-
-	auto &prefs = Config::GetPreferences();
-
-	UI::FontManager::Get().Initialize(prefs.fonts);
-	UI::ThemeManager::Get().Initialize(prefs.currentTheme);
-
-	AQUILA_LOG_INFO("Editor managers initialized");
-}
-
-void Application::InitializeEditor() {
-	AQUILA_LOG_INFO("Creating editor layers and windows...");
-
-	m_MenubarLayer = CreateUnique<Menubar>(*this);
-
-	m_EditorLayer = CreateUnique<EditorLayer>(*this);
-
-	m_SceneHierarchyLayer = CreateUnique<SceneHierarchyPanel>(*this);
-	m_PropertiesLayer = CreateUnique<PropertiesPanel>(*this);
-	m_ContentBrowserLayer = CreateUnique<ContentBrowserPanel>(*this);
-	m_ViewportLayer = CreateUnique<ViewportPanel>(*this);
-	m_MaterialEditorLayer = CreateUnique<MaterialEditorPanel>(*this);
-
-	m_AboutWindow = CreateUnique<UI::AboutWindow>();
-	m_PreferencesWindow = CreateUnique<UI::PreferencesWindow>(*this);
-	m_ProfilerWindow = CreateUnique<UI::ProfilerWindow>();
-
-	m_MenubarLayer->SetMaterialEditorPanel(m_MaterialEditorLayer.get());
-	m_MenubarLayer->SetAboutWindow(m_AboutWindow.get());
-	m_MenubarLayer->SetPreferencesWindow(m_PreferencesWindow.get());
-
-	m_PreferencesWindow->SetDeferredOperationCallback([this]() { m_FontReloadRequested = true; });
-
-	PushLayer(std::move(m_MenubarLayer));
-	PushLayer(std::move(m_EditorLayer));
-	PushLayer(std::move(m_SceneHierarchyLayer));
-	PushLayer(std::move(m_PropertiesLayer));
-	PushLayer(std::move(m_ContentBrowserLayer));
-	PushLayer(std::move(m_ViewportLayer));
-	PushLayer(std::move(m_MaterialEditorLayer));
-	PushLayer(std::move(m_AboutWindow));
-	PushLayer(std::move(m_PreferencesWindow));
-	PushLayer(std::move(m_ProfilerWindow));
-
-	AQUILA_LOG_INFO("Editor layers and windows created");
-}
-
-void Application::InitializeImGui() {
-	AQUILA_LOG_INFO("Initializing ImGui...");
-
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
-
-	ImGuiIO &io = ImGui::GetIO();
-	io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
-	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-	const auto &window = GetWindow();
-	auto &device = GetDevice();
-	auto &renderer = GetRenderer();
-
-	m_ImGuiColorFormat = renderer.GetSwapchain()->GetImageFormat();
-
-	ImGui_ImplGlfw_InitForVulkan(window.GetNativeWindow(), true);
-
-	ImGui_ImplVulkan_InitInfo init_info = {};
-	init_info.Instance = device.GetInstance();
-	init_info.PhysicalDevice = device.GetPhysicalDevice();
-	init_info.Device = device.GetDevice();
-	init_info.Queue = device.GetGraphicsQueue();
-	init_info.DescriptorPool =
-		Aquila::Graphics::RenderingPipeline::DescriptorAllocator::GetSharedPool()->GetDescriptorPool();
-	init_info.MinImageCount = 2;
-	init_info.ImageCount = 2;
-	init_info.Allocator = VK_NULL_HANDLE;
-	init_info.UseDynamicRendering = true;
-
-	init_info.PipelineInfoMain.RenderPass = VK_NULL_HANDLE;
-	init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.PipelineInfoMain.Subpass = 0;
-	init_info.PipelineInfoMain.PipelineRenderingCreateInfo = { .sType =
-																   VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO };
-	init_info.PipelineInfoMain.PipelineRenderingCreateInfo.colorAttachmentCount = 1;
-	init_info.PipelineInfoMain.PipelineRenderingCreateInfo.pColorAttachmentFormats = &m_ImGuiColorFormat;
-
-	ImGui_ImplVulkan_Init(&init_info);
-	AQUILA_LOG_INFO("ImGui initialized");
-}
-
-void Application::ProcessDeferredOperations() {
-	if (m_FontReloadRequested) {
-		UI::FontManager::Get().Shutdown();
-		UI::FontManager::Get().Initialize(Config::GetPreferences().fonts);
-
-		m_FontReloadRequested = false;
+void EditorApplication::OnShutdown() {
+	UI::Core::ViewSystem::Shutdown();
+	for (auto &font : m_Fonts) {
+		font.reset();
+	}
+	for (auto &cache : m_TextureCaches) {
+		cache.reset();
 	}
 }
 
-void Application::BeginUIFrame() {
-	ProcessDeferredOperations();
+void EditorApplication::OnPreRender(f32 deltaTime) {
+	UI::Core::ViewSystem::Get()->Update(deltaTime);
+	UI::Core::ViewSystem::Get()->Compute();
 
-	ImGui_ImplVulkan_NewFrame();
-	ImGui_ImplGlfw_NewFrame();
-	ImGui::NewFrame();
-	ImGuizmo::BeginFrame();
+	const bool uiDirty =
+		UI::Core::ViewSystem::Get()->IsAnyLayerDirty(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
+
+	GetRenderer2D().SetUIDirty(uiDirty);
+	if (uiDirty) {
+		UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
+	}
 }
 
-void Application::EndUIFrame(VkCommandBuffer commandBuffer) {
-	ImGui::Render();
+void EditorApplication::OnEvent(Events::Event &event) {
+	UI::Core::ViewSystem::Get()->OnEvent(event);
+}
 
-	const auto &io = ImGui::GetIO();
+void EditorApplication::OnResize(uint32 width, uint32 height) {
+	UI::Core::ViewSystem::Get()->Resize(width, height);
+	if (m_ViewportImage) {
+		m_ViewportImage->SetTexture(&GetRenderOutput());
+	}
+}
 
-	if ((io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) != 0) {
-		ImGui::UpdatePlatformWindows();
-		ImGui::RenderPlatformWindowsDefault();
+void EditorApplication::SetupScene() {
+	auto *em = GetScene().GetEntityManager();
+
+	auto cam = em->CreateEntity("Camera");
+	auto &camComp = cam.AddComponent<CameraComponent>();
+	camComp.fov = 60.f;
+	camComp.nearPlane = 0.1f;
+	camComp.farPlane = 500.f;
+	camComp.aspectRatio = static_cast<f32>(GetWindow().GetWidth()) / static_cast<f32>(GetWindow().GetHeight());
+	camComp.primary = true;
+	cam.GetComponent<TransformComponent>().SetLocalPosition({ 0.f, 1.5f, -5.f });
+	GetScene().SetActiveCamera(cam);
+
+	auto litMat = Graphics::MaterialFactory::Get()->Create(GetContext(), SharedConstants::SHADERS_DIR + "Basic.slang",
+														   {
+															   .type = Graphics::MaterialType::Lit,
+															   .colorFormats = { RHI::TextureFormat::RGBA16F },
+															   .depthTest = true,
+															   .depthWrite = false,
+														   });
+
+	auto addCube = [&](const char *name, vec3 pos) {
+		auto entity = em->CreateEntity(name);
+		auto mesh = CreateRef<Graphics::Resources::Mesh>(name);
+		mesh->LoadFromData(Graphics::Resources::Mesh::GenerateCube(0.5f));
+		entity.AddComponent<MeshComponent>().SetMesh(mesh);
+		entity.GetComponent<TransformComponent>().SetLocalPosition(pos);
+		auto &mat = entity.AddComponent<MaterialComponent>(litMat);
+		mat.surfaceProperties.albedo = vec4(0.8f, 0.6f, 0.4f, 1.f);
+		mat.surfaceProperties.metallic = 0.0f;
+		mat.surfaceProperties.roughness = 0.6f;
+	};
+	addCube("CubeA", { -1.5f, 0.f, 2.f });
+	addCube("CubeB", { 1.5f, 0.f, 2.f });
+	addCube("Floor", { 0.0f, 0.5f, 2.f });
+
+	{
+		auto e = em->CreateEntity("SunLight");
+		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Directional, vec3(1.0f, 0.95f, 0.8f), 2.0f);
+		light.SetDirection(glm::normalize(vec3(0.4f, -1.0f, 0.6f)));
+	}
+	{
+		auto e = em->CreateEntity("PointA");
+		e.GetComponent<TransformComponent>().SetLocalPosition({ -1.5f, -0.5f, 1.5f });
+		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Point, vec3(1.0f, 0.4f, 0.1f), 5.0f);
+		light.SetRange(6.0f);
+	}
+	{
+		auto e = em->CreateEntity("PointB");
+		e.GetComponent<TransformComponent>().SetLocalPosition({ 1.5f, -0.5f, 1.5f });
+		auto &light = e.AddComponent<LightComponent>(LightComponent::Type::Point, vec3(0.2f, 0.5f, 1.0f), 5.0f);
+		light.SetRange(6.0f);
+	}
+}
+
+void EditorApplication::SetupEditorUI() {
+	auto &editorCanvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Editor);
+
+	m_TextureCaches.push_back(CreateUnique<UI::Core::TextureCache>(GetContext(), "/resources"));
+
+	auto addFont = [&](const char *name, const char *path) {
+		m_Fonts.push_back(UI::Text::FontAtlas::CreateFromFile(GetContext(), path, 48.f));
+		UI::Core::FontRegistry::Register(name, m_Fonts.back().get());
+	};
+	addFont("regular", "/resources/Engine/Fonts/Lexend/Lexend-Regular.ttf");
+	addFont("thin", "/resources/Engine/Fonts/Lexend/Lexend-Thin.ttf");
+	addFont("medium", "/resources/Engine/Fonts/Lexend/Lexend-Medium.ttf");
+	addFont("bold", "/resources/Engine/Fonts/Lexend/Lexend-Bold.ttf");
+
+	UI::StyleParser::LoadFile("/resources/Engine/UI/widget_test.aqstyle", editorCanvas.GetStyleSheet());
+
+	UI::Core::LayoutLoader loader;
+	loader.RegisterFont("regular", m_Fonts[0].get());
+	loader.RegisterTextureCache(m_TextureCaches.back().get());
+	loader.RegisterWidget("ColorPicker", [this](std::string_view, UI::Text::FontAtlas *) -> Unique<UI::Core::View> {
+		return CreateUnique<UI::Core::ColorPicker>(GetContext());
+	});
+
+	auto root = loader.LoadFile("/resources/Engine/UI/widget_test.aqlayout");
+	if (!root) {
+		AQUILA_LOG_ERROR("EditorApplication: failed to load editor layout");
+		return;
 	}
 
-	auto &renderer = GetRenderer();
-	auto *currentImageView = renderer.GetSwapchain()->GetCurrentImageView(renderer.GetCurrentImageIndex());
-	auto *currentImage = renderer.GetSwapchain()->GetCurrentImage(renderer.GetCurrentImageIndex());
-	auto extent = renderer.GetSwapchain()->GetExtent();
+	if (auto *view = root->FindById("btn-click")) {
+		if (auto *btn = dynamic_cast<UI::Core::Button *>(view)) {
+			btn->SetOnClick([]() { AQUILA_LOG_INFO("Button clicked!"); });
+		}
+	}
 
-	Aquila::Graphics::Helpers::DynamicRendering::BeginSwapchain(commandBuffer, currentImageView, extent, false);
-	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), commandBuffer);
-	Aquila::Graphics::Helpers::DynamicRendering::End(commandBuffer);
+	if (auto *view = root->FindById("viewport")) {
+		if (auto *img = dynamic_cast<UI::Core::Image *>(view)) {
+			img->SetTexture(&GetRenderOutput());
+			m_ViewportImage = img;
+		}
+	}
 
-	auto &device = GetDevice();
-	Aquila::Graphics::Helpers::DynamicRendering::TransitionImages(
-		device, commandBuffer, { currentImage }, renderer.GetSwapchain()->GetImageFormat(), VK_NULL_HANDLE,
-		VK_FORMAT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
-
-	ImGui::EndFrame();
-}
-
-void Application::OnUpdate(f32 deltaTime) {}
-
-void Application::OnRender(VkCommandBuffer commandBuffer) {}
-
-void Application::OnShutdown() {
-	AQUILA_LOG_INFO("Shutting down editor...");
-
-	GetDevice().Wait();
-
-	ShutdownImGui();
-	ShutdownManagers();
-
-	Config::GetPreferences().SaveToFile();
-
-	AQUILA_LOG_INFO("Editor shutdown complete");
-}
-
-void Application::ShutdownManagers() {
-	AQUILA_LOG_INFO("Shutting down editor managers...");
-
-	UI::ThemeManager::Get().Shutdown();
-	UI::FontManager::Get().Shutdown();
-
-	AQUILA_LOG_INFO("Editor managers shut down");
-}
-
-void Application::ShutdownImGui() {
-	AQUILA_LOG_INFO("Shutting down ImGui...");
-
-	ImGui_ImplVulkan_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-
-	AQUILA_LOG_INFO("ImGui shutdown complete");
+	editorCanvas.GetRoot()->AddChild(std::move(root));
+	editorCanvas.ReloadStyles();
 }
 
 } // namespace Editor
