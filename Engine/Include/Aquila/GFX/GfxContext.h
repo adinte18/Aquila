@@ -1,5 +1,7 @@
 #pragma once
+#include <array>
 #include "Aquila/RHI/Backend/IRHIDevice.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/GFX/GfxBuffer.h"
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/GFX/GfxCommandList.h"
@@ -29,6 +31,7 @@ class GfxContext {
 	[[nodiscard]] Ref<GfxRenderPass> CreateRenderPass(const RHI::RenderPassDesc &desc);
 
 	[[nodiscard]] Ref<GfxCommandList> CreateCommandList(RHI::CommandListType type, const std::string &name = {});
+	[[nodiscard]] GfxCommandList &AcquireFrameCommandList(uint32 frameSlot);
 
 	void CopyBuffer(GfxBuffer &src, GfxBuffer &dst, uint64 size, uint64 srcOffset = 0, uint64 dstOffset = 0);
 	void UploadTextureData(GfxTexture &dst, const void *data, uint64 byteSize);
@@ -49,13 +52,13 @@ class GfxContext {
 		m_Device->SubmitAndWait(cmd->GetRHI());
 	}
 	void WaitIdle();
-	void ProcessPendingDeletions();
 
 	[[nodiscard]] RHI::IRHIDevice &GetDevice() { return *m_Device; }
 
   private:
 	explicit GfxContext(Unique<RHI::IRHIDevice> device);
 	Unique<RHI::IRHIDevice> m_Device;
+	std::array<Unique<GfxCommandList>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_FrameCommandLists;
 };
 
 } // namespace Aquila::GFX

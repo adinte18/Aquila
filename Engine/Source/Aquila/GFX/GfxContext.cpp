@@ -2,10 +2,15 @@
 #include "Aquila/GFX/GfxBuffer.h"
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/RHI/RHIBackend.h"
+#include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::GFX {
 
-GfxContext::GfxContext(Unique<RHI::IRHIDevice> device) : m_Device(std::move(device)) {}
+GfxContext::GfxContext(Unique<RHI::IRHIDevice> device) : m_Device(std::move(device)) {
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_FrameCommandLists[i] = Unique<GfxCommandList>(new GfxCommandList(m_Device->CreateFrameCommandList(i)));
+	}
+}
 GfxContext::~GfxContext() = default;
 
 Unique<GfxContext> GfxContext::Create(GLFWwindow &window) {
@@ -58,6 +63,11 @@ Ref<GfxCommandList> GfxContext::CreateCommandList(RHI::CommandListType type, con
 	return Ref<GfxCommandList>(new GfxCommandList(m_Device->CreateCommandList(type, name)));
 }
 
+GfxCommandList &GfxContext::AcquireFrameCommandList(uint32 frameSlot) {
+	AQUILA_ASSERT(frameSlot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
+	return *m_FrameCommandLists[frameSlot];
+}
+
 void GfxContext::SubmitFrame(GfxCommandList &cmd, GfxSwapchain *swapchain, uint32 imageIndex) {
 	m_Device->SubmitFrame(cmd.GetRHI(), (swapchain != nullptr) ? &swapchain->GetRHI() : nullptr, imageIndex);
 }
@@ -99,10 +109,6 @@ void GfxContext::CopyBuffer(GfxBuffer &src, GfxBuffer &dst, uint64 size, uint64 
 
 void GfxContext::WaitIdle() {
 	m_Device->WaitIdle();
-}
-
-void GfxContext::ProcessPendingDeletions() {
-	m_Device->ProcessPendingDeletions();
 }
 
 void GfxContext::DestroyImmediateBuffer(GfxBuffer &buffer) {

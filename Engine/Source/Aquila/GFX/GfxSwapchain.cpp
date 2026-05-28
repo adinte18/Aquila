@@ -8,9 +8,6 @@ bool GfxSwapchain::AcquireNextImage(uint32 &outImageIndex) {
 	return m_Swapchain->AcquireNextImage(outImageIndex);
 }
 
-bool GfxSwapchain::Present(uint32 imageIndex) {
-	return m_Swapchain->Present(imageIndex);
-}
 uint32 GfxSwapchain::GetWidth() const {
 	return m_Swapchain->GetWidth();
 }
@@ -28,6 +25,9 @@ bool GfxSwapchain::NeedsResize() const {
 }
 void GfxSwapchain::Resize(uint32 width, uint32 height) {
 	m_Swapchain->Resize(width, height);
+}
+uint32 GfxSwapchain::GetCurrentFrameSlot() const {
+	return m_Swapchain->GetCurrentFrameSlot();
 }
 
 } // namespace Aquila::GFX

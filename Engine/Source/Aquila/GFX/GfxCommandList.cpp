@@ -74,7 +74,7 @@ void GfxCommandList::DrawIndexedIndirect(GfxBuffer &buffer, uint64 offset, uint3
 }
 
 void GfxCommandList::CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
-										  uint32 dstArrayLayer, uint32 dstMipLevel) {
+										 uint32 dstArrayLayer, uint32 dstMipLevel) {
 	m_Cmd->CopyBufferToTexture(src.GetRHI(), dst.GetRHI(), width, height, dstArrayLayer, dstMipLevel);
 }
 

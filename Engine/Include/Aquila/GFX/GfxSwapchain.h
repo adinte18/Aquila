@@ -5,7 +5,6 @@
 
 namespace Aquila::GFX {
 
-
 class GfxContext;
 
 class GfxSwapchain {
@@ -14,7 +13,6 @@ class GfxSwapchain {
 	AQUILA_NONCOPYABLE(GfxSwapchain);
 
 	bool AcquireNextImage(uint32 &outImageIndex);
-	bool Present(uint32 imageIndex);
 
 	[[nodiscard]] uint32 GetWidth() const;
 	[[nodiscard]] uint32 GetHeight() const;
@@ -22,6 +20,7 @@ class GfxSwapchain {
 	[[nodiscard]] uint32 GetImageCount() const;
 	[[nodiscard]] bool NeedsResize() const;
 	void Resize(uint32 width, uint32 height);
+	[[nodiscard]] uint32 GetCurrentFrameSlot() const;
 	[[nodiscard]] RHI::IRHISwapchain &GetRHI() { return *m_Swapchain; }
 
   private:

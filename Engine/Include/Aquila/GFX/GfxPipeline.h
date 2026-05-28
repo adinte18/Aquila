@@ -6,7 +6,6 @@
 
 namespace Aquila::GFX {
 
-
 class GfxContext;
 class GfxCommandList;
 

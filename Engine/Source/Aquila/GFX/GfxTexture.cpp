@@ -5,7 +5,7 @@ namespace Aquila::GFX {
 GfxTexture::GfxTexture(Unique<RHI::IRHITexture> texture) : m_Texture(std::move(texture)) {}
 
 void GfxTexture::DestroyImmediate() {
-    m_Texture->DestroyImmediate();
+	m_Texture->DestroyImmediate();
 }
 
 uint32 GfxTexture::GetWidth() const {
