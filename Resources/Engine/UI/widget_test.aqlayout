@@ -1,58 +1,66 @@
 <View id="root">
-    <View id="sidebar">
-        <View id="brand">
-            <Label id="brand-name">AQUILA</Label>
+
+    <View id="toolbar">
+        <View id="toolbar-left">
+            <Label id="engine-logo">AQUILA</Label>
+            <View class="toolbar-sep"></View>
+            <Button class="menu-btn">File</Button>
+            <Button class="menu-btn">Edit</Button>
+            <Button class="menu-btn">View</Button>
+            <Button class="menu-btn">Window</Button>
         </View>
-        <View id="sidebar-divider"></View>
-        <View id="nav">
-            <Button id="btn-click" class="nav-btn">
-                <Image src="Engine/UI/Icons/house.png" style="width: 16px; height: 16px;"/>
-                Home
-            </Button>
-            <Button class="nav-btn">New Project</Button>
-            <Button class="nav-btn">Open Project</Button>
-            <Button class="nav-btn">Marketplace</Button>
-            <Button class="nav-btn">Settings</Button>
+        <View id="toolbar-center">
+            <Button id="btn-play"  class="run-btn">Play</Button>
+            <Button id="btn-pause" class="run-btn">Pause</Button>
+            <Button id="btn-stop"  class="run-btn run-stop">Stop</Button>
         </View>
-        <View id="version-area">
-            <Label id="version-label">v 0.1.0-alpha</Label>
+        <View id="toolbar-right">
+            <Label id="fps-counter">60 fps</Label>
         </View>
     </View>
-    <View id="main">
-        <View id="main-header">
-            <Label id="section-title">Widget Gallery</Label>
+
+    <View id="workspace">
+
+        <View id="panel-hierarchy">
+            <View class="panel-header">
+                <Label class="panel-title">SCENE</Label>
+            </View>
+            <View id="scene-tree">
+            </View>
         </View>
-        <View id="panel-row">
-            <View id="widget-panel">
-                <Label class="section-label">CHECKBOXES</Label>
-                <View class="widget-row">
-                    <Checkbox id="cb-shadows" class="checkbox"/>
-                    <Label class="widget-label">Enable Shadows</Label>
-                </View>
-                <View class="widget-row">
-                    <Checkbox id="cb-vsync" class="checkbox"/>
-                    <Label class="widget-label">VSync</Label>
-                </View>
 
-                <Label class="section-label">SLIDERS</Label>
-                <View class="widget-row">
-                    <Label class="widget-label-fixed">Opacity</Label>
-                    <Slider id="sl-opacity" class="slider"/>
-                </View>
-                <View class="widget-row">
-                    <Label class="widget-label-fixed">Exposure</Label>
-                    <Slider id="sl-exposure" class="slider"/>
-                </View>
-
-                <Label class="section-label">TEXT INPUT</Label>
-                <TextInput id="ti-name" class="text-input"/>
-
-                <Label class="section-label">COLOR PICKER</Label>
-                <ColorPicker id="cp-main" class="color-picker"/>
+        <View id="center-col">
+            <View id="viewport-bar">
+                <Button class="vp-tab vp-tab-active">Perspective</Button>
+                <Button class="vp-tab">Top</Button>
+                <Button class="vp-tab">Front</Button>
+                <Button class="vp-tab">Right</Button>
+                <View id="vp-bar-spacer"></View>
+                <Button class="vp-mode">Lit</Button>
+                <Button class="vp-mode">Wireframe</Button>
+                <Button class="vp-mode">Unlit</Button>
             </View>
-            <View id="viewport-area">
-                <Image id="viewport"/>
+            <Image id="viewport"/>
+        </View>
+
+        <View id="panel-inspector">
+            <View class="panel-header">
+                <Label class="panel-title">INSPECTOR</Label>
             </View>
+            <View id="inspector-scroll">
+            </View>
+        </View>
+
+    </View>
+
+    <View id="content-browser">
+        <View class="panel-header">
+            <Label class="panel-title">ASSETS</Label>
+            <View id="cb-gap"></View>
+            <TextInput id="cb-search"/>
+        </View>
+        <View id="asset-grid">
         </View>
     </View>
+
 </View>
