@@ -17,7 +17,7 @@ RGBufferHandle RGRegistry::DeclareBuffer(const RGBufferDesc &desc) {
 }
 
 RGTextureHandle RGRegistry::ImportTexture(GFX::GfxTexture *texture, std::string_view debugName,
-										   ResourceState initialState) {
+										  ResourceState initialState) {
 	AQUILA_ASSERT(texture, "Cannot import a null texture");
 
 	const RHI::TextureDesc &rhiDesc = texture->GetDesc();
@@ -44,7 +44,7 @@ RGTextureHandle RGRegistry::ImportTexture(GFX::GfxTexture *texture, std::string_
 }
 
 RGBufferHandle RGRegistry::ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName,
-										 ResourceState initialState) {
+										ResourceState initialState) {
 	AQUILA_ASSERT(buffer, "Cannot import a null buffer");
 
 	RGBufferDesc desc{};

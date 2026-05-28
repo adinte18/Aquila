@@ -94,8 +94,9 @@ class ShaderWatcher {
 	// (starts with a drive letter on Windows, or '/' on Unix) and does NOT
 	// contain "://" which is the VFS scheme separator.
 	static bool IsNativePath(const std::string &path) {
-		if (path.find("://") != std::string::npos)
+		if (path.find("://") != std::string::npos) {
 			return false; // VFS virtual path
+		}
 
 		// std::filesystem considers "C:\..." and "/home/..." as absolute
 		return std::filesystem::path(path).is_absolute();
@@ -104,8 +105,9 @@ class ShaderWatcher {
 	static uint64 NativeLastWriteTime(const std::string &path) {
 		std::error_code ec;
 		auto ftime = std::filesystem::last_write_time(path, ec);
-		if (ec)
+		if (ec) {
 			return 0;
+		}
 		// Convert to a plain integer comparable across calls
 		return static_cast<uint64>(ftime.time_since_epoch().count());
 	}

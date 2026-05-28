@@ -59,7 +59,7 @@ class RGRegistry {
 	[[nodiscard]] RGBufferHandle DeclareBuffer(const RGBufferDesc &desc);
 
 	[[nodiscard]] RGTextureHandle ImportTexture(GFX::GfxTexture *texture, std::string_view debugName = {},
-											    ResourceState initialState = ResourceState::Undefined);
+												ResourceState initialState = ResourceState::Undefined);
 
 	[[nodiscard]] RGBufferHandle ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName = {},
 											  ResourceState initialState = ResourceState::Undefined);

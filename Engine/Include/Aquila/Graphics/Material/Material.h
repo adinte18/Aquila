@@ -1,5 +1,7 @@
 #pragma once
+#include <array>
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Graphics/Material/MaterialParameters.h"
 #include "Aquila/GFX/GfxPipeline.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
@@ -55,12 +57,12 @@ class Material {
 
 	Material &SetTexture(uint32 binding, GFX::GfxTexture &tex);
 
-	void Flush();
+	void Flush(uint32 frameSlot);
 
-	void Bind(GFX::GfxCommandList &cmd, uint32 setIndex = 1);
+	void Bind(GFX::GfxCommandList &cmd, uint32 setIndex, uint32 frameSlot);
 
 	[[nodiscard]] GFX::GfxPipeline &GetPipeline() { return *m_Pipeline; }
-	[[nodiscard]] bool HasDescriptorSet() const { return m_Set != nullptr; }
+	[[nodiscard]] bool HasDescriptorSet() const { return m_Sets[0] != nullptr; }
 	[[nodiscard]] const std::vector<MaterialParameter> &GetParameters() const { return m_Parameters; }
 	[[nodiscard]] const MaterialParameter *GetParameter(const std::string &paramName) const;
 
@@ -80,12 +82,14 @@ class Material {
 	MaterialType m_Type = MaterialType::PBR;
 	std::string m_ShaderPath;
 	Ref<GFX::GfxDescriptorSetLayout> m_Layout;
-	Ref<GFX::GfxDescriptorSet> m_Set;
-	Ref<GFX::GfxBuffer> m_UniformBuffer;
+
+	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_Sets;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_UniformBuffers;
+
+	uint32 m_DirtySlotMask = 0;
 
 	std::vector<MaterialParameter> m_Parameters;
 	std::vector<uint8> m_UBOData;
-	bool m_UniformDirty = false;
 
 	struct PendingTexture {
 		uint32 binding;
@@ -97,7 +101,7 @@ class Material {
 
 	template <typename T> void WriteUBO(uint32 offset, const T &v);
 
-	void EnsureUniformBuffer();
+	void EnsureUniformBuffers();
 };
 
 } // namespace Aquila::Graphics

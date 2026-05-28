@@ -83,10 +83,12 @@ class GPUUploadManager {
 				std::unique_lock<std::mutex> lock(m_QueueMutex);
 				m_QueueCV.wait(lock, [this] { return !m_UploadQueue.empty() || !m_Running; });
 
-				if (!m_Running && m_UploadQueue.empty())
+				if (!m_Running && m_UploadQueue.empty()) {
 					break;
-				if (m_UploadQueue.empty())
+				}
+				if (m_UploadQueue.empty()) {
 					continue;
+				}
 
 				cmd = std::move(const_cast<GPUUploadCommand &>(m_UploadQueue.top()));
 				m_UploadQueue.pop();

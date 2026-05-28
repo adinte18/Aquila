@@ -1,4 +1,5 @@
 ﻿#include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/Rendering/FrameScheduler.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -133,6 +134,7 @@ void MaterialFactory::Tick(GFX::GfxContext &ctx) {
 		auto it = m_Entries.find(path);
 		if (it != m_Entries.end()) {
 			RebuildEntry(ctx, it->second, path);
+			Rendering::FrameScheduler::Get()->RequestFrame();
 		}
 	}
 }

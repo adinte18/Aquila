@@ -1,6 +1,7 @@
 #include "Aquila/Graphics/Material/Material.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
 #include "Aquila/GFX/GfxContext.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include <cstring>
 
 namespace Aquila::Graphics {
@@ -88,7 +89,9 @@ Ref<Material> Material::CreateFromShader(GFX::GfxContext &ctx, Shader::ShaderPro
 	mat->m_Layout = shader.m_DescriptorSetLayout;
 
 	if (mat->m_Layout) {
-		mat->m_Set = ctx.AllocateDescriptorSet(*mat->m_Layout);
+		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+			mat->m_Sets[i] = ctx.AllocateDescriptorSet(*mat->m_Layout);
+		}
 	}
 
 	using RBType = Shader::ShaderProgram::ReflectedBindingType;
@@ -125,15 +128,17 @@ Ref<Material> Material::CreateFromShader(GFX::GfxContext &ctx, Shader::ShaderPro
 	// std140 struct size must be a multiple of 16.
 	uboSize = (uboSize + 15u) & ~15u;
 
-	if (uboSize > 0 && mat->m_Set) {
+	if (uboSize > 0 && mat->m_Sets[0]) {
 		mat->m_UBOData.assign(uboSize, 0);
-		mat->m_UniformBuffer = ctx.CreateBuffer({
-			.size = uboSize,
-			.usage = RHI::BufferUsage::UniformBuffer,
-			.domain = RHI::MemoryDomain::CPU_TO_GPU,
-			.debugName = "MaterialUBO",
-		});
-		mat->m_UniformDirty = true;
+		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+			mat->m_UniformBuffers[i] = ctx.CreateBuffer({
+				.size = uboSize,
+				.usage = RHI::BufferUsage::UniformBuffer,
+				.domain = RHI::MemoryDomain::CPU_TO_GPU,
+				.debugName = ("MaterialUBO_" + std::to_string(i)).c_str(),
+			});
+		}
+		mat->m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 
 	return mat;
@@ -147,7 +152,9 @@ Ref<Material> Material::Create(GFX::GfxContext &ctx, Ref<GFX::GfxPipeline> pipel
 	mat->m_Layout = layout;
 
 	if (mat->m_Layout) {
-		mat->m_Set = ctx.AllocateDescriptorSet(*mat->m_Layout);
+		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+			mat->m_Sets[i] = ctx.AllocateDescriptorSet(*mat->m_Layout);
+		}
 	}
 
 	return mat;
@@ -202,24 +209,26 @@ template <typename T> void Material::WriteUBO(uint32 offset, const T &v) {
 	}
 }
 
-void Material::EnsureUniformBuffer() {
-	if (m_UniformBuffer || m_UBOData.empty() || !m_Context || !m_Set) {
+void Material::EnsureUniformBuffers() {
+	if (m_UniformBuffers[0] || m_UBOData.empty() || !m_Context || !m_Sets[0]) {
 		return;
 	}
-
-	m_UniformBuffer = m_Context->CreateBuffer({
-		.size = static_cast<uint32>(m_UBOData.size()),
-		.usage = RHI::BufferUsage::UniformBuffer,
-		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "MaterialUBO",
-	});
+	uint32 size = static_cast<uint32>(m_UBOData.size());
+	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_UniformBuffers[i] = m_Context->CreateBuffer({
+			.size = size,
+			.usage = RHI::BufferUsage::UniformBuffer,
+			.domain = RHI::MemoryDomain::CPU_TO_GPU,
+			.debugName = ("MaterialUBO_" + std::to_string(i)).c_str(),
+		});
+	}
 }
 
 Material &Material::Set(const std::string &paramName, f32 v) {
 	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
 		p->value = v;
 		WriteUBO(p->uboOffset, v);
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -228,7 +237,7 @@ Material &Material::Set(const std::string &paramName, int v) {
 	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
 		p->value = v;
 		WriteUBO(p->uboOffset, v);
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -238,7 +247,7 @@ Material &Material::Set(const std::string &paramName, bool v) {
 		p->value = v;
 		int asInt = v ? 1 : 0;
 		WriteUBO(p->uboOffset, asInt);
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -247,7 +256,7 @@ Material &Material::Set(const std::string &paramName, const vec2 &v) {
 	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
 		p->value = v;
 		WriteUBO(p->uboOffset, v);
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -259,7 +268,7 @@ Material &Material::Set(const std::string &paramName, const vec3 &v) {
 		if (p->uboOffset + ValueSize(ParameterType::Vec3) <= m_UBOData.size()) {
 			std::memcpy(m_UBOData.data() + p->uboOffset, &v, ValueSize(ParameterType::Vec3));
 		}
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -268,7 +277,7 @@ Material &Material::Set(const std::string &paramName, const vec4 &v) {
 	if (auto *p = FindParameter(paramName); p && p->uboOffset != UINT32_MAX) {
 		p->value = v;
 		WriteUBO(p->uboOffset, v);
-		m_UniformDirty = true;
+		m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	}
 	return *this;
 }
@@ -285,39 +294,49 @@ Material &Material::SetTexture(uint32 binding, GFX::GfxTexture &tex) {
 	for (auto &tb : m_PendingTextures) {
 		if (tb.binding == binding) {
 			tb.tex = &tex;
+			m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 			return *this;
 		}
 	}
 	m_PendingTextures.push_back({ binding, &tex });
+	m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 	return *this;
 }
 
-void Material::Flush() {
-	if (!m_Set) {
+void Material::Flush(uint32 frameSlot) {
+	if (!m_Sets[frameSlot]) {
 		return;
 	}
 
-	if (m_UniformDirty && !m_UBOData.empty()) {
-		EnsureUniformBuffer();
-		if (m_UniformBuffer) {
-			m_UniformBuffer->Write(m_UBOData.data(), static_cast<uint32>(m_UBOData.size()));
-			m_Set->SetBuffer(0, *m_UniformBuffer);
-			m_UniformDirty = false;
+	const uint32 slotBit = 1u << frameSlot;
+	if ((m_DirtySlotMask & slotBit) == 0) {
+		return;
+	}
+
+	if (!m_UBOData.empty()) {
+		EnsureUniformBuffers();
+		if (m_UniformBuffers[frameSlot]) {
+			m_UniformBuffers[frameSlot]->Write(m_UBOData.data(), static_cast<uint32>(m_UBOData.size()));
+			m_Sets[frameSlot]->SetBuffer(0, *m_UniformBuffers[frameSlot]);
 		}
 	}
 
 	for (auto &tb : m_PendingTextures) {
-		m_Set->SetTexture(tb.binding, *tb.tex);
+		m_Sets[frameSlot]->SetTexture(tb.binding, *tb.tex);
 	}
-	m_PendingTextures.clear();
 
-	m_Set->Flush();
+	m_Sets[frameSlot]->Flush();
+
+	m_DirtySlotMask &= ~slotBit;
+	if (m_DirtySlotMask == 0) {
+		m_PendingTextures.clear();
+	}
 }
 
-void Material::Bind(GFX::GfxCommandList &cmd, uint32 setIndex) {
+void Material::Bind(GFX::GfxCommandList &cmd, uint32 setIndex, uint32 frameSlot) {
 	cmd.BindPipeline(*m_Pipeline);
-	if (m_Set) {
-		cmd.BindDescriptorSet(setIndex, *m_Set);
+	if (m_Sets[frameSlot]) {
+		cmd.BindDescriptorSet(setIndex, *m_Sets[frameSlot]);
 	}
 }
 
@@ -326,10 +345,11 @@ void Material::ReplacePipeline(Ref<GFX::GfxPipeline> newPipeline, Ref<GFX::GfxDe
 
 	if (newLayout && m_Context) {
 		m_Layout = std::move(newLayout);
-		m_Set = m_Context->AllocateDescriptorSet(*m_Layout);
-		if (m_UniformBuffer) {
-			m_Set->SetBuffer(0, *m_UniformBuffer);
-			m_UniformDirty = true;
+		for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+			m_Sets[i] = m_Context->AllocateDescriptorSet(*m_Layout);
+		}
+		if (m_UniformBuffers[0]) {
+			m_DirtySlotMask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
 		}
 	}
 }

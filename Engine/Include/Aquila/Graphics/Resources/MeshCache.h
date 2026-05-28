@@ -66,8 +66,9 @@ class MeshCache {
 		{
 			std::lock_guard<std::mutex> lock(m_Mutex);
 			auto it = m_Cache.find(name);
-			if (it != m_Cache.end())
+			if (it != m_Cache.end()) {
 				return it->second;
+			}
 		}
 
 		auto mesh = CreateRef<Mesh>(name);
@@ -104,8 +105,9 @@ class MeshCache {
 	}
 
 	void Preload(const std::vector<std::string> &filepaths) {
-		for (const auto &filepath : filepaths)
+		for (const auto &filepath : filepaths) {
 			LoadAsync(filepath);
+		}
 	}
 
 	size_t GetCacheSize() const {

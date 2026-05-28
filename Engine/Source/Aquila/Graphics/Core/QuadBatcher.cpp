@@ -161,9 +161,15 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		},
 	});
 
-	GetOrCreateFlatPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, RHI::TextureFormat::None);
-	GetOrCreateFlatPipeline(RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, RHI::TextureFormat::None);
-	GetOrCreateGUIPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, RHI::TextureFormat::None);
+	// Prewarm all pipeline variants used by UIOverlay (BGRA8) and GameUI (RGBA16F).
+	// Lazy compilation inside an execute lambda causes a multi-frame stall on first use.
+	for (auto fmt : { RHI::TextureFormat::BGRA8, RHI::TextureFormat::RGBA16F }) {
+		GetOrCreateFlatPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+		GetOrCreateGUIPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+		GetOrCreateTexturePipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+		GetOrCreateTextPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+		GetOrCreateShadowPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+	}
 }
 
 void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
