@@ -1,6 +1,7 @@
 
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleSheet.h"
+#include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Aquila::UI {
 
@@ -9,14 +10,12 @@ void StyleParser::ApplyProperty(StyleProperties &props, std::string_view propert
 }
 
 bool StyleParser::LoadFile(const std::string &path, StyleSheet &sheet) {
-	std::ifstream f(path);
-	if (!f.is_open()) {
+	const std::string src = Platform::Filesystem::VirtualFileSystem::Get()->ReadTextFile(path);
+	if (src.empty()) {
 		AQUILA_LOG_ERROR("StyleParser: cannot open '{}'", path);
 		return false;
 	}
-	std::ostringstream ss;
-	ss << f.rdbuf();
-	return LoadString(ss.str(), sheet);
+	return LoadString(src, sheet);
 }
 
 bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {

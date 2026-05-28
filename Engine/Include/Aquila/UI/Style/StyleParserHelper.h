@@ -188,7 +188,9 @@ static Option<vec4> ParseColor(std::string_view raw) {
 		float a = (hasAlpha && parts.size() >= 4) ? ParseFloat(parts[3]) : 1.f;
 		// CSS rgb() uses 0-255 integers; normalize when any component is outside [0,1].
 		if (r > 1.f || g > 1.f || b > 1.f) {
-			r /= 255.f; g /= 255.f; b /= 255.f;
+			r /= 255.f;
+			g /= 255.f;
+			b /= 255.f;
 		}
 		return vec4(r, g, b, a);
 	}
@@ -258,14 +260,24 @@ static Option<BoxShadow> ParseOneShadow(std::string_view raw) {
 	size_t i = 0;
 	std::string s = Trim(raw);
 	while (i < s.size()) {
-		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) { ++i; }
-		if (i >= s.size()) { break; }
+		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) {
+			++i;
+		}
+		if (i >= s.size()) {
+			break;
+		}
 		size_t start = i;
 		if (s[i] == 'r' && i + 3 < s.size() && s.substr(i, 3) == "rgb") {
-			while (i < s.size() && s[i] != ')') { ++i; }
-			if (i < s.size()) { ++i; }
+			while (i < s.size() && s[i] != ')') {
+				++i;
+			}
+			if (i < s.size()) {
+				++i;
+			}
 		} else {
-			while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) { ++i; }
+			while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) {
+				++i;
+			}
 		}
 		tokens.emplace_back(s.substr(start, i - start));
 	}
@@ -273,23 +285,37 @@ static Option<BoxShadow> ParseOneShadow(std::string_view raw) {
 	BoxShadow out;
 	std::vector<std::string> lengths;
 	for (const auto &tok : tokens) {
-		if (tok == "inset") { out.inset = true; continue; }
-		if (auto c = ParseColor(tok)) { out.color = *c; continue; }
+		if (tok == "inset") {
+			out.inset = true;
+			continue;
+		}
+		if (auto c = ParseColor(tok)) {
+			out.color = *c;
+			continue;
+		}
 		lengths.push_back(tok);
 	}
 	// lengths: offset-x offset-y [blur [spread]]
 	auto px = [](std::string_view v) -> float {
 		std::string t = Trim(v);
-		if (t.ends_with("px")) { t = t.substr(0, t.size() - 2); }
+		if (t.ends_with("px")) {
+			t = t.substr(0, t.size() - 2);
+		}
 		float f = 0.f;
 		std::from_chars(t.data(), t.data() + t.size(), f);
 		return f;
 	};
-	if (lengths.size() < 2) { return std::nullopt; }
+	if (lengths.size() < 2) {
+		return std::nullopt;
+	}
 	out.offset.x = px(lengths[0]);
 	out.offset.y = px(lengths[1]);
-	if (lengths.size() >= 3) { out.blur   = std::max(0.f, px(lengths[2])); }
-	if (lengths.size() >= 4) { out.spread = px(lengths[3]); }
+	if (lengths.size() >= 3) {
+		out.blur = std::max(0.f, px(lengths[2]));
+	}
+	if (lengths.size() >= 4) {
+		out.spread = px(lengths[3]);
+	}
 	return out;
 }
 
@@ -477,9 +503,13 @@ static void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, s
 		}
 
 	} else if (prop == "text-align") {
-		if (valueLower == "left")   { props.textAlign = TextAlign::Left; }
-		else if (valueLower == "center") { props.textAlign = TextAlign::Center; }
-		else if (valueLower == "right")  { props.textAlign = TextAlign::Right; }
+		if (valueLower == "left") {
+			props.textAlign = TextAlign::Left;
+		} else if (valueLower == "center") {
+			props.textAlign = TextAlign::Center;
+		} else if (valueLower == "right") {
+			props.textAlign = TextAlign::Right;
+		}
 
 	} else if (prop == "box-shadow") {
 		if (valueLower == "none") {
@@ -490,17 +520,29 @@ static void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, s
 			std::string layer;
 			int depth = 0;
 			for (char c : value) {
-				if (c == '(') { ++depth; layer += c; }
-				else if (c == ')') { --depth; layer += c; }
-				else if (c == ',' && depth == 0) {
-					if (auto sh = ParseOneShadow(layer)) { shadows.push_back(*sh); }
+				if (c == '(') {
+					++depth;
+					layer += c;
+				} else if (c == ')') {
+					--depth;
+					layer += c;
+				} else if (c == ',' && depth == 0) {
+					if (auto sh = ParseOneShadow(layer)) {
+						shadows.push_back(*sh);
+					}
 					layer.clear();
-				} else { layer += c; }
+				} else {
+					layer += c;
+				}
 			}
 			if (!layer.empty()) {
-				if (auto sh = ParseOneShadow(layer)) { shadows.push_back(*sh); }
+				if (auto sh = ParseOneShadow(layer)) {
+					shadows.push_back(*sh);
+				}
 			}
-			if (!shadows.empty()) { props.boxShadows = std::move(shadows); }
+			if (!shadows.empty()) {
+				props.boxShadows = std::move(shadows);
+			}
 		}
 
 	} else if (prop == "transition") {

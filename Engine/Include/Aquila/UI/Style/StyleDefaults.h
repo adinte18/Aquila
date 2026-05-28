@@ -42,8 +42,7 @@ AQUILA_INLINE constexpr Overflow Overflow = Overflow::Visible;
 AQUILA_INLINE constexpr vec4 Color = vec4(1, 1, 1, 1);
 
 AQUILA_INLINE constexpr f32 TransitionDuration = 0.f;
-AQUILA_INLINE constexpr TransitionEasing TransitionEase =
-    TransitionEasing::Ease;
+AQUILA_INLINE constexpr TransitionEasing TransitionEase = TransitionEasing::Ease;
 
 AQUILA_INLINE constexpr f32 FontSize = 16.f;
 
