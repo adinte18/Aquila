@@ -1,13 +1,9 @@
 <View id="root">
-
     <View id="sidebar">
-
         <View id="brand">
             <Label id="brand-name">AQUILA</Label>
         </View>
-
         <View id="sidebar-divider"></View>
-
         <View id="nav">
             <Button id="btn-click" class="nav-btn">
                 <Image src="Engine/UI/Icons/house.png" style="width: 16px; height: 16px;"/>
@@ -18,25 +14,45 @@
             <Button class="nav-btn">Marketplace</Button>
             <Button class="nav-btn">Settings</Button>
         </View>
-
         <View id="version-area">
             <Label id="version-label">v 0.1.0-alpha</Label>
         </View>
-
     </View>
-
     <View id="main">
-
         <View id="main-header">
-            <Label id="section-title">Recent Projects</Label>
+            <Label id="section-title">Widget Gallery</Label>
         </View>
+        <View id="panel-row">
+            <View id="widget-panel">
+                <Label class="section-label">CHECKBOXES</Label>
+                <View class="widget-row">
+                    <Checkbox id="cb-shadows" class="checkbox"/>
+                    <Label class="widget-label">Enable Shadows</Label>
+                </View>
+                <View class="widget-row">
+                    <Checkbox id="cb-vsync" class="checkbox"/>
+                    <Label class="widget-label">VSync</Label>
+                </View>
 
-        <View id="projects-list">
+                <Label class="section-label">SLIDERS</Label>
+                <View class="widget-row">
+                    <Label class="widget-label-fixed">Opacity</Label>
+                    <Slider id="sl-opacity" class="slider"/>
+                </View>
+                <View class="widget-row">
+                    <Label class="widget-label-fixed">Exposure</Label>
+                    <Slider id="sl-exposure" class="slider"/>
+                </View>
 
-            <Image id="viewport"/>
+                <Label class="section-label">TEXT INPUT</Label>
+                <TextInput id="ti-name" class="text-input"/>
 
+                <Label class="section-label">COLOR PICKER</Label>
+                <ColorPicker id="cp-main" class="color-picker"/>
+            </View>
+            <View id="viewport-area">
+                <Image id="viewport"/>
+            </View>
         </View>
-
     </View>
-
 </View>

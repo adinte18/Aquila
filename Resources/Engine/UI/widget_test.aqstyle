@@ -6,8 +6,10 @@
     background-color: #0E0A07;
 }
 
+/* ── Sidebar ─────────────────────────────────────────────────────────────── */
+
 #sidebar {
-    width: 26%;
+    width: 22%;
     height: 100%;
     background-color: #14100C;
     border-color: #2A1F14;
@@ -89,64 +91,176 @@
     color: #4A3020;
 }
 
+/* ── Main area ───────────────────────────────────────────────────────────── */
+
 #main {
-    width: 74%;
+    width: 78%;
     height: 100%;
     background-color: #0E0A07;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    padding: 40px 28px;
-    gap: 20px;
+    padding: 28px 24px 24px 24px;
+    gap: 16px;
 }
 
 #main-header {
-    background-color: #ff0000;
     flex-direction: row;
     justify-content: start;
     width: 100%;
-    gap: 16px;
 }
 
 #section-title {
     font-family: bold;
-    font-size: 34px;
+    font-size: 30px;
     color: #F5DFC0;
     width: 100%;
 }
 
-.cta-btn {
-    font-family: medium;
-    font-size: 16px;
-    color: #C8905A;
-    padding: 10px 22px;
-    border-radius: 10px;
+/* ── Panel row (widgets left, viewport right) ─────────────────────────────── */
+
+#panel-row {
+    flex-direction: row;
+    width: 100%;
+    height: grow;
+    gap: 20px;
+    align-items: start;
+}
+
+/* ── Widget panel ────────────────────────────────────────────────────────── */
+
+#widget-panel {
+    width: 270px;
+    flex-direction: column;
+    background-color: #14100C;
+    border-radius: 12px;
     border-width: 1px;
-    border-color: #3D2812;
-    background-color: #1E1208;
+    border-color: #2A1F14;
+    padding: 16px;
+    gap: 6px;
+}
+
+.section-label {
+    font-family: bold;
+    font-size: 10px;
+    color: #5A3E28;
+    padding: 10px 0px 2px 0px;
+    width: 100%;
+}
+
+.widget-row {
+    flex-direction: row;
     align-items: center;
-    justify-content: center;
-    transition: 160ms ease-out;
+    gap: 10px;
+    width: 100%;
 }
 
-.cta-btn:hover {
-    background-color: #2A1A0A;
-    border-color: #6B3D18;
-    color: #F0B87A;
+.widget-label {
+    font-family: regular;
+    font-size: 14px;
+    color: #A07850;
 }
 
-.cta-btn:pressed {
+.widget-label-fixed {
+    font-family: regular;
+    font-size: 14px;
+    color: #A07850;
+    width: 60px;
+}
+
+/* Checkbox */
+
+Checkbox {
+    width: 18px;
+    height: 18px;
+    background-color: #1A1108;
+    border-radius: 4px;
+    border-width: 1.5px;
+    border-color: #3D2812;
+    color: #C8905A;
+    transition: 150ms ease-out;
+}
+
+Checkbox:hover {
+    background-color: #221608;
+    border-color: #7A5030;
+}
+
+Checkbox:pressed {
     background-color: #160E05;
     border-color: #C8905A;
 }
 
-#projects-list {
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+/* Slider */
+
+Slider {
+    height: 24px;
+    width: grow;
+    color: #C8905A;
+}
+
+/* TextInput */
+
+.text-input {
     width: 100%;
-    height: grow;
-    gap: 12px;
+    height: 34px;
+    background-color: #1A1108;
+    border-width: 1.5px;
+    border-color: #3D2812;
+    border-radius: 6px;
+    color: #E8C898;
+    font-family: regular;
+    font-size: 14px;
+    transition: 150ms ease-out;
+}
+
+.text-input:focus {
+    background-color: #1F1508;
+    border-color: #C8905A;
+}
+
+/* ColorPicker */
+
+.color-picker {
+    width: 100%;
+    background-color: #1A1108;
+    border-radius: 8px;
+    border-width: 1px;
+    border-color: #2A1F14;
+    padding: 4px;
+}
+
+.cp-row {
+    width: grow;
+}
+
+.cp-label {
+    font-family: bold;
+    font-size: 12px;
+    color: #7A5030;
+    width: 12px;
+}
+
+.cp-input {
+    height: 26px;
+    background-color: #140E06;
+    border-width: 1px;
+    border-color: #2A1F14;
+    border-radius: 4px;
+    color: #D0A878;
+    font-family: regular;
+    font-size: 13px;
+}
+
+.cp-input:focus {
+    border-color: #C8905A;
+}
+
+/* ── Viewport ────────────────────────────────────────────────────────────── */
+
+#viewport-area {
+    flex-direction: column;
+    flex-grow: 1;
+    height: 100%;
 }
 
 #viewport {
@@ -155,33 +269,6 @@
     border-radius: 8px;
     border-width: 1px;
     border-color: #2A1F14;
-}
-
-.project-card {
-    width: 100%;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 20px 24px;
-    border-radius: 16px;
-    border-width: 1px;
-    border-color: #2A1F14;
-    background-color: #170F09;
-    gap: 5px;
-}
-
-.project-name {
-    font-family: bold;
-    font-size: 22px;
-    color: #DDB990;
-    width: 100%;
-}
-
-.project-meta {
-    font-family: thin;
-    font-size: 15px;
-    color: #4A3020;
-    width: 100%;
 }
 
 Button {
