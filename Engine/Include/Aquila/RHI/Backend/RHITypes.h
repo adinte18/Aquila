@@ -370,6 +370,7 @@ struct GraphicsPipelineDesc {
 	std::vector<TextureFormat> colorFormats;
 	TextureFormat depthFormat = TextureFormat::Depth32;
 	SampleCount sampleCount = SampleCount::x1;
+	bool minSampleShading = false;
 	std::vector<IRHIDescriptorSetLayout *> setLayouts;
 	std::vector<PushConstantRange> pushConstants;
 	std::optional<VertexBindingDesc> customVertexLayout;
@@ -423,6 +424,9 @@ struct RenderPassDesc {
 	std::vector<RenderPassColorAttachmentDesc> colorAttachments;
 	std::optional<RenderPassDepthAttachmentDesc> depthAttachment;
 	bool useSwapchain = false;
+	// When true, colorAttachments[0].texture is the MSAA render target and the
+	// swapchain image (passed to Begin()) is used as the resolve destination.
+	bool useSwapchainAsResolve = false;
 	uint32 width = 0;
 	uint32 height = 0;
 

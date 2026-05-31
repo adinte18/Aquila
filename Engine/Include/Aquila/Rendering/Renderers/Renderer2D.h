@@ -3,6 +3,7 @@
 #include "Aquila/Rendering/Systems/Base/I2DRenderingSystem.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/GFX/GfxRenderpass.h"
+#include "Aquila/GFX/GfxTexture.h"
 
 namespace Aquila::GFX {
 class GfxSwapchain;
@@ -36,13 +37,18 @@ class Renderer2D : public IRenderer {
 	}
 
   private:
+	void RebuildMSAAResources(uint32 w, uint32 h);
+
 	GFX::GfxContext *m_Ctx = nullptr;
 	Unique<Graphics::QuadBatcher> m_R2D;
 	std::vector<Unique<I2DRenderingSystem>> m_Systems;
 
 	Ref<GFX::GfxRenderPass> m_SwapchainPass;
+	Ref<GFX::GfxTexture> m_UIMSAAColor;
 	GFX::GfxSwapchain *m_Swapchain = nullptr;
 	uint32 m_SwapchainImageIndex = 0;
+	uint32 m_UIWidth = 0;
+	uint32 m_UIHeight = 0;
 	bool m_UIDirty = true;
 };
 

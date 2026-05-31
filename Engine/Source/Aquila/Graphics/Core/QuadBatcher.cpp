@@ -19,7 +19,7 @@ static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *sha
 										   const std::vector<GFX::GfxDescriptorSetLayout *> &setLayouts,
 										   uint32 pushConstantSize, RHI::TextureFormat colorFormat,
 										   RHI::SampleCount sampleCount, RHI::TextureFormat depthFormat,
-										   RHI::VertexBindingDesc vertexLayout) {
+										   RHI::VertexBindingDesc vertexLayout, bool minSampleShading = false) {
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
 	if (!RHI::VulkanShaderCompiler::CompileFile(shaderPath, stages, err)) {
@@ -55,6 +55,7 @@ static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *sha
 	desc.blendAttachments = { { true } };
 	desc.pushConstants = { { RHI::ShaderStageFlags::Vertex, 0, pushConstantSize } };
 	desc.sampleCount = sampleCount;
+	desc.minSampleShading = minSampleShading;
 	desc.customVertexLayout = std::move(vertexLayout);
 
 	return ctx.CreateGraphicsPipeline(desc);
@@ -170,6 +171,8 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		GetOrCreateTextPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
 		GetOrCreateShadowPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
 	}
+	// Prewarm x4 MSAA text pipeline for the UIOverlay pass.
+	GetOrCreateTextPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, RHI::TextureFormat::None);
 }
 
 void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
@@ -298,8 +301,9 @@ GFX::GfxPipeline &QuadBatcher::GetOrCreateTextPipeline(RHI::TextureFormat format
 	if (it != m_TextPipelines.end()) {
 		return *it->second;
 	}
+	const bool perSampleShading = (samples != RHI::SampleCount::x1);
 	m_TextPipelines[key] = BuildPipeline(m_Ctx, kTextShader, { m_TextDataLayout.get() }, sizeof(QuadPushConstants),
-										 format, samples, depthFormat, TextVertexLayout());
+										 format, samples, depthFormat, TextVertexLayout(), perSampleShading);
 	return *m_TextPipelines[key];
 }
 

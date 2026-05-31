@@ -11,13 +11,26 @@ namespace Aquila::Rendering {
 void Renderer2D::OnInit(GFX::GfxContext &ctx) {
 	m_Ctx = &ctx;
 	m_R2D = CreateUnique<Graphics::QuadBatcher>(ctx);
+	// MSAA resources are created lazily in AddFinalPasses once dimensions are known.
+}
 
-	m_SwapchainPass = ctx.CreateRenderPass({
+void Renderer2D::RebuildMSAAResources(uint32 w, uint32 h) {
+	m_UIMSAAColor = m_Ctx->CreateTexture({
+		.width = w,
+		.height = h,
+		.format = RHI::TextureFormat::BGRA8,
+		.usage = RHI::TextureUsage::ColorAttachment,
+		.samples = RHI::SampleCount::x4,
+		.debugName = "UIMSAAColor",
+	});
+
+	m_SwapchainPass = m_Ctx->CreateRenderPass({
 		.colorAttachments = { {
-			.loadOp = RHI::AttachmentLoadOp::Load,
-			.storeOp = RHI::AttachmentStoreOp::Store,
+			.texture = &m_UIMSAAColor->GetRHI(),
+			.loadOp = RHI::AttachmentLoadOp::Clear,
+			.storeOp = RHI::AttachmentStoreOp::DontCare,
 		} },
-		.useSwapchain = true,
+		.useSwapchainAsResolve = true,
 		.debugName = "UIOverlay",
 	});
 }
@@ -42,6 +55,12 @@ void Renderer2D::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) 
 void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	if (m_Swapchain == nullptr) {
 		return;
+	}
+
+	if (ctx.width != m_UIWidth || ctx.height != m_UIHeight) {
+		m_UIWidth = ctx.width;
+		m_UIHeight = ctx.height;
+		RebuildMSAAResources(ctx.width, ctx.height);
 	}
 
 	auto *swapchain = m_Swapchain;
@@ -70,7 +89,7 @@ void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &
 			if (uiDirty) {
 				PROFILE_SCOPE("UIOverlay::DirtyRebuild");
 				r2d->BeginCapture();
-				r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x1, ortho);
+				r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, ortho);
 				for (auto &sys : *systems) {
 					sys->Render(*r2d, cmd);
 				}

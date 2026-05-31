@@ -71,6 +71,13 @@ void VulkanRenderPass::IssuePreBarriers(VulkanCommandList &cmd, const VulkanSwap
 										   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, srcAccess,
 										   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_READ_BIT));
 		}
+
+		if (m_Desc.useSwapchainAsResolve) {
+			AQUILA_ASSERT(swapchain, "useSwapchainAsResolve=true but no swapchain passed to Begin()");
+			barriers.push_back(MakeBarrier(swapchain->GetImage(imageIndex), VK_IMAGE_ASPECT_COLOR_BIT,
+										   VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 0,
+										   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT));
+		}
 	}
 
 	if (m_Desc.depthAttachment.has_value()) {
@@ -117,12 +124,14 @@ void VulkanRenderPass::IssuePostBarriers(VulkanCommandList &cmd) const {
 		VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 	VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT;
 
-	if (m_Desc.useSwapchain) {
-		AQUILA_ASSERT(m_ActiveSwapchain, "useSwapchain=true but swapchain is null during End()");
+	if (m_Desc.useSwapchain || m_Desc.useSwapchainAsResolve) {
+		AQUILA_ASSERT(m_ActiveSwapchain, "useSwapchain/useSwapchainAsResolve but swapchain is null during End()");
 		barriers.push_back(MakeBarrier(m_ActiveSwapchain->GetImage(m_SwapchainImageIndex), VK_IMAGE_ASPECT_COLOR_BIT,
 									   VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
 									   VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, 0));
-	} else {
+	}
+
+	if (!m_Desc.useSwapchain) {
 		for (const auto &att : m_Desc.colorAttachments) {
 			if ((att.texture == nullptr) || att.storeOp == AttachmentStoreOp::DontCare) {
 				continue;
@@ -200,6 +209,11 @@ void VulkanRenderPass::Begin(IRHICommandList &cmd, IRHISwapchain *swapchain, uin
 		});
 		m_ColorFormat = TextureFormat::BGRA8;
 	} else {
+		if (m_Desc.useSwapchainAsResolve && m_ActiveSwapchain) {
+			width = m_ActiveSwapchain->GetExtent().width;
+			height = m_ActiveSwapchain->GetExtent().height;
+		}
+
 		for (const auto &att : m_Desc.colorAttachments) {
 			AQUILA_ASSERT(att.texture, "Offscreen color attachment has null texture");
 			auto &vkTex = static_cast<VulkanTexture &>(*att.texture);
@@ -207,6 +221,8 @@ void VulkanRenderPass::Begin(IRHICommandList &cmd, IRHISwapchain *swapchain, uin
 			VkImageView resolveView = VK_NULL_HANDLE;
 			if (att.resolveTexture != nullptr) {
 				resolveView = static_cast<VulkanTexture &>(*att.resolveTexture).GetImageView();
+			} else if (m_Desc.useSwapchainAsResolve && m_ActiveSwapchain) {
+				resolveView = m_ActiveSwapchain->GetImageView(imageIndex);
 			}
 
 			colorDescs.push_back({
@@ -216,7 +232,7 @@ void VulkanRenderPass::Begin(IRHICommandList &cmd, IRHISwapchain *swapchain, uin
 				.clear = (att.loadOp == AttachmentLoadOp::Clear),
 				.clearColor = att.clearColor,
 			});
-			m_ColorFormat = vkTex.GetFormat();
+			m_ColorFormat = m_Desc.useSwapchainAsResolve ? TextureFormat::BGRA8 : vkTex.GetFormat();
 			m_SampleCount = vkTex.GetSampleCount();
 		}
 	}

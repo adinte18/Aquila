@@ -43,6 +43,8 @@ enum class KeyCode : uint16 {
 	Left = 263,
 	Down = 264,
 	Up = 265,
+	Home = 268,
+	End = 269,
 	F1 = 290,
 	F2 = 291,
 	F3 = 292,

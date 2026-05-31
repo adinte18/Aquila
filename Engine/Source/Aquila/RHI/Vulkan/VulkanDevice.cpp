@@ -366,6 +366,8 @@ Unique<IRHIPipeline> VulkanDevice::CreateGraphicsPipeline(const GraphicsPipeline
 	config.pipelineLayout = pipelineLayout;
 
 	config.multisampleInfo.rasterizationSamples = ToVkSampleCount(desc.sampleCount);
+	config.multisampleInfo.sampleShadingEnable = desc.minSampleShading ? VK_TRUE : VK_FALSE;
+	config.multisampleInfo.minSampleShading = desc.minSampleShading ? 1.0f : 0.0f;
 
 	config.inputAssemblyInfo.topology = ToVkPrimitiveTopology(desc.topology);
 
@@ -873,6 +875,7 @@ void VulkanDevice::CreateLogicalDevice() {
 	deviceFeatures.wideLines = VK_TRUE;
 	deviceFeatures.fillModeNonSolid = VK_TRUE;
 	deviceFeatures.independentBlend = VK_TRUE;
+	deviceFeatures.sampleRateShading = VK_TRUE;
 
 	VkPhysicalDeviceFeatures2 deviceFeatures2{};
 	deviceFeatures2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;

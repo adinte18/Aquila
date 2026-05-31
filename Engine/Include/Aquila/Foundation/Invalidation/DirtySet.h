@@ -17,6 +17,12 @@ template <typename Key, typename Hash = std::hash<Key>> class DirtySet {
 	[[nodiscard]] bool IsEmpty() const { return m_Ordered.empty(); }
 	[[nodiscard]] const std::vector<Key> &GetOrdered() const { return m_Ordered; }
 
+	void Remove(const Key &key) {
+		if (m_Set.erase(key)) {
+			m_Ordered.erase(std::remove(m_Ordered.begin(), m_Ordered.end(), key), m_Ordered.end());
+		}
+	}
+
 	void Clear() {
 		m_Set.clear();
 		m_Ordered.clear();
