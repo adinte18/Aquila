@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/ColorPicker.h"
+#include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 
 namespace Aquila::UI::Core {
@@ -54,7 +55,7 @@ class ColorPicker::PickerArea : public View {
 	bool m_Is1D = false;
 	Delegate<void(vec2)> m_OnPick;
 
-	PickerArea() { SetCapturesInput(true); }
+	PickerArea() { SetInputLeaf(true); }
 
 	void OnMousePress(Platform::MouseButton btn, vec2 pos) override {
 		View::OnMousePress(btn, pos);
@@ -71,7 +72,7 @@ class ColorPicker::PickerArea : public View {
 	void OnDrawSelf(Rendering::DrawList &dl) override {
 		View::OnDrawSelf(dl);
 		const Rect r = { GetAbsolutePosition(), GetLayoutRect().size };
-		const int32 z = GetDisplayStyle().zIndex * 4;
+		const int32 z = GetStackingZ() * 4;
 
 		if (m_Tex) {
 			dl.DrawImage(r, m_Tex, vec4(1.f), vec2(0.f), vec2(1.f), z + 1);
@@ -94,7 +95,7 @@ class ColorPicker::PickerArea : public View {
 
   private:
 	void Pick(vec2 absPos) {
-		const Rect r = { GetAbsolutePosition(), GetLayoutRect().size };
+		const Rect r = GetAbsoluteRect();
 		vec2 n = (absPos - r.position) / glm::max(r.size, vec2(1.f));
 		n = glm::clamp(n, vec2(0.f), vec2(1.f));
 		if (m_Is1D) {
@@ -460,12 +461,23 @@ void ColorPicker::ApplyChannelValue(int idx, float rawValue) {
 }
 
 void ColorPicker::TogglePopup() {
-	if (m_Popup) {
-		m_Popup->Toggle();
+	if (!m_Popup) {
+		return;
 	}
-	m_PopupOpen = m_Popup ? m_Popup->IsOpen() : false;
+	if (!m_Popup->IsOpen()) {
+		const Rect swatchRect = m_Swatch->GetAbsoluteRect();
+		FloatingConfig fc = m_Popup->GetFloating();
+		if (swatchRect.position.x > m_Popup->GetParent()->GetLayoutRect().Width() * 0.5f) {
+			fc.elementPoint = FloatingAttachPoint::RightTop;
+			fc.parentPoint = FloatingAttachPoint::RightBottom;
+		} else {
+			fc.elementPoint = FloatingAttachPoint::LeftTop;
+			fc.parentPoint = FloatingAttachPoint::LeftBottom;
+		}
+		m_Popup->SetFloating(fc);
+	}
+	m_Popup->Toggle();
 }
-
 void ColorPicker::SetMode(Mode mode) {
 	m_Mode = mode;
 
@@ -514,17 +526,10 @@ void ColorPicker::SetMode(Mode mode) {
 }
 
 void ColorPicker::Init() {
+	AddClass("color-picker");
+
 	{
-		StyleProperties sp;
-		sp.width = StyleLength::Grow();
-		sp.height = StyleLength::Pixel(kSwatchH);
-		sp.borderRadius = vec4(4.f);
-		sp.backgroundColor = m_Color;
-		sp.borderWidth = 1.f;
-		sp.borderColor = vec4(0.f, 0.f, 0.f, 0.35f);
-		sp.padding = StyleEdges{};
 		auto btn = CreateUnique<Button>();
-		btn->SetStyle(sp);
 		btn->AddClass("cp-swatch");
 		btn->SetOnClick([this] { TogglePopup(); });
 		m_Swatch = AddChild(std::move(btn));
@@ -535,18 +540,6 @@ void ColorPicker::Init() {
 	RebuildAlphaTexture();
 
 	{
-		StyleProperties pp;
-		pp.flexDirection = FlexDirection::Column;
-		pp.gap = 6.f;
-		pp.padding = StyleEdges{ StyleLength::Pixel(kPad), StyleLength::Pixel(kPad), StyleLength::Pixel(kPad),
-								 StyleLength::Pixel(kPad) };
-		pp.width = StyleLength::Pixel(kPopupW);
-		pp.backgroundColor = vec4(0.13f, 0.13f, 0.15f, 0.97f);
-		pp.borderRadius = vec4(6.f);
-		pp.borderWidth = 1.f;
-		pp.borderColor = vec4(1.f, 1.f, 1.f, 0.09f);
-		pp.zIndex = 60;
-
 		FloatingConfig fc;
 		fc.attachTo = FloatingAttachTo::Parent;
 		fc.elementPoint = FloatingAttachPoint::LeftTop;
@@ -555,20 +548,14 @@ void ColorPicker::Init() {
 		fc.zIndex = 60;
 
 		auto popup = CreateUnique<Popup>();
-		popup->MergeStyle(pp);
+		popup->AddClass("cp-popup");
 		popup->SetFloating(fc);
 		m_Popup = static_cast<Popup *>(AddChild(std::move(popup)));
 	}
 
 	{
-		StyleProperties sp;
-		sp.width = StyleLength::Grow();
-		sp.height = StyleLength::Pixel(kSVH);
-		sp.borderRadius = vec4(4.f);
-		sp.overflow = Overflow::Hidden;
-		sp.zIndex = 60;
 		auto sv = CreateUnique<PickerArea>();
-		sv->SetStyle(sp);
+		sv->AddClass("cp-sv-area");
 		sv->m_Tex = m_SVTex.get();
 		sv->m_Is1D = false;
 		sv->m_Indicator = { m_S, 1.f - m_V };
@@ -590,27 +577,12 @@ void ColorPicker::Init() {
 
 	{
 		auto row = CreateUnique<View>();
-		{
-			StyleProperties rp;
-			rp.flexDirection = FlexDirection::Row;
-			rp.gap = 6.f;
-			rp.alignItems = AlignItems::Center;
-			rp.width = StyleLength::Grow();
-			rp.zIndex = 60;
-			row->SetStyle(rp);
-		}
+		row->AddClass("cp-hue-row");
 		View *rowRaw = m_Popup->AddChild(std::move(row));
 
-		// Hue bar
 		{
 			auto hue = CreateUnique<PickerArea>();
-			StyleProperties bp;
-			bp.flexGrow = 1.f;
-			bp.height = StyleLength::Pixel(kBarH);
-			bp.borderRadius = vec4(kBarH * 0.5f);
-			bp.overflow = Overflow::Hidden;
-			bp.zIndex = 60;
-			hue->SetStyle(bp);
+			hue->AddClass("cp-hue-bar");
 			hue->m_Tex = m_HueTex.get();
 			hue->m_Is1D = true;
 			hue->m_Indicator = { m_H, 0.f };
@@ -633,31 +605,16 @@ void ColorPicker::Init() {
 			m_HueBar = static_cast<PickerArea *>(rowRaw->AddChild(std::move(hue)));
 		}
 
-		// Color preview swatch
 		{
 			auto prev = CreateUnique<View>();
-			StyleProperties pp;
-			pp.width = StyleLength::Pixel(28.f);
-			pp.height = StyleLength::Pixel(28.f);
-			pp.borderRadius = vec4(4.f);
-			pp.backgroundColor = m_Color;
-			pp.borderWidth = 1.f;
-			pp.borderColor = vec4(0.f, 0.f, 0.f, 0.35f);
-			pp.zIndex = 60;
-			prev->SetStyle(pp);
+			prev->AddClass("cp-preview");
 			m_Preview = rowRaw->AddChild(std::move(prev));
 		}
 	}
 
 	{
 		auto alpha = CreateUnique<PickerArea>();
-		StyleProperties bp;
-		bp.width = StyleLength::Grow();
-		bp.height = StyleLength::Pixel(kBarH);
-		bp.borderRadius = vec4(kBarH * 0.5f);
-		bp.overflow = Overflow::Hidden;
-		bp.zIndex = 60;
-		alpha->SetStyle(bp);
+		alpha->AddClass("cp-alpha-bar");
 		alpha->m_Tex = m_AlphaTex.get();
 		alpha->m_Is1D = true;
 		alpha->m_Indicator = { m_Color.a, 0.f };
@@ -673,21 +630,11 @@ void ColorPicker::Init() {
 
 	{
 		auto row = CreateUnique<View>();
-		StyleProperties rp;
-		rp.flexDirection = FlexDirection::Row;
-		rp.gap = 4.f;
-		rp.width = StyleLength::Grow();
-		rp.zIndex = 60;
-		row->SetStyle(rp);
+		row->AddClass("cp-mode-row");
 		View *rowRaw = m_Popup->AddChild(std::move(row));
 
 		auto makeBtn = [&](const char *text) -> Button * {
 			auto btn = CreateUnique<Button>(text);
-			StyleProperties bp;
-			bp.flexGrow = 1.f;
-			bp.fontSize = 11.f;
-			bp.zIndex = 60;
-			btn->SetStyle(bp);
 			btn->AddClass("cp-mode-btn");
 			return static_cast<Button *>(rowRaw->AddChild(std::move(btn)));
 		};
@@ -702,22 +649,11 @@ void ColorPicker::Init() {
 	const char *labels[4] = { "R", "G", "B", "A" };
 	for (int i = 0; i < 4; ++i) {
 		auto row = CreateUnique<View>();
-		StyleProperties rp;
-		rp.flexDirection = FlexDirection::Row;
-		rp.gap = 6.f;
-		rp.width = StyleLength::Grow();
-		rp.alignItems = AlignItems::Center;
-		rp.zIndex = 60;
-		row->SetStyle(rp);
+		row->AddClass("cp-ch-row");
 		m_Ch[i].row = m_Popup->AddChild(std::move(row));
 
 		{
 			auto lbl = CreateUnique<Label>(labels[i]);
-			StyleProperties lp;
-			lp.fontSize = 11.f;
-			lp.width = StyleLength::Pixel(12.f);
-			lp.zIndex = 60;
-			lbl->SetStyle(lp);
 			lbl->AddClass("cp-ch-lbl");
 			m_Ch[i].label = static_cast<Label *>(m_Ch[i].row->AddChild(std::move(lbl)));
 		}
@@ -725,32 +661,20 @@ void ColorPicker::Init() {
 			auto sl = CreateUnique<Slider>();
 			sl->SetRange(0.f, 255.f);
 			sl->SetStep(1.f);
-			StyleProperties sp;
-			sp.flexGrow = 1.f;
-			sp.height = StyleLength::Pixel(14.f);
-			sp.zIndex = 60;
-			sl->SetStyle(sp);
 			sl->AddClass("cp-ch-slider");
 			m_Ch[i].slider = static_cast<Slider *>(m_Ch[i].row->AddChild(std::move(sl)));
 		}
 		{
 			auto ti = CreateUnique<TextInput>();
-			StyleProperties ip;
-			ip.width = StyleLength::Pixel(38.f);
-			ip.fontSize = 11.f;
-			ip.zIndex = 60;
-			ti->SetStyle(ip);
 			ti->AddClass("cp-ch-input");
 			m_Ch[i].input = static_cast<TextInput *>(m_Ch[i].row->AddChild(std::move(ti)));
 		}
 
-		// Slider drives color
 		const int idx = i;
 		m_Ch[i].slider->SetOnChanged([this, idx](float val) {
 			m_Ch[idx].input->SetText(FmtInt(static_cast<int>(std::round(val))));
 			ApplyChannelValue(idx, val);
 		});
-
 		m_Ch[i].input->SetOnSubmit([this, idx](const std::string &s) {
 			try {
 				const float val = static_cast<float>(std::stoi(s));
@@ -763,30 +687,16 @@ void ColorPicker::Init() {
 
 	{
 		auto row = CreateUnique<View>();
-		StyleProperties rp;
-		rp.flexDirection = FlexDirection::Row;
-		rp.gap = 6.f;
-		rp.width = StyleLength::Grow();
-		rp.alignItems = AlignItems::Center;
-		rp.display = Display::None;
-		rp.zIndex = 60;
-		row->SetStyle(rp);
+		row->AddClass("cp-hex-row");
 		m_HexRow = m_Popup->AddChild(std::move(row));
 
 		{
 			auto lbl = CreateUnique<Label>("#");
-			StyleProperties lp;
-			lp.fontSize = 11.f;
-			lp.width = StyleLength::Pixel(8.f);
-			lbl->SetStyle(lp);
+			lbl->AddClass("cp-hex-lbl");
 			m_HexRow->AddChild(std::move(lbl));
 		}
 		{
 			auto ti = CreateUnique<TextInput>();
-			StyleProperties ip;
-			ip.flexGrow = 1.f;
-			ip.fontSize = 11.f;
-			ti->SetStyle(ip);
 			ti->AddClass("cp-hex-input");
 			ti->SetOnSubmit([this](const std::string &s) {
 				vec4 c;

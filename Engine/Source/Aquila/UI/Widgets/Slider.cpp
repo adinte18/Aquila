@@ -1,6 +1,4 @@
 #include "Aquila/UI/Widgets/Slider.h"
-#include <algorithm>
-#include <cmath>
 
 namespace Aquila::UI::Core {
 
@@ -9,7 +7,7 @@ static constexpr float kHandleSize = 12.f;
 static constexpr float kHandlePad = kHandleSize * 0.5f;
 
 Slider::Slider() {
-	SetCapturesInput(true);
+	SetInputLeaf(true);
 }
 
 void Slider::SetValue(float value) {
@@ -40,7 +38,7 @@ void Slider::SetOnChanged(Delegate<void(float)> callback) {
 }
 
 float Slider::ValueFromX(float x) const {
-	const Rect rect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
+	const Rect rect = GetAbsoluteRect();
 	const float left = rect.position.x + kHandlePad;
 	const float right = rect.position.x + rect.size.x - kHandlePad;
 	const float t = std::clamp((x - left) / (right - left), 0.f, 1.f);
@@ -49,13 +47,6 @@ float Slider::ValueFromX(float x) const {
 		raw = std::round((raw - m_Min) / m_Step) * m_Step + m_Min;
 	}
 	return std::clamp(raw, m_Min, m_Max);
-}
-
-void Slider::OnMouseEnter() {
-	View::OnMouseEnter();
-}
-void Slider::OnMouseLeave() {
-	View::OnMouseLeave();
 }
 
 void Slider::OnMousePress(Platform::MouseButton btn, vec2 pos) {
@@ -72,10 +63,6 @@ void Slider::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	View::OnMousePress(btn, pos);
 }
 
-void Slider::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	View::OnMouseRelease(btn, pos);
-}
-
 void Slider::OnMouseMove(vec2 pos) {
 	const float newVal = ValueFromX(pos.x);
 	if (newVal != m_Value) {
@@ -90,9 +77,10 @@ void Slider::OnMouseMove(vec2 pos) {
 void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 	View::OnDrawSelf(drawList);
 
-	const Rect rect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
+	const Rect rect = GetAbsoluteRect();
+	using namespace Rendering;
 	const auto &style = GetDisplayStyle();
-	const int32 z = style.zIndex * 4;
+	const int32 z = GetStackingZ() * 4;
 	const float cy = rect.position.y + rect.size.y * 0.5f;
 
 	const float t = (m_Max > m_Min) ? (m_Value - m_Min) / (m_Max - m_Min) : 0.f;
@@ -110,23 +98,26 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
 		drawList.DrawRect(handle, vec4(1.f), vec4(kHandleSize * 0.5f), 1.5f, vec4(0.f, 0.f, 0.f, 0.7f), z + 2);
 	} else {
+		// Use accent-color for the fill; fall back to text color when accent-color was not set (alpha==0).
+		const vec4 accentColor = (style.accentColor.a > 0.f) ? style.accentColor : style.color;
+
 		const Rect track = {
 			.position = { rect.position.x + kHandlePad, cy - kTrackHeight * 0.5f },
 			.size = { rect.size.x - kHandlePad * 2.f, kTrackHeight },
 		};
-		const vec4 trackColor = vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.3f);
+		const vec4 trackColor = vec4(accentColor.r, accentColor.g, accentColor.b, accentColor.a * 0.3f);
 		drawList.DrawRect(track, trackColor, vec4(kTrackHeight * 0.5f), 0.f, vec4(0.f), z + 1);
 
 		const float fillW = track.size.x * t;
 		if (fillW > 0.f) {
 			const Rect fill = { .position = track.position, .size = { fillW, kTrackHeight } };
-			drawList.DrawRect(fill, style.color, vec4(kTrackHeight * 0.5f), 0.f, vec4(0.f), z + 1);
+			drawList.DrawRect(fill, accentColor, vec4(kTrackHeight * 0.5f), 0.f, vec4(0.f), z + 1);
 		}
 
 		const float hx = track.position.x + fillW - kHandleSize * 0.5f;
 		const float hy = cy - kHandleSize * 0.5f;
 		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
-		drawList.DrawRect(handle, style.color, vec4(kHandleSize * 0.5f), 0.f, vec4(0.f), z + 2);
+		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), 0.f, vec4(0.f), z + 2);
 	}
 }
 

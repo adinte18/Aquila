@@ -24,10 +24,7 @@ class Slider : public View {
 	[[nodiscard]] float GetMin() const { return m_Min; }
 	[[nodiscard]] float GetMax() const { return m_Max; }
 
-	void OnMouseEnter() override;
-	void OnMouseLeave() override;
 	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnMouseMove(vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 

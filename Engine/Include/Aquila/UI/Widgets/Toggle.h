@@ -4,22 +4,22 @@
 
 namespace Aquila::UI::Core {
 
-class Checkbox : public View {
+class Toggle : public View {
   public:
-	Checkbox();
-	explicit Checkbox(bool checked);
+	Toggle();
+	explicit Toggle(bool on);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Checkbox"; }
+	[[nodiscard]] std::string_view GetTypeName() const override { return "Toggle"; }
 
-	void SetChecked(bool checked);
+	void SetOn(bool on);
+	[[nodiscard]] bool IsOn() const { return m_On; }
 	void SetOnChanged(Delegate<void(bool)> callback);
-	[[nodiscard]] bool IsChecked() const { return m_Checked; }
 
 	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 
   private:
-	bool m_Checked = false;
+	bool m_On = false;
 	Delegate<void(bool)> m_OnChanged;
 };
 

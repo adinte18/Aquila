@@ -1,4 +1,7 @@
 #include "Aquila/UI/Widgets/Image.h"
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/UI/Style/StyleParserHelper.h"
 
 namespace Aquila::UI::Core {
 
@@ -36,23 +39,35 @@ void Image::OnDrawSelf(Rendering::DrawList &drawList) {
 		return;
 	}
 
-	const Rect worldRect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
+	const Rect worldRect = GetAbsoluteRect();
 	const vec4 tint = m_Tint * GetDisplayStyle().color;
-	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, GetDisplayStyle().zIndex * 4 + 2);
+	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, GetStackingZ() * 4 + 2);
 }
 
-void Image::OnDraw(Rendering::DrawList &drawList, vec2 origin) {
-	View::OnDraw(drawList, origin);
-
-	if (m_Texture == nullptr) {
+void Image::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+	if (name == "tint") {
+		if (auto c = UI::ParserHelper::ParseColor(value)) {
+			SetTint(*c);
+		}
 		return;
 	}
-
-	const Rect &layout = GetLayoutRect();
-	const Rect worldRect{ .position = layout.position + origin, .size = layout.size };
-
-	const vec4 tint = m_Tint * GetDisplayStyle().color;
-	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, GetDisplayStyle().zIndex * 4 + 2);
+	if (name == "src") {
+		auto *loader = static_cast<Core::LayoutLoader *>(loaderCtx);
+		if (loader) {
+			if (GFX::GfxTexture *tex = loader->ResolveTexture(std::string(value))) {
+				SetTexture(tex);
+			} else {
+				AQUILA_LOG_WARNING("Image: could not load texture '{}'", value);
+			}
+		}
+		return;
+	}
+	// icon/bank/uv: the LayoutLoader handles these together (they require cross-attribute
+	// coordination) — ignore them here so we don't double-apply them.
+	if (name == "icon" || name == "bank" || name == "uv") {
+		return;
+	}
+	View::ApplyXmlAttribute(name, value, loaderCtx);
 }
 
 } // namespace Aquila::UI::Core

@@ -31,8 +31,8 @@ class Image : public View {
 		return texSize * uvSpan;
 	}
 
-	void OnDraw(Rendering::DrawList &drawList, vec2 origin) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
 
   private:
 	GFX::GfxTexture *m_Texture = nullptr;

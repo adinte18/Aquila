@@ -3,11 +3,11 @@
 namespace Aquila::UI::Core {
 
 Checkbox::Checkbox() {
-	SetCapturesInput(true);
+	SetInputLeaf(true);
 }
 
 Checkbox::Checkbox(bool checked) : m_Checked(checked) {
-	SetCapturesInput(true);
+	SetInputLeaf(true);
 }
 
 void Checkbox::SetChecked(bool checked) {
@@ -20,16 +20,6 @@ void Checkbox::SetChecked(bool checked) {
 
 void Checkbox::SetOnChanged(Delegate<void(bool)> callback) {
 	m_OnChanged = std::move(callback);
-}
-
-void Checkbox::OnMouseEnter() {
-	View::OnMouseEnter();
-}
-void Checkbox::OnMouseLeave() {
-	View::OnMouseLeave();
-}
-void Checkbox::OnMousePress(Platform::MouseButton btn, vec2 pos) {
-	View::OnMousePress(btn, pos);
 }
 
 void Checkbox::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
@@ -50,11 +40,10 @@ void Checkbox::OnDrawSelf(Rendering::DrawList &drawList) {
 		return;
 	}
 
-	const Rect rect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
+	const Rect rect = GetAbsoluteRect();
 	const auto &style = GetDisplayStyle();
-	const int32 z = style.zIndex * 4 + 2;
 	constexpr float pad = 4.f;
-
+	const int32 z = GetStackingZ() * 4 + 2;
 	const Rect fill = {
 		.position = rect.position + vec2(pad),
 		.size = rect.size - vec2(pad * 2.f),

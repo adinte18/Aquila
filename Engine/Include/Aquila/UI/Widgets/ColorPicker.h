@@ -57,7 +57,6 @@ class ColorPicker : public View {
 	vec4 m_Color = vec4(1.f);
 	float m_H = 0.f, m_S = 0.f, m_V = 1.f;
 	Mode m_Mode = Mode::RGB;
-	bool m_PopupOpen = false;
 
 	Ref<GFX::GfxTexture> m_SVTex;
 	Ref<GFX::GfxTexture> m_HueTex;

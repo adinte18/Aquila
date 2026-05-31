@@ -13,14 +13,12 @@ class Button : public View {
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Button"; }
 
 	void SetText(std::string text);
-	void SetFont(Text::FontAtlas *font);
+	void SetFont(Text::FontAtlas *font) override;
 	void SetOnClick(Delegate<void()> callback);
 
-	void OnMouseEnter() override;
-	void OnMouseLeave() override;
-	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
 	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnStyleResolved() override;
+	void ApplyXmlTextContent(std::string_view text) override { SetText(std::string(text)); }
 
   private:
 	Label *m_Label = nullptr; // owned by m_Children

@@ -1,13 +1,13 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/FloatingOverlay.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include <string>
 #include <vector>
 
 namespace Aquila::UI::Core {
 
-class ContextMenu : public View {
+class ContextMenu : public FloatingOverlay {
   public:
 	ContextMenu();
 
@@ -16,10 +16,6 @@ class ContextMenu : public View {
 	void AddItem(std::string text, Delegate<void()> callback);
 	void ClearItems();
 	void OpenAt(vec2 canvasPos);
-	void Close();
-	[[nodiscard]] bool IsOpen() const { return m_Open; }
-
-	View *HitTestAbsolute(vec2 canvasPos) override;
 
   private:
 	struct Item {
@@ -28,12 +24,9 @@ class ContextMenu : public View {
 	};
 
 	void Rebuild();
-	void ApplyDisplayState();
 
-	bool m_Open = false;
 	std::vector<Item> m_Items;
 	std::vector<View *> m_ItemViews;
-	Button *m_Backdrop = nullptr;
 };
 
 } // namespace Aquila::UI::Core

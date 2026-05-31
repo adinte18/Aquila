@@ -1,5 +1,5 @@
 #include "Aquila/UI/Widgets/Label.h"
-#include "Aquila/UI/Core/FontRegistry.h"
+#include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Style/StyleTypes.h"
 
 namespace Aquila::UI::Core {
@@ -23,11 +23,8 @@ void Label::SetFont(Text::FontAtlas *font) {
 }
 
 Text::FontAtlas *Label::ResolveFont() const {
-	const std::string &family = GetComputedStyle().fontFamily;
-	if (!family.empty()) {
-		if (Text::FontAtlas *resolved = FontRegistry::Resolve(family)) {
-			return resolved;
-		}
+	if (Text::FontAtlas *css = GetResolvedFont()) {
+		return css;
 	}
 	return m_Font;
 }
@@ -75,25 +72,7 @@ void Label::OnDrawSelf(Rendering::DrawList &drawList) {
 	const Rect worldRect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
 	const vec4 color = GetDisplayStyle().color;
 	const float fontSize = GetDisplayStyle().fontSize;
-	const int32 z = GetDisplayStyle().zIndex * 4 + 3;
-
-	drawList.DrawText(worldRect, m_Text, font, color, fontSize, TextAlign::Center, z);
-}
-
-void Label::OnDraw(Rendering::DrawList &drawList, vec2 origin) {
-	View::OnDraw(drawList, origin);
-
-	Text::FontAtlas *font = ResolveFont();
-	if (m_Text.empty() || font == nullptr) {
-		return;
-	}
-
-	const Rect &layout = GetLayoutRect();
-	const Rect worldRect = { .position = layout.position + origin, .size = layout.size };
-
-	const vec4 color = GetDisplayStyle().color;
-	const float fontSize = GetDisplayStyle().fontSize;
-	const int32 z = GetDisplayStyle().zIndex * 4 + 3;
+	const int32 z = GetStackingZ() * 4 + 3;
 
 	drawList.DrawText(worldRect, m_Text, font, color, fontSize, TextAlign::Center, z);
 }
