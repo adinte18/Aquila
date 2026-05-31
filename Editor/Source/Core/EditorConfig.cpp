@@ -1,5 +1,5 @@
 #include "Core/EditorConfig.h"
-#include "Aquila/Core/Defines.h"
+#include "Aquila/Foundation/Macros.h"
 
 namespace Editor::Config {
 
@@ -27,11 +27,8 @@ void EditorPreferences::SaveToFile() const {
 
 void EditorPreferences::ResetToDefaults() {
 	window = WindowSettings{};
-	fonts.mainFontPath = ENGINE_RESOURCES_PATH "/Fonts/Roboto-VariableFont_wdth,wght.ttf";
-	fonts.iconsFontPath = ENGINE_RESOURCES_PATH "/Fonts/lucide.ttf";
-	fonts.defaultFontSize = 16.0f;
-	fonts.oversampleH = 3;
-	fonts.oversampleV = 1;
+	fonts = FontSettings{};
+	ui = UISettings{};
 	currentTheme = Theme::Aquila2;
 
 	showGrid = true;

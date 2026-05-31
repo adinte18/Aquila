@@ -21,11 +21,17 @@ struct WindowSettings {
 };
 
 struct FontSettings {
-	std::string mainFontPath = ENGINE_RESOURCES_PATH "/Fonts/Roboto-VariableFont_wdth,wght.ttf";
-	std::string iconsFontPath = ENGINE_RESOURCES_PATH "/Fonts/lucide.ttf";
-	f32 defaultFontSize = 16.0f;
-	int oversampleH = 3;
-	int oversampleV = 1;
+	std::string regularPath = "/resources/Engine/Fonts/Lexend/Lexend-Regular.ttf";
+	std::string thinPath    = "/resources/Engine/Fonts/Lexend/Lexend-Thin.ttf";
+	std::string mediumPath  = "/resources/Engine/Fonts/Lexend/Lexend-Medium.ttf";
+	std::string boldPath    = "/resources/Engine/Fonts/Lexend/Lexend-Bold.ttf";
+	f32 size = 16.f;
+};
+
+struct UISettings {
+	std::string resourcesPath = "/resources";
+	std::string layoutPath    = "/resources/Engine/UI/widget_test.aqlayout";
+	std::string stylePath     = "/resources/Engine/UI/widget_test.aqstyle";
 };
 
 enum class Theme { Aquila, Aquila2, Dark, Light, Custom };
@@ -33,6 +39,7 @@ enum class Theme { Aquila, Aquila2, Dark, Light, Custom };
 struct EditorPreferences {
 	WindowSettings window;
 	FontSettings fonts;
+	UISettings ui;
 	Theme currentTheme = Theme::Aquila2;
 
 	bool showGrid = true;
