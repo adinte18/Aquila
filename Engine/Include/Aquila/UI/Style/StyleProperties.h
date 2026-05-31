@@ -18,7 +18,8 @@ struct StyleProperties {
 	Option<StyleLength> min, max;
 	Option<StyleLength> minWidth, maxWidth;
 	Option<StyleLength> minHeight, maxHeight;
-	Option<StyleEdges> padding;
+	Option<StyleEdges>   padding;
+	Option<StyleLength>  paddingLeft, paddingRight, paddingTop, paddingBottom;
 	Option<f32> gap;
 
 	Option<FlexDirection> flexDirection;
@@ -32,6 +33,7 @@ struct StyleProperties {
 	Option<int32> zIndex;
 
 	Option<vec4> color;
+	Option<vec4> accentColor;
 	Option<f32> fontSize;
 	Option<std::string> fontFamily;
 	Option<TextAlign> textAlign;

@@ -1,19 +1,10 @@
 #pragma once
 
 #include "Aquila/UI/Style/StyleProperties.h"
+#include "Aquila/UI/Style/StyleSheet.h"
 
 namespace Aquila::UI {
 
-// Typed base-style bank per widget type, swappable at runtime.
-//
-// Resolution priority (lowest → highest):
-//   Theme base style  <  Theme pseudo-class style  <  CSS rules  <  Inline style
-//
-// Usage:
-//   auto theme = CreateRef<Theme>();
-//   theme->Set("Button", StyleProperties{ .backgroundColor = ... });
-//   theme->Set("Button", "hover", StyleProperties{ .backgroundColor = ... });
-//   canvas.SetTheme(theme);
 class Theme {
   public:
 	Theme() = default;
@@ -33,8 +24,11 @@ class Theme {
 	// Returns nullptr if no entry exists for (typeName, pseudoClass).
 	[[nodiscard]] const StyleProperties *Get(std::string_view typeName, std::string_view pseudoClass = "") const;
 
-	// Serialise the theme to .aqstyle text. The result can be passed directly to
-	// StyleParser::LoadString() to produce an equivalent StyleSheet.
+	// Directly injects every theme entry as StyleRule objects into |sheet|.
+	// This is the preferred runtime path — no text serialisation or re-parsing.
+	void ApplyToStyleSheet(StyleSheet &sheet) const;
+
+	// Serialise the theme to .aqstyle text. Useful for save/export; not needed for runtime.
 	// Color/constant tokens are emitted as comments (reference only).
 	[[nodiscard]] std::string ToAqStyle() const;
 

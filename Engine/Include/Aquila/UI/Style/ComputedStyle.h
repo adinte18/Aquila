@@ -41,6 +41,7 @@ struct ComputedStyle {
 	Display display = StyleDefaults::Disp;
 	Overflow overflow = StyleDefaults::Overflow;
 	vec4 color = StyleDefaults::Color;
+	vec4 accentColor = vec4(0.f); // transparent sentinel; if alpha==0 widgets fall back to style.color
 
 	f32 fontSize = StyleDefaults::FontSize; // 0 = unset / inherit from parent
 	std::string fontFamily;					// "" = unset / inherit from parent
@@ -58,7 +59,8 @@ struct ComputedStyle {
 			   maxHeight == b.maxHeight && padding == b.padding && gap == b.gap && flexDirection == b.flexDirection &&
 			   justify == b.justify && align == b.align && wrap == b.wrap && flexGrow == b.flexGrow &&
 			   position == b.position && top == b.top && bottom == b.bottom && left == b.left && right == b.right &&
-			   zIndex == b.zIndex && display == b.display && overflow == b.overflow && color == b.color &&
+			   zIndex == b.zIndex && display == b.display && overflow == b.overflow &&
+			   color == b.color && accentColor == b.accentColor &&
 			   fontSize == b.fontSize && fontFamily == b.fontFamily && textAlign == b.textAlign &&
 			   boxShadows == b.boxShadows && transitionDuration == b.transitionDuration &&
 			   transitionEasing == b.transitionEasing;
