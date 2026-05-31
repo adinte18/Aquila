@@ -2,64 +2,31 @@
 
     <View id="toolbar">
         <View id="toolbar-left">
-            <Label id="engine-logo">AQUILA</Label>
-            <View class="toolbar-sep"></View>
-            <Button class="menu-btn">File</Button>
-            <Button class="menu-btn">Edit</Button>
-            <Button class="menu-btn">View</Button>
-            <Button class="menu-btn">Window</Button>
+            <View id="engine-logo">
+                <Image id="image-logo" src="Logo/16px.png"/>
+            </View>
+            <Button id="btn-file" class="menu-btn">File</Button>
+            <Button id="btn-edit" class="menu-btn">Edit</Button>
+            <Button id="btn-view" class="menu-btn">View</Button>
+            <Button id="btn-window" class="menu-btn">Window</Button>
         </View>
         <View id="toolbar-center">
-            <Button id="btn-play"  class="run-btn">Play</Button>
-            <Button id="btn-pause" class="run-btn">Pause</Button>
-            <Button id="btn-stop"  class="run-btn run-stop">Stop</Button>
+            <Button id="btn-play" class="run-btn">
+                <Image id="image-play" src="Engine/UI/Icons/play.png"/>
+            </Button>
+            <Button id="btn-pause" class="run-btn">
+                <Image id="image-pause" src="Engine/UI/Icons/pause.png"/>
+            </Button>
+            <Button id="btn-stop" class="run-btn run-stop">
+                <Image id="image-stop" src="Engine/UI/Icons/square.png"/>
+            </Button>
         </View>
         <View id="toolbar-right">
-            <Label id="fps-counter">60 fps</Label>
         </View>
     </View>
 
     <View id="workspace">
-
-        <View id="panel-hierarchy">
-            <View class="panel-header">
-                <Label class="panel-title">SCENE</Label>
-            </View>
-            <View id="scene-tree">
-            </View>
-        </View>
-
-        <View id="center-col">
-            <View id="viewport-bar">
-                <Button class="vp-tab vp-tab-active">Perspective</Button>
-                <Button class="vp-tab">Top</Button>
-                <Button class="vp-tab">Front</Button>
-                <Button class="vp-tab">Right</Button>
-                <View id="vp-bar-spacer"></View>
-                <Button class="vp-mode">Lit</Button>
-                <Button class="vp-mode">Wireframe</Button>
-                <Button class="vp-mode">Unlit</Button>
-            </View>
-            <Image id="viewport"/>
-        </View>
-
-        <View id="panel-inspector">
-            <View class="panel-header">
-                <Label class="panel-title">INSPECTOR</Label>
-            </View>
-            <View id="inspector-scroll">
-            </View>
-        </View>
-
-    </View>
-
-    <View id="content-browser">
-        <View class="panel-header">
-            <Label class="panel-title">ASSETS</Label>
-            <View id="cb-gap"></View>
-            <TextInput id="cb-search"/>
-        </View>
-        <View id="asset-grid">
+        <View id="dock-root">
         </View>
     </View>
 
