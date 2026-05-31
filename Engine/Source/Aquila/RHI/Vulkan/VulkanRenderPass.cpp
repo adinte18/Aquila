@@ -41,8 +41,7 @@ void VulkanRenderPass::IssuePreBarriers(VulkanCommandList &cmd, const VulkanSwap
 
 	VkPipelineStageFlags srcStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	VkPipelineStageFlags dstStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT |
-									VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT |
-									VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
 
 	if (m_Desc.useSwapchain) {
 		AQUILA_ASSERT(swapchain, "useSwapchain=true but no swapchain passed to Begin()");
@@ -96,15 +95,14 @@ void VulkanRenderPass::IssuePreBarriers(VulkanCommandList &cmd, const VulkanSwap
 
 		if (depthImage != VK_NULL_HANDLE) {
 			VkImageLayout oldLayout = (d.depthLoadOp == AttachmentLoadOp::Load)
-										  ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
-										  : VK_IMAGE_LAYOUT_UNDEFINED;
+				? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+				: VK_IMAGE_LAYOUT_UNDEFINED;
 			VkAccessFlags srcAccess = (d.depthLoadOp == AttachmentLoadOp::Load) ? VK_ACCESS_SHADER_READ_BIT : 0;
 			VkImageLayout newLayout =
 				d.readOnly ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-			VkAccessFlags dstAccess =
-				d.readOnly
-					? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
-					: (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+			VkAccessFlags dstAccess = d.readOnly
+				? VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT
+				: (VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
 
 			barriers.push_back(MakeBarrier(depthImage, aspect, oldLayout, newLayout, srcAccess, dstAccess));
 		}
@@ -260,12 +258,13 @@ void VulkanRenderPass::Begin(IRHICommandList &cmd, IRHISwapchain *swapchain, uin
 		}
 	}
 
-	VulkanDynamicRendering::Begin(vkCmd, {
-											 .width = width,
-											 .height = height,
-											 .colorAttachments = colorDescs,
-											 .depthAttachment = depthDesc,
-										 });
+	VulkanDynamicRendering::Begin(vkCmd,
+								  {
+									  .width = width,
+									  .height = height,
+									  .colorAttachments = colorDescs,
+									  .depthAttachment = depthDesc,
+								  });
 
 	m_Width = width;
 	m_Height = height;

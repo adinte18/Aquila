@@ -82,7 +82,7 @@ void TextInput::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	const size_t hit = m_State.HitTestPos(*font, scale, localX);
 
 	const bool shift = Platform::Input::IsKeyPressed(Platform::KeyCode::LeftShift) ||
-					   Platform::Input::IsKeyPressed(Platform::KeyCode::RightShift);
+		Platform::Input::IsKeyPressed(Platform::KeyCode::RightShift);
 
 	if (shift) {
 		m_State.cursor = hit;

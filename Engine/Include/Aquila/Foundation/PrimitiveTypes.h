@@ -22,7 +22,7 @@ using uptr = std::uintptr_t;
 using iptr = std::intptr_t;
 
 using Mutex = std::shared_mutex;
-using MutexLock = std::unique_lock<Mutex>;	// exclusive write lock
+using MutexLock = std::unique_lock<Mutex>; // exclusive write lock
 using SharedLock = std::shared_lock<Mutex>; // shared read lock
 
 template <typename T> using Ref = std::shared_ptr<T>;
@@ -49,11 +49,11 @@ template <typename T, typename... Args> constexpr Unique<T> CreateUnique(Args &&
 
 enum class AccessMode : uint8 { Read = 0, Write = 1, ReadWrite = 2 };
 enum class OpenMode : uint8 {
-	Text = 0,		   // default, text mode
-	Binary = BIT(1),   // "b" no newline translation
-	Append = BIT(2),   // "a" writes go to end
+	Text = 0, // default, text mode
+	Binary = BIT(1), // "b" no newline translation
+	Append = BIT(2), // "a" writes go to end
 	Truncate = BIT(3), // "w" clears file on open
-	Create = BIT(4),   // create if not exists
+	Create = BIT(4), // create if not exists
 };
 
 AQUILA_FORCE_INLINE OpenMode operator|(OpenMode a, OpenMode b) {

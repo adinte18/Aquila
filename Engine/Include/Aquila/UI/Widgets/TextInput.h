@@ -36,7 +36,7 @@ class TextInput : public View {
 	void ClampScrollOffset(Text::FontAtlas *font, float scale, float visibleWidth);
 
 	TextInputState m_State;
-	std::string    m_Placeholder;
+	std::string m_Placeholder;
 	Text::FontAtlas *m_Font = nullptr;
 	float m_ScrollOffsetX = 0.f; // horizontal scroll offset in pixels
 

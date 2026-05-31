@@ -115,7 +115,7 @@ class RGRegistry {
 	// That's how the graph knows "this is a different write than before" without wasting memory.
 	static constexpr uint32 kVersionShift = 24u;
 	static constexpr uint32 kIndexMask =
-		(1u << kVersionShift) - 1u;						// bottom 24 bits: 000000 11111111 11111111 11111111
+		(1u << kVersionShift) - 1u; // bottom 24 bits: 000000 11111111 11111111 11111111
 	static constexpr uint32 kVersionMask = ~kIndexMask; // top    8  bits: 111111 00000000 00000000 00000000
 
 	static uint32 EncodeHandle(uint32 index, uint32 version) {

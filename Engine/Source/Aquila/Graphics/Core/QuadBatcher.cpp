@@ -1,6 +1,5 @@
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/Foundation/SharedConstants.h"
-#include <cstring>
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
@@ -65,14 +64,14 @@ static RHI::VertexBindingDesc QuadVertexLayout() {
 	return RHI::VertexBindingDesc{
 		.stride = sizeof(QuadVertex),
 		.attributes = {
-			{ 0, 0, RHI::TextureFormat::RGB32F,  offsetof(QuadVertex, position)    },
-			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, color)       },
-			{ 2, 0, RHI::TextureFormat::RG32F,   offsetof(QuadVertex, uv)          },
-			{ 3, 0, RHI::TextureFormat::RG32F,   offsetof(QuadVertex, size)        },
-			{ 4, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, radius)      },
-			{ 5, 0, RHI::TextureFormat::R32F,    offsetof(QuadVertex, borderWidth) },
+			{ 0, 0, RHI::TextureFormat::RGB32F, offsetof(QuadVertex, position) },
+			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, color) },
+			{ 2, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, uv) },
+			{ 3, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, size) },
+			{ 4, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, radius) },
+			{ 5, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, borderWidth) },
 			{ 6, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, borderColor) },
-			{ 7, 0, RHI::TextureFormat::R32UI,   offsetof(QuadVertex, glyphID)     },
+			{ 7, 0, RHI::TextureFormat::R32UI, offsetof(QuadVertex, glyphID) },
 		},
 	};
 }
@@ -81,12 +80,12 @@ static RHI::VertexBindingDesc TextVertexLayout() {
 	return RHI::VertexBindingDesc{
 		.stride = sizeof(TextVertex),
 		.attributes = {
-			{ 0, 0, RHI::TextureFormat::RGB32F,  offsetof(TextVertex, position) },
-			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, color)    },
-			{ 2, 0, RHI::TextureFormat::RG32F,   offsetof(TextVertex, texcoord) },
-			{ 3, 0, RHI::TextureFormat::R32F,    offsetof(TextVertex, texLoc)   },
-			{ 4, 0, RHI::TextureFormat::R32F,    offsetof(TextVertex, bandMax)  },
-			{ 5, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, banding)  },
+			{ 0, 0, RHI::TextureFormat::RGB32F, offsetof(TextVertex, position) },
+			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, color) },
+			{ 2, 0, RHI::TextureFormat::RG32F, offsetof(TextVertex, texcoord) },
+			{ 3, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, texLoc) },
+			{ 4, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, bandMax) },
+			{ 5, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, banding) },
 		},
 	};
 }
@@ -162,8 +161,6 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		},
 	});
 
-	// Prewarm all pipeline variants used by UIOverlay (BGRA8) and GameUI (RGBA16F).
-	// Lazy compilation inside an execute lambda causes a multi-frame stall on first use.
 	for (auto fmt : { RHI::TextureFormat::BGRA8, RHI::TextureFormat::RGBA16F }) {
 		GetOrCreateFlatPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
 		GetOrCreateGUIPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
@@ -171,7 +168,7 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		GetOrCreateTextPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
 		GetOrCreateShadowPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
 	}
-	// Prewarm x4 MSAA text pipeline for the UIOverlay pass.
+
 	GetOrCreateTextPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, RHI::TextureFormat::None);
 }
 
@@ -199,7 +196,6 @@ void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat
 	m_LastBoundVertexBuffer = nullptr;
 	m_PushConstantsDirty = true;
 
-	// Index buffer never changes — bind once per frame instead of per draw call.
 	cmd.BindIndexBuffer(*m_IndexBuffer);
 	StartBatch();
 }
@@ -570,8 +566,7 @@ void QuadBatcher::Flush() {
 		if (&pipeline != m_LastBoundPipeline) {
 			m_ActiveCmd->BindPipeline(pipeline);
 			m_LastBoundPipeline = &pipeline;
-			// Each pipeline has its own VkPipelineLayout; push constants are not
-			// preserved across incompatible layouts, so re-push on every switch.
+
 			m_PushConstantsDirty = true;
 		}
 	};

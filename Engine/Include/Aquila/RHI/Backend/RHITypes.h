@@ -400,12 +400,12 @@ enum class AttachmentLoadOp : uint8 { Load, Clear, DontCare };
 enum class AttachmentStoreOp : uint8 { Store, DontCare };
 
 struct RenderPassColorAttachmentDesc {
-	IRHITexture *texture = nullptr;		   // null = use swapchain image
+	IRHITexture *texture = nullptr; // null = use swapchain image
 	IRHITexture *resolveTexture = nullptr; // MSAA resolve target
 	vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
 	AttachmentLoadOp loadOp = AttachmentLoadOp::Clear;
 	AttachmentStoreOp storeOp = AttachmentStoreOp::Store;
-	uint32 mipLevel = 0;   // target mip level (for rendering into a mip)
+	uint32 mipLevel = 0; // target mip level (for rendering into a mip)
 	uint32 arrayLayer = 0; // target array layer / cubemap face
 };
 
@@ -444,8 +444,8 @@ enum class ResourceState : uint16 {
 	ColorAttachmentWrite = 1 << 1,
 	DepthStencilRead = 1 << 2,
 	DepthStencilWrite = 1 << 3,
-	ShaderRead = 1 << 4,   // sampled / SRV
-	StorageRead = 1 << 5,  // UAV read
+	ShaderRead = 1 << 4, // sampled / SRV
+	StorageRead = 1 << 5, // UAV read
 	StorageWrite = 1 << 6, // UAV write
 	UniformRead = 1 << 7,
 	TransferSrc = 1 << 8,

@@ -160,7 +160,7 @@ void Application::InternalUpdate(f32 deltaTime) {
 
 void Application::InternalOnEvent(Events::Event &event) {
 	const bool isCursorEvent = (event.GetCategory() & Events::EventCategory::Mouse) &&
-							   !(event.GetCategory() & Events::EventCategory::MouseButton);
+		!(event.GetCategory() & Events::EventCategory::MouseButton);
 	if (!isCursorEvent) {
 		Rendering::FrameScheduler::Get()->RequestFrame();
 	}

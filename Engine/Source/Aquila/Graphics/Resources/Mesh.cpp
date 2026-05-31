@@ -70,11 +70,11 @@ void Mesh::Load(const std::string &filepath) {
 				RHI::Vertex v{};
 				v.pos = glm::vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.f);
 				v.normals = mesh->HasNormals()
-								? glm::normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
-								: vec3(0, 1, 0);
+					? glm::normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
+					: vec3(0, 1, 0);
 				v.texcoord = mesh->HasTextureCoords(0)
-								 ? vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y)
-								 : vec2(0);
+					? vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y)
+					: vec2(0);
 
 				if (mesh->HasTangentsAndBitangents()) {
 					vec3 T = glm::normalize(vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z));

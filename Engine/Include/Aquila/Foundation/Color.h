@@ -76,12 +76,18 @@ inline vec3 HsvToRgb(float h, float s, float v) {
 	const float q = v * (1.f - s * f);
 	const float t = v * (1.f - s * (1.f - f));
 	switch (i % 6) {
-	case 0: return { v, t, p };
-	case 1: return { q, v, p };
-	case 2: return { p, v, t };
-	case 3: return { p, q, v };
-	case 4: return { t, p, v };
-	default: return { v, p, q };
+	case 0:
+		return { v, t, p };
+	case 1:
+		return { q, v, p };
+	case 2:
+		return { p, v, t };
+	case 3:
+		return { p, q, v };
+	case 4:
+		return { t, p, v };
+	default:
+		return { v, p, q };
 	}
 }
 
@@ -137,7 +143,8 @@ inline std::vector<uint8> GenHue(uint32 w, uint32 h) {
 	return px;
 }
 
-inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, int ch, bool isHSV, uint32 w, uint32 texH) {
+inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, int ch, bool isHSV, uint32 w,
+										 uint32 texH) {
 	std::vector<uint8> px(w * texH * 4);
 	for (uint32 x = 0; x < w; ++x) {
 		const float t = x / static_cast<float>(w - 1);
@@ -152,9 +159,15 @@ inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, 
 			} else if (!isHSV) {
 				float cr = color.r, cg = color.g, cb = color.b;
 				switch (ch) {
-				case 0: cr = t; break;
-				case 1: cg = t; break;
-				case 2: cb = t; break;
+				case 0:
+					cr = t;
+					break;
+				case 1:
+					cg = t;
+					break;
+				case 2:
+					cb = t;
+					break;
 				}
 				px[i + 0] = uint8(cr * 255.f);
 				px[i + 1] = uint8(cg * 255.f);
@@ -163,9 +176,15 @@ inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, 
 			} else {
 				float ch_h = h, ch_s = s, ch_v = v;
 				switch (ch) {
-				case 0: ch_h = t; break;
-				case 1: ch_s = t; break;
-				case 2: ch_v = t; break;
+				case 0:
+					ch_h = t;
+					break;
+				case 1:
+					ch_s = t;
+					break;
+				case 2:
+					ch_v = t;
+					break;
 				}
 				const vec3 rgb = HsvToRgb(ch_h, ch_s, ch_v);
 				px[i + 0] = uint8(rgb.r * 255.f);

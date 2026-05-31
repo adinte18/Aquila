@@ -225,28 +225,32 @@ void EditorApplication::WireMenubar(Aquila::UI::Core::View *layoutRoot) {
 		}
 	};
 
-	makeMenu("btn-file", {
-							 { "New Scene", [] { AQUILA_LOG_INFO("File: New Scene"); } },
-							 { "Open Scene...", [] { AQUILA_LOG_INFO("File: Open Scene"); } },
-							 { "Save Scene", [] { AQUILA_LOG_INFO("File: Save Scene"); } },
-							 { "Exit", [] { AQUILA_LOG_INFO("File: Exit"); } },
-						 });
-	makeMenu("btn-edit", {
-							 { "Undo", [] { AQUILA_LOG_INFO("Edit: Undo"); } },
-							 { "Redo", [] { AQUILA_LOG_INFO("Edit: Redo"); } },
-							 { "Duplicate", [] { AQUILA_LOG_INFO("Edit: Duplicate"); } },
-							 { "Delete", [] { AQUILA_LOG_INFO("Edit: Delete"); } },
-						 });
-	makeMenu("btn-view", {
-							 { "Toggle Grid", [] { AQUILA_LOG_INFO("View: Toggle Grid"); } },
-							 { "Toggle Stats", [] { AQUILA_LOG_INFO("View: Toggle Stats"); } },
-							 { "Fullscreen", [] { AQUILA_LOG_INFO("View: Fullscreen"); } },
-						 });
-	makeMenu("btn-window", {
-							   { "Scene", [] { AQUILA_LOG_INFO("Window: Scene"); } },
-							   { "Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); } },
-							   { "Console", [] { AQUILA_LOG_INFO("Window: Console"); } },
-						   });
+	makeMenu("btn-file",
+			 {
+				 { "New Scene", [] { AQUILA_LOG_INFO("File: New Scene"); } },
+				 { "Open Scene...", [] { AQUILA_LOG_INFO("File: Open Scene"); } },
+				 { "Save Scene", [] { AQUILA_LOG_INFO("File: Save Scene"); } },
+				 { "Exit", [] { AQUILA_LOG_INFO("File: Exit"); } },
+			 });
+	makeMenu("btn-edit",
+			 {
+				 { "Undo", [] { AQUILA_LOG_INFO("Edit: Undo"); } },
+				 { "Redo", [] { AQUILA_LOG_INFO("Edit: Redo"); } },
+				 { "Duplicate", [] { AQUILA_LOG_INFO("Edit: Duplicate"); } },
+				 { "Delete", [] { AQUILA_LOG_INFO("Edit: Delete"); } },
+			 });
+	makeMenu("btn-view",
+			 {
+				 { "Toggle Grid", [] { AQUILA_LOG_INFO("View: Toggle Grid"); } },
+				 { "Toggle Stats", [] { AQUILA_LOG_INFO("View: Toggle Stats"); } },
+				 { "Fullscreen", [] { AQUILA_LOG_INFO("View: Fullscreen"); } },
+			 });
+	makeMenu("btn-window",
+			 {
+				 { "Scene", [] { AQUILA_LOG_INFO("Window: Scene"); } },
+				 { "Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); } },
+				 { "Console", [] { AQUILA_LOG_INFO("Window: Console"); } },
+			 });
 }
 
 } // namespace Editor

@@ -109,14 +109,14 @@ class EnvironmentBaker {
 
 		// Band 1 (l=1) - Linear
 		basis[1] = -c1 * dir.y; // Y_1_-1
-		basis[2] = c1 * dir.z;	// Y_1_0
+		basis[2] = c1 * dir.z; // Y_1_0
 		basis[3] = -c1 * dir.x; // Y_1_1
 
 		// Band 2 (l=2) - Quadratic
-		basis[4] = c2 * dir.x * dir.y;					 // Y_2_-2
-		basis[5] = -c2 * dir.y * dir.z;					 // Y_2_-1
-		basis[6] = c3 * (3.0f * dir.z * dir.z - 1.0f);	 // Y_2_0
-		basis[7] = -c2 * dir.x * dir.z;					 // Y_2_1
+		basis[4] = c2 * dir.x * dir.y; // Y_2_-2
+		basis[5] = -c2 * dir.y * dir.z; // Y_2_-1
+		basis[6] = c3 * (3.0f * dir.z * dir.z - 1.0f); // Y_2_0
+		basis[7] = -c2 * dir.x * dir.z; // Y_2_1
 		basis[8] = c4 * (dir.x * dir.x - dir.y * dir.y); // Y_2_2
 	}
 };

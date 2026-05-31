@@ -12,7 +12,7 @@ class EntityManager;
 namespace Aquila::UI::Core {
 class TreeView;
 class TreeNode;
-}
+} // namespace Aquila::UI::Core
 
 namespace Editor {
 

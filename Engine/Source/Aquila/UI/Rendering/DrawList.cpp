@@ -25,7 +25,7 @@ void DrawList::DrawShadow(Rect widgetRect, vec2 offset, float blur, float spread
 	command.color = color;
 	command.radius = radius;
 	command.borderWidth = blur;
-	// borderColor.xy = shadow offset, .zw = widget half-size + spread (SDF box)
+
 	command.borderColor = { offset.x, offset.y, widgetRect.size.x * 0.5f + spread, widgetRect.size.y * 0.5f + spread };
 	command.zOrder = z;
 	m_Commands.push_back(command);
@@ -45,7 +45,7 @@ void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *fon
 	command.text = std::string(text);
 	command.font = font;
 	command.fontSize = fontSize;
-	// Pack text-align into borderWidth (unused for text otherwise)
+
 	command.borderWidth = static_cast<float>(static_cast<uint8>(align));
 
 	m_Commands.push_back(command);
@@ -107,8 +107,9 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 			const vec2 sdfHalfSize = { command.borderColor.z, command.borderColor.w };
 			const float blur = command.borderWidth;
 			spec.position = command.rect.position + offset - vec2(blur + (sdfHalfSize.x - command.rect.size.x * 0.5f));
-			spec.size = command.rect.size + vec2(2.f * (blur + (sdfHalfSize.x - command.rect.size.x * 0.5f)),
-												 2.f * (blur + (sdfHalfSize.y - command.rect.size.y * 0.5f)));
+			spec.size = command.rect.size +
+				vec2(2.f * (blur + (sdfHalfSize.x - command.rect.size.x * 0.5f)),
+					 2.f * (blur + (sdfHalfSize.y - command.rect.size.y * 0.5f)));
 			spec.color = command.color;
 			spec.offset = offset;
 			spec.originalHalfSize = sdfHalfSize;
@@ -134,15 +135,13 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 			}
 
 			Text::FontAtlas *atlas = command.font;
-			const auto depth = 0.f; // depth test is off; CPU sort handles draw order
+			const auto depth = 0.f;
 			const auto align = static_cast<TextAlign>(static_cast<uint8>(command.borderWidth));
 
 			const f32 bakeSize = command.font->GetBakeSize();
 			const f32 renderSize = (command.fontSize > 0.f) ? command.fontSize : bakeSize;
 			const f32 scale = (bakeSize > 0.f) ? (renderSize / bakeSize) : 1.f;
 
-			// Single pass: collect glyph pointers and measure width simultaneously.
-			// This avoids a second GetGlyph loop for center/right alignment.
 			struct CharEntry {
 				const Text::GlyphInfo *glyph;
 				const Text::SlugGlyphData *slug;

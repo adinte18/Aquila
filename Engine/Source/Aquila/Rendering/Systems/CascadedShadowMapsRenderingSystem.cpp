@@ -320,7 +320,7 @@ mat4 ShadowRenderSystem::GetLightSpaceMatrix(const f32 nearPlane, const f32 farP
 	if (std::abs(dir.y) > 0.99f) {
 		const vec3 u_axis = vec3(1.0f, 0.0f, 0.0f); // right = X
 		const vec3 v_axis = vec3(0.0f, 0.0f, 1.0f); // up = Z
-		const vec3 w_axis = dir;					// forward = light dir
+		const vec3 w_axis = dir; // forward = light dir
 
 		lightView = mat4(1.0f);
 		lightView[0][0] = u_axis.x;

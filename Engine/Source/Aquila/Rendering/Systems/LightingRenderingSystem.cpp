@@ -257,9 +257,9 @@ void LightingRenderSystem::OnRender(const FrameSpec &frameSpec) {
 
 	std::array<VkDescriptorSet, 4> descriptorSets = {
 		frameSpec.cameraDescriptorSet, // set 0
-		set1,						   // set 1 - lights + env
-		set2,						   // set 2 - gbuffer
-		set3						   // set 3 - shadows
+		set1, // set 1 - lights + env
+		set2, // set 2 - gbuffer
+		set3 // set 3 - shadows
 	};
 
 	vkCmdBindDescriptorSets(frameSpec.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0,

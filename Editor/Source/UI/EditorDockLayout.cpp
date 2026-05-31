@@ -27,9 +27,9 @@ DockPanels EditorDockLayout::Build(UI::Core::View *dockRoot) {
 
 	DockPanels panels;
 	panels.hierarchy = leftNode->AddPanel("Hierarchy");
-	panels.viewport  = centerNode->AddPanel("Viewport");
+	panels.viewport = centerNode->AddPanel("Viewport");
 	panels.inspector = rightNode->AddPanel("Inspector");
-	panels.console   = bottomNode->AddPanel("Console");
+	panels.console = bottomNode->AddPanel("Console");
 
 	panels.hierarchy->SetId("panel-hierarchy");
 	panels.viewport->SetId("panel-viewport");

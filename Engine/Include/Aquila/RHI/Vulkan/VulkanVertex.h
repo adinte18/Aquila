@@ -16,7 +16,7 @@ struct Vertex {
 
 	bool operator==(const Vertex &other) const {
 		return pos == other.pos && color == other.color && normals == other.normals && texcoord == other.texcoord &&
-			   tangent == other.tangent;
+			tangent == other.tangent;
 	}
 
 	static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions() {

@@ -14,12 +14,11 @@ struct Config {
 	static inline ImGuiDockNodeFlags DockspaceFlags = ImGuiDockNodeFlags_NoTabBar;
 
 	static inline ImGuiWindowFlags WindowFlags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse |
-												 ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus |
-												 ImGuiWindowFlags_NoNavFocus;
+		ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-	static inline ImGuiConfigFlags ConfigFlags =
-		ImGuiConfigFlags_NavEnableKeyboard | ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_DockingEnable |
-		ImGuiConfigFlags_NoMouseCursorChange | ImGuiConfigFlags_ViewportsEnable;
+	static inline ImGuiConfigFlags ConfigFlags = ImGuiConfigFlags_NavEnableKeyboard |
+		ImGuiConfigFlags_NavEnableGamepad | ImGuiConfigFlags_DockingEnable | ImGuiConfigFlags_NoMouseCursorChange |
+		ImGuiConfigFlags_ViewportsEnable;
 
 	static inline f32 WindowRounding = 0.0f;
 	static inline f32 WindowBorderSize = 0.0f;

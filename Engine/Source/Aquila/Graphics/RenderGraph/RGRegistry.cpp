@@ -93,8 +93,9 @@ void RGRegistry::ResolveTexture(RGTextureHandle handle, GFX::GfxTexture *physica
 
 	auto &entry = m_Textures[index];
 	if (entry.imported) {
-		AQUILA_ASSERT(physical == entry.importedPtr, "Imported texture resolved with a different pointer — "
-													 "did you pass the wrong GfxTexture?");
+		AQUILA_ASSERT(physical == entry.importedPtr,
+					  "Imported texture resolved with a different pointer — "
+					  "did you pass the wrong GfxTexture?");
 	}
 	entry.physical = physical;
 }
@@ -202,8 +203,9 @@ void RGRegistry::ValidateTextureHandle(RGTextureHandle handle) const {
 							m_Textures[index].version, m_Textures[index].desc.debugName);
 	}
 
-	AQUILA_ASSERT(ver == m_Textures[index].version, "Stale RGTextureHandle: a write pass has produced a newer version. "
-													"Use the handle returned by WriteTexture() instead.");
+	AQUILA_ASSERT(ver == m_Textures[index].version,
+				  "Stale RGTextureHandle: a write pass has produced a newer version. "
+				  "Use the handle returned by WriteTexture() instead.");
 }
 
 void RGRegistry::ValidateBufferHandle(RGBufferHandle handle) const {
@@ -211,8 +213,9 @@ void RGRegistry::ValidateBufferHandle(RGBufferHandle handle) const {
 	const uint32 index = SlotOf(handle.id);
 	const uint32 ver = VersionOf(handle.id);
 	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
-	AQUILA_ASSERT(ver == m_Buffers[index].version, "Stale RGBufferHandle: a write pass has produced a newer version. "
-												   "Use the handle returned by WriteBuffer() instead.");
+	AQUILA_ASSERT(ver == m_Buffers[index].version,
+				  "Stale RGBufferHandle: a write pass has produced a newer version. "
+				  "Use the handle returned by WriteBuffer() instead.");
 }
 
 } // namespace Aquila::Graphics::RG

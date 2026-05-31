@@ -4,12 +4,12 @@
 
 namespace Aquila::UI::Core {
 
+using Aquila::Foundation::Color::GenAlpha;
+using Aquila::Foundation::Color::GenChannelGrad;
+using Aquila::Foundation::Color::GenHue;
+using Aquila::Foundation::Color::GenSV;
 using Aquila::Foundation::Color::HsvToRgb;
 using Aquila::Foundation::Color::RgbToHsv;
-using Aquila::Foundation::Color::GenSV;
-using Aquila::Foundation::Color::GenHue;
-using Aquila::Foundation::Color::GenChannelGrad;
-using Aquila::Foundation::Color::GenAlpha;
 
 class ColorPicker::PickerArea : public View {
   public:
@@ -84,7 +84,6 @@ static Ref<GFX::GfxTexture> MakeTex(GFX::GfxContext &ctx, uint32 w, uint32 h, co
 	ctx.UploadTextureData(*tex, px.data(), static_cast<uint64>(px.size()));
 	return tex;
 }
-
 
 std::string ColorPicker::FmtInt(int v) {
 	return std::to_string(v);
@@ -347,9 +346,15 @@ void ColorPicker::SetMode(Mode mode) {
 	m_HSVBtn->RemoveClass("cp-mode-active");
 	m_HEXBtn->RemoveClass("cp-mode-active");
 	switch (mode) {
-	case Mode::RGB: m_RGBBtn->AddClass("cp-mode-active"); break;
-	case Mode::HSV: m_HSVBtn->AddClass("cp-mode-active"); break;
-	case Mode::HEX: m_HEXBtn->AddClass("cp-mode-active"); break;
+	case Mode::RGB:
+		m_RGBBtn->AddClass("cp-mode-active");
+		break;
+	case Mode::HSV:
+		m_HSVBtn->AddClass("cp-mode-active");
+		break;
+	case Mode::HEX:
+		m_HEXBtn->AddClass("cp-mode-active");
+		break;
 	}
 
 	static const char *rgbLbls[4] = { "R", "G", "B", "A" };

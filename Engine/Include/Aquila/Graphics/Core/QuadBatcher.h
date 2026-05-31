@@ -58,18 +58,18 @@ struct TextVertex {
 	vec3 position; // screen-space XYZ (Z = depth)
 	float _pad0{};
 	vec4 color;
-	vec2 texcoord;	 // em-space coordinate (interpolated)
-	float texLoc{};	 // bit_cast<float>(glyphLocX | (glyphLocY << 16))
+	vec2 texcoord; // em-space coordinate (interpolated)
+	float texLoc{}; // bit_cast<float>(glyphLocX | (glyphLocY << 16))
 	float bandMax{}; // bit_cast<float>((bandMaxX & 0xFF) | (bandMaxY << 8))
-	vec4 banding;	 // (scaleX, scaleY, offsetX, offsetY) nointerpolation
+	vec4 banding; // (scaleX, scaleY, offsetX, offsetY) nointerpolation
 };
 static_assert(sizeof(TextVertex) == 64);
 
 struct ShadowSpec {
 	vec2 position = { 0.F, 0.F }; // top-left of the expanded shadow quad
-	vec2 size = { 1.F, 1.F };	  // shadow quad size = widgetSize + 2*(blur+spread)
+	vec2 size = { 1.F, 1.F }; // shadow quad size = widgetSize + 2*(blur+spread)
 	vec4 color = { 0.F, 0.F, 0.F, 0.75F };
-	vec2 offset = { 0.F, 0.F };			  // CSS shadow-offset (x, y)
+	vec2 offset = { 0.F, 0.F }; // CSS shadow-offset (x, y)
 	vec2 originalHalfSize = { 0.F, 0.F }; // widgetHalfSize + spread (SDF box)
 	vec4 radius = { 0.F, 0.F, 0.F, 0.F };
 	float blur = 0.F;
@@ -78,7 +78,7 @@ struct ShadowSpec {
 
 struct GlyphSpec {
 	vec2 position = { 0.F, 0.F }; // top-left screen position
-	vec2 size = { 1.F, 1.F };	  // screen size
+	vec2 size = { 1.F, 1.F }; // screen size
 	vec4 color = { 1.F, 1.F, 1.F, 1.F };
 	float depth = 0.F;
 	// Slug per-glyph data (constant across all 4 vertices).
@@ -158,7 +158,7 @@ class QuadBatcher {
 	struct ReplayEntry {
 		GFX::GfxPipeline *pipeline;
 		GFX::GfxDescriptorSet *descSet; // null for pipelines with no descriptor set
-		bool isTextBuffer;				// selects text VB vs quad VB
+		bool isTextBuffer; // selects text VB vs quad VB
 		uint32 indexCount;
 		int32 vertexOffset;
 	};
@@ -220,7 +220,7 @@ class QuadBatcher {
 	// Replay state — built during a captured Submit, consumed by ExecuteReplay.
 	std::vector<ReplayEntry> m_ReplayList;
 	bool m_Capturing = false;
-	uint32 m_CurrentSlot = 0;	// ring slot in use this frame (set by Begin)
+	uint32 m_CurrentSlot = 0; // ring slot in use this frame (set by Begin)
 	uint32 m_LastDirtySlot = 0; // ring slot written during last BeginCapture+Submit
 	uint64 m_ReplayQuadBytes = 0;
 	uint64 m_ReplayTextBytes = 0;

@@ -22,7 +22,7 @@ uint32 RGCompiler::SlotOf(uint32 id) {
 // verifies if two texture descriptors are compatible, i.e same shape, format, etc.
 bool RGCompiler::TexDescCompatible(const RGTextureDesc &a, const RGTextureDesc &b) {
 	return a.width == b.width && a.height == b.height && a.mipLevels == b.mipLevels && a.arrayLayers == b.arrayLayers &&
-		   a.format == b.format && a.usage == b.usage && a.samples == b.samples;
+		a.format == b.format && a.usage == b.usage && a.samples == b.samples;
 }
 
 bool RGCompiler::BufDescCompatible(const RGBufferDesc &a, const RGBufferDesc &b) {

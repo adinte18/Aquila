@@ -15,8 +15,8 @@ namespace Aquila::UI::Text {
 // CPU-side per-glyph placement data (used by DrawList for cursor math).
 struct GlyphInfo {
 	uint32 glyphID; // index into FontAtlas::m_SlugGlyphs
-	vec2 size;		// glyph size in pixels at bake scale
-	vec2 bearing;	// offset from cursor baseline to top-left of quad (screen Y-down)
+	vec2 size; // glyph size in pixels at bake scale
+	vec2 bearing; // offset from cursor baseline to top-left of quad (screen Y-down)
 	f32 advance;
 };
 
@@ -68,7 +68,7 @@ class FontAtlas {
 	GFX::GfxContext *m_Ctx = nullptr;
 
 	Ref<GFX::GfxTexture> m_CurveTexture; // RGBA32F: 2 texels per curve (p0+p1, p2)
-	Ref<GFX::GfxTexture> m_BandTexture;	 // RGBA32U: band headers + curve index lists
+	Ref<GFX::GfxTexture> m_BandTexture; // RGBA32U: band headers + curve index lists
 
 	std::unordered_map<uint32, GlyphInfo> m_Glyphs;
 	std::vector<SlugGlyphData> m_SlugGlyphs;

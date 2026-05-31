@@ -29,9 +29,9 @@ void FontManager::Initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSet
 	};
 
 	load("regular", settings.regularPath);
-	load("thin",    settings.thinPath);
-	load("medium",  settings.mediumPath);
-	load("bold",    settings.boldPath);
+	load("thin", settings.thinPath);
+	load("medium", settings.mediumPath);
+	load("bold", settings.boldPath);
 
 	m_Initialized = true;
 	AQUILA_LOG_INFO("FontManager: loaded {} fonts at {}pt", m_Atlases.size(), settings.size);

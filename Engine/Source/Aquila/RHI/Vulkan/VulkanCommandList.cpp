@@ -65,7 +65,7 @@ static VkTexBarrierInfo TexBarrierInfo(ResourceState state, bool isDepth) {
 
 	if (has(ResourceState::ShaderRead)) {
 		out.stage |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-					 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		out.access |= VK_ACCESS_SHADER_READ_BIT;
 		if (out.layout == VK_IMAGE_LAYOUT_UNDEFINED) {
 			out.layout =
@@ -124,12 +124,12 @@ static VkBufBarrierInfo BufBarrierInfo(ResourceState state) {
 
 	if (has(ResourceState::UniformRead)) {
 		out.stage |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-					 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		out.access |= VK_ACCESS_UNIFORM_READ_BIT;
 	}
 	if (has(ResourceState::ShaderRead)) {
 		out.stage |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
-					 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
 		out.access |= VK_ACCESS_SHADER_READ_BIT;
 	}
 	if (has(ResourceState::StorageRead)) {

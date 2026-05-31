@@ -3,7 +3,7 @@
 namespace Aquila::UI::Core {
 class DockPanel;
 class View;
-}
+} // namespace Aquila::UI::Core
 
 namespace Editor {
 

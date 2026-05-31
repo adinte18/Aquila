@@ -20,13 +20,13 @@ using namespace Aquila::Graphics::RenderingPipeline;
 using namespace Aquila::Graphics::Resources;
 
 struct alignas(16) ShadowUniformData {
-	mat4 cascadeViewProj[4];		   // 4 * 64 = 256 bytes
+	mat4 cascadeViewProj[4]; // 4 * 64 = 256 bytes
 	alignas(16) vec4 cascadeSplits[4]; // 16 bytes (one vec4 for the 4 split distances)
-	alignas(16) vec3 lightDirection;   // 16 bytes (12 + pad)
-	f32 lightSize;					   // Light size for penumbra (16 bytes with padding)
-	f32 shadowBias;					   // Base shadow bias
-	f32 normalBias;					   // Normal-based bias multiplier
-	int pcfSamples;					   // Number of PCF samples
+	alignas(16) vec3 lightDirection; // 16 bytes (12 + pad)
+	f32 lightSize; // Light size for penumbra (16 bytes with padding)
+	f32 shadowBias; // Base shadow bias
+	f32 normalBias; // Normal-based bias multiplier
+	int pcfSamples; // Number of PCF samples
 };
 
 struct ShadowPushConstants {

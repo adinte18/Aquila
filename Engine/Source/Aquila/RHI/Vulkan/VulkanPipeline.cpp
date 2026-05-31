@@ -51,8 +51,8 @@ void VulkanPipeline::CreatePipelineFromStages(const std::vector<VkPipelineShader
 	vertexInputInfo.pVertexAttributeDescriptions = configInfo.attributeDescriptions.data();
 
 	uint32_t colorAttachmentCount = configInfo.colorFormats.empty()
-										? static_cast<uint32_t>(configInfo.colorBlendAttachments.size())
-										: static_cast<uint32_t>(configInfo.colorFormats.size());
+		? static_cast<uint32_t>(configInfo.colorBlendAttachments.size())
+		: static_cast<uint32_t>(configInfo.colorFormats.size());
 
 	VkPipelineColorBlendStateCreateInfo colorBlending{};
 	colorBlending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;

@@ -45,6 +45,11 @@ AllowAllParametersOfDeclarationOnNextLine: false
 
 AlignConsecutiveAssignments: false
 AlignConsecutiveDeclarations: false
+AlignConsecutiveMacros: false
+AlignConsecutiveBitFields: false
+AlignTrailingComments: false
+AlignOperands: DontAlign
+AlignArrayOfStructures: None
 
 ReflowComments: false
 FixNamespaceComments: true

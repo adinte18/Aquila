@@ -86,7 +86,7 @@ class KeyPressedEvent final : public Event {
 
 	[[nodiscard]] std::string ToString() const override {
 		return std::string("KeyPressedEvent: ") + std::to_string(static_cast<int>(m_KeyCode)) + " (" +
-			   std::to_string(m_RepeatCount) + " repeats)";
+			std::to_string(m_RepeatCount) + " repeats)";
 	}
 
 	EVENT_CLASS_TYPE(KeyPressedEvent)

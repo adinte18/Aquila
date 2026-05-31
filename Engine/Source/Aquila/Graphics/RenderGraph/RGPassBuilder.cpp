@@ -104,10 +104,11 @@ RGTextureHandle RGPassBuilder::SetColorAttachment(uint32 slot, RGTextureHandle h
 
 	// Grow the slot array to fit.
 	if (slot >= m_Data.colorAttachments.size()) {
-		m_Data.colorAttachments.resize(slot + 1, RGColorAttachment{ .handle = RGTextureHandle{},
-																	.loadOp = AttachmentLoadOp::DontCare,
-																	.storeOp = AttachmentStoreOp::DontCare,
-																	.clear = {} });
+		m_Data.colorAttachments.resize(slot + 1,
+									   RGColorAttachment{ .handle = RGTextureHandle{},
+														  .loadOp = AttachmentLoadOp::DontCare,
+														  .storeOp = AttachmentStoreOp::DontCare,
+														  .clear = {} });
 	}
 
 	m_Data.colorAttachments[slot] = RGColorAttachment{

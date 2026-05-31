@@ -41,7 +41,7 @@ struct VkQueueFamilyIndices {
 
 	[[nodiscard]] bool IsComplete() const {
 		return m_GraphicsFamily.has_value() && m_PresentFamily.has_value() && m_ComputeFamily.has_value() &&
-			   m_TransferFamily.has_value();
+			m_TransferFamily.has_value();
 	}
 };
 

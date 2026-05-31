@@ -184,7 +184,7 @@ bool Scene::HasActiveCamera() const {
 
 	// Check if entity still exists and has camera component
 	return GetRegistry().valid(m_ActiveCameraEntity) &&
-		   GetRegistry().all_of<Components::CameraComponent>(m_ActiveCameraEntity);
+		GetRegistry().all_of<Components::CameraComponent>(m_ActiveCameraEntity);
 }
 
 Entity Scene::FindPrimaryCamera() const {
@@ -239,9 +239,9 @@ bool Scene::Serialize(const std::string &filepath) {
 		if (entity.HasComponent<Components::SceneNodeComponent>()) {
 			auto &node = entity.GetComponent<Components::SceneNodeComponent>();
 			entityJson["SceneNodeComponent"] = {
-				{ "Parent", node.Parent.IsNull()
-								? "null"
-								: node.Parent.GetComponent<Components::MetadataComponent>().GetId().ToString() },
+				{ "Parent",
+				  node.Parent.IsNull() ? "null"
+									   : node.Parent.GetComponent<Components::MetadataComponent>().GetId().ToString() },
 				{ "Children", nlohmann::ordered_json::array() }
 			};
 

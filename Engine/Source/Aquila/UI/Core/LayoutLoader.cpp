@@ -64,8 +64,9 @@ struct Parser {
 
 	std::string ReadName() {
 		size_t start = pos;
-		while (!AtEnd() && ((std::isalnum(static_cast<unsigned char>(Peek())) != 0) || Peek() == '-' || Peek() == '_' ||
-							Peek() == ':')) {
+		while (!AtEnd() &&
+			   ((std::isalnum(static_cast<unsigned char>(Peek())) != 0) || Peek() == '-' || Peek() == '_' ||
+				Peek() == ':')) {
 			Advance();
 		}
 		return std::string(src.substr(start, pos - start));

@@ -22,7 +22,7 @@ SkyboxRenderSystem::SkyboxRenderSystem(Device &device, const std::vector<Ref<Des
 void SkyboxRenderSystem::CreatePipelineLayout() {
 	std::vector<VkDescriptorSetLayout> layouts = {
 		m_Layouts[0]->GetDescriptorSetLayout(), // Set 0: Camera
-		m_Layouts[1]->GetDescriptorSetLayout()	// Set 1: Skybox texture
+		m_Layouts[1]->GetDescriptorSetLayout() // Set 1: Skybox texture
 	};
 
 	VkPushConstantRange pushConstantRange{};
@@ -118,12 +118,12 @@ void SkyboxRenderSystem::CreateCubeGeometry() {
 								   { -1.0F, 1.0F, -1.0F } };
 
 	std::vector<uint32_t> indices = {
-		0,	1,	2,	2,	3,	0,	// Front
-		4,	5,	6,	6,	7,	4,	// Back
-		8,	9,	10, 10, 11, 8,	// Top
+		0,	1,	2,	2,	3,	0, // Front
+		4,	5,	6,	6,	7,	4, // Back
+		8,	9,	10, 10, 11, 8, // Top
 		12, 13, 14, 14, 15, 12, // Bottom
 		16, 17, 18, 18, 19, 16, // Right
-		20, 21, 22, 22, 23, 20	// Left
+		20, 21, 22, 22, 23, 20 // Left
 	};
 
 	m_IndexCount = static_cast<uint32>(indices.size());
@@ -186,7 +186,7 @@ void SkyboxRenderSystem::OnRender(const FrameSpec &frameSpec) {
 
 	std::array<VkDescriptorSet, 2> sets = {
 		frameSpec.cameraDescriptorSet, // set 0: global camera
-		textureSet					   // set 1: skybox texture
+		textureSet // set 1: skybox texture
 	};
 
 	vkCmdBindDescriptorSets(frameSpec.commandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, m_PipelineLayout, 0, 2,

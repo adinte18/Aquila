@@ -198,11 +198,11 @@ void Canvas::MarkSubtreeDirty(View *node) {
 
 static bool AffectsLayout(const ComputedStyle &a, const ComputedStyle &b) {
 	return a.width != b.width || a.height != b.height || a.minWidth != b.minWidth || a.maxWidth != b.maxWidth ||
-		   a.minHeight != b.minHeight || a.maxHeight != b.maxHeight || a.padding != b.padding || a.gap != b.gap ||
-		   a.flexDirection != b.flexDirection || a.justify != b.justify || a.align != b.align || a.wrap != b.wrap ||
-		   a.flexGrow != b.flexGrow || a.display != b.display || a.overflow != b.overflow || a.position != b.position ||
-		   a.top != b.top || a.bottom != b.bottom || a.left != b.left || a.right != b.right ||
-		   a.fontSize != b.fontSize || a.fontFamily != b.fontFamily || a.zIndex != b.zIndex;
+		a.minHeight != b.minHeight || a.maxHeight != b.maxHeight || a.padding != b.padding || a.gap != b.gap ||
+		a.flexDirection != b.flexDirection || a.justify != b.justify || a.align != b.align || a.wrap != b.wrap ||
+		a.flexGrow != b.flexGrow || a.display != b.display || a.overflow != b.overflow || a.position != b.position ||
+		a.top != b.top || a.bottom != b.bottom || a.left != b.left || a.right != b.right || a.fontSize != b.fontSize ||
+		a.fontFamily != b.fontFamily || a.zIndex != b.zIndex;
 }
 
 void Canvas::StylePass() {
@@ -349,9 +349,10 @@ void Canvas::ClayLayoutPass(View *node) {
 
 		switch (cs.overflow) {
 		case Overflow::Scroll:
-			CLAY(clayId, { .layout = layout,
-						   .floating = floatCfg,
-						   .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
+			CLAY(clayId,
+				 { .layout = layout,
+				   .floating = floatCfg,
+				   .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
 				emitChildren();
 			}
 			break;
@@ -371,19 +372,21 @@ void Canvas::ClayLayoutPass(View *node) {
 
 	switch (cs.overflow) {
 	case Overflow::Scroll:
-		CLAY(clayId, {
-						 .layout = layout,
-						 .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() },
-					 }) {
+		CLAY(clayId,
+			 {
+				 .layout = layout,
+				 .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() },
+			 }) {
 			emitChildren();
 		}
 		break;
 
 	case Overflow::Hidden:
-		CLAY(clayId, {
-						 .layout = layout,
-						 .clip = { .horizontal = true, .vertical = true },
-					 }) {
+		CLAY(clayId,
+			 {
+				 .layout = layout,
+				 .clip = { .horizontal = true, .vertical = true },
+			 }) {
 			emitChildren();
 		}
 		break;
