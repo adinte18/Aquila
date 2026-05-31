@@ -1,19 +1,23 @@
 #pragma once
 
 #include "Aquila/Application/ApplicationNew.h"
-#include "Aquila/UI/Text/FontAtlas.h"
 #include "Aquila/UI/Core/TextureCache.h"
 
 namespace Aquila::UI::Core {
-class Image;
+class View;
 }
 
 namespace Editor {
 
+class ViewportPanel;
+class HierarchyPanel;
+class InspectorPanel;
+class ConsolePanel;
+
 class EditorApplication : public Aquila::Application::Application {
   public:
 	explicit EditorApplication(const ApplicationSpec &spec);
-	~EditorApplication() override = default;
+	~EditorApplication() override;
 
   protected:
 	void OnInit() override;
@@ -25,10 +29,14 @@ class EditorApplication : public Aquila::Application::Application {
   private:
 	void SetupScene();
 	void SetupEditorUI();
+	void WireMenubar(Aquila::UI::Core::View *layoutRoot);
 
-	std::vector<Unique<Aquila::UI::Text::FontAtlas>> m_Fonts;
-	std::vector<Unique<Aquila::UI::Core::TextureCache>> m_TextureCaches;
-	Aquila::UI::Core::Image *m_ViewportImage = nullptr;
+	Unique<Aquila::UI::Core::TextureCache> m_TextureCache;
+
+	Unique<ViewportPanel> m_ViewportPanel;
+	Unique<HierarchyPanel> m_HierarchyPanel;
+	Unique<InspectorPanel> m_InspectorPanel;
+	Unique<ConsolePanel> m_ConsolePanel;
 };
 
 } // namespace Editor

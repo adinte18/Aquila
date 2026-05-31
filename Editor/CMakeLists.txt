@@ -5,6 +5,13 @@ set(EDITOR_SOURCE_DIR  ${EDITOR_ROOT_DIR}/Source)
 set(EDITOR_SOURCES
     ${EDITOR_SOURCE_DIR}/main.cpp
     ${EDITOR_SOURCE_DIR}/Core/EditorApplication.cpp
+    ${EDITOR_SOURCE_DIR}/Core/EditorConfig.cpp
+    ${EDITOR_SOURCE_DIR}/UI/EditorDockLayout.cpp
+    ${EDITOR_SOURCE_DIR}/UI/Managers/FontManager.cpp
+    ${EDITOR_SOURCE_DIR}/UI/Panels/ViewportPanel.cpp
+    ${EDITOR_SOURCE_DIR}/UI/Panels/HierarchyPanel.cpp
+    ${EDITOR_SOURCE_DIR}/UI/Panels/InspectorPanel.cpp
+    ${EDITOR_SOURCE_DIR}/UI/Panels/ConsolePanel.cpp
 )
 
 if (WIN32)

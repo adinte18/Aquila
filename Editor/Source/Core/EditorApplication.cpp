@@ -1,23 +1,28 @@
 #include "Core/EditorApplication.h"
 
+#include "UI/EditorDockLayout.h"
+#include "UI/Managers/FontManager.h"
+#include "UI/Panels/ConsolePanel.h"
+#include "UI/Panels/HierarchyPanel.h"
+#include "UI/Panels/InspectorPanel.h"
+#include "UI/Panels/ViewportPanel.h"
+
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
-#include "Aquila/Scene/EntityManager.h"
-#include "Aquila/Scene/Components/TransformComponent.h"
-#include "Aquila/Scene/Components/CameraComponent.h"
-#include "Aquila/Scene/Components/MeshComponent.h"
-#include "Aquila/Scene/Components/MaterialComponent.h"
-#include "Aquila/Scene/Components/LightComponent.h"
-#include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
-#include "Aquila/UI/Core/ViewSystem.h"
+#include "Aquila/Graphics/Resources/Mesh.h"
+#include "Aquila/Scene/Components/CameraComponent.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Scene/Components/MaterialComponent.h"
+#include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/TransformComponent.h"
+#include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Core/Clipboard.h"
-#include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
-#include "Aquila/UI/Style/StyleParser.h"
+#include "Aquila/UI/Core/ViewSystem.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
+#include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Widgets/Button.h"
-#include "Aquila/UI/Widgets/Image.h"
 #include "Aquila/UI/Widgets/ColorPicker.h"
 #include "Aquila/UI/Widgets/ContextMenu.h"
 
@@ -30,13 +35,15 @@ using namespace Aquila::Application;
 
 EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(spec) {}
 
+EditorApplication::~EditorApplication() = default;
+
 void EditorApplication::OnInit() {
-	UI::Core::ViewSystem::Init(GetWindow().GetWidth(), GetWindow().GetHeight());
-	GetRenderer2D().AddSystem<UI::Rendering::ViewRenderingSystem>();
+	Aquila::UI::Core::ViewSystem::Init(GetWindow().GetWidth(), GetWindow().GetHeight());
+	GetRenderer2D().AddSystem<Aquila::UI::Rendering::ViewRenderingSystem>();
 
 	{
 		GLFWwindow *nativeWin = GetWindow().GetNativeWindow();
-		UI::Core::Clipboard::Init(
+		Aquila::UI::Core::Clipboard::Init(
 			[nativeWin]() -> std::string {
 				const char *s = glfwGetClipboardString(nativeWin);
 				return s ? s : "";
@@ -46,41 +53,45 @@ void EditorApplication::OnInit() {
 
 	Graphics::MaterialFactory::Get()->EnableHotReload(true);
 
+	UI::FontManager::Get().Initialize(GetContext(), Config::GetPreferences().fonts);
+
 	SetupScene();
 	SetupEditorUI();
 }
 
 void EditorApplication::OnShutdown() {
-	UI::Core::ViewSystem::Shutdown();
-	for (auto &font : m_Fonts) {
-		font.reset();
-	}
-	for (auto &cache : m_TextureCaches) {
-		cache.reset();
-	}
+	m_HierarchyPanel.reset();
+	m_ViewportPanel.reset();
+	m_InspectorPanel.reset();
+	m_ConsolePanel.reset();
+	m_TextureCache.reset();
+
+	Aquila::UI::Core::ViewSystem::Shutdown();
+	UI::FontManager::Get().Shutdown();
 }
 
 void EditorApplication::OnPreRender(f32 deltaTime) {
-	UI::Core::ViewSystem::Get()->Update(deltaTime);
-	UI::Core::ViewSystem::Get()->Compute();
+	Aquila::UI::Core::ViewSystem::Get()->Update(deltaTime);
+	Aquila::UI::Core::ViewSystem::Get()->Compute();
 
-	const bool uiDirty =
-		UI::Core::ViewSystem::Get()->IsAnyLayerDirty(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
+	const bool uiDirty = Aquila::UI::Core::ViewSystem::Get()->IsAnyLayerDirty(Aquila::UI::Core::UILayer::ScreenOverlay,
+																			  Aquila::UI::Core::UILayer::Editor);
 
 	GetRenderer2D().SetUIDirty(uiDirty);
 	if (uiDirty) {
-		UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(UI::Core::UILayer::ScreenOverlay, UI::Core::UILayer::Editor);
+		Aquila::UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(Aquila::UI::Core::UILayer::ScreenOverlay,
+																  Aquila::UI::Core::UILayer::Editor);
 	}
 }
 
 void EditorApplication::OnEvent(Events::Event &event) {
-	UI::Core::ViewSystem::Get()->OnEvent(event);
+	Aquila::UI::Core::ViewSystem::Get()->OnEvent(event);
 }
 
 void EditorApplication::OnResize(uint32 width, uint32 height) {
-	UI::Core::ViewSystem::Get()->Resize(width, height);
-	if (m_ViewportImage) {
-		m_ViewportImage->SetTexture(&GetRenderOutput());
+	Aquila::UI::Core::ViewSystem::Get()->Resize(width, height);
+	if (m_ViewportPanel) {
+		m_ViewportPanel->SetTexture(&GetRenderOutput());
 	}
 }
 
@@ -140,54 +151,102 @@ void EditorApplication::SetupScene() {
 }
 
 void EditorApplication::SetupEditorUI() {
-	auto &editorCanvas = UI::Core::ViewSystem::Get()->GetLayer(UI::Core::UILayer::Editor);
+	auto &editorCanvas = Aquila::UI::Core::ViewSystem::Get()->GetLayer(Aquila::UI::Core::UILayer::Editor);
+	const auto &cfg = Config::GetPreferences();
 
-	m_TextureCaches.push_back(CreateUnique<UI::Core::TextureCache>(GetContext(), "/resources"));
+	m_TextureCache = CreateUnique<Aquila::UI::Core::TextureCache>(GetContext(), cfg.ui.resourcesPath);
 
-	auto addFont = [&](const char *name, const char *path) {
-		m_Fonts.push_back(UI::Text::FontAtlas::CreateFromFile(GetContext(), path, 48.f));
-		UI::Core::FontRegistry::Register(name, m_Fonts.back().get());
-	};
-	addFont("regular", "/resources/Engine/Fonts/Lexend/Lexend-Regular.ttf");
-	addFont("thin", "/resources/Engine/Fonts/Lexend/Lexend-Thin.ttf");
-	addFont("medium", "/resources/Engine/Fonts/Lexend/Lexend-Medium.ttf");
-	addFont("bold", "/resources/Engine/Fonts/Lexend/Lexend-Bold.ttf");
+	Aquila::UI::StyleParser::LoadFile(cfg.ui.stylePath, editorCanvas.GetStyleSheet());
 
-	UI::StyleParser::LoadFile("/resources/Engine/UI/widget_test.aqstyle", editorCanvas.GetStyleSheet());
+	Aquila::UI::Core::LayoutLoader loader;
+	loader.RegisterFont("regular", UI::FontManager::Get().GetFont("regular"));
+	loader.RegisterTextureCache(m_TextureCache.get());
+	loader.RegisterWidget("ColorPicker",
+						  [this](std::string_view, Aquila::UI::Text::FontAtlas *) -> Unique<Aquila::UI::Core::View> {
+							  return CreateUnique<Aquila::UI::Core::ColorPicker>(GetContext());
+						  });
 
-	UI::Core::LayoutLoader loader;
-	loader.RegisterFont("regular", m_Fonts[0].get());
-	loader.RegisterTextureCache(m_TextureCaches.back().get());
-	loader.RegisterWidget("ColorPicker", [this](std::string_view, UI::Text::FontAtlas *) -> Unique<UI::Core::View> {
-		return CreateUnique<UI::Core::ColorPicker>(GetContext());
-	});
-
-	auto root = loader.LoadFile("/resources/Engine/UI/widget_test.aqlayout");
+	auto root = loader.LoadFile(cfg.ui.layoutPath);
 	if (!root) {
-		AQUILA_LOG_ERROR("EditorApplication: failed to load editor layout");
+		AQUILA_LOG_ERROR("EditorApplication: failed to load editor layout from {}", cfg.ui.layoutPath);
 		return;
 	}
 
-	if (auto *view = root->FindById("viewport")) {
-		if (auto *img = dynamic_cast<UI::Core::Image *>(view)) {
-			img->SetTexture(&GetRenderOutput());
-			img->SetPassThroughScroll(true);
-			m_ViewportImage = img;
-		}
+	Aquila::UI::Core::View *layoutRoot = editorCanvas.GetRoot()->AddChild(std::move(root));
+
+	auto *dockRoot = layoutRoot->FindById("dock-root");
+	if (!dockRoot) {
+		AQUILA_LOG_ERROR("EditorApplication: dock-root not found in layout");
+		return;
 	}
 
-	UI::Core::View *layoutRoot = editorCanvas.GetRoot()->AddChild(std::move(root));
+	auto dockPanels = EditorDockLayout::Build(dockRoot);
 
-	auto ctxMenuUniq = CreateUnique<UI::Core::ContextMenu>();
-	auto *ctxMenu = static_cast<UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(ctxMenuUniq)));
-	ctxMenu->AddItem("Create Empty", [] { AQUILA_LOG_INFO("Create Empty entity"); });
-	ctxMenu->AddItem("Create Cube", [] { AQUILA_LOG_INFO("Create Cube entity"); });
+	m_HierarchyPanel = CreateUnique<HierarchyPanel>(*GetScene().GetEntityManager());
+	m_ViewportPanel = CreateUnique<ViewportPanel>(GetRenderOutput());
+	m_InspectorPanel = CreateUnique<InspectorPanel>(GetContext());
+	m_ConsolePanel = CreateUnique<ConsolePanel>();
 
-	if (auto *hierarchy = layoutRoot->FindById("panel-hierarchy")) {
-		hierarchy->SetContextView([ctxMenu](vec2 pos) { ctxMenu->OpenAt(pos); });
-	}
+	m_HierarchyPanel->Build(dockPanels.hierarchy, layoutRoot);
+	m_ViewportPanel->Build(dockPanels.viewport, layoutRoot);
+	m_InspectorPanel->Build(dockPanels.inspector, layoutRoot);
+	m_ConsolePanel->Build(dockPanels.console, layoutRoot);
+
+	m_HierarchyPanel->SetOnEntitySelected([this](Entity entity) { m_InspectorPanel->ShowEntity(entity); });
+
+	WireMenubar(layoutRoot);
 
 	editorCanvas.ReloadStyles();
+}
+
+void EditorApplication::WireMenubar(Aquila::UI::Core::View *layoutRoot) {
+	auto wireBtn = [&](const char *id, const char *action) {
+		if (auto *v = layoutRoot->FindById(id)) {
+			if (auto *btn = dynamic_cast<Aquila::UI::Core::Button *>(v)) {
+				btn->SetOnClick([action] { AQUILA_LOG_INFO("EditorApplication: {}", action); });
+			}
+		}
+	};
+	wireBtn("btn-play", "Play");
+	wireBtn("btn-pause", "Pause");
+	wireBtn("btn-stop", "Stop");
+
+	using MenuItem = std::pair<const char *, std::function<void()>>;
+	auto makeMenu = [&](const char *btnId, std::initializer_list<MenuItem> items) {
+		auto menuUniq = CreateUnique<Aquila::UI::Core::ContextMenu>();
+		auto *menu = static_cast<Aquila::UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(menuUniq)));
+		for (auto &[label, cb] : items) {
+			menu->AddItem(label, cb);
+		}
+		if (auto *v = layoutRoot->FindById(btnId)) {
+			if (auto *btn = dynamic_cast<Aquila::UI::Core::Button *>(v)) {
+				btn->SetOnClick([menu, btn] { menu->OpenAt(btn->GetAbsolutePosition()); });
+			}
+		}
+	};
+
+	makeMenu("btn-file", {
+							 { "New Scene", [] { AQUILA_LOG_INFO("File: New Scene"); } },
+							 { "Open Scene...", [] { AQUILA_LOG_INFO("File: Open Scene"); } },
+							 { "Save Scene", [] { AQUILA_LOG_INFO("File: Save Scene"); } },
+							 { "Exit", [] { AQUILA_LOG_INFO("File: Exit"); } },
+						 });
+	makeMenu("btn-edit", {
+							 { "Undo", [] { AQUILA_LOG_INFO("Edit: Undo"); } },
+							 { "Redo", [] { AQUILA_LOG_INFO("Edit: Redo"); } },
+							 { "Duplicate", [] { AQUILA_LOG_INFO("Edit: Duplicate"); } },
+							 { "Delete", [] { AQUILA_LOG_INFO("Edit: Delete"); } },
+						 });
+	makeMenu("btn-view", {
+							 { "Toggle Grid", [] { AQUILA_LOG_INFO("View: Toggle Grid"); } },
+							 { "Toggle Stats", [] { AQUILA_LOG_INFO("View: Toggle Stats"); } },
+							 { "Fullscreen", [] { AQUILA_LOG_INFO("View: Fullscreen"); } },
+						 });
+	makeMenu("btn-window", {
+							   { "Scene", [] { AQUILA_LOG_INFO("Window: Scene"); } },
+							   { "Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); } },
+							   { "Console", [] { AQUILA_LOG_INFO("Window: Console"); } },
+						   });
 }
 
 } // namespace Editor
