@@ -4,8 +4,6 @@
 
 namespace Aquila::UI::Core {
 
-// Maps font-family name strings to FontAtlas instances.
-// Register fonts once at startup; reference them by name in .aqstyle via font-family.
 class FontRegistry {
   public:
 	static void Register(const std::string &name, Text::FontAtlas *atlas) { GetMap()[name] = atlas; }

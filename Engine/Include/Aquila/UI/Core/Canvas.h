@@ -5,6 +5,7 @@
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleSheet.h"
+#include <unordered_map>
 
 namespace Aquila::UI::Core {
 
@@ -33,10 +34,12 @@ class Canvas {
 	void ClearDrawListDirty() { m_DrawListDirty = false; }
 
   private:
+	View *HitTest(vec2 pos);
 	void ClayLayoutPass(View *node);
 	bool ClayUpdateRects(View *node, vec2 parentAbsPos = {});
 	void MarkNodeDrawDirty(View *node);
-	void CollectFlatViews(View *node);
+	void CollectFlatViews(View *node, int32 floatingBase);
+	void ComputeStackingZ();
 
 	Unique<View> m_Root;
 	StyleSheet m_StyleSheet;
@@ -56,15 +59,15 @@ class Canvas {
 	Foundation::DirtySet<View *> m_DirtyViews;
 	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
 	std::vector<View *> m_FlatViews;
-	std::vector<std::vector<DrawCmd>> m_PerNodeCmds; // parallel to m_FlatViews
+	std::unordered_map<View *, std::vector<DrawCmd>> m_PerNodeCmds;
 	std::vector<View *> m_ActiveAnims;
 
 	bool m_LayoutDirty = true;
 	bool m_Dirty = true;
-	bool m_NeedsSort = true;
 	bool m_DrawListDirty = true; // true when draw list was rebuilt this frame
 
 	void MarkDirty();
+	void SetFocus(View *view); // handles OnFocusLost/OnFocusGained bookkeeping
 	void StylePass();
 	void AnimationPass(f32 dt);
 };

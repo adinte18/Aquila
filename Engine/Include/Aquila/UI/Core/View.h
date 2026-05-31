@@ -5,6 +5,10 @@
 #include "Aquila/UI/Style/ComputedStyle.h"
 #include "Aquila/UI/Style/StyleProperties.h"
 
+namespace Aquila::UI::Text {
+class FontAtlas;
+}
+
 namespace Aquila::UI::Core {
 
 class View {
@@ -13,12 +17,18 @@ class View {
 	AQUILA_NONCOPYABLE(View);
 	AQUILA_NONMOVEABLE(View);
 
-	View *AddChild(Unique<View> child); // sets child->m_Parent, returns raw ptr
+	View *AddChild(Unique<View> child);
 	void RemoveChild(View *child);
+	Unique<View> DetachChild(View *child);
+	View *ReplaceChild(View *old, Unique<View> newChild);
 	[[nodiscard]] View *GetParent() const;
 	[[nodiscard]] const std::vector<Unique<View>> &GetChildren() const;
 	View *FindById(std::string_view id);
-	View *HitTest(vec2 screenPos);
+
+	template <typename T> T *FindById(std::string_view id) {
+		View *v = FindById(id);
+		return v ? dynamic_cast<T *>(v) : nullptr;
+	}
 	void PropagateCallbacks(View *node);
 
 	[[nodiscard]] virtual std::string_view GetTypeName() const { return "View"; }
@@ -30,19 +40,46 @@ class View {
 	[[nodiscard]] const Rect &GetLayoutRect() const { return m_LayoutRect; }
 	[[nodiscard]] vec2 GetAbsolutePosition() const { return m_AbsolutePosition; }
 
-	void AddClass(std::string cls) { m_Classes.push_back(std::move(cls)); }
+	void AddClass(std::string cls) {
+		m_Classes.push_back(std::move(cls));
+		if (m_OnDirty) {
+			m_OnDirty(this);
+		}
+	}
+	void RemoveClass(std::string_view cls) {
+		auto it = std::ranges::find(m_Classes, cls);
+		if (it != m_Classes.end()) {
+			m_Classes.erase(it);
+			if (m_OnDirty) {
+				m_OnDirty(this);
+			}
+		}
+	}
 
 	void SetId(std::string id) { m_Id = std::move(id); }
 	void SetStyle(StyleProperties props) { m_Style = std::move(props); }
-	// Overlay only the fields that are explicitly set in |overlay|, leaving everything else unchanged.
+
 	void MergeStyle(const StyleProperties &overlay);
-	void SetComputedStyle(ComputedStyle style); // detects changes and starts transitions
+	void SetComputedStyle(ComputedStyle style);
 	void SetLayoutRect(Rect rect) { m_LayoutRect = rect; }
 	void SetAbsolutePosition(vec2 pos) { m_AbsolutePosition = pos; }
+	void SetStackingZ(int32 z) { m_StackingZ = z; }
+	[[nodiscard]] int32 GetStackingZ() const { return m_StackingZ; }
 	void SetClayId(uint32 id) { m_ClayId = id; }
-	void SetCapturesInput(bool v) { m_CapturesInput = v; }
+
+	void SetInputLeaf(bool v) { m_IsInputLeaf = v; }
+	[[nodiscard]] bool IsInputLeaf() const { return m_IsInputLeaf; }
+
+	void SetEnabled(bool enabled);
+	[[nodiscard]] bool IsEnabled() const { return m_Enabled; }
+
+	[[nodiscard]] Text::FontAtlas *GetResolvedFont() const { return m_ResolvedFont; }
+
+	void RequestFocus();
 	void SetPassThroughScroll(bool v) { m_PassThroughScroll = v; }
 	[[nodiscard]] bool GetPassThroughScroll() const { return m_PassThroughScroll; }
+
+	[[nodiscard]] Rect GetAbsoluteRect() const { return { m_AbsolutePosition, m_LayoutRect.size }; }
 	void SetContextView(Delegate<void(vec2)> cb) { m_OnContextMenu = std::move(cb); }
 	bool IsAnimationFinished() const { return m_IsAnimationFinished; }
 
@@ -50,13 +87,9 @@ class View {
 	[[nodiscard]] bool IsPressed() const { return m_IsPressed; }
 	[[nodiscard]] bool IsFocused() const { return m_IsFocused; }
 	[[nodiscard]] uint32 GetClayId() const { return m_ClayId; }
-	[[nodiscard]] bool IsStyleDirty() const { return m_IsDirty; }
 
-	// Returns the preferred content size for leaf nodes (e.g. measured text for Label).
-	// Return {-1,-1} to let Clay size via the normal CSS rules.
 	virtual vec2 GetIntrinsicSize() const { return { -1.f, -1.f }; }
 
-	virtual void OnDraw(Rendering::DrawList &drawList, vec2 originOffset);
 	virtual void OnDrawSelf(Rendering::DrawList &drawList);
 	virtual void OnMouseEnter();
 	virtual void OnMouseLeave();
@@ -68,7 +101,14 @@ class View {
 	virtual void OnCharInput(uint32 codepoint) {}
 	virtual void OnFocusGained();
 	virtual void OnFocusLost();
-	virtual void OnStyleResolved() {}
+
+	virtual void OnStyleResolved();
+
+	virtual void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr);
+
+	virtual void ApplyXmlTextContent(std::string_view text) { (void)text; }
+
+	virtual void SetFont(Text::FontAtlas * /*font*/) {}
 
 	void QueueRedraw();
 
@@ -89,6 +129,8 @@ class View {
 	void SetAnimationCallback(Delegate<void(View *)> cb) { m_OnAnimationStarted = std::move(cb); }
 	void SetDrawDirtyCallback(Delegate<void(View *)> cb) { m_OnDrawDirty = std::move(cb); }
 	void SetLayoutDirtyCallback(Delegate<void(View *)> cb) { m_OnLayoutDirty = std::move(cb); }
+	void SetFocusRequestCallback(Delegate<void(View *)> cb) { m_OnFocusRequest = std::move(cb); }
+	void SetRemoveCallback(Delegate<void(View *)> cb) { m_OnRemoved = std::move(cb); }
 
 	void UpdateAnimation(float deltaTime);
 	virtual ~View() = default;
@@ -99,11 +141,13 @@ class View {
 	bool m_IsFocused = false;
 
   private:
+	void NotifyRemoved(View *node);
+
 	View *m_Parent = nullptr;
 	std::vector<Unique<View>> m_Children;
 
-	ComputedStyle m_DisplayStyle;  // interpolated toward m_ComputedStyle each frame
-	ComputedStyle m_AnimationFrom; // snapshot taken when a transition starts
+	ComputedStyle m_DisplayStyle;
+	ComputedStyle m_AnimationFrom;
 	float m_TransitionTimer = 0.f;
 	bool m_DisplayStyleInitialized = false;
 
@@ -112,22 +156,25 @@ class View {
 	StyleProperties m_Style;
 	ComputedStyle m_ComputedStyle;
 	Rect m_LayoutRect;
-	vec2 m_AbsolutePosition; // canvas-space top-left, set by Canvas after layout
+	vec2 m_AbsolutePosition;
+	int32 m_StackingZ = 0;
 	bool m_Visible = true;
 	bool m_Enabled = true;
-	bool m_CapturesInput = false;
+	bool m_IsInputLeaf = false;
 	bool m_PassThroughScroll = false;
 	Delegate<void(vec2)> m_OnContextMenu;
 	uint32 m_ClayId = 0;
 
 	Option<FloatingConfig> m_Floating;
 
-	bool m_IsDirty = true;
 	bool m_IsAnimationFinished = false;
 	bool m_DrawDirty = true;
+	Text::FontAtlas *m_ResolvedFont = nullptr;
 	Delegate<void(View *)> m_OnDirty;
 	Delegate<void(View *)> m_OnAnimationStarted;
 	Delegate<void(View *)> m_OnDrawDirty;
 	Delegate<void(View *)> m_OnLayoutDirty;
+	Delegate<void(View *)> m_OnFocusRequest;
+	Delegate<void(View *)> m_OnRemoved;
 };
 } // namespace Aquila::UI::Core

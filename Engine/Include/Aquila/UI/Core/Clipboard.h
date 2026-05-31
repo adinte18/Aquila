@@ -4,8 +4,6 @@
 
 namespace Aquila::UI::Core {
 
-// Thin clipboard abstraction backed by callbacks set at app startup.
-// The application layer (which has GLFW access) installs Get/Set callbacks.
 class Clipboard {
   public:
 	static void Init(std::function<std::string()> getter, std::function<void(const std::string &)> setter) {

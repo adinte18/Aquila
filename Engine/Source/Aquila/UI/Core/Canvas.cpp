@@ -18,6 +18,7 @@
 namespace Aquila::UI::Core {
 
 using namespace Application::Events;
+using namespace Aquila::UI::Rendering;
 
 static Clay_LayoutAlignmentX JustifyToAlignX(JustifyContent justify) {
 	switch (justify) {
@@ -123,6 +124,17 @@ Canvas::Canvas(uint32 width, uint32 height) : m_Width(width), m_Height(height) {
 		m_LayoutDirty = true;
 		MarkNodeDrawDirty(v);
 	});
+	m_Root->SetFocusRequestCallback([this](View *v) { SetFocus(v); });
+	m_Root->SetRemoveCallback([this](View *v) {
+		m_StyleCache.Remove(v);
+		m_DirtyViews.Remove(v);
+		if (m_HoveredView == v) {
+			m_HoveredView = nullptr;
+		}
+		if (m_FocusedView == v) {
+			m_FocusedView = nullptr;
+		}
+	});
 
 	m_DrawList.SetCanvasSize(width, height);
 
@@ -136,11 +148,25 @@ Canvas::Canvas(uint32 width, uint32 height) : m_Width(width), m_Height(height) {
 	rootStyle.height = StyleLength::Grow();
 	m_Root->SetStyle(rootStyle);
 	NotifyStyleDirty(m_Root.get());
+	StylePass();
 }
 
 void Canvas::MarkDirty() {
 	m_Dirty = true;
 	Aquila::Rendering::FrameScheduler::Get()->RequestFrame();
+}
+
+void Canvas::SetFocus(View *view) {
+	if (m_FocusedView == view) {
+		return;
+	}
+	if (m_FocusedView) {
+		m_FocusedView->OnFocusLost();
+	}
+	m_FocusedView = view;
+	if (m_FocusedView) {
+		m_FocusedView->OnFocusGained();
+	}
 }
 
 void Canvas::NotifyStyleDirty(View *view) {
@@ -210,9 +236,15 @@ void Canvas::StylePass() {
 			m_StyleCache.RegisterDependency(node, parent);
 		}
 
+		StyleSheet::ResolveContext ctx;
+		ctx.viewportSize = { static_cast<f32>(m_Width), static_cast<f32>(m_Height) };
+		if (View *parent = node->GetParent()) {
+			ctx.containerSize = parent->GetLayoutRect().size;
+		}
+
 		const ComputedStyle old = node->GetComputedStyle();
 		const ComputedStyle &resolved =
-			m_StyleCache.Get(node, [&]() { return m_StyleSheet.Resolve(*node, parentStyle); });
+			m_StyleCache.Get(node, [&]() { return m_StyleSheet.Resolve(*node, parentStyle, ctx); });
 
 		if (resolved != old) {
 			if (!m_LayoutDirty && AffectsLayout(old, resolved)) {
@@ -243,7 +275,7 @@ void Canvas::AnimationPass(f32 dt) {
 	while (it != m_ActiveAnims.end()) {
 		View *v = *it;
 		v->UpdateAnimation(dt);
-		MarkNodeDrawDirty(v); // display style changed — m_NeedsSort intentionally not set (color/border only)
+		MarkNodeDrawDirty(v);
 		if (v->IsAnimationFinished()) {
 			it = m_ActiveAnims.erase(it);
 		} else {
@@ -397,6 +429,21 @@ bool Canvas::ClayUpdateRects(View *node, vec2 parentAbsPos) {
 	return changed;
 }
 
+static constexpr int32 kFloatingZBase = INT32_MAX / 2;
+static constexpr int32 kFloatingZTier = 1000;
+
+void Canvas::ComputeStackingZ() {
+	int32 index = 0;
+	for (View *v : m_FlatViews) {
+		const int32 ownZ = v->GetComputedStyle().zIndex;
+		if (v->HasFloating()) {
+			v->SetStackingZ(kFloatingZBase + static_cast<int32>(v->GetFloating().zIndex) * kFloatingZTier + index);
+		} else {
+			v->SetStackingZ(index + ownZ * 1000);
+		}
+		index++;
+	}
+}
 void Canvas::Compute() {
 	if (!m_Root || !m_Dirty) {
 		return;
@@ -413,43 +460,50 @@ void Canvas::Compute() {
 		Clay_EndLayout(m_DeltaTime);
 		ClayUpdateRects(m_Root.get());
 		m_LayoutDirty = false;
-		m_NeedsSort = true;
+
+		// @container rules depend on element sizes — re-resolve immediately after
+		// layout so rules see the current frame's container sizes.
+		if (m_StyleSheet.HasContainerBlocks()) {
+			MarkSubtreeDirty(m_Root.get());
+			StylePass();
+		}
 
 		m_FlatViews.clear();
-		CollectFlatViews(m_Root.get());
-		m_PerNodeCmds.resize(m_FlatViews.size());
+		CollectFlatViews(m_Root.get(), 0);
+		std::stable_sort(m_FlatViews.begin(), m_FlatViews.end(),
+						 [](const View *a, const View *b) { return a->GetStackingZ() < b->GetStackingZ(); });
+		m_PerNodeCmds.clear();
 		for (View *v : m_FlatViews) {
 			v->SetDrawDirty();
 		}
 	}
 
 	bool anyRebuilt = false;
-	for (size_t i = 0; i < m_FlatViews.size(); ++i) {
-		View *v = m_FlatViews[i];
+	for (View *v : m_FlatViews) {
 		if (v->IsDrawDirty()) {
 			DrawList capture;
 			capture.SetCanvasSize(m_Width, m_Height);
 			v->OnDrawSelf(capture);
-			m_PerNodeCmds[i] = capture.TakeCommands();
+			m_PerNodeCmds[v] = capture.TakeCommands();
 			v->ClearDrawDirty();
 			anyRebuilt = true;
 		}
 	}
 
-	if (anyRebuilt || m_NeedsSort) {
+	if (anyRebuilt) {
 		m_DrawList.Clear();
-		for (const std::vector<DrawCmd> &cmds : m_PerNodeCmds) {
-			for (const DrawCmd &cmd : cmds) {
-				m_DrawList.AppendCmd(cmd);
+		for (View *v : m_FlatViews) {
+			auto it = m_PerNodeCmds.find(v);
+			if (it != m_PerNodeCmds.end()) {
+				for (const DrawCmd &cmd : it->second) {
+					m_DrawList.AppendCmd(cmd);
+				}
 			}
 		}
-		if (m_NeedsSort) {
-			m_DrawList.Sort();
-			m_NeedsSort = false;
-		}
+
+		m_DrawList.Sort();
 		m_DrawListDirty = true;
 	}
-
 	m_Dirty = false;
 }
 
@@ -458,13 +512,25 @@ void Canvas::MarkNodeDrawDirty(View *node) {
 	MarkDirty();
 }
 
-void Canvas::CollectFlatViews(View *node) {
+void Canvas::CollectFlatViews(View *node, int32 floatingBase) {
 	if (node->GetDisplayStyle().display == Display::None) {
 		return;
 	}
+
+	int32 myBase = floatingBase;
+	if (node->HasFloating()) {
+		const FloatingConfig &fc = node->GetFloating();
+		myBase = kFloatingZBase + fc.zIndex * kFloatingZTier;
+	} else {
+		// Inherit parent's z contribution so children always render above parent
+		myBase = floatingBase + node->GetComputedStyle().zIndex * 1000;
+	}
+
+	node->SetStackingZ(myBase + static_cast<int32>(m_FlatViews.size()));
 	m_FlatViews.push_back(node);
+
 	for (const auto &child : node->GetChildren()) {
-		CollectFlatViews(child.get());
+		CollectFlatViews(child.get(), myBase);
 	}
 }
 
@@ -474,12 +540,31 @@ void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList
 	}
 	m_DrawList.Submit(r2d, cmd);
 }
+
+View *Canvas::HitTest(vec2 pos) {
+	for (int i = static_cast<int>(m_FlatViews.size()) - 1; i >= 0; --i) {
+		View *v = m_FlatViews[i];
+		if (!v->GetAbsoluteRect().Contains(pos)) {
+			continue;
+		}
+		View *p = v->GetParent();
+		while (p) {
+			if (p->IsInputLeaf() && p->GetAbsoluteRect().Contains(pos)) {
+				v = p;
+			}
+			p = p->GetParent();
+		}
+		return v;
+	}
+	return nullptr;
+}
+
 void Canvas::OnEvent(Application::Events::Event &e) {
 	EventDispatcher dispatcher(e);
 
 	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
 		m_MousePos = { e.GetX(), e.GetY() };
-		View *hit = m_Root ? m_Root->HitTestAbsolute(m_MousePos) : nullptr;
+		View *hit = HitTest(m_MousePos);
 		if (hit != m_HoveredView) {
 			if (m_HoveredView) {
 				m_HoveredView->OnMouseLeave();
@@ -490,7 +575,6 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 			}
 			MarkDirty();
 		}
-		// Route drag to the focused+pressed view even when the cursor leaves its bounds.
 		if (m_FocusedView && m_FocusedView->IsPressed()) {
 			m_FocusedView->OnMouseMove(m_MousePos);
 		}
@@ -504,11 +588,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		if (!m_HoveredView) {
 			return false;
 		}
-		if (m_FocusedView && m_FocusedView != m_HoveredView) {
-			m_FocusedView->OnFocusLost();
-		}
-		m_FocusedView = m_HoveredView;
-		m_FocusedView->OnFocusGained();
+		SetFocus(m_HoveredView);
 		m_FocusedView->OnMousePress(e.GetMouseButton(), m_MousePos);
 		return false;
 	});
@@ -537,6 +617,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent &e) {
 		if (m_FocusedView) {
 			m_FocusedView->OnKeyPress(e.GetKeyCode(), e.GetMods());
+			return true; // consumed — prevents the engine layer from also acting on this key
 		}
 		return false;
 	});
@@ -544,6 +625,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	dispatcher.Dispatch<KeyReleasedEvent>([this](KeyReleasedEvent &e) {
 		if (m_FocusedView) {
 			m_FocusedView->OnKeyRelease(e.GetKeyCode());
+			return true;
 		}
 		return false;
 	});
@@ -551,6 +633,7 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	dispatcher.Dispatch<KeyTypedEvent>([this](KeyTypedEvent &e) {
 		if (m_FocusedView) {
 			m_FocusedView->OnCharInput(static_cast<uint32>(e.GetKeyCode()));
+			return true;
 		}
 		return false;
 	});
@@ -568,6 +651,10 @@ void Canvas::Resize(uint32 width, uint32 height) {
 	m_DrawList.SetCanvasSize(width, height);
 	m_LayoutDirty = true;
 	MarkDirty();
+	// @media rules depend on viewport size — re-resolve all styles on resize.
+	if (m_StyleSheet.HasMediaBlocks()) {
+		MarkSubtreeDirty(m_Root.get());
+	}
 	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_ClayCtx));
 	Clay_SetLayoutDimensions({ static_cast<f32>(width), static_cast<f32>(height) });
 }

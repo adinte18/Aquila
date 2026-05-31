@@ -9,6 +9,18 @@
 #include "Aquila/UI/Widgets/Popup.h"
 #include "Aquila/UI/Widgets/ContextMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
+#include "Aquila/UI/Widgets/NumberInput.h"
+#include "Aquila/UI/Widgets/DragFloat.h"
+#include "Aquila/UI/Widgets/DragInt.h"
+#include "Aquila/UI/Widgets/Toggle.h"
+#include "Aquila/UI/Widgets/ScrollView.h"
+#include "Aquila/UI/Widgets/Collapsible.h"
+#include "Aquila/UI/Widgets/TabView.h"
+#include "Aquila/UI/Widgets/Dropdown.h"
+#include "Aquila/UI/Widgets/VecField.h"
+#include "Aquila/UI/Widgets/PropertyGrid.h"
+#include "Aquila/UI/Widgets/TreeView.h"
+#include "Aquila/UI/Widgets/AssetPicker.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 
@@ -50,7 +62,6 @@ struct Parser {
 		}
 	}
 
-	// Tag / attribute name: letters, digits, hyphens, underscores.
 	std::string ReadName() {
 		size_t start = pos;
 		while (!AtEnd() && ((std::isalnum(static_cast<unsigned char>(Peek())) != 0) || Peek() == '-' || Peek() == '_' ||
@@ -60,7 +71,6 @@ struct Parser {
 		return std::string(src.substr(start, pos - start));
 	}
 
-	// Quoted string (single or double quotes), returns content without quotes.
 	std::string ReadQuoted() {
 		char q = Advance();
 		size_t start = pos;
@@ -69,12 +79,11 @@ struct Parser {
 		}
 		std::string val(src.substr(start, pos - start));
 		if (!AtEnd()) {
-			Advance(); // closing quote
+			Advance();
 		}
 		return val;
 	}
 
-	// Unquoted attribute value — reads until whitespace, '>', or '/'.
 	std::string ReadUnquoted() {
 		size_t start = pos;
 		while (!AtEnd() && Peek() != '>' && Peek() != '/' && (std::isspace(static_cast<unsigned char>(Peek())) == 0)) {
@@ -83,7 +92,6 @@ struct Parser {
 		return std::string(src.substr(start, pos - start));
 	}
 
-	// Text content between tags — reads until '<', trims whitespace.
 	std::string ReadTextContent() {
 		size_t start = pos;
 		while (!AtEnd() && Peek() != '<') {
@@ -99,7 +107,6 @@ struct Parser {
 		return std::string(raw);
 	}
 
-	// Skip <!-- ... --> comment. Call when pos is at '<'.
 	bool TrySkipComment() {
 		if (pos + 3 < src.size() && src[pos] == '<' && src[pos + 1] == '!' && src[pos + 2] == '-' &&
 			src[pos + 3] == '-') {
@@ -115,7 +122,6 @@ struct Parser {
 		return false;
 	}
 
-	// Called when pos is at '<' (and it is NOT a closing tag or comment).
 	Unique<View> ParseElement() {
 		Expect('<');
 		SkipWS();
@@ -131,7 +137,6 @@ struct Parser {
 		UI::StyleProperties props;
 		Text::FontAtlas *font = loader.ResolveFont("default");
 
-		// Image-widget attributes collected during the attribute loop.
 		std::string imageSrc;
 		std::string imageIcon;
 		std::string imageBank;
@@ -156,7 +161,6 @@ struct Parser {
 			if (attrName == "id") {
 				id = attrValue;
 			} else if (attrName == "class") {
-				// space-separated class list
 				std::istringstream iss(attrValue);
 				std::string cls;
 				while (iss >> cls) {
@@ -165,7 +169,6 @@ struct Parser {
 			} else if (attrName == "font") {
 				font = loader.ResolveFont(attrValue);
 			} else if (attrName == "style") {
-				// Inline style block: "prop: value; prop: value"
 				std::string_view decls = attrValue;
 				while (!decls.empty()) {
 					const auto semi = decls.find(';');
@@ -208,12 +211,10 @@ struct Parser {
 			}
 		}
 
-		// Text content is unknown until we parse the body; create with empty
-		// text first, then update below if we find inline text.
 		Unique<View> view = loader.CreateWidget(tagName, "", font);
 		if (!view) {
 			AQUILA_LOG_ERROR("LayoutLoader: unknown widget type '{}'", tagName);
-			// skip to closing tag to keep the parser alive
+
 			while (!AtEnd() && Peek() != '>') {
 				Advance();
 			}
@@ -231,20 +232,19 @@ struct Parser {
 		}
 		view->MergeStyle(props);
 
-		// Apply Image-specific attributes after construction.
-		if (auto *img = dynamic_cast<Image *>(view.get())) {
-			img->SetTint(imageTint);
+		if (font != nullptr) {
+			view->SetFont(font);
+		}
 
-			// src="path" — load texture from disk via the registered TextureCache.
-			if (!imageSrc.empty()) {
-				if (GFX::GfxTexture *tex = loader.ResolveTexture(imageSrc)) {
-					img->SetTexture(tex);
-				} else {
-					AQUILA_LOG_WARNING("LayoutLoader: could not load image '{}'", imageSrc);
-				}
+		if (imageTint != vec4(1.f)) {
+			if (auto *img = dynamic_cast<Image *>(view.get())) {
+				img->SetTint(imageTint);
 			}
-
-			// icon="name" bank="bankName" — look up a named icon in a TextureIconBank.
+		}
+		if (!imageSrc.empty()) {
+			view->ApplyXmlAttribute("src", imageSrc, const_cast<LayoutLoader *>(&loader));
+		}
+		if (auto *img = dynamic_cast<Image *>(view.get())) {
 			if (!imageIcon.empty()) {
 				if (TextureIconBank *bank = loader.ResolveTextureIconBank(imageBank)) {
 					if (const IconEntry *entry = bank->GetIcon(imageIcon)) {
@@ -259,8 +259,6 @@ struct Parser {
 									   imageBank.empty() ? "default" : imageBank);
 				}
 			}
-
-			// uv="u0 v0 u1 v1" — override UV region (e.g. for sprite atlas slices).
 			if (!imageUV.empty()) {
 				float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 1.f;
 				std::istringstream ss(imageUV);
@@ -271,37 +269,33 @@ struct Parser {
 		}
 
 		if (!AtEnd() && Peek() == '/') {
-			Advance(); // '/'
+			Advance();
 			Expect('>');
 			return view;
 		}
 
 		Expect('>');
 
-		// Children / text content
 		while (!AtEnd()) {
 			SkipWS();
 			if (AtEnd()) {
 				break;
 			}
 
-			// Closing tag?
 			if (Peek() == '<' && Peek2() == '/') {
-				pos += 2; // consume '</'
+				pos += 2;
 				SkipWS();
-				ReadName(); // consume tag name (we trust the author lol)
+				ReadName();
 				SkipWS();
 				Expect('>');
 				break;
 			}
 
-			// Comment?
 			if (Peek() == '<' && pos + 1 < src.size() && src[pos + 1] == '!') {
 				TrySkipComment();
 				continue;
 			}
 
-			// Child element?
 			if (Peek() == '<') {
 				auto child = ParseElement();
 				if (child) {
@@ -310,27 +304,12 @@ struct Parser {
 				continue;
 			}
 
-			// Text content — applies to Label / Button
 			std::string text = ReadTextContent();
 			if (!text.empty()) {
-				if (auto *lbl = dynamic_cast<Label *>(view.get())) {
-					lbl->SetText(text);
-					if (font != nullptr) {
-						lbl->SetFont(font);
-					}
-					// Re-measure and bake pixel size so Clay knows the label dimensions.
-					// vec2 sz = lbl->Measure();
-					// if (sz.x > 0.f || sz.y > 0.f) {
-					// 	UI::StyleProperties textProps = lbl->GetStyle();
-					// 	textProps.width = UI::StyleLength::Pixel(sz.x);
-					// 	textProps.height = UI::StyleLength::Pixel(sz.y);
-					// 	lbl->SetStyle(textProps);
-					// }
-				} else if (auto *btn = dynamic_cast<Button *>(view.get())) {
-					btn->SetText(text);
-					if (font != nullptr) {
-						btn->SetFont(font);
-					}
+				view->ApplyXmlTextContent(text);
+
+				if (font != nullptr) {
+					view->SetFont(font);
 				}
 			}
 		}
@@ -341,7 +320,6 @@ struct Parser {
 	Unique<View> Parse() {
 		SkipWS();
 		while (!AtEnd()) {
-			// Skip comments and XML declarations at top level.
 			if (Peek() == '<' && Peek2() == '!') {
 				TrySkipComment();
 				SkipWS();
@@ -360,7 +338,7 @@ struct Parser {
 			if (Peek() == '<') {
 				return ParseElement();
 			}
-			Advance(); // ignore stray characters
+			Advance();
 		}
 		return nullptr;
 	}
@@ -409,7 +387,6 @@ void LayoutLoader::RegisterTextureIconBank(const std::string &name, TextureIconB
 }
 
 TextureIconBank *LayoutLoader::ResolveTextureIconBank(const std::string &name) const {
-	// Empty name resolves to "default".
 	const std::string &key = name.empty() ? "default" : name;
 	auto it = m_IconBanks.find(key);
 	if (it != m_IconBanks.end()) {
@@ -462,6 +439,46 @@ void LayoutLoader::RegisterBuiltins() {
 	m_Factories["Popup"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Popup>(); };
 	m_Factories["ContextMenu"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
 		return CreateUnique<ContextMenu>();
+	};
+	m_Factories["NumberInput"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<NumberInput>();
+	};
+	m_Factories["DragFloat"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<DragFloat>();
+	};
+	m_Factories["DragInt"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<DragInt>();
+	};
+	m_Factories["Toggle"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Toggle>(); };
+	m_Factories["ScrollView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<ScrollView>();
+	};
+	m_Factories["Collapsible"] = [](std::string_view text, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Collapsible>(std::string(text));
+	};
+	m_Factories["TabView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<TabView>();
+	};
+	m_Factories["Dropdown"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Dropdown>();
+	};
+	m_Factories["Vec2Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Vec2Field>();
+	};
+	m_Factories["Vec3Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Vec3Field>();
+	};
+	m_Factories["Vec4Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<Vec4Field>();
+	};
+	m_Factories["PropertyGrid"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<PropertyGrid>();
+	};
+	m_Factories["TreeView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<TreeView>();
+	};
+	m_Factories["AssetPicker"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+		return CreateUnique<AssetPicker>();
 	};
 }
 

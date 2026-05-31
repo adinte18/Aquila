@@ -31,13 +31,5 @@ struct DrawCmd {
 	std::string text;
 	Text::FontAtlas *font = nullptr;
 	float fontSize = 0.f;
-
-	// Shadow (UICommandType::Shadow)
-	// rect = widget rect (used to compute SDF parameters)
-	// color = shadow color
-	// borderColor.xy = shadow offset
-	// borderWidth = blur radius
-	// borderColor.zw = (widget.w/2 + spread, widget.h/2 + spread)
-	// radius = widget corner radii
 };
 } // namespace Aquila::UI::Rendering

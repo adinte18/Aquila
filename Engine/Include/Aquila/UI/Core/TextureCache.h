@@ -15,10 +15,8 @@ class TextureCache {
 
 	[[nodiscard]] GFX::GfxTexture *Load(const std::string &path);
 
-	// Remove one entry; its GfxTexture is destroyed immediately.
 	void Evict(const std::string &path);
 
-	// Destroy every cached texture.
 	void Clear();
 
   private:

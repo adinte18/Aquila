@@ -19,25 +19,20 @@ class DrawList {
 	void PushClip(Rect clipRect);
 	void PopClip();
 
-	// Call before Submit. Stable sort by zOrder — preserves tree order within same z.
 	void Sort();
 
-	// Translates every DrawCmd into Renderer2D calls.
-	// Must be called between Renderer2D::Begin and End.
 	void Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
 
-	// Append a pre-built command (used when collecting from per-node draw caches).
 	void AppendCmd(const DrawCmd &cmd);
 
-	// Move the internal command list out, leaving this DrawList empty.
-	// Used by Canvas to capture per-node draw output into a cache entry.
 	[[nodiscard]] std::vector<DrawCmd> TakeCommands();
 
 	void Clear();
 	[[nodiscard]] bool IsEmpty() const;
 
-	// Must be kept in sync with the owning Canvas size.
-	// Used to restore full-screen scissor when the clip stack empties.
+	// TODO : DELETE, debug only
+	const std::vector<DrawCmd> &GetCommands() const { return m_Commands; }
+
 	void SetCanvasSize(uint32 width, uint32 height);
 
   private:

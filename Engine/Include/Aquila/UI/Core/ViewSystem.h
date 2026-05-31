@@ -20,9 +20,9 @@ class ViewSystem : public Foundation::Singleton<ViewSystem> {
 	Canvas &GetLayer(UILayer layer);
 
 	void OnEvent(Application::Events::Event &e);
-	void Update(float deltaTime); // Stage 1: animate + resolve styles (CPU)
-	void Compute();				  // Stage 2: layout + build draw list from cache (CPU)
-	// Stage 3: submit canvas draw lists for the given layer range into the provided batcher.
+	void Update(float deltaTime);
+	void Compute();
+
 	void RenderLayers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
 	void Resize(uint32 width, uint32 height);
 

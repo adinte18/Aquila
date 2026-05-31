@@ -1,4 +1,7 @@
 #include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Core/FontRegistry.h"
+#include "Aquila/UI/Rendering/DrawCmd.h"
+#include "Aquila/UI/Style/StyleParserHelper.h"
 
 namespace Aquila::UI::Core {
 
@@ -11,7 +14,7 @@ static float ApplyEasing(float t, UI::TransitionEasing easing) {
 	case UI::TransitionEasing::EaseInOut:
 		return t < 0.5f ? 2.f * t * t : 1.f - (-2.f * t + 2.f) * (-2.f * t + 2.f) * 0.5f;
 	case UI::TransitionEasing::Ease:
-		return t * t * (3.f - 2.f * t); // smoothstep
+		return t * t * (3.f - 2.f * t);
 	case UI::TransitionEasing::Linear:
 	default:
 		return t;
@@ -32,7 +35,6 @@ void View::SetComputedStyle(UI::ComputedStyle style) {
 		}
 	}
 	m_ComputedStyle = std::move(style);
-	m_IsDirty = false;
 }
 
 void View::UpdateAnimation(float dt) {
@@ -67,6 +69,33 @@ void View::UpdateAnimation(float dt) {
 	}
 }
 
+void View::ApplyXmlAttribute(std::string_view name, std::string_view value, void * /*loaderCtx*/) {
+	StyleProperties props;
+	UI::ParserHelper::ApplyDeclaration(props, name, value);
+	MergeStyle(props);
+}
+
+void View::OnStyleResolved() {
+	const std::string &family = GetComputedStyle().fontFamily;
+	m_ResolvedFont = family.empty() ? nullptr : FontRegistry::Resolve(family);
+}
+
+void View::SetEnabled(bool enabled) {
+	if (m_Enabled == enabled) {
+		return;
+	}
+	m_Enabled = enabled;
+	if (m_OnDirty) {
+		m_OnDirty(this);
+	}
+}
+
+void View::RequestFocus() {
+	if (m_OnFocusRequest) {
+		m_OnFocusRequest(this);
+	}
+}
+
 void View::MergeStyle(const StyleProperties &o) {
 	StyleProperties &s = m_Style;
 #define MERGE(f) \
@@ -88,6 +117,10 @@ void View::MergeStyle(const StyleProperties &o) {
 	MERGE(minHeight);
 	MERGE(maxHeight);
 	MERGE(padding);
+	MERGE(paddingLeft);
+	MERGE(paddingRight);
+	MERGE(paddingTop);
+	MERGE(paddingBottom);
 	MERGE(gap);
 	MERGE(flexDirection);
 	MERGE(justifyContent);
@@ -101,6 +134,7 @@ void View::MergeStyle(const StyleProperties &o) {
 	MERGE(left);
 	MERGE(zIndex);
 	MERGE(color);
+	MERGE(accentColor);
 	MERGE(fontSize);
 	MERGE(fontFamily);
 	MERGE(textAlign);
@@ -108,7 +142,6 @@ void View::MergeStyle(const StyleProperties &o) {
 	MERGE(transitionDuration);
 	MERGE(transitionEasing);
 #undef MERGE
-	m_IsDirty = true;
 	if (m_OnDirty) {
 		m_OnDirty(this);
 	}
@@ -121,6 +154,10 @@ View *View::AddChild(Unique<View> child) {
 	m_Children.push_back(std::move(child));
 	if (raw->m_OnDirty) {
 		raw->m_OnDirty(raw);
+	}
+	raw->SetDrawDirty();
+	if (raw->m_OnDrawDirty) {
+		raw->m_OnDrawDirty(raw);
 	}
 	return raw;
 }
@@ -142,15 +179,60 @@ void View::PropagateCallbacks(View *node) {
 	node->m_OnAnimationStarted = m_OnAnimationStarted;
 	node->m_OnDrawDirty = m_OnDrawDirty;
 	node->m_OnLayoutDirty = m_OnLayoutDirty;
+	node->m_OnFocusRequest = m_OnFocusRequest;
+	node->m_OnRemoved = m_OnRemoved;
 	for (const auto &child : node->GetChildren()) {
 		PropagateCallbacks(child.get());
 	}
 }
+
+void View::NotifyRemoved(View *node) {
+	for (const auto &child : node->m_Children) {
+		NotifyRemoved(child.get());
+	}
+	if (node->m_OnRemoved) {
+		node->m_OnRemoved(node);
+	}
+}
+
 void View::RemoveChild(View *child) {
 	auto iterator = std::ranges::find_if(m_Children, [child](const Unique<View> &view) { return view.get() == child; });
 	if (iterator != m_Children.end()) {
-		m_Children.erase(iterator); // destructor recursively destroys entire subtree
+		NotifyRemoved(child);
+		m_Children.erase(iterator);
 	}
+}
+
+Unique<View> View::DetachChild(View *child) {
+	auto it = std::ranges::find_if(m_Children, [child](const Unique<View> &view) { return view.get() == child; });
+	if (it == m_Children.end()) {
+		return nullptr;
+	}
+	NotifyRemoved(child);
+	child->m_Parent = nullptr;
+	auto owned = std::move(*it);
+	m_Children.erase(it);
+	return owned;
+}
+
+View *View::ReplaceChild(View *old, Unique<View> newChild) {
+	auto it = std::ranges::find_if(m_Children, [old](const Unique<View> &v) { return v.get() == old; });
+	if (it == m_Children.end()) {
+		return nullptr;
+	}
+	NotifyRemoved(old);
+	*it = std::move(newChild);
+	View *raw = it->get();
+	raw->m_Parent = this;
+	PropagateCallbacks(raw);
+	if (raw->m_OnDirty) {
+		raw->m_OnDirty(raw);
+	}
+	raw->SetDrawDirty();
+	if (raw->m_OnDrawDirty) {
+		raw->m_OnDrawDirty(raw);
+	}
+	return raw;
 }
 
 View *View::GetParent() const {
@@ -180,7 +262,6 @@ void View::OnMouseEnter() {
 		return;
 	}
 	m_IsHovered = true;
-	m_IsDirty = true;
 	if (m_OnDirty) {
 		m_OnDirty(this);
 	}
@@ -190,8 +271,6 @@ void View::OnMouseLeave() {
 		return;
 	}
 	m_IsHovered = false;
-	m_IsPressed = false;
-	m_IsDirty = true;
 	if (m_OnDirty) {
 		m_OnDirty(this);
 	}
@@ -199,7 +278,6 @@ void View::OnMouseLeave() {
 void View::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
 		m_IsPressed = true;
-		m_IsDirty = true;
 		if (m_OnDirty) {
 			m_OnDirty(this);
 		}
@@ -211,7 +289,6 @@ void View::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 void View::OnMouseRelease(Platform::MouseButton btn, vec2) {
 	if (btn == Platform::MouseButton::Left) {
 		m_IsPressed = false;
-		m_IsDirty = true;
 		if (m_OnDirty) {
 			m_OnDirty(this);
 		}
@@ -219,44 +296,15 @@ void View::OnMouseRelease(Platform::MouseButton btn, vec2) {
 }
 void View::OnFocusGained() {
 	m_IsFocused = true;
-	m_IsDirty = true;
 	if (m_OnDirty) {
 		m_OnDirty(this);
 	}
 }
 void View::OnFocusLost() {
 	m_IsFocused = false;
-	m_IsDirty = true;
 	if (m_OnDirty) {
 		m_OnDirty(this);
 	}
-}
-
-View *View::HitTest(vec2 screenPos) {
-	if (!m_Visible) {
-		return nullptr;
-	}
-	if (!m_LayoutRect.Contains(screenPos)) {
-		return nullptr;
-	}
-
-	// Interactive views consume the hit; children cannot steal input from them.
-	if (!m_CapturesInput) {
-		// m_LayoutRect.position is parent-relative, so translate into our local space before recursing.
-		vec2 localPos = screenPos - m_LayoutRect.position;
-
-		const bool clips = m_ComputedStyle.overflow == Overflow::Hidden || m_ComputedStyle.overflow == Overflow::Scroll;
-		const Rect localBounds = { .position = { 0.f, 0.f }, .size = m_LayoutRect.size };
-		if (!clips || localBounds.Contains(localPos)) {
-			for (int i = static_cast<int>(m_Children.size()) - 1; i >= 0; i--) {
-				if (View *hit = m_Children[i]->HitTest(localPos)) {
-					return hit;
-				}
-			}
-		}
-	}
-
-	return this;
 }
 
 View *View::HitTestAbsolute(vec2 canvasPos) {
@@ -264,21 +312,18 @@ View *View::HitTestAbsolute(vec2 canvasPos) {
 		return nullptr;
 	}
 
-	// Capturing views stop child recursion and win the hit test if their rect matches.
-	if (m_CapturesInput) {
-		const Rect r = { m_AbsolutePosition, m_LayoutRect.size };
+	if (m_IsInputLeaf) {
+		const Rect r = GetAbsoluteRect();
 		return r.Contains(canvasPos) ? this : nullptr;
 	}
 
-	// Non-capturing: always recurse children first (floating children may extend outside
-	// our layout rect, so we can't gate on parent-rect containment).
 	for (int i = static_cast<int>(m_Children.size()) - 1; i >= 0; --i) {
 		if (View *hit = m_Children[i]->HitTestAbsolute(canvasPos)) {
 			return hit;
 		}
 	}
 
-	const Rect r = { m_AbsolutePosition, m_LayoutRect.size };
+	const Rect r = GetAbsoluteRect();
 	return r.Contains(canvasPos) ? this : nullptr;
 }
 
@@ -288,7 +333,7 @@ void View::OnDrawSelf(Rendering::DrawList &drawList) {
 	}
 
 	const Rect worldRect = { .position = m_AbsolutePosition, .size = m_LayoutRect.size };
-	const int32 z = m_DisplayStyle.zIndex * 4;
+	const int32 z = m_StackingZ * 4;
 
 	for (const auto &shadow : m_DisplayStyle.boxShadows) {
 		drawList.DrawShadow(worldRect, shadow.offset, shadow.blur, shadow.spread, shadow.color,
@@ -301,26 +346,4 @@ void View::OnDrawSelf(Rendering::DrawList &drawList) {
 	}
 }
 
-void View::OnDraw(Rendering::DrawList &drawList, vec2 origin) {
-	if (!m_Visible || m_ComputedStyle.display == Display::None) {
-		return;
-	}
-
-	const Rect worldRect = { .position = m_LayoutRect.position + origin, .size = m_LayoutRect.size };
-	const int32 z = m_DisplayStyle.zIndex * 4;
-
-	for (const auto &shadow : m_DisplayStyle.boxShadows) {
-		drawList.DrawShadow(worldRect, shadow.offset, shadow.blur, shadow.spread, shadow.color,
-							m_DisplayStyle.borderRadius, z + 0);
-	}
-
-	if (m_DisplayStyle.backgroundColor.a > 0.f || m_DisplayStyle.borderWidth > 0.f) {
-		drawList.DrawRect(worldRect, m_DisplayStyle.backgroundColor, m_DisplayStyle.borderRadius,
-						  m_DisplayStyle.borderWidth, m_DisplayStyle.borderColor, z + 1);
-	}
-
-	for (const auto &child : m_Children) {
-		child->OnDraw(drawList, origin + m_LayoutRect.position);
-	}
-}
 } // namespace Aquila::UI::Core
