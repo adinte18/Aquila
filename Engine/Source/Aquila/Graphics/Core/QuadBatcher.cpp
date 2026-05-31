@@ -449,6 +449,9 @@ void QuadBatcher::DrawRect(const RectSpec &spec) {
 }
 
 void QuadBatcher::DrawSprite(const SpriteSpec &spec) {
+	if (spec.texture != nullptr && !spec.texture->IsReady()) {
+		return;
+	}
 	if (m_BatchTexture != spec.texture) {
 		Flush();
 		StartBatch();

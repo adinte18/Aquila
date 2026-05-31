@@ -13,6 +13,7 @@ class GfxTexture {
 	AQUILA_NONCOPYABLE(GfxTexture);
 
 	void DestroyImmediate();
+	[[nodiscard]] bool IsReady() const;
 
 	[[nodiscard]] uint32 GetWidth() const;
 	[[nodiscard]] uint32 GetHeight() const;

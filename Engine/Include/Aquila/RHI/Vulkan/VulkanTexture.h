@@ -19,6 +19,7 @@ class VulkanTexture final : public IRHITexture {
 	AQUILA_NONCOPYABLE(VulkanTexture);
 
 	void DestroyImmediate() override;
+	[[nodiscard]] bool IsReady() const override { return m_ImageView != VK_NULL_HANDLE; }
 
 	// IRHITexture
 	[[nodiscard]] uint32 GetWidth() const override { return m_Desc.width; }

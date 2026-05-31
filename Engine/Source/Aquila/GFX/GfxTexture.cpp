@@ -8,6 +8,10 @@ void GfxTexture::DestroyImmediate() {
 	m_Texture->DestroyImmediate();
 }
 
+bool GfxTexture::IsReady() const {
+	return m_Texture->IsReady();
+}
+
 uint32 GfxTexture::GetWidth() const {
 	return m_Texture->GetWidth();
 }

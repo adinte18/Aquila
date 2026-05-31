@@ -14,6 +14,9 @@ class IRHITexture {
 
 	virtual void DestroyImmediate() = 0;
 
+	// Returns false if the underlying image view is not yet valid (e.g. lazy init or after DestroyImmediate).
+	[[nodiscard]] virtual bool IsReady() const = 0;
+
 	[[nodiscard]] virtual uint32 GetWidth() const = 0;
 	[[nodiscard]] virtual uint32 GetHeight() const = 0;
 	[[nodiscard]] virtual uint32 GetMipLevels() const = 0;
