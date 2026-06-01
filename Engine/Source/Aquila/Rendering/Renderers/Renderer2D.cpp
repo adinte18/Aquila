@@ -52,7 +52,7 @@ void Renderer2D::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) 
 	}
 }
 
-void Renderer2D::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+void Renderer2D::BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	if (m_Swapchain == nullptr) {
 		return;
 	}

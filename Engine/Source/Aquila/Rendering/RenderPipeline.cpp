@@ -50,7 +50,7 @@ void RenderPipeline::Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 	{
 		PROFILE_SCOPE("RenderPipeline::AddFinalPasses");
 		for (auto &renderer : m_Renderers) {
-			renderer->AddFinalPasses(m_Graph, ctx);
+			renderer->BlitToSwapchain(m_Graph, ctx);
 		}
 	}
 

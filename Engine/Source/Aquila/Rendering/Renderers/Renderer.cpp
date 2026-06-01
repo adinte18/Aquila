@@ -55,14 +55,13 @@ void Renderer::OnInit(GFX::GfxContext &ctx) {
 	}
 
 	// create swapchain pass
-	m_SwapchainPass = ctx.CreateRenderPass({
-		.colorAttachments = { {
-			.loadOp = RHI::AttachmentLoadOp::DontCare,
-			.storeOp = RHI::AttachmentStoreOp::Store,
-		} },
-		.useSwapchain = true,
-		.debugName = "SwapchainBlit",
-	});
+	m_SwapchainPass = ctx.CreateRenderPass({ .colorAttachments = { {
+												 .loadOp = RHI::AttachmentLoadOp::DontCare,
+												 .storeOp = RHI::AttachmentStoreOp::Store,
+											 } },
+											 .depthAttachment = {},
+											 .useSwapchain = true,
+											 .debugName = "SwapchainBlit" });
 }
 
 void Renderer::OnShutdown() {
@@ -83,7 +82,7 @@ void Renderer::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	}
 }
 
-void Renderer::AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+void Renderer::BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_BlitPipeline || (m_Swapchain == nullptr)) {
 		return;
 	}

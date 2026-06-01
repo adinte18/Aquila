@@ -22,7 +22,7 @@ class Renderer2D : public IRenderer {
 	void OnInit(GFX::GfxContext &ctx) override;
 	void OnShutdown() override;
 	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
-	void AddFinalPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
 	void SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex);
 	void SetUIDirty(bool dirty) { m_UIDirty = dirty; }
