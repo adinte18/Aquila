@@ -5,7 +5,6 @@
 #include "Aquila/GFX/GfxMesh.h"
 #include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Rendering/Systems/Base/IRenderingSystem.h"
-#include "Aquila/Rendering/FrameContext.h"
 
 namespace Aquila::Rendering {
 

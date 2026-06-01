@@ -20,7 +20,6 @@
 #include "Aquila/UI/Widgets/VecField.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
 #include "Aquila/UI/Widgets/TreeView.h"
-#include "Aquila/UI/Widgets/AssetPicker.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 
@@ -477,9 +476,6 @@ void LayoutLoader::RegisterBuiltins() {
 	};
 	m_Factories["TreeView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
 		return CreateUnique<TreeView>();
-	};
-	m_Factories["AssetPicker"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<AssetPicker>();
 	};
 }
 

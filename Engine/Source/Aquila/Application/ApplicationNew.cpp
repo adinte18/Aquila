@@ -2,7 +2,6 @@
 #include "Aquila/Foundation/Profiler.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 #include "Aquila/Platform/Input.h"
-#include "Aquila/Foundation/Macros.h"
 
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
