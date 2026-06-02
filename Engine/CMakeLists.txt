@@ -7,9 +7,15 @@ set(ENGINE_INCLUDE_DIR ${ENGINE_ROOT_DIR}/Include)
 set(VULKAN_SDK $ENV{VULKAN_SDK} CACHE PATH "Vulkan SDK path")
 
 find_package(Vulkan REQUIRED)
-if (NOT Vulkan_FOUND OR NOT EXISTS ${VULKAN_SDK})
+if (NOT Vulkan_FOUND)
     message(FATAL_ERROR "Vulkan SDK not found.")
-endif ()
+endif()
+
+# only validate the path if the user explicitly set VULKAN_SDK
+# we might have vulkan installed through package manager, or manually via Lunarg SDK
+if (VULKAN_SDK AND NOT EXISTS ${VULKAN_SDK})
+    message(FATAL_ERROR "VULKAN_SDK points to invalid path: ${VULKAN_SDK}")
+endif()
 
 message(STATUS "Vulkan SDK found at: ${VULKAN_SDK}")
 message(STATUS "Vulkan includes: ${Vulkan_INCLUDE_DIRS}")
