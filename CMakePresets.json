@@ -1,0 +1,269 @@
+{
+    "version": 6,
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang",
+                "CMAKE_CXX_COMPILER": "clang++"
+            }
+        },
+        {
+            "name": "windows-editor-debug",
+            "displayName": "Windows | Editor | Debug",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "windows-editor-release",
+            "displayName": "Windows | Editor | Release",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "windows-editor-relwithdebinfo",
+            "displayName": "Windows | Editor | RelWithDebInfo",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "windows-engine-debug",
+            "displayName": "Windows | Engine | Debug",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        },
+        {
+            "name": "windows-engine-release",
+            "displayName": "Windows | Engine | Release",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        },
+        {
+            "name": "windows-engine-relwithdebinfo",
+            "displayName": "Windows | Engine | RelWithDebInfo",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Windows"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        },
+        {
+            "name": "linux-editor-debug",
+            "displayName": "Linux | Editor | Debug",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "linux-editor-release",
+            "displayName": "Linux | Editor | Release",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "linux-editor-relwithdebinfo",
+            "displayName": "Linux | Editor | RelWithDebInfo",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "AQUILA_BUILD_EDITOR": "ON"
+            }
+        },
+        {
+            "name": "linux-engine-debug",
+            "displayName": "Linux | Engine | Debug",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        },
+        {
+            "name": "linux-engine-release",
+            "displayName": "Linux | Engine | Release",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        },
+        {
+            "name": "linux-engine-relwithdebinfo",
+            "displayName": "Linux | Engine | RelWithDebInfo",
+            "inherits": "base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+                "AQUILA_BUILD_EDITOR": "OFF"
+            }
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "windows-editor-debug",
+            "configurePreset": "windows-editor-debug",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "windows-editor-release",
+            "configurePreset": "windows-editor-release",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "windows-editor-relwithdebinfo",
+            "configurePreset": "windows-editor-relwithdebinfo",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "windows-engine-debug",
+            "configurePreset": "windows-engine-debug",
+            "targets": [
+                "AquilaEngine"
+            ]
+        },
+        {
+            "name": "windows-engine-release",
+            "configurePreset": "windows-engine-release",
+            "targets": [
+                "AquilaEngine"
+            ]
+        },
+        {
+            "name": "windows-engine-relwithdebinfo",
+            "configurePreset": "windows-engine-relwithdebinfo",
+            "targets": [
+                "AquilaEngine"
+            ]
+        },
+        {
+            "name": "linux-editor-debug",
+            "configurePreset": "linux-editor-debug",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "linux-editor-release",
+            "configurePreset": "linux-editor-release",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "linux-editor-relwithdebinfo",
+            "configurePreset": "linux-editor-relwithdebinfo",
+            "targets": [
+                "AquilaEditor"
+            ]
+        },
+        {
+            "name": "linux-engine-debug",
+            "configurePreset": "linux-engine-debug",
+            "targets": [
+                "AquilaEngine"
+            ]
+        },
+        {
+            "name": "linux-engine-release",
+            "configurePreset": "linux-engine-release",
+            "targets": [
+                "AquilaEngine"
+            ]
+        },
+        {
+            "name": "linux-engine-relwithdebinfo",
+            "configurePreset": "linux-engine-relwithdebinfo",
+            "targets": [
+                "AquilaEngine"
+            ]
+        }
+    ]
+}
