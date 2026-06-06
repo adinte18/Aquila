@@ -149,31 +149,31 @@ static GpuCameraData BuildCameraData(const CameraComponent &cam, const Transform
 static GpuLightData BuildLightData(const LightComponent &light, const TransformComponent &transform) {
 	GpuLightData data{};
 
-	data.positionAndRange = vec4(vec3(transform.GetLocalPosition()), light.m_Range);
-	data.colorAndIntensity = vec4(light.m_Color, light.m_Intensity);
-	data.directionAndType = vec4(light.m_Direction, static_cast<float>(light.m_Type));
-	data.shadowIndex = -1;
-	data.flags = 0;
+	data.m_PositionAndRange = vec4(vec3(transform.GetLocalPosition()), light.m_Range);
+	data.m_ColorAndIntensity = vec4(light.m_Color, light.m_Intensity);
+	data.m_DirectionAndType = vec4(light.m_Direction, static_cast<float>(light.m_Type));
+	data.m_ShadowIndex = -1;
+	data.m_Flags = 0;
 
 	switch (light.m_Type) {
 	case LightComponent::Type::Spot: {
-		data.cosInnerAngle = glm::cos(glm::radians(light.m_InnerConeAngle));
-		data.cosOuterAngle = glm::cos(glm::radians(light.m_OuterConeAngle));
+		data.m_CosInnerAngle = glm::cos(glm::radians(light.m_InnerConeAngle));
+		data.m_CosOuterAngle = glm::cos(glm::radians(light.m_OuterConeAngle));
 		break;
 	}
 	case LightComponent::Type::Area: {
 		const mat3 rot = glm::mat3_cast(transform.GetLocalRotation());
 		const vec3 right = rot[0];
 		const vec3 up = rot[1];
-		data.rightAndWidth = vec4(right, light.m_AreaSize.x);
-		data.upAndHeight = vec4(up, light.m_AreaSize.y);
-		data.cosInnerAngle = 1.0f;
-		data.cosOuterAngle = 1.0f;
+		data.m_RightAndWidth = vec4(right, light.m_AreaSize.x);
+		data.m_UpAndHeight = vec4(up, light.m_AreaSize.y);
+		data.m_CosInnerAngle = 1.0f;
+		data.m_CosOuterAngle = 1.0f;
 		break;
 	}
 	default:
-		data.cosInnerAngle = 1.0f;
-		data.cosOuterAngle = 1.0f;
+		data.m_CosInnerAngle = 1.0f;
+		data.m_CosOuterAngle = 1.0f;
 		break;
 	}
 
@@ -246,10 +246,10 @@ void SceneFrameData::Update(SceneManagement::Scene &scene, float deltaTime, uint
 			}
 			const auto &sh = sky.GetIrradiance();
 			for (int i = 0; i < 9; ++i) {
-				envData.shCoeffs[i] = vec4(sh.coeffs[i], 0.f);
+				envData.m_ShCoeffs[i] = vec4(sh.coeffs[i], 0.f);
 			}
-			envData.tintAndIntensity = vec4(sky.GetTint(), sky.GetIntensity());
-			envData.enabled = 1;
+			envData.m_TintAndIntensity = vec4(sky.GetTint(), sky.GetIntensity());
+			envData.m_Enabled = 1;
 			break;
 		}
 	}

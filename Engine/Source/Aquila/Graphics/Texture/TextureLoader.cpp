@@ -2,7 +2,7 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 
 #define STB_IMAGE_IMPLEMENTATION
-#include "stb_image.h"
+#include "stb/stb_image.h"
 
 namespace Aquila::Graphics::Texture {
 
