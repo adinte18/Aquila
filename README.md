@@ -1,4 +1,4 @@
-#Aquila - Vulkan PBR Rendering Engine
+# Aquila - Vulkan PBR Rendering Engine
 
 This project is my personal Vulkan-based engine built entirely from scratch with the primary goal of learning and exploring graphics programming and scalable (and maintanable) project architecture. It is still a work in progress, and its lacking comments and documentation (I am pretty inconsistent with this :/). It should come pretty soon though.
 
@@ -7,25 +7,61 @@ The initial idea was to keep it on Vulkan, but I am really veering towards integ
 > **This project is for educational purposes only.**
 > The current state of the engine is not designed to compete with existing game engines, commercial or open-source, nor is that its goal. The primary intent is personal growth and experimentation in the field of graphics programming.
 
-## About
+## Build
 
-This engine serves as a hands-on learning platform to:
+### Configure Presets
 
-- Understand the Vulkan graphics API in depth
-- Implement modern PBR shading workflows
-- Explore efficient rendering pipelines and GPU resource management
+#### Windows
 
-## Features
+| Preset | Build Type |
+|--------|-----------|
+| `windows-editor-debug` | Debug|
+| `windows-editor-release` | Release |
+| `windows-editor-relwithdebinfo` | RelWithDebInfo |
+| `windows-engine-debug` | Debug |
+| `windows-engine-release` | Release |
+| `windows-engine-relwithdebinfo` | RelWithDebInfo |
 
-The engine contains some cool features that I am proud of : 
+#### Linux
 
-- Physically-Based Rendering using metallic-roughness workflow
-- Runtime IBL computation from HDR environment maps
-- Material editing at runtime
-- Model loading with Assimp, although I am trying to move away from it
-- Clean(-ish) and modular C++ architecture
+| Preset | Build Type |
+|--------|-----------|
+| `linux-editor-debug` | Debug |
+| `linux-editor-release` | Release |
+| `linux-editor-relwithdebinfo` | RelWithDebInfo |
+| `linux-engine-debug` | Debug |
+| `linux-engine-release` | Release |
+| `linux-engine-relwithdebinfo` | RelWithDebInfo |
 
----
+## Usage
+
+### Configure
+
+```bash
+cmake --preset <preset-name>
+```
+
+### Build
+
+```bash
+cmake --build --preset <preset-name>
+```
+
+### Example
+
+```bash
+cmake --preset windows-engine-debug
+cmake --build --preset windows-engine-debug
+```
+
+## Base Configuration
+
+All presets inherit from `base` which sets:
+
+- **Generator:** Ninja
+- **C Compiler:** clang
+- **C++ Compiler:** clang++
+- **Build directory:** `build/<preset-name>`
 
 ## Dependencies
 
@@ -36,18 +72,12 @@ This project uses a collection of libraries and tools to support Vulkan renderin
 - [**GLFW**](https://github.com/glfw/glfw) – Windowing and input
 - [**GLM**](https://github.com/g-truc/glm) – Mathematics for graphics
 - [**Assimp**](https://github.com/assimp/assimp) – Model loading
-- [**ImGui**](https://github.com/ocornut/imgui) – Immediate-mode GUI
-- [**ImGuizmo**](https://github.com/CedricGuillemet/ImGuizmo) – Editor gizmo tools
-- [**SLang**](https://github.com/shader-slang/slang) - Shader language 
+- [**stb**](https://github.com/nothings/stb) - Image processing
+
 ### Header-only Utilities
 
 - [`entt.h`](https://github.com/skypjack/entt) – Entity-Component-System (ECS) framework (WIP)
 - [`json.hpp`](https://github.com/nlohmann/json) – JSON parsing and serialization
-- [`stb_image.h`](https://github.com/nothings/stb) – Image loading
-- [`stb_image_resize2.h`](https://github.com/nothings/stb) – Image resizing
-- [`stb_image_write.h`](https://github.com/nothings/stb) – Image writing
-- [`stb_ds.h`](https://github.com/nothings/stb) – Dynamic arrays and hash tables
-- [`stb_truetype.h`](https://github.com/nothings/stb) – Font rendering
 
 ---
 
