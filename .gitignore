@@ -19,5 +19,6 @@ Resources/EnvMaps/
 *.o
 *.rc
 *.code-workspace
+compile_commands.json
 Makefile
 tok.txt
