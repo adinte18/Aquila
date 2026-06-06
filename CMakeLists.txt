@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.26)
 project(Aquila LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -246,6 +246,9 @@ add_compile_definitions(
     AQUILA_SHADERS_DIR="${CMAKE_SOURCE_DIR}/Engine/Shaders/"
     AQUILA_RESOURCES_DIR="${CMAKE_SOURCE_DIR}/Resources/"
 )
+
+
+include(cmake/InstallDependencies.cmake)
 
 add_subdirectory(Engine)
 
