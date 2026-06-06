@@ -24,10 +24,6 @@ target_precompile_headers(${MODULE_NAME} PRIVATE
     ${MODULE_INCLUDE_DIR}/VulkanPCH.h
 )
 
-if (UNIX)
-    target_include_directories(${MODULE_NAME} PUBLIC ${SLANG_INCLUDE_DIR})
-endif()
-
 target_link_libraries(${MODULE_NAME}
     PUBLIC
     Foundation
@@ -35,8 +31,8 @@ target_link_libraries(${MODULE_NAME}
     Vulkan::Vulkan
     glfw
     GPUOpen::VulkanMemoryAllocator
-    ${SLANG_LIBRARY}
-)
+    Slang::Slang
+    )
 
 # Treat VMA headers as system headers so Clang suppresses their warnings
 # (VMA uses _Nullable/_Nonnull which are Clang extensions not valid on non-Apple targets).

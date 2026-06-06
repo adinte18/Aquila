@@ -31,6 +31,7 @@ target_link_libraries(${MODULE_NAME}
     GFX
     PRIVATE
     assimp::assimp
+    Slang::Slang
   )
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${MODULE_NAME} PRIVATE
