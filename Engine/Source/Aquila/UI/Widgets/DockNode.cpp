@@ -31,7 +31,6 @@ DockNode::DockNode(DockDragContext *dragCtx) : m_DragCtx(dragCtx) {
 	StyleProperties sp;
 	sp.flexDirection = FlexDirection::Column;
 	sp.flexGrow = 1.f;
-	sp.overflow = Overflow::Hidden;
 	SetStyle(sp);
 	AddClass("dock-node");
 

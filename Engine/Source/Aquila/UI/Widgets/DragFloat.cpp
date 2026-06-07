@@ -159,7 +159,7 @@ void DragFloat::OnDrawSelf(Rendering::DrawList &drawList) {
 	using namespace Rendering;
 	const Rect rect = GetAbsoluteRect();
 	const auto &style = GetDisplayStyle();
-	const int32 z = GetStackingZ() * 4;
+	const int32 z = 0;
 	const float fontSize = style.fontSize > 0.f ? style.fontSize : 14.f;
 
 	Text::FontAtlas *font = ResolveFont();

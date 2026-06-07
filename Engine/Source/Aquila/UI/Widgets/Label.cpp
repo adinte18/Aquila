@@ -72,7 +72,7 @@ void Label::OnDrawSelf(Rendering::DrawList &drawList) {
 	const Rect worldRect = { .position = GetAbsolutePosition(), .size = GetLayoutRect().size };
 	const vec4 color = GetDisplayStyle().color;
 	const float fontSize = GetDisplayStyle().fontSize;
-	const int32 z = GetStackingZ() * 4 + 3;
+	const int32 z = 3;
 
 	drawList.DrawText(worldRect, m_Text, font, color, fontSize, TextAlign::Center, z);
 }

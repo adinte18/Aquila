@@ -41,7 +41,7 @@ void Image::OnDrawSelf(Rendering::DrawList &drawList) {
 
 	const Rect worldRect = GetAbsoluteRect();
 	const vec4 tint = m_Tint * GetDisplayStyle().color;
-	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, GetStackingZ() * 4 + 2);
+	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, 2);
 }
 
 void Image::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {

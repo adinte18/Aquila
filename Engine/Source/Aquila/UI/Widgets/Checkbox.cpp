@@ -43,7 +43,7 @@ void Checkbox::OnDrawSelf(Rendering::DrawList &drawList) {
 	const Rect rect = GetAbsoluteRect();
 	const auto &style = GetDisplayStyle();
 	constexpr float pad = 4.f;
-	const int32 z = GetStackingZ() * 4 + 2;
+	const int32 z = 2;
 	const Rect fill = {
 		.position = rect.position + vec2(pad),
 		.size = rect.size - vec2(pad * 2.f),

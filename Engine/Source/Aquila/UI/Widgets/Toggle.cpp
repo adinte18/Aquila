@@ -38,7 +38,7 @@ void Toggle::OnDrawSelf(Rendering::DrawList &drawList) {
 
 	using namespace Rendering;
 	const Rect rect = GetAbsoluteRect();
-	const int32 z = GetStackingZ() * 4;
+	const int32 z = 0;
 
 	// Track
 	const float trackH = rect.size.y * 0.55f;

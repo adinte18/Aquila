@@ -80,7 +80,7 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 	const Rect rect = GetAbsoluteRect();
 	using namespace Rendering;
 	const auto &style = GetDisplayStyle();
-	const int32 z = GetStackingZ() * 4;
+	const int32 z = 0;
 	const float cy = rect.position.y + rect.size.y * 0.5f;
 
 	const float t = (m_Max > m_Min) ? (m_Value - m_Min) / (m_Max - m_Min) : 0.f;

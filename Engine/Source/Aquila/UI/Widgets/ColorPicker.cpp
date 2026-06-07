@@ -35,7 +35,7 @@ class ColorPicker::PickerArea : public View {
 	void OnDrawSelf(Rendering::DrawList &dl) override {
 		View::OnDrawSelf(dl);
 		const Rect r = { GetAbsolutePosition(), GetLayoutRect().size };
-		const int32 z = GetStackingZ() * 4;
+		const int32 z = 0;
 
 		if (m_Tex) {
 			dl.DrawImage(r, m_Tex, vec4(1.f), vec2(0.f), vec2(1.f), z + 1);
