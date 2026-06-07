@@ -80,6 +80,20 @@ void View::OnStyleResolved() {
 	m_ResolvedFont = family.empty() ? nullptr : FontRegistry::Resolve(family);
 }
 
+const Rect &View::GetSubtreeBounds() {
+	if (!m_SubtreeBoundsDirty) {
+		return m_SubtreeBounds;
+	}
+	m_SubtreeBounds = GetAbsoluteRect();
+	for (const auto &child : m_Children) {
+		if (child->GetDisplayStyle().display != Display::None && child->IsVisible()) {
+			m_SubtreeBounds = m_SubtreeBounds.Union(child->GetSubtreeBounds());
+		}
+	}
+	m_SubtreeBoundsDirty = false;
+	return m_SubtreeBounds;
+}
+
 void View::SetEnabled(bool enabled) {
 	if (m_Enabled == enabled) {
 		return;
@@ -152,6 +166,7 @@ View *View::AddChild(Unique<View> child) {
 	raw->m_Parent = this;
 	PropagateCallbacks(raw);
 	m_Children.push_back(std::move(child));
+	MarkSubtreeBoundsDirty();
 	if (raw->m_OnDirty) {
 		raw->m_OnDirty(raw);
 	}
@@ -200,6 +215,7 @@ void View::RemoveChild(View *child) {
 	if (iterator != m_Children.end()) {
 		NotifyRemoved(child);
 		m_Children.erase(iterator);
+		MarkSubtreeBoundsDirty();
 	}
 }
 
@@ -212,6 +228,7 @@ Unique<View> View::DetachChild(View *child) {
 	child->m_Parent = nullptr;
 	auto owned = std::move(*it);
 	m_Children.erase(it);
+	MarkSubtreeBoundsDirty();
 	return owned;
 }
 
@@ -333,7 +350,7 @@ void View::OnDrawSelf(Rendering::DrawList &drawList) {
 	}
 
 	const Rect worldRect = { .position = m_AbsolutePosition, .size = m_LayoutRect.size };
-	const int32 z = m_StackingZ * 4;
+	const int32 z = 0;
 
 	for (const auto &shadow : m_DisplayStyle.boxShadows) {
 		drawList.DrawShadow(worldRect, shadow.offset, shadow.blur, shadow.spread, shadow.color,

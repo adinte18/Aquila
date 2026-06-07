@@ -109,6 +109,7 @@ class QuadBatcher {
 
 	void BeginCapture();
 	void ExecuteReplay(GFX::GfxCommandList &cmd);
+	void SetScissor(GFX::GfxCommandList &cmd, int32 x, int32 y, uint32 w, uint32 h);
 
 	void DrawRect(const RectSpec &spec);
 	void DrawShadow(const ShadowSpec &spec);
@@ -161,6 +162,11 @@ class QuadBatcher {
 		bool isTextBuffer; // selects text VB vs quad VB
 		uint32 indexCount;
 		int32 vertexOffset;
+		bool isScissor = false;
+		int32 scissorX = 0;
+		int32 scissorY = 0;
+		uint32 scissorW = 0;
+		uint32 scissorH = 0;
 	};
 
 	void StartBatch();

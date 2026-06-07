@@ -61,14 +61,21 @@ class View {
 
 	void MergeStyle(const StyleProperties &overlay);
 	void SetComputedStyle(ComputedStyle style);
-	void SetLayoutRect(Rect rect) { m_LayoutRect = rect; }
-	void SetAbsolutePosition(vec2 pos) { m_AbsolutePosition = pos; }
-	void SetStackingZ(int32 z) { m_StackingZ = z; }
-	[[nodiscard]] int32 GetStackingZ() const { return m_StackingZ; }
+	void SetLayoutRect(Rect rect) {
+		if (m_LayoutRect == rect) return;
+		m_LayoutRect = rect;
+		MarkSubtreeBoundsDirty();
+	}
+	void SetAbsolutePosition(vec2 pos) {
+		if (m_AbsolutePosition == pos) return;
+		m_AbsolutePosition = pos;
+		MarkSubtreeBoundsDirty();
+	}
 	void SetClayId(uint32 id) { m_ClayId = id; }
 
 	void SetInputLeaf(bool v) { m_IsInputLeaf = v; }
 	[[nodiscard]] bool IsInputLeaf() const { return m_IsInputLeaf; }
+	[[nodiscard]] bool IsVisible() const { return m_Visible; }
 
 	void SetEnabled(bool enabled);
 	[[nodiscard]] bool IsEnabled() const { return m_Enabled; }
@@ -80,6 +87,15 @@ class View {
 	[[nodiscard]] bool GetPassThroughScroll() const { return m_PassThroughScroll; }
 
 	[[nodiscard]] Rect GetAbsoluteRect() const { return { m_AbsolutePosition, m_LayoutRect.size }; }
+
+	void MarkSubtreeBoundsDirty() {
+		m_SubtreeBoundsDirty = true;
+		if (m_Parent) {
+			m_Parent->MarkSubtreeBoundsDirty();
+		}
+	}
+	const Rect &GetSubtreeBounds();
+
 	void SetContextView(Delegate<void(vec2)> cb) { m_OnContextMenu = std::move(cb); }
 	bool IsAnimationFinished() const { return m_IsAnimationFinished; }
 
@@ -123,6 +139,9 @@ class View {
 	void ClearDrawDirty() { m_DrawDirty = false; }
 	[[nodiscard]] bool IsDrawDirty() const { return m_DrawDirty; }
 
+	void SetEffectiveZ(int32 z) { m_EffectiveZ = z; }
+	[[nodiscard]] int32 GetEffectiveZ() const { return m_EffectiveZ; }
+
 	void InvalidateLayout();
 
 	void SetDirtyCallback(Delegate<void(View *)> cb) { m_OnDirty = std::move(cb); }
@@ -157,7 +176,6 @@ class View {
 	ComputedStyle m_ComputedStyle;
 	Rect m_LayoutRect;
 	vec2 m_AbsolutePosition;
-	int32 m_StackingZ = 0;
 	bool m_Visible = true;
 	bool m_Enabled = true;
 	bool m_IsInputLeaf = false;
@@ -169,6 +187,9 @@ class View {
 
 	bool m_IsAnimationFinished = false;
 	bool m_DrawDirty = true;
+	int32 m_EffectiveZ = 0;
+	Rect m_SubtreeBounds{};
+	bool m_SubtreeBoundsDirty = true;
 	Text::FontAtlas *m_ResolvedFont = nullptr;
 	Delegate<void(View *)> m_OnDirty;
 	Delegate<void(View *)> m_OnAnimationStarted;

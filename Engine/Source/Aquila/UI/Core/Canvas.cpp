@@ -417,10 +417,12 @@ bool Canvas::ClayUpdateRects(View *node, vec2 parentAbsPos) {
 		const Rect newRect = { .position = myAbsPos - parentAbsPos, .size = { bb.width, bb.height } };
 		if (newRect != node->GetLayoutRect()) {
 			node->SetLayoutRect(newRect);
+			node->MarkSubtreeBoundsDirty();
 			changed = true;
 		}
 		if (myAbsPos != node->GetAbsolutePosition()) {
 			node->SetAbsolutePosition(myAbsPos);
+			node->MarkSubtreeBoundsDirty();
 			MarkNodeDrawDirty(node);
 		}
 	}
@@ -432,21 +434,19 @@ bool Canvas::ClayUpdateRects(View *node, vec2 parentAbsPos) {
 	return changed;
 }
 
-static constexpr int32 kFloatingZBase = INT32_MAX / 2;
-static constexpr int32 kFloatingZTier = 1000;
-
-void Canvas::ComputeStackingZ() {
-	int32 index = 0;
-	for (View *v : m_FlatViews) {
-		const int32 ownZ = v->GetComputedStyle().zIndex;
-		if (v->HasFloating()) {
-			v->SetStackingZ(kFloatingZBase + static_cast<int32>(v->GetFloating().zIndex) * kFloatingZTier + index);
-		} else {
-			v->SetStackingZ(index + ownZ * 1000);
-		}
-		index++;
+static void GatherFloatingRoots(View *node, std::vector<View *> &roots) {
+	if (node->GetDisplayStyle().display == Display::None) {
+		return;
+	}
+	if (node->HasFloating()) {
+		roots.push_back(node);
+		return;
+	}
+	for (const auto &c : node->GetChildren()) {
+		GatherFloatingRoots(c.get(), roots);
 	}
 }
+
 void Canvas::Compute() {
 	if (!m_Root || !m_Dirty) {
 		return;
@@ -471,31 +471,79 @@ void Canvas::Compute() {
 			StylePass();
 		}
 
-		m_FlatViews.clear();
-		CollectFlatViews(m_Root.get(), 0);
-		std::stable_sort(m_FlatViews.begin(), m_FlatViews.end(),
-						 [](const View *a, const View *b) { return a->GetStackingZ() < b->GetStackingZ(); });
+		// Rebuild node lists. m_PerNodeCmds is cleared first so _CullCanvasItem
+		// finds no commands and only populates m_CanvasItems / m_CanvasLayers.
 		m_PerNodeCmds.clear();
-		for (View *v : m_FlatViews) {
+		for (auto &b : m_ZBuckets) {
+			b.clear();
+		}
+		m_CanvasItems.clear();
+		m_CanvasLayers.clear();
+		{
+			const Rect canvasBounds = { { 0.f, 0.f }, { static_cast<f32>(m_Width), static_cast<f32>(m_Height) } };
+			_CullCanvasItem(m_Root.get(), 0, &canvasBounds);
+		}
+		std::vector<View *> floatRoots;
+		GatherFloatingRoots(m_Root.get(), floatRoots);
+		std::stable_sort(floatRoots.begin(), floatRoots.end(),
+						 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
+		for (View *root : floatRoots) {
+			_CollectCanvasLayer(root);
+		}
+		for (View *v : m_CanvasItems) {
+			v->SetDrawDirty();
+		}
+		for (View *v : m_CanvasLayers) {
 			v->SetDrawDirty();
 		}
 	}
 
 	bool anyRebuilt = false;
-	for (View *v : m_FlatViews) {
+	auto rebuildNode = [&](View *v) {
 		if (v->IsDrawDirty()) {
 			DrawList capture;
 			capture.SetCanvasSize(m_Width, m_Height);
 			v->OnDrawSelf(capture);
-			m_PerNodeCmds[v] = capture.TakeCommands();
+			auto cmds = capture.TakeCommands();
+			std::stable_sort(cmds.begin(), cmds.end(),
+							 [](const DrawCmd &a, const DrawCmd &b) { return a.zOrder < b.zOrder; });
+			m_PerNodeCmds[v] = std::move(cmds);
 			v->ClearDrawDirty();
 			anyRebuilt = true;
 		}
+	};
+	for (View *v : m_CanvasItems) {
+		rebuildNode(v);
+	}
+	for (View *v : m_CanvasLayers) {
+		rebuildNode(v);
 	}
 
 	if (anyRebuilt) {
+		for (auto &b : m_ZBuckets) {
+			b.clear();
+		}
+		m_CanvasItems.clear();
+		m_CanvasLayers.clear();
+		{
+			const Rect canvasBounds = { { 0.f, 0.f }, { static_cast<f32>(m_Width), static_cast<f32>(m_Height) } };
+			_CullCanvasItem(m_Root.get(), 0, &canvasBounds);
+		}
+		std::vector<View *> floatRoots;
+		GatherFloatingRoots(m_Root.get(), floatRoots);
+		std::stable_sort(floatRoots.begin(), floatRoots.end(),
+						 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
+		for (View *root : floatRoots) {
+			_CollectCanvasLayer(root);
+		}
+
 		m_DrawList.Clear();
-		for (View *v : m_FlatViews) {
+		for (const auto &b : m_ZBuckets) {
+			for (const DrawCmd &cmd : b) {
+				m_DrawList.AppendCmd(cmd);
+			}
+		}
+		for (View *v : m_CanvasLayers) {
 			auto it = m_PerNodeCmds.find(v);
 			if (it != m_PerNodeCmds.end()) {
 				for (const DrawCmd &cmd : it->second) {
@@ -503,8 +551,6 @@ void Canvas::Compute() {
 				}
 			}
 		}
-
-		m_DrawList.Sort();
 		m_DrawListDirty = true;
 	}
 	m_Dirty = false;
@@ -515,25 +561,84 @@ void Canvas::MarkNodeDrawDirty(View *node) {
 	MarkDirty();
 }
 
-void Canvas::CollectFlatViews(View *node, int32 floatingBase) {
+void Canvas::_CullCanvasItem(View *node, int32 parentEffectiveZ, const Rect *clipRect) {
 	if (node->GetDisplayStyle().display == Display::None) {
 		return;
 	}
-
-	int32 myBase = floatingBase;
+	if (!node->IsVisible()) {
+		return;
+	}
 	if (node->HasFloating()) {
-		const FloatingConfig &fc = node->GetFloating();
-		myBase = kFloatingZBase + fc.zIndex * kFloatingZTier;
-	} else {
-		// Inherit parent's z contribution so children always render above parent
-		myBase = floatingBase + node->GetComputedStyle().zIndex * 1000;
+		return;
 	}
 
-	node->SetStackingZ(myBase + static_cast<int32>(m_FlatViews.size()));
-	m_FlatViews.push_back(node);
+	if (clipRect != nullptr && !clipRect->Overlaps(node->GetSubtreeBounds())) {
+		return;
+	}
+
+	const int32 effectiveZ = parentEffectiveZ + node->GetComputedStyle().zIndex;
+	const int32 bucketIdx = std::clamp(effectiveZ, kZMin, kZMax) - kZMin;
+
+	if (clipRect == nullptr || clipRect->Overlaps(node->GetAbsoluteRect())) {
+		auto it = m_PerNodeCmds.find(node);
+		if (it != m_PerNodeCmds.end()) {
+			for (const DrawCmd &cmd : it->second) {
+				m_ZBuckets[bucketIdx].push_back(cmd);
+			}
+		}
+		m_CanvasItems.push_back(node);
+	}
+
+	const Rect *childClip = clipRect;
+	Rect ownClip;
+	bool clipsChildren = false;
+	const Overflow overflow = node->GetDisplayStyle().overflow;
+	if (overflow == Overflow::Scroll || overflow == Overflow::Hidden) {
+		ownClip = node->GetAbsoluteRect();
+		if (clipRect != nullptr) {
+			ownClip = clipRect->Intersect(ownClip);
+			if (ownClip.IsEmpty()) {
+				return;
+			}
+		}
+		childClip = &ownClip;
+		clipsChildren = true;
+
+		DrawCmd clipPush{};
+		clipPush.type = UICommandType::ClipPush;
+		clipPush.rect = ownClip;
+		m_ZBuckets[bucketIdx].push_back(clipPush);
+	}
 
 	for (const auto &child : node->GetChildren()) {
-		CollectFlatViews(child.get(), myBase);
+		_CullCanvasItem(child.get(), effectiveZ, childClip);
+	}
+
+	if (clipsChildren) {
+		DrawCmd clipPop{};
+		clipPop.type = UICommandType::ClipPop;
+		clipPop.rect = clipRect != nullptr ? *clipRect : Rect{};
+		m_ZBuckets[bucketIdx].push_back(clipPop);
+	}
+}
+
+void Canvas::_CollectCanvasLayer(View *node) {
+	m_CanvasLayers.push_back(node);
+	for (const auto &child : node->GetChildren()) {
+		_CollectCanvasLayerSubtree(child.get());
+	}
+}
+
+void Canvas::_CollectCanvasLayerSubtree(View *node) {
+	if (node->GetDisplayStyle().display == Display::None) {
+		return;
+	}
+	if (!node->IsVisible()) {
+		return;
+	}
+	m_CanvasLayers.push_back(node);
+	for (const auto &child : node->GetChildren()) {
+		_CollectCanvasLayerSubtree(child.get());
 	}
 }
 
@@ -544,10 +649,33 @@ void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList
 	m_DrawList.Submit(r2d, cmd);
 }
 
+static bool WithinAllClipAncestors(View *node, vec2 pos) {
+	View *p = node->GetParent();
+	while (p != nullptr) {
+		const Overflow overflow = p->GetDisplayStyle().overflow;
+		if (overflow == Overflow::Scroll || overflow == Overflow::Hidden) {
+			if (!p->GetAbsoluteRect().Contains(pos)) {
+				return false;
+			}
+		}
+		p = p->GetParent();
+	}
+	return true;
+}
+
 View *Canvas::HitTest(vec2 pos) {
-	for (int i = static_cast<int>(m_FlatViews.size()) - 1; i >= 0; --i) {
-		View *v = m_FlatViews[i];
+	for (int i = static_cast<int>(m_CanvasLayers.size()) - 1; i >= 0; --i) {
+		View *v = m_CanvasLayers[i];
+		if (v->GetAbsoluteRect().Contains(pos)) {
+			return v;
+		}
+	}
+	for (int i = static_cast<int>(m_CanvasItems.size()) - 1; i >= 0; --i) {
+		View *v = m_CanvasItems[i];
 		if (!v->GetAbsoluteRect().Contains(pos)) {
+			continue;
+		}
+		if (!WithinAllClipAncestors(v, pos)) {
 			continue;
 		}
 		View *p = v->GetParent();

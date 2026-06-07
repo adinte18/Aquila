@@ -232,6 +232,11 @@ void QuadBatcher::ExecuteReplay(GFX::GfxCommandList &cmd) {
 	GFX::GfxBuffer *lastVB = nullptr;
 
 	for (const ReplayEntry &entry : m_ReplayList) {
+		if (entry.isScissor) {
+			cmd.SetScissor(entry.scissorX, entry.scissorY, entry.scissorW, entry.scissorH);
+			continue;
+		}
+
 		if (entry.pipeline != lastPipeline) {
 			cmd.BindPipeline(*entry.pipeline);
 			lastPipeline = entry.pipeline;
@@ -648,6 +653,7 @@ void QuadBatcher::Flush() {
 
 		m_VertexOffset += m_QuadCount * SharedConstants::VERTS_PER_QUAD;
 	}
+	StartBatch();
 }
 
 GFX::GfxDescriptorSet &QuadBatcher::GetOrCreateTextureSet(GFX::GfxTexture &texture) {
@@ -682,6 +688,24 @@ void QuadBatcher::StartBatch() {
 	m_BatchTexture = nullptr;
 	m_BatchCurveTexture = nullptr;
 	m_BatchBandTexture = nullptr;
+}
+
+void QuadBatcher::SetScissor(GFX::GfxCommandList &cmd, int32 x, int32 y, uint32 w, uint32 h) {
+	cmd.SetScissor(x, y, w, h);
+	if (m_Capturing) {
+		m_ReplayList.push_back({
+			.pipeline = nullptr,
+			.descSet = nullptr,
+			.isTextBuffer = false,
+			.indexCount = 0,
+			.vertexOffset = 0,
+			.isScissor = true,
+			.scissorX = x,
+			.scissorY = y,
+			.scissorW = w,
+			.scissorH = h,
+		});
+	}
 }
 
 mat4 QuadBatcher::BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const {

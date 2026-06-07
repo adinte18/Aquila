@@ -208,16 +208,16 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 		}
 		case UICommandType::ClipPush: {
 			r2d.Flush();
-			cmd.SetScissor(static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
+			r2d.SetScissor(cmd, static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
 						   static_cast<uint32>(command.rect.Width()), static_cast<uint32>(command.rect.Height()));
 			break;
 		}
 		case UICommandType::ClipPop: {
 			r2d.Flush();
 			if (command.rect.IsEmpty()) {
-				cmd.SetScissor(0, 0, m_CanvasWidth, m_CanvasHeight);
+				r2d.SetScissor(cmd, 0, 0, m_CanvasWidth, m_CanvasHeight);
 			} else {
-				cmd.SetScissor(static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
+				r2d.SetScissor(cmd, static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
 							   static_cast<uint32>(command.rect.Width()), static_cast<uint32>(command.rect.Height()));
 			}
 			break;
