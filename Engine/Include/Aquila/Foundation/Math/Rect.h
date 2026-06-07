@@ -20,10 +20,18 @@ struct Rect {
 	}
 
 	[[nodiscard]] AQUILA_FORCE_INLINE bool Overlaps(const Rect &other) const {
-		return Left() < other.Right() && Right() > other.Left() && Top() < other.Bottom() && Bottom() > other.Top();
+		return Left() <= other.Right() && Right() >= other.Left() && Top() <= other.Bottom() && Bottom() >= other.Top();
 	}
 
-	[[nodiscard]] Rect Intersect(const Rect &other) const {
+	[[nodiscard]] AQUILA_FORCE_INLINE Rect Union(const Rect &other) const {
+		const float x = std::min(Left(), other.Left());
+		const float y = std::min(Top(), other.Top());
+		const float r = std::max(Right(), other.Right());
+		const float b = std::max(Bottom(), other.Bottom());
+		return { { x, y }, { r - x, b - y } };
+	}
+
+	[[nodiscard]] AQUILA_FORCE_INLINE Rect Intersect(const Rect &other) const {
 		float left = std::max(Left(), other.Left());
 		float top = std::max(Top(), other.Top());
 		float right = std::min(Right(), other.Right());
@@ -31,9 +39,9 @@ struct Rect {
 		return { { left, top }, { std::max(0.f, right - left), std::max(0.f, bottom - top) } };
 	}
 
-	static Rect FromMinMax(vec2 min, vec2 max) { return { .position = min, .size = max - min }; }
+	static AQUILA_FORCE_INLINE Rect FromMinMax(vec2 min, vec2 max) { return { .position = min, .size = max - min }; }
 
-	[[nodiscard]] bool IsEmpty() const { return size.x <= 0.f || size.y <= 0.f; }
+	[[nodiscard]] AQUILA_FORCE_INLINE bool IsEmpty() const { return size.x <= 0.f || size.y <= 0.f; }
 
 	[[nodiscard]] AQUILA_FORCE_INLINE bool operator==(const Rect &other) const {
 		return position == other.position && size == other.size;
