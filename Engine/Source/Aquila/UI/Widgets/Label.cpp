@@ -4,7 +4,9 @@
 
 namespace Aquila::UI::Core {
 
-Label::Label(std::string text, Text::FontAtlas *font) : m_Text(std::move(text)), m_Font(font) {}
+Label::Label(std::string text, Text::FontAtlas *font) : m_Text(std::move(text)), m_Font(font) {
+	m_ShouldSkipHitTest = true;
+}
 
 void Label::SetText(std::string text) {
 	if (text == m_Text) {

@@ -62,12 +62,16 @@ class View {
 	void MergeStyle(const StyleProperties &overlay);
 	void SetComputedStyle(ComputedStyle style);
 	void SetLayoutRect(Rect rect) {
-		if (m_LayoutRect == rect) return;
+		if (m_LayoutRect == rect) {
+			return;
+		}
 		m_LayoutRect = rect;
 		MarkSubtreeBoundsDirty();
 	}
 	void SetAbsolutePosition(vec2 pos) {
-		if (m_AbsolutePosition == pos) return;
+		if (m_AbsolutePosition == pos) {
+			return;
+		}
 		m_AbsolutePosition = pos;
 		MarkSubtreeBoundsDirty();
 	}
@@ -102,6 +106,7 @@ class View {
 	[[nodiscard]] bool IsHovered() const { return m_IsHovered; }
 	[[nodiscard]] bool IsPressed() const { return m_IsPressed; }
 	[[nodiscard]] bool IsFocused() const { return m_IsFocused; }
+	[[nodiscard]] bool IsSkippingHitTest() const { return m_ShouldSkipHitTest; }
 	[[nodiscard]] uint32 GetClayId() const { return m_ClayId; }
 
 	virtual vec2 GetIntrinsicSize() const { return { -1.f, -1.f }; }
@@ -158,6 +163,7 @@ class View {
 	bool m_IsHovered = false;
 	bool m_IsPressed = false;
 	bool m_IsFocused = false;
+	bool m_ShouldSkipHitTest = false;
 
   private:
 	void NotifyRemoved(View *node);

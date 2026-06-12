@@ -14,8 +14,9 @@ Button::Button(std::string text, Text::FontAtlas *font) {
 
 void Button::SetText(std::string text) {
 	if (m_Label == nullptr) {
-		auto label = CreateUnique<Label>();
+		auto label = CreateUnique<Label>(text);
 		m_Label = static_cast<Label *>(AddChild(std::move(label)));
+		return;
 	}
 	m_Label->SetText(std::move(text));
 }

@@ -21,6 +21,7 @@ class TextInput : public View {
 	void SetOnSubmit(Delegate<void(const std::string &)> callback);
 
 	[[nodiscard]] const std::string &GetText() const { return m_State.text; }
+	[[nodiscard]] vec2 GetIntrinsicSize() const override;
 
 	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
 	void OnMouseMove(vec2 pos) override;

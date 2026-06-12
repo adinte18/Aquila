@@ -7,7 +7,7 @@ namespace Aquila::UI::Core {
 
 class Label : public View {
   public:
-	Label() = default;
+	Label();
 	explicit Label(std::string text, Text::FontAtlas *font = nullptr);
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Label"; }
