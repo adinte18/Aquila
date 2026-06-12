@@ -70,6 +70,12 @@ void Renderer::OnShutdown() {
 	}
 }
 
+void Renderer::OnResize(uint32 width, uint32 height) {
+	for (auto &sys : m_Systems) {
+		sys->OnResize(width, height);
+	}
+}
+
 void Renderer::SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex) {
 	m_Swapchain = &swapchain;
 	m_SwapchainImageIndex = imageIndex;

@@ -24,6 +24,7 @@ class Renderer : public IRenderer {
 	void OnShutdown() override;
 	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 	void BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void OnResize(uint32 width, uint32 height) override;
 	void SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex);
 
 	template <typename T, typename... Args> T &AddSystem(Args &&...args) {

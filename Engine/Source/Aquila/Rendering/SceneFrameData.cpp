@@ -7,9 +7,9 @@
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
-#include "Aquila/Foundation/Macros.h"
-
-#include <glm/gtc/constants.hpp>
+#include "Aquila/Rendering/FrameData.h"
+#include "Aquila/Rendering/LightData.h"
+#include "Aquila/Graphics/SurfaceData.h"
 
 namespace Aquila::Rendering {
 
@@ -17,7 +17,7 @@ using namespace SceneManagement::Components;
 
 SceneFrameData::SceneFrameData(GFX::GfxContext &ctx, uint32 width, uint32 height)
 	: m_Ctx(ctx), m_Width(width), m_Height(height) {
-	m_Layout = ctx.CreateDescriptorSetLayout({
+	m_Layout = m_Ctx.CreateDescriptorSetLayout({
         .bindings = {
             {
                 .binding = 0,

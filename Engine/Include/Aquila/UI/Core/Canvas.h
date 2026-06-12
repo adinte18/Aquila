@@ -34,10 +34,6 @@ class Canvas {
 	bool IsDrawListDirty() const { return m_DrawListDirty; }
 	void ClearDrawListDirty() { m_DrawListDirty = false; }
 
-	static constexpr int32 kZMin   = -512;
-	static constexpr int32 kZMax   =  512;
-	static constexpr int32 kZRange = kZMax - kZMin + 1;
-
   private:
 	View *HitTest(vec2 pos);
 	void ClayLayoutPass(View *node);
@@ -64,7 +60,7 @@ class Canvas {
 
 	Foundation::DirtySet<View *> m_DirtyViews;
 	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
-	std::array<std::vector<DrawCmd>, kZRange> m_ZBuckets;
+	std::array<std::vector<DrawCmd>, SharedConstants::Z_RANGE> m_ZBuckets;
 	std::vector<View *> m_CanvasItems;
 	std::vector<View *> m_CanvasLayers;
 	std::unordered_map<View *, std::vector<DrawCmd>> m_PerNodeCmds;

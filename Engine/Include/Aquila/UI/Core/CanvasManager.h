@@ -1,9 +1,9 @@
 #pragma once
 
-#include "Aquila/Foundation/Singleton.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/UI/Core/Canvas.h"
+#include "Aquila/Foundation/Singleton.h"
 
 namespace Aquila::UI::Core {
 
@@ -15,7 +15,7 @@ enum class UILayer : uint8 {
 	Count // keep track of how many layers we have
 };
 
-class ViewSystem : public Foundation::Singleton<ViewSystem> {
+class CanvasManager : public Foundation::Singleton<CanvasManager> {
   public:
 	Canvas &GetLayer(UILayer layer);
 
@@ -30,9 +30,8 @@ class ViewSystem : public Foundation::Singleton<ViewSystem> {
 	void ClearLayerDirtyFlags(UILayer from, UILayer to);
 
   private:
-	friend class Foundation::Singleton<ViewSystem>;
-
-	ViewSystem(uint32 width, uint32 height);
+	friend class Foundation::Singleton<CanvasManager>;
+	CanvasManager(uint32 width, uint32 height);
 
 	std::array<Unique<Canvas>, static_cast<size_t>(UILayer::Count)> m_Layers;
 };

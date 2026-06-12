@@ -176,7 +176,7 @@ void Canvas::NotifyStyleDirty(View *view) {
 }
 
 void Canvas::NotifyAnimationStarted(View *view) {
-	for (View *v : m_ActiveAnims) {
+	for (const View *v : m_ActiveAnims) {
 		if (v == view) {
 			return;
 		}
@@ -211,7 +211,7 @@ void Canvas::StylePass() {
 	}
 	PROFILE_SCOPE("Canvas::StylePass");
 
-	auto depth = [](View *view) {
+	auto depth = [](const View *view) {
 		int result = 0;
 		while (view->GetParent()) {
 			view = view->GetParent();
@@ -221,7 +221,7 @@ void Canvas::StylePass() {
 	};
 
 	std::vector<View *> queue = m_DirtyViews.GetOrdered();
-	std::stable_sort(queue.begin(), queue.end(), [&](View *a, View *b) { return depth(a) < depth(b); });
+	std::ranges::stable_sort(queue.begin(), queue.end(), [&](View *a, View *b) { return depth(a) < depth(b); });
 	std::unordered_set<View *> inQueue(queue.begin(), queue.end());
 
 	for (size_t i = 0; i < queue.size(); i++) {
@@ -238,7 +238,7 @@ void Canvas::StylePass() {
 
 		StyleSheet::ResolveContext ctx;
 		ctx.viewportSize = { static_cast<f32>(m_Width), static_cast<f32>(m_Height) };
-		if (View *parent = node->GetParent()) {
+		if (const View *parent = node->GetParent()) {
 			ctx.containerSize = parent->GetLayoutRect().size;
 		}
 
@@ -315,7 +315,7 @@ void Canvas::ClayLayoutPass(View *node) {
 	if (node->HasFloating()) {
 		const FloatingConfig &fc = node->GetFloating();
 
-		auto toPoint = [](FloatingAttachPoint p) -> Clay_FloatingAttachPointType {
+		auto toPoint = [](FloatingAttachPoint p) {
 			switch (p) {
 			case FloatingAttachPoint::LeftTop:
 				return CLAY_ATTACH_POINT_LEFT_TOP;
@@ -485,8 +485,8 @@ void Canvas::Compute() {
 		}
 		std::vector<View *> floatRoots;
 		GatherFloatingRoots(m_Root.get(), floatRoots);
-		std::stable_sort(floatRoots.begin(), floatRoots.end(),
-						 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
+		std::ranges::stable_sort(floatRoots.begin(), floatRoots.end(),
+								 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
 		for (View *root : floatRoots) {
 			_CollectCanvasLayer(root);
 		}
@@ -505,8 +505,8 @@ void Canvas::Compute() {
 			capture.SetCanvasSize(m_Width, m_Height);
 			v->OnDrawSelf(capture);
 			auto cmds = capture.TakeCommands();
-			std::stable_sort(cmds.begin(), cmds.end(),
-							 [](const DrawCmd &a, const DrawCmd &b) { return a.zOrder < b.zOrder; });
+			std::ranges::stable_sort(cmds.begin(), cmds.end(),
+									 [](const DrawCmd &a, const DrawCmd &b) { return a.zOrder < b.zOrder; });
 			m_PerNodeCmds[v] = std::move(cmds);
 			v->ClearDrawDirty();
 			anyRebuilt = true;
@@ -531,8 +531,8 @@ void Canvas::Compute() {
 		}
 		std::vector<View *> floatRoots;
 		GatherFloatingRoots(m_Root.get(), floatRoots);
-		std::stable_sort(floatRoots.begin(), floatRoots.end(),
-						 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
+		std::ranges::stable_sort(floatRoots.begin(), floatRoots.end(),
+								 [](View *a, View *b) { return a->GetFloating().zIndex < b->GetFloating().zIndex; });
 		for (View *root : floatRoots) {
 			_CollectCanvasLayer(root);
 		}
@@ -577,11 +577,11 @@ void Canvas::_CullCanvasItem(View *node, int32 parentEffectiveZ, const Rect *cli
 	}
 
 	const int32 effectiveZ = parentEffectiveZ + node->GetComputedStyle().zIndex;
-	const int32 bucketIdx = std::clamp(effectiveZ, kZMin, kZMax) - kZMin;
+	const int32 bucketIdx =
+		Math::Clamp(effectiveZ, SharedConstants::Z_MIN, SharedConstants::Z_MAX) - SharedConstants::Z_MIN;
 
 	if (clipRect == nullptr || clipRect->Overlaps(node->GetAbsoluteRect())) {
-		auto it = m_PerNodeCmds.find(node);
-		if (it != m_PerNodeCmds.end()) {
+		if (auto it = m_PerNodeCmds.find(node); it != m_PerNodeCmds.end()) {
 			for (const DrawCmd &cmd : it->second) {
 				m_ZBuckets[bucketIdx].push_back(cmd);
 			}
@@ -666,12 +666,23 @@ static bool WithinAllClipAncestors(View *node, vec2 pos) {
 View *Canvas::HitTest(vec2 pos) {
 	for (int i = static_cast<int>(m_CanvasLayers.size()) - 1; i >= 0; --i) {
 		View *v = m_CanvasLayers[i];
+
+		if (v->IsSkippingHitTest()) {
+			continue;
+		}
+
 		if (v->GetAbsoluteRect().Contains(pos)) {
 			return v;
 		}
 	}
+
 	for (int i = static_cast<int>(m_CanvasItems.size()) - 1; i >= 0; --i) {
 		View *v = m_CanvasItems[i];
+
+		if (v->IsSkippingHitTest()) {
+			continue;
+		}
+
 		if (!v->GetAbsoluteRect().Contains(pos)) {
 			continue;
 		}

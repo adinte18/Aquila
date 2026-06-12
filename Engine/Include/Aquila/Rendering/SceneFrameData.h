@@ -1,11 +1,7 @@
 #pragma once
-#include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Singleton.h"
-#include "Aquila/Rendering/FrameData.h"
-#include "Aquila/Rendering/LightData.h"
-#include "Aquila/Graphics/SurfaceData.h"
 #include "Aquila/GFX/GfxBuffer.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
 

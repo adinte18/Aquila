@@ -1,9 +1,6 @@
 #pragma once
 #include "Aquila/Rendering/Renderers/IRenderer.h"
-#include "Aquila/Rendering/Systems/Base/I2DRenderingSystem.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
-#include "Aquila/GFX/GfxRenderpass.h"
-#include "Aquila/GFX/GfxTexture.h"
+#include "Aquila/Rendering/Systems/Base/IRenderingSystem.h"
 
 namespace Aquila::GFX {
 class GfxSwapchain;
@@ -23,12 +20,12 @@ class Renderer2D : public IRenderer {
 	void OnShutdown() override;
 	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 	void BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void OnResize(uint32 width, uint32 height) override;
 
 	void SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex);
-	void SetUIDirty(bool dirty) { m_UIDirty = dirty; }
 
 	template <typename T, typename... Args> T &AddSystem(Args &&...args) {
-		static_assert(std::is_base_of_v<I2DRenderingSystem, T>);
+		static_assert(std::is_base_of_v<IRenderingSystem, T>);
 		auto sys = CreateUnique<T>(std::forward<Args>(args)...);
 		T &ref = *sys;
 		sys->OnInit(*m_Ctx);
@@ -37,19 +34,11 @@ class Renderer2D : public IRenderer {
 	}
 
   private:
-	void RebuildMSAAResources(uint32 w, uint32 h);
-
 	GFX::GfxContext *m_Ctx = nullptr;
-	Unique<Graphics::QuadBatcher> m_R2D;
-	std::vector<Unique<I2DRenderingSystem>> m_Systems;
+	std::vector<Unique<IRenderingSystem>> m_Systems;
 
-	Ref<GFX::GfxRenderPass> m_SwapchainPass;
-	Ref<GFX::GfxTexture> m_UIMSAAColor;
 	GFX::GfxSwapchain *m_Swapchain = nullptr;
 	uint32 m_SwapchainImageIndex = 0;
-	uint32 m_UIWidth = 0;
-	uint32 m_UIHeight = 0;
-	bool m_UIDirty = true;
 };
 
 } // namespace Aquila::Rendering

@@ -6,6 +6,10 @@ namespace Aquila::SceneManagement {
 class Scene;
 }
 
+namespace Aquila::GFX {
+class GfxSwapchain;
+}
+
 namespace Aquila::Rendering {
 
 class SceneFrameData;
@@ -24,6 +28,9 @@ struct FrameContext {
 	Graphics::RG::RGBufferHandle hClusterAABBs;
 	Graphics::RG::RGBufferHandle hLightList;
 	Graphics::RG::RGBufferHandle hClusterLightInfo;
+
+	GFX::GfxSwapchain *swapchain = nullptr;
+	uint32 swapchainImageIndex = 0;
 
 	uint32 width = 0;
 	uint32 height = 0;
