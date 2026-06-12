@@ -126,11 +126,6 @@ ColorPicker::ColorPicker(GFX::GfxContext &ctx, vec4 color) : m_Ctx(ctx), m_Color
 	m_S = hsv.y;
 	m_V = hsv.z;
 
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	SetStyle(sp);
-
 	Init();
 }
 

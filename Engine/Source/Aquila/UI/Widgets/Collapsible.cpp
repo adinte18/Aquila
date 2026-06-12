@@ -3,19 +3,9 @@
 namespace Aquila::UI::Core {
 
 Collapsible::Collapsible(std::string title) {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	SetStyle(sp);
-
 	auto header = CreateUnique<Button>();
 	header->SetText(std::move(title));
 	header->AddClass("collapsible-header");
-	{
-		StyleProperties hp;
-		hp.width = StyleLength::Grow();
-		header->SetStyle(hp);
-	}
 	header->SetOnClick([this] {
 		SetExpanded(!m_Expanded);
 		if (m_OnToggled) {
@@ -25,13 +15,7 @@ Collapsible::Collapsible(std::string title) {
 	m_Header = static_cast<Button *>(AddChild(std::move(header)));
 
 	auto content = CreateUnique<View>();
-	{
-		StyleProperties cp;
-		cp.flexDirection = FlexDirection::Column;
-		cp.width = StyleLength::Grow();
-		content->SetStyle(cp);
-		content->AddClass("collapsible-content");
-	}
+	content->AddClass("collapsible-content");
 	m_Content = AddChild(std::move(content));
 	ApplyState(); // apply initial collapsed/expanded display state
 }

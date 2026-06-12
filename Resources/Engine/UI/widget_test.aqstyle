@@ -37,9 +37,6 @@
     background-color: var(--bg-base);
 }
 
-
-
-
 #toolbar {
     width: 100%;
     height: 40px;
@@ -172,11 +169,6 @@
     height: 100%;
 }
 
-.dock-side-bottom {
-    width: 100%;
-    height: 200px;
-}
-
 .dock-center {
     width: grow;
     height: 100%;
@@ -191,6 +183,11 @@
     width: grow;
     height: grow;
     background-color: var(--bg-panel);
+}
+
+.dock-side-bottom {
+    width: 100%;
+    height: 200px;
 }
 
 .dock-tab-bar {
@@ -292,9 +289,6 @@
     display: none;
 }
 
-
-
-
 .panel-header {
     flex-direction: row;
     align-items: center;
@@ -376,17 +370,26 @@
     color: var(--text-muted);
 }
 
-
-
-
 #viewport {
     width: 100%;
     height: grow;
-    z-index: 0;
 }
 
+#console-scroll {
+    flex-direction: column;
+    width: 100%;
+    padding: 8px;
+    background-color : #db2f2f
+}
 
-
+.console-text {
+    font-family: medium;
+    font-size: 256px;
+    color: #F0F0F0;
+    width: 100%;
+    padding: 6px 2px;
+    background-color: #0A3A60;
+}
 
 #inspector-scroll {
     flex-direction: column;
@@ -400,18 +403,18 @@
     font-size: 16px;
     color: #F0F0F0;
     width: 100%;
-    padding: 6px 2px;
+    height: 24px;
+    padding: 100px;
+    border-width: 1px;
+    border-color: var(--border-dim);
 }
-
-
-
 
 .collapsible-header {
     font-family: medium;
     font-size: 13px;
     color: var(--text);
     width: 100%;
-    height: 28px;
+    height: auto;
     padding: 0px 10px;
     background-color: #2D2D2D;
     border-color: var(--border-dim);
@@ -443,6 +446,7 @@
 
 
 .property-grid {
+    flex-direction: column;
     width: 100%;
     gap: 4px;
 }
@@ -459,6 +463,12 @@
     font-size: 13px;
     color: var(--text-dim);
     width: 80px;
+}
+
+.property-separator {
+    width: 100%;
+    height: 1px;
+    background-color: rgba(255, 255, 255, 0.08);
 }
 
 .comp-block {
@@ -622,6 +632,20 @@ Button {
     border-radius: 3px;
 }
 
+Collapsible {
+    flex-direction: column;
+    width: 100%;
+}
+
+ColorPicker {
+    flex-direction: column;
+    width: grow;
+}
+
+TextInput {
+    overflow: hidden;
+}
+
 Checkbox {
     width: 16px;
     height: 16px;
@@ -782,7 +806,6 @@ ContextMenu {
     justify-content: start;
     border-radius: 3px;
     transition: 60ms ease-out;
-    z-index: 1;
 }
 
 .context-item:hover {

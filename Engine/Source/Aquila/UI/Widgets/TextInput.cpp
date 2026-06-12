@@ -7,10 +7,6 @@ namespace Aquila::UI::Core {
 
 static void InitTextInput(TextInput *self) {
 	self->SetInputLeaf(true);
-
-	StyleProperties sp;
-	sp.overflow = Overflow::Hidden;
-	self->SetStyle(sp);
 }
 
 TextInput::TextInput() {
@@ -164,12 +160,25 @@ void TextInput::OnFocusLost() {
 	QueueRedraw();
 }
 
+vec2 TextInput::GetIntrinsicSize() const {
+	vec2 result{};
+	auto &style = GetComputedStyle();
+
+	Text::FontAtlas *font = ResolveFont();
+	auto scale = style.fontSize / font->GetBakeSize();
+
+	result.x = -1; // we dont care bout width
+	result.y = font->GetLineHeight() * scale;
+
+	return result;
+}
+
 void TextInput::OnDrawSelf(Rendering::DrawList &drawList) {
 	View::OnDrawSelf(drawList);
 
 	using namespace Rendering;
 	const Rect rect = GetAbsoluteRect();
-	const auto &style = GetDisplayStyle();
+	const auto &style = GetComputedStyle();
 	const int32 z = 0;
 	const float fontSize = style.fontSize > 0.f ? style.fontSize : 14.f;
 
