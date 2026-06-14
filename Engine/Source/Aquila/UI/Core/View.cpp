@@ -256,6 +256,24 @@ View *View::GetParent() const {
 	return m_Parent;
 }
 
+View *View::GetFirstDraggableParent() const {
+	auto cursor = const_cast<View *>(this);
+	while (cursor != nullptr && !cursor->IsDraggable()) {
+		cursor = cursor->GetParent();
+	}
+
+	return cursor;
+}
+
+View *View::GetFirstParentThatAcceptsDrop() const {
+	auto cursor = const_cast<View *>(this);
+	while (cursor != nullptr && !cursor->IsAcceptingPayload()) {
+		cursor = cursor->GetParent();
+	}
+
+	return cursor;
+}
+
 const std::vector<Unique<View>> &View::GetChildren() const {
 	return m_Children;
 }
@@ -323,6 +341,11 @@ void View::OnFocusLost() {
 		m_OnDirty(this);
 	}
 }
+
+void View::OnDragStart(DragState &state) {}
+void View::OnDrop(DragState &state) {}
+void View::OnDragEnter(DragState &state) {}
+void View::OnDragLeave(DragState &state) {}
 
 View *View::HitTestAbsolute(vec2 canvasPos) {
 	if (m_ComputedStyle.display == Display::None || !m_Visible) {

@@ -16,24 +16,29 @@ class TreeView : public View {
 	[[nodiscard]] std::string_view GetTypeName() const override { return "TreeView"; }
 
 	TreeNode *AddNode(std::string label);
-
 	void RemoveNode(TreeNode *node);
+	View *AddChild(Unique<View> child) override;
 
-	void SetOnSelected(Delegate<void(TreeNode *)> callback);
-	void SetOnRightClicked(Delegate<void(TreeNode *, vec2)> callback);
+	void OnDragEnter(DragState &state) override;
+	void OnDragLeave(DragState &state) override;
+
+	void SetOnSelected(Delegate<void(TreeNode *node)> callback);
+	void SetOnRightClicked(Delegate<void(TreeNode *node, vec2 position)> callback);
 
 	void SelectNode(TreeNode *node);
 	[[nodiscard]] TreeNode *GetSelected() const { return m_Selected; }
+
+  protected:
+	View *m_Content = nullptr;
 
   private:
 	friend class TreeNode;
 	void NotifySelected(TreeNode *node);
 	void NotifyRightClicked(TreeNode *node, vec2 pos);
 
-	View *m_Content = nullptr;
 	TreeNode *m_Selected = nullptr;
-	Delegate<void(TreeNode *)> m_OnSelected;
-	Delegate<void(TreeNode *, vec2)> m_OnRightClicked;
+	Delegate<void(TreeNode *node)> m_OnSelected;
+	Delegate<void(TreeNode *node, vec2 position)> m_OnRightClicked;
 };
 
 class TreeNode : public View {
@@ -42,22 +47,30 @@ class TreeNode : public View {
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "TreeNode"; }
 
-	TreeNode *AddChild(std::string label);
+	TreeNode *AddChildNode(std::string label);
+	View *AddChild(Unique<View> node) override;
+	void OnDragEnter(DragState &state) override;
+	void OnDragLeave(DragState &state) override;
+	void UpdateDepth(int newDepth);
 	void SetLabel(std::string label);
 	void SetExpanded(bool expanded);
+
 	[[nodiscard]] bool IsExpanded() const { return m_Expanded; }
 	[[nodiscard]] const std::string &GetLabel() const { return m_Label; }
 	[[nodiscard]] int GetDepth() const { return m_Depth; }
 
 	void SetSelected(bool selected);
 
+  protected:
+	TreeView &m_Owner;
+
   private:
 	void ApplyState();
+	void UpdateHeaderText();
 	void OnHeaderClicked();
 	void OnHeaderRightClicked(vec2 pos);
 
 	std::string m_Label;
-	TreeView &m_Owner;
 	int m_Depth = 0;
 	bool m_Expanded = true;
 

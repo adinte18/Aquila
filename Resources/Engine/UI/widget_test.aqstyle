@@ -821,6 +821,10 @@ ContextMenu {
 
 
 
+.tree-view {
+    padding: 2px;
+}
+
 .tree-node-header {
     font-family: regular;
     font-size: 15px;
@@ -845,6 +849,12 @@ ContextMenu {
 .tree-node-selected {
     background-color: var(--accent-dark);
     color: var(--text-bright);
+}
+
+.drag-target {
+    border-width: 2px;
+    border-color: var(--accent);
+    border-radius: 4px;
 }
 
 

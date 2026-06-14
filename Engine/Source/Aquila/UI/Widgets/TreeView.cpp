@@ -6,6 +6,7 @@ TreeView::TreeView() {
 	StyleProperties sp;
 	sp.flexDirection = FlexDirection::Column;
 	sp.width = StyleLength::Grow();
+	sp.height = StyleLength::Grow();
 	sp.overflow = Overflow::Hidden;
 	SetStyle(sp);
 	AddClass("tree-view");
@@ -15,6 +16,7 @@ TreeView::TreeView() {
 		StyleProperties cp;
 		cp.flexDirection = FlexDirection::Column;
 		cp.width = StyleLength::Grow();
+		cp.height = StyleLength::Grow();
 		content->SetStyle(cp);
 	}
 	m_Content = View::AddChild(std::move(content));
@@ -22,7 +24,19 @@ TreeView::TreeView() {
 
 TreeNode *TreeView::AddNode(std::string label) {
 	auto node = CreateUnique<TreeNode>(std::move(label), *this, 0);
-	return static_cast<TreeNode *>(m_Content->View::AddChild(std::move(node)));
+	return static_cast<TreeNode *>(AddChild(std::move(node)));
+}
+
+View *TreeView::AddChild(Unique<View> child) {
+	return m_Content->View::AddChild(std::move(child));
+}
+
+void TreeView::OnDragEnter(DragState &) {
+	AddClass("drag-target");
+}
+
+void TreeView::OnDragLeave(DragState &) {
+	RemoveClass("drag-target");
 }
 
 static bool IsDescendantOf(View *candidate, View *ancestor) {
@@ -40,10 +54,15 @@ void TreeView::RemoveNode(TreeNode *node) {
 		return;
 	}
 
+	if (node->GetParent() == nullptr) {
+		return;
+	}
+
 	if (m_Selected != nullptr && IsDescendantOf(m_Selected, node)) {
 		m_Selected = nullptr;
 	}
-	m_Content->RemoveChild(node);
+
+	node->GetParent()->RemoveChild(node);
 }
 
 void TreeView::SetOnSelected(Delegate<void(TreeNode *)> callback) {
@@ -80,7 +99,7 @@ void TreeView::NotifyRightClicked(TreeNode *node, vec2 pos) {
 static constexpr float kIndentPerDepth = 16.f;
 
 TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
-	: m_Label(std::move(label)), m_Owner(owner), m_Depth(depth) {
+	: m_Owner(owner), m_Label(std::move(label)), m_Depth(depth) {
 	StyleProperties sp;
 	sp.flexDirection = FlexDirection::Column;
 	sp.width = StyleLength::Grow();
@@ -100,7 +119,6 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 		header->SetStyle(hp);
 		header->AddClass("tree-node-header");
 	}
-	header->SetText(m_Label);
 	header->SetOnClick([this] { OnHeaderClicked(); });
 	header->SetContextView([this](vec2 pos) { OnHeaderRightClicked(pos); });
 	m_Header = static_cast<Button *>(View::AddChild(std::move(header)));
@@ -114,16 +132,52 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 		children->AddClass("tree-node-children");
 	}
 	m_Children = View::AddChild(std::move(children));
+	UpdateHeaderText();
 }
 
-TreeNode *TreeNode::AddChild(std::string label) {
+View *TreeNode::AddChild(Unique<View> node) {
+	auto *added = m_Children->View::AddChild(std::move(node));
+	UpdateHeaderText();
+	QueueRedraw();
+	return added;
+}
+
+void TreeNode::OnDragEnter(DragState &) {
+	m_Header->AddClass("drag-target");
+}
+
+void TreeNode::OnDragLeave(DragState &) {
+	m_Header->RemoveClass("drag-target");
+}
+
+TreeNode *TreeNode::AddChildNode(std::string label) {
 	auto node = CreateUnique<TreeNode>(std::move(label), m_Owner, m_Depth + 1);
-	return static_cast<TreeNode *>(m_Children->View::AddChild(std::move(node)));
+	return static_cast<TreeNode *>(AddChild(std::move(node)));
+}
+
+void TreeNode::UpdateDepth(int newDepth) {
+	m_Depth = newDepth;
+
+	const float indent = kIndentPerDepth * static_cast<float>(m_Depth);
+	StyleProperties hp;
+	hp.padding = StyleEdges{
+		StyleLength::Pixel(2.f),
+		StyleLength::Pixel(4.f),
+		StyleLength::Pixel(2.f),
+		StyleLength::Pixel(4.f + indent),
+	};
+	m_Header->MergeStyle(hp);
+
+	for (const auto &child : m_Children->GetChildren()) {
+		if (auto *childNode = dynamic_cast<TreeNode *>(child.get())) {
+			childNode->UpdateDepth(m_Depth + 1);
+		}
+	}
 }
 
 void TreeNode::SetLabel(std::string label) {
 	m_Label = std::move(label);
-	m_Header->SetText(m_Label);
+	UpdateHeaderText();
 }
 
 void TreeNode::SetExpanded(bool expanded) {
@@ -132,6 +186,8 @@ void TreeNode::SetExpanded(bool expanded) {
 	}
 	m_Expanded = expanded;
 	ApplyState();
+	UpdateHeaderText();
+	QueueRedraw();
 }
 
 void TreeNode::SetSelected(bool selected) {
@@ -155,6 +211,17 @@ void TreeNode::OnHeaderClicked() {
 
 void TreeNode::OnHeaderRightClicked(vec2 pos) {
 	m_Owner.NotifyRightClicked(this, pos);
+}
+
+void TreeNode::UpdateHeaderText() {
+	if (!m_Header || !m_Children) {
+		return;
+	}
+	if (m_Children->GetChildren().empty()) {
+		m_Header->SetText(m_Label);
+	} else {
+		m_Header->SetText(std::string(m_Expanded ? "> " : "v ") + m_Label);
+	}
 }
 
 } // namespace Aquila::UI::Core

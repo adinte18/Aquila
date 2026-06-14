@@ -117,17 +117,17 @@ void Window::SetupCallbacks() const {
 		}
 	});
 
-	glfwSetScrollCallback(m_Window, [](GLFWwindow *window, const double xOffset, const double yOffset) {
+	glfwSetScrollCallback(m_Window, [](GLFWwindow *window, const f64 xOffset, const f64 yOffset) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Events::MouseScrolledEvent event(static_cast<f32>(xOffset), static_cast<f32>(yOffset));
 		data.EventCallback(event);
 	});
 
 	// Store the latest position; PollEvents fires one synthesized event after draining the queue.
-	glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, const double xPos, const double yPos) {
+	glfwSetCursorPosCallback(m_Window, [](GLFWwindow *window, const f64 xPos, const f64 yPos) {
 		WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		data.LastMouseX = static_cast<f32>(xPos);
-		data.LastMouseY = static_cast<f32>(yPos);
+		data.LastMouseX = xPos;
+		data.LastMouseY = yPos;
 		data.HasPendingMouseMove = true;
 	});
 

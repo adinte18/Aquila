@@ -706,6 +706,23 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 
 	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
 		m_MousePos = { e.GetX(), e.GetY() };
+
+		if (Platform::Input::IsMouseButtonPressed(MouseButton::Left) && !m_DragState.isDragging) {
+			vec2 delta = m_MousePos - m_DragStartPos;
+			if (Math::Length(delta) > 5.f && m_HoveredView) {
+				m_DragSourceCandidate = m_HoveredView->GetFirstDraggableParent();
+				if (m_DragSourceCandidate != nullptr) {
+					m_DragState.isDragging = true;
+					m_DragSourceCandidate->OnDragStart(m_DragState);
+					m_DragTarget = m_HoveredView->GetFirstParentThatAcceptsDrop();
+					if (m_DragTarget) {
+						m_DragTarget->OnDragEnter(m_DragState);
+					}
+					MarkDirty();
+				}
+			}
+		}
+
 		View *hit = HitTest(m_MousePos);
 		if (hit != m_HoveredView) {
 			if (m_HoveredView) {
@@ -715,6 +732,20 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 			if (m_HoveredView) {
 				m_HoveredView->OnMouseEnter();
 			}
+
+			if (m_DragState.isDragging) {
+				View *newTarget = m_HoveredView ? m_HoveredView->GetFirstParentThatAcceptsDrop() : nullptr;
+				if (newTarget != m_DragTarget) {
+					if (m_DragTarget) {
+						m_DragTarget->OnDragLeave(m_DragState);
+					}
+					m_DragTarget = newTarget;
+					if (m_DragTarget) {
+						m_DragTarget->OnDragEnter(m_DragState);
+					}
+				}
+			}
+
 			MarkDirty();
 		}
 		if (m_FocusedView && m_FocusedView->IsPressed()) {
@@ -732,6 +763,9 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		}
 		SetFocus(m_HoveredView);
 		m_FocusedView->OnMousePress(e.GetMouseButton(), m_MousePos);
+
+		m_DragStartPos = Platform::Input::GetMousePosition();
+
 		return false;
 	});
 
@@ -739,6 +773,25 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 		if (e.GetMouseButton() == MouseButton::Left) {
 			m_MouseDown = false;
 		}
+
+		if (m_DragState.isDragging) {
+			if (m_HoveredView) {
+				View *dropCandidate = m_HoveredView->GetFirstParentThatAcceptsDrop();
+
+				if (dropCandidate) {
+					dropCandidate->OnDrop(m_DragState);
+				}
+			}
+
+			if (m_DragTarget) {
+				m_DragTarget->OnDragLeave(m_DragState);
+				m_DragTarget = nullptr;
+			}
+			m_DragState.payload.reset();
+			m_DragState.isDragging = false;
+			m_DragSourceCandidate = nullptr;
+		}
+
 		if (m_HoveredView) {
 			m_HoveredView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
 		}

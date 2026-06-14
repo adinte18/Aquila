@@ -4,6 +4,7 @@
 #include "Aquila/UI/Rendering/DrawList.h"
 #include "Aquila/UI/Style/ComputedStyle.h"
 #include "Aquila/UI/Style/StyleProperties.h"
+#include "Aquila/UI/Core/DragState.h"
 
 namespace Aquila::UI::Text {
 class FontAtlas;
@@ -17,11 +18,13 @@ class View {
 	AQUILA_NONCOPYABLE(View);
 	AQUILA_NONMOVEABLE(View);
 
-	View *AddChild(Unique<View> child);
+	virtual View *AddChild(Unique<View> child);
 	void RemoveChild(View *child);
 	Unique<View> DetachChild(View *child);
 	View *ReplaceChild(View *old, Unique<View> newChild);
 	[[nodiscard]] View *GetParent() const;
+	[[nodiscard]] View *GetFirstDraggableParent() const;
+	[[nodiscard]] View *GetFirstParentThatAcceptsDrop() const;
 	[[nodiscard]] const std::vector<Unique<View>> &GetChildren() const;
 	View *FindById(std::string_view id);
 
@@ -107,6 +110,8 @@ class View {
 	[[nodiscard]] bool IsPressed() const { return m_IsPressed; }
 	[[nodiscard]] bool IsFocused() const { return m_IsFocused; }
 	[[nodiscard]] bool IsSkippingHitTest() const { return m_ShouldSkipHitTest; }
+	[[nodiscard]] bool IsAcceptingPayload() const { return m_IsAcceptingPayload; }
+	[[nodiscard]] bool IsDraggable() const { return m_IsDraggable; }
 	[[nodiscard]] uint32 GetClayId() const { return m_ClayId; }
 
 	virtual vec2 GetIntrinsicSize() const { return { -1.f, -1.f }; }
@@ -122,6 +127,10 @@ class View {
 	virtual void OnCharInput(uint32 codepoint) {}
 	virtual void OnFocusGained();
 	virtual void OnFocusLost();
+	virtual void OnDragStart(DragState &dState);
+	virtual void OnDrop(DragState &dState);
+	virtual void OnDragEnter(DragState &dState);
+	virtual void OnDragLeave(DragState &dState);
 
 	virtual void OnStyleResolved();
 
@@ -164,6 +173,8 @@ class View {
 	bool m_IsPressed = false;
 	bool m_IsFocused = false;
 	bool m_ShouldSkipHitTest = false;
+	bool m_IsAcceptingPayload = false;
+	bool m_IsDraggable = false;
 
   private:
 	void NotifyRemoved(View *node);

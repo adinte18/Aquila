@@ -5,8 +5,6 @@
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleSheet.h"
-#include <array>
-#include <unordered_map>
 
 namespace Aquila::UI::Core {
 
@@ -48,15 +46,20 @@ class Canvas {
 	DrawList m_DrawList;
 	View *m_HoveredView = nullptr;
 	View *m_FocusedView = nullptr;
+	View *m_DragSourceCandidate = nullptr;
+	View *m_DragTarget = nullptr;
 	uint32 m_Width, m_Height;
 
 	void *m_ClayCtx = nullptr;
 	std::vector<uint8_t> m_ClayMemory;
 
 	vec2 m_MousePos = {};
+	vec2 m_DragStartPos = {};
 	bool m_MouseDown = false;
 	vec2 m_ScrollDelta = {};
 	float m_DeltaTime = 0.f;
+
+	DragState m_DragState{};
 
 	Foundation::DirtySet<View *> m_DirtyViews;
 	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
