@@ -50,6 +50,10 @@ constexpr uint32 FONT_BAND_COUNT = 16;
 constexpr uint32 FONT_BAND_MAX = FONT_BAND_COUNT - 1;
 constexpr uint32 FONT_TEXELS_PER_CURVE = 2;
 
+constexpr uint8 Z_MIN = -4096;
+constexpr uint8 Z_MAX = 4096;
+constexpr uint8 Z_RANGE = Z_MAX - Z_MIN + 1; // 4096 + 4096 + 1 = 8193
+
 }; // namespace Aquila::SharedConstants
 
 #endif

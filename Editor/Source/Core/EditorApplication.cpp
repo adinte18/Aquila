@@ -19,7 +19,7 @@
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Core/Clipboard.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
-#include "Aquila/UI/Core/ViewSystem.h"
+#include "Aquila/UI/Core/CanvasManager.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Widgets/Button.h"
@@ -38,7 +38,7 @@ EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(
 EditorApplication::~EditorApplication() = default;
 
 void EditorApplication::OnInit() {
-	Aquila::UI::Core::ViewSystem::Init(GetWindow().GetWidth(), GetWindow().GetHeight());
+	Aquila::UI::Core::CanvasManager::Init(GetWindow().GetWidth(), GetWindow().GetHeight());
 	GetRenderer2D().AddSystem<Aquila::UI::Rendering::ViewRenderingSystem>();
 
 	{
@@ -66,30 +66,20 @@ void EditorApplication::OnShutdown() {
 	m_ConsolePanel.reset();
 	m_TextureCache.reset();
 
-	Aquila::UI::Core::ViewSystem::Shutdown();
+	Aquila::UI::Core::CanvasManager::Shutdown();
 	UI::FontManager::Get().Shutdown();
 }
 
 void EditorApplication::OnPreRender(f32 deltaTime) {
-	Aquila::UI::Core::ViewSystem::Get()->Update(deltaTime);
-	Aquila::UI::Core::ViewSystem::Get()->Compute();
-
-	const bool uiDirty = Aquila::UI::Core::ViewSystem::Get()->IsAnyLayerDirty(Aquila::UI::Core::UILayer::ScreenOverlay,
-																			  Aquila::UI::Core::UILayer::Editor);
-
-	GetRenderer2D().SetUIDirty(uiDirty);
-	if (uiDirty) {
-		Aquila::UI::Core::ViewSystem::Get()->ClearLayerDirtyFlags(Aquila::UI::Core::UILayer::ScreenOverlay,
-																  Aquila::UI::Core::UILayer::Editor);
-	}
+	Aquila::UI::Core::CanvasManager::Get()->Update(deltaTime);
+	Aquila::UI::Core::CanvasManager::Get()->Compute();
 }
 
 void EditorApplication::OnEvent(Events::Event &event) {
-	Aquila::UI::Core::ViewSystem::Get()->OnEvent(event);
+	Aquila::UI::Core::CanvasManager::Get()->OnEvent(event);
 }
 
 void EditorApplication::OnResize(uint32 width, uint32 height) {
-	Aquila::UI::Core::ViewSystem::Get()->Resize(width, height);
 	if (m_ViewportPanel) {
 		m_ViewportPanel->SetTexture(&GetRenderOutput());
 	}
@@ -151,7 +141,7 @@ void EditorApplication::SetupScene() {
 }
 
 void EditorApplication::SetupEditorUI() {
-	auto &editorCanvas = Aquila::UI::Core::ViewSystem::Get()->GetLayer(Aquila::UI::Core::UILayer::Editor);
+	auto &editorCanvas = Aquila::UI::Core::CanvasManager::Get()->GetLayer(Aquila::UI::Core::UILayer::Editor);
 	const auto &cfg = Config::GetPreferences();
 
 	m_TextureCache = CreateUnique<Aquila::UI::Core::TextureCache>(GetContext(), cfg.ui.resourcesPath);

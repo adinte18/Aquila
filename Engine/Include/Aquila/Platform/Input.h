@@ -16,7 +16,7 @@ class Input {
 	[[nodiscard]] static bool IsMouseButtonPressed(MouseButton button) {
 		return s_MouseButtonStates.at(static_cast<usize>(button));
 	}
-	[[nodiscard]] static std::pair<f32, f32> GetMousePosition() { return { s_MouseX, s_MouseY }; }
+	[[nodiscard]] static vec2 GetMousePosition() { return { s_MouseX, s_MouseY }; }
 
 	static void OnEvent(Event &event) {
 		EventDispatcher dispatcher(event);

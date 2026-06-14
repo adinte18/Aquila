@@ -54,7 +54,7 @@ class Window {
 		bool Resized = false;
 		EventCallbackFn EventCallback;
 		std::function<void()> RefreshCallback;
-		f32 LastMouseX = 0.f, LastMouseY = 0.f;
+		f64 LastMouseX = 0.f, LastMouseY = 0.f;
 		bool HasPendingMouseMove = false;
 	};
 
