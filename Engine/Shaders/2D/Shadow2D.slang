@@ -54,15 +54,16 @@ float sdRoundBox(float2 p, float2 halfSize, float4 r) {
 
 [shader("fragment")] float4 main(VSOutput input) : SV_Target {
 	float2 localPos = (input.uv - 0.5) * input.size;
-	float2 shadowOff = input.shadowParams.xy;
 	float2 boxHalfSize = input.shadowParams.zw;
 	float blur = max(input.blur, 1.0);
 
-	// Shift localPos into widget-box space (box center = shadow quad center - offset)
-	float2 sdfPos = localPos + shadowOff;
+	float dist = sdRoundBox(localPos, boxHalfSize, input.radius);
 
-	float dist = sdRoundBox(sdfPos, boxHalfSize, input.radius);
-	float alpha = exp(-max(dist, 0.0) * 2.0 / blur) * input.color.a;
+	float t = saturate(max(dist, 0.0) / blur);
+	const float kDecay = 2.0;
+	const float edge = exp(-kDecay);
+	float falloff = saturate((exp(-kDecay * t) - edge) / (1.0 - edge));
+	float alpha = falloff * input.color.a;
 
 	return float4(input.color.rgb, alpha);
 }
