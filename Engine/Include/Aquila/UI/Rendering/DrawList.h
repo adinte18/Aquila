@@ -11,6 +11,7 @@ class DrawList {
   public:
 	void DrawRect(Rect rect, vec4 color, vec4 radius = vec4(0.F), float borderWidth = 0.F, vec4 borderColor = vec4(0.F),
 				  int32 z = 0);
+	void DrawLine(vec2 from, vec2 to, float width, vec4 color, int32 z = 0);
 	void DrawShadow(Rect widgetRect, vec2 offset, float blur, float spread, vec4 color, vec4 radius, int32 z = 0);
 	void DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint = vec4(1.F), vec2 uvMin = vec2(0.F),
 				   vec2 uvMax = vec2(1.F), int32 z = 0);

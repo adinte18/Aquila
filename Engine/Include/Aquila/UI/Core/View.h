@@ -12,13 +12,20 @@ class FontAtlas;
 
 namespace Aquila::UI::Core {
 
+class Canvas;
+
 class View {
   public:
-	View() = default;
+	View();
 	AQUILA_NONCOPYABLE(View);
 	AQUILA_NONMOVEABLE(View);
 
 	virtual View *AddChild(Unique<View> child);
+
+	template <typename T, typename... Args> T *AddChild(Args &&...args) {
+		return static_cast<T *>(AddChild(CreateUnique<T>(std::forward<Args>(args)...)));
+	}
+
 	void RemoveChild(View *child);
 	Unique<View> DetachChild(View *child);
 	View *ReplaceChild(View *old, Unique<View> newChild);
@@ -32,7 +39,9 @@ class View {
 		View *v = FindById(id);
 		return v ? dynamic_cast<T *>(v) : nullptr;
 	}
-	void PropagateCallbacks(View *node);
+
+	void SetCanvas(Canvas *canvas);
+	[[nodiscard]] Canvas *GetCanvas() const { return m_Canvas; }
 
 	[[nodiscard]] virtual std::string_view GetTypeName() const { return "View"; }
 	[[nodiscard]] const std::string &GetId() const { return m_Id; }
@@ -43,21 +52,8 @@ class View {
 	[[nodiscard]] const Rect &GetLayoutRect() const { return m_LayoutRect; }
 	[[nodiscard]] vec2 GetAbsolutePosition() const { return m_AbsolutePosition; }
 
-	void AddClass(std::string cls) {
-		m_Classes.push_back(std::move(cls));
-		if (m_OnDirty) {
-			m_OnDirty(this);
-		}
-	}
-	void RemoveClass(std::string_view cls) {
-		auto it = std::ranges::find(m_Classes, cls);
-		if (it != m_Classes.end()) {
-			m_Classes.erase(it);
-			if (m_OnDirty) {
-				m_OnDirty(this);
-			}
-		}
-	}
+	void AddClass(std::string cls);
+	void RemoveClass(std::string_view cls);
 
 	void SetId(std::string id) { m_Id = std::move(id); }
 	void SetStyle(StyleProperties props) { m_Style = std::move(props); }
@@ -103,7 +99,7 @@ class View {
 	}
 	const Rect &GetSubtreeBounds();
 
-	void SetContextView(Delegate<void(vec2)> cb) { m_OnContextMenu = std::move(cb); }
+	Signal<void(vec2)> onContextMenu;
 	bool IsAnimationFinished() const { return m_IsAnimationFinished; }
 
 	[[nodiscard]] bool IsHovered() const { return m_IsHovered; }
@@ -113,6 +109,8 @@ class View {
 	[[nodiscard]] bool IsAcceptingPayload() const { return m_IsAcceptingPayload; }
 	[[nodiscard]] bool IsDraggable() const { return m_IsDraggable; }
 	[[nodiscard]] uint32 GetClayId() const { return m_ClayId; }
+
+	[[nodiscard]] uint32 GetStableId() const { return m_StableId; }
 
 	virtual vec2 GetIntrinsicSize() const { return { -1.f, -1.f }; }
 
@@ -158,13 +156,6 @@ class View {
 
 	void InvalidateLayout();
 
-	void SetDirtyCallback(Delegate<void(View *)> cb) { m_OnDirty = std::move(cb); }
-	void SetAnimationCallback(Delegate<void(View *)> cb) { m_OnAnimationStarted = std::move(cb); }
-	void SetDrawDirtyCallback(Delegate<void(View *)> cb) { m_OnDrawDirty = std::move(cb); }
-	void SetLayoutDirtyCallback(Delegate<void(View *)> cb) { m_OnLayoutDirty = std::move(cb); }
-	void SetFocusRequestCallback(Delegate<void(View *)> cb) { m_OnFocusRequest = std::move(cb); }
-	void SetRemoveCallback(Delegate<void(View *)> cb) { m_OnRemoved = std::move(cb); }
-
 	void UpdateAnimation(float deltaTime);
 	virtual ~View() = default;
 
@@ -197,7 +188,6 @@ class View {
 	bool m_Enabled = true;
 	bool m_IsInputLeaf = false;
 	bool m_PassThroughScroll = false;
-	Delegate<void(vec2)> m_OnContextMenu;
 	uint32 m_ClayId = 0;
 
 	Option<FloatingConfig> m_Floating;
@@ -208,11 +198,7 @@ class View {
 	Rect m_SubtreeBounds{};
 	bool m_SubtreeBoundsDirty = true;
 	Text::FontAtlas *m_ResolvedFont = nullptr;
-	Delegate<void(View *)> m_OnDirty;
-	Delegate<void(View *)> m_OnAnimationStarted;
-	Delegate<void(View *)> m_OnDrawDirty;
-	Delegate<void(View *)> m_OnLayoutDirty;
-	Delegate<void(View *)> m_OnFocusRequest;
-	Delegate<void(View *)> m_OnRemoved;
+	Canvas *m_Canvas = nullptr;
+	uint32 m_StableId = 0;
 };
 } // namespace Aquila::UI::Core

@@ -1,8 +1,10 @@
 #pragma once
 
-#include "Aquila/Foundation/Cache/ComputedCache.h"
-#include "Aquila/Foundation/Invalidation/DirtySet.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/UI/Core/DrawCompositor.h"
+#include "Aquila/UI/Core/InputRouter.h"
+#include "Aquila/UI/Core/LayoutEngine.h"
+#include "Aquila/UI/Core/StyleEngine.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleSheet.h"
 
@@ -11,6 +13,8 @@ namespace Aquila::UI::Core {
 using namespace Aquila::UI::Rendering;
 
 class Canvas {
+	friend class InputRouter; // calls MarkDirty()/RequestLayout() on input
+
   public:
 	Canvas(uint32 width, uint32 height);
 
@@ -26,6 +30,10 @@ class Canvas {
 	uint32 GetHeight() const { return m_Height; }
 	void NotifyStyleDirty(View *view);
 	void NotifyAnimationStarted(View *view);
+	void NotifyDrawDirty(View *view);
+	void NotifyLayoutDirty(View *view);
+	void NotifyFocusRequest(View *view);
+	void NotifyViewRemoved(View *view);
 	void ReloadStyles();
 	void MarkSubtreeDirty(View *node);
 
@@ -33,40 +41,17 @@ class Canvas {
 	void ClearDrawListDirty() { m_DrawListDirty = false; }
 
   private:
-	View *HitTest(vec2 pos);
-	void ClayLayoutPass(View *node);
-	bool ClayUpdateRects(View *node, vec2 parentAbsPos = {});
 	void MarkNodeDrawDirty(View *node);
-	void _CullCanvasItem(View *node, int32 parentEffectiveZ, const Rect *clipRect);
-	void _CollectCanvasLayer(View *node);
-	void _CollectCanvasLayerSubtree(View *node);
 
 	Unique<View> m_Root;
-	StyleSheet m_StyleSheet;
-	DrawList m_DrawList;
-	View *m_HoveredView = nullptr;
-	View *m_FocusedView = nullptr;
-	View *m_DragSourceCandidate = nullptr;
-	View *m_DragTarget = nullptr;
+	StyleEngine m_StyleEngine;
+	LayoutEngine m_LayoutEngine;
+	DrawCompositor m_DrawCompositor;
+	InputRouter m_InputRouter;
 	uint32 m_Width, m_Height;
 
-	void *m_ClayCtx = nullptr;
-	std::vector<uint8_t> m_ClayMemory;
-
-	vec2 m_MousePos = {};
-	vec2 m_DragStartPos = {};
-	bool m_MouseDown = false;
-	vec2 m_ScrollDelta = {};
 	float m_DeltaTime = 0.f;
 
-	DragState m_DragState{};
-
-	Foundation::DirtySet<View *> m_DirtyViews;
-	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
-	std::array<std::vector<DrawCmd>, SharedConstants::Z_RANGE> m_ZBuckets;
-	std::vector<View *> m_CanvasItems;
-	std::vector<View *> m_CanvasLayers;
-	std::unordered_map<View *, std::vector<DrawCmd>> m_PerNodeCmds;
 	std::vector<View *> m_ActiveAnims;
 
 	bool m_LayoutDirty = true;
@@ -74,7 +59,7 @@ class Canvas {
 	bool m_DrawListDirty = true; // true when draw list was rebuilt this frame
 
 	void MarkDirty();
-	void SetFocus(View *view); // handles OnFocusLost/OnFocusGained bookkeeping
+	void RequestLayout(); // mark layout dirty + request a frame (used by input/scroll)
 	void StylePass();
 	void AnimationPass(f32 dt);
 };

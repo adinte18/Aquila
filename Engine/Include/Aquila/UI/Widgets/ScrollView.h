@@ -12,6 +12,12 @@ class ScrollView : public View {
 
 	View *AddContent(Unique<View> child);
 
+	template <typename T, typename... Args> T *AddContent(Args &&...args) {
+		return static_cast<T *>(AddContent(CreateUnique<T>(std::forward<Args>(args)...)));
+	}
+
+	void RemoveOldestContent();
+
   private:
 	View *m_Inner = nullptr;
 };

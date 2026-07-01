@@ -1,9 +1,15 @@
 #include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
+#include "Aquila/UI/Style/StylePropertyList.h"
 
 namespace Aquila::UI::Core {
+
+static uint32 s_NextStableId = 0;
+
+View::View() : m_StableId(++s_NextStableId) {}
 
 static float ApplyEasing(float t, UI::TransitionEasing easing) {
 	switch (easing) {
@@ -30,8 +36,8 @@ void View::SetComputedStyle(UI::ComputedStyle style) {
 		m_AnimationFrom = m_DisplayStyle;
 		m_TransitionTimer = 0.f;
 		m_IsAnimationFinished = false;
-		if (m_OnAnimationStarted) {
-			m_OnAnimationStarted(this);
+		if (m_Canvas) {
+			m_Canvas->NotifyAnimationStarted(this);
 		}
 	}
 	m_ComputedStyle = std::move(style);
@@ -57,12 +63,10 @@ void View::UpdateAnimation(float dt) {
 
 	m_DisplayStyle = m_ComputedStyle;
 
-	m_DisplayStyle.backgroundColor = glm::mix(m_AnimationFrom.backgroundColor, m_ComputedStyle.backgroundColor, alpha);
-	m_DisplayStyle.borderColor = glm::mix(m_AnimationFrom.borderColor, m_ComputedStyle.borderColor, alpha);
-	m_DisplayStyle.borderRadius = glm::mix(m_AnimationFrom.borderRadius, m_ComputedStyle.borderRadius, alpha);
-	m_DisplayStyle.borderWidth = glm::mix(m_AnimationFrom.borderWidth, m_ComputedStyle.borderWidth, alpha);
-	m_DisplayStyle.opacity = glm::mix(m_AnimationFrom.opacity, m_ComputedStyle.opacity, alpha);
-	m_DisplayStyle.color = glm::mix(m_AnimationFrom.color, m_ComputedStyle.color, alpha);
+#define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
+	AQ_STYLE_WHEN(anim, m_DisplayStyle.cs = glm::mix(m_AnimationFrom.cs, m_ComputedStyle.cs, alpha);)
+	AQ_STYLE_PROPERTY_LIST
+#undef AQ_STYLE_PROP
 
 	if (m_TransitionTimer >= durationSec) {
 		m_IsAnimationFinished = true;
@@ -99,105 +103,97 @@ void View::SetEnabled(bool enabled) {
 		return;
 	}
 	m_Enabled = enabled;
-	if (m_OnDirty) {
-		m_OnDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
 	}
 }
 
 void View::RequestFocus() {
-	if (m_OnFocusRequest) {
-		m_OnFocusRequest(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyFocusRequest(this);
 	}
 }
 
 void View::MergeStyle(const StyleProperties &o) {
 	StyleProperties &s = m_Style;
-#define MERGE(f) \
-	if (o.f)     \
-	s.f = o.f
-	MERGE(backgroundColor);
-	MERGE(borderColor);
-	MERGE(borderWidth);
-	MERGE(borderRadius);
-	MERGE(opacity);
-	MERGE(overflow);
-	MERGE(display);
-	MERGE(width);
-	MERGE(height);
-	MERGE(min);
-	MERGE(max);
-	MERGE(minWidth);
-	MERGE(maxWidth);
-	MERGE(minHeight);
-	MERGE(maxHeight);
-	MERGE(padding);
-	MERGE(paddingLeft);
-	MERGE(paddingRight);
-	MERGE(paddingTop);
-	MERGE(paddingBottom);
-	MERGE(gap);
-	MERGE(flexDirection);
-	MERGE(justifyContent);
-	MERGE(alignItems);
-	MERGE(flexWrap);
-	MERGE(flexGrow);
-	MERGE(position);
-	MERGE(top);
-	MERGE(right);
-	MERGE(bottom);
-	MERGE(left);
-	MERGE(zIndex);
-	MERGE(color);
-	MERGE(accentColor);
-	MERGE(fontSize);
-	MERGE(fontFamily);
-	MERGE(textAlign);
-	MERGE(boxShadows);
-	MERGE(transitionDuration);
-	MERGE(transitionEasing);
-#undef MERGE
-	if (m_OnDirty) {
-		m_OnDirty(this);
+#define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
+	if (o.sp) {                                           \
+		s.sp = o.sp;                                      \
+	}
+	AQ_STYLE_PROPERTY_LIST
+#undef AQ_STYLE_PROP
+
+	if (o.min) {
+		s.min = o.min;
+	}
+	if (o.max) {
+		s.max = o.max;
+	}
+	if (o.paddingLeft) {
+		s.paddingLeft = o.paddingLeft;
+	}
+	if (o.paddingRight) {
+		s.paddingRight = o.paddingRight;
+	}
+	if (o.paddingTop) {
+		s.paddingTop = o.paddingTop;
+	}
+	if (o.paddingBottom) {
+		s.paddingBottom = o.paddingBottom;
+	}
+
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
+	}
+}
+
+void View::AddClass(std::string cls) {
+	m_Classes.push_back(std::move(cls));
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
+	}
+}
+
+void View::RemoveClass(std::string_view cls) {
+	auto it = std::ranges::find(m_Classes, cls);
+	if (it != m_Classes.end()) {
+		m_Classes.erase(it);
+		if (m_Canvas) {
+			m_Canvas->NotifyStyleDirty(this);
+		}
 	}
 }
 
 View *View::AddChild(Unique<View> child) {
 	View *raw = child.get();
 	raw->m_Parent = this;
-	PropagateCallbacks(raw);
+	raw->SetCanvas(m_Canvas);
 	m_Children.push_back(std::move(child));
 	MarkSubtreeBoundsDirty();
-	if (raw->m_OnDirty) {
-		raw->m_OnDirty(raw);
-	}
 	raw->SetDrawDirty();
-	if (raw->m_OnDrawDirty) {
-		raw->m_OnDrawDirty(raw);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(raw);
+		m_Canvas->NotifyDrawDirty(raw);
 	}
 	return raw;
 }
 
 void View::QueueRedraw() {
-	if (m_OnDrawDirty) {
-		m_OnDrawDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyDrawDirty(this);
 	}
 }
 
 void View::InvalidateLayout() {
-	if (m_OnLayoutDirty) {
-		m_OnLayoutDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyLayoutDirty(this);
 	}
 }
 
-void View::PropagateCallbacks(View *node) {
-	node->m_OnDirty = m_OnDirty;
-	node->m_OnAnimationStarted = m_OnAnimationStarted;
-	node->m_OnDrawDirty = m_OnDrawDirty;
-	node->m_OnLayoutDirty = m_OnLayoutDirty;
-	node->m_OnFocusRequest = m_OnFocusRequest;
-	node->m_OnRemoved = m_OnRemoved;
-	for (const auto &child : node->GetChildren()) {
-		PropagateCallbacks(child.get());
+void View::SetCanvas(Canvas *canvas) {
+	m_Canvas = canvas;
+	for (const auto &child : m_Children) {
+		child->SetCanvas(canvas);
 	}
 }
 
@@ -205,9 +201,10 @@ void View::NotifyRemoved(View *node) {
 	for (const auto &child : node->m_Children) {
 		NotifyRemoved(child.get());
 	}
-	if (node->m_OnRemoved) {
-		node->m_OnRemoved(node);
+	if (node->m_Canvas) {
+		node->m_Canvas->NotifyViewRemoved(node);
 	}
+	node->m_Canvas = nullptr;
 }
 
 void View::RemoveChild(View *child) {
@@ -241,13 +238,11 @@ View *View::ReplaceChild(View *old, Unique<View> newChild) {
 	*it = std::move(newChild);
 	View *raw = it->get();
 	raw->m_Parent = this;
-	PropagateCallbacks(raw);
-	if (raw->m_OnDirty) {
-		raw->m_OnDirty(raw);
-	}
+	raw->SetCanvas(m_Canvas);
 	raw->SetDrawDirty();
-	if (raw->m_OnDrawDirty) {
-		raw->m_OnDrawDirty(raw);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(raw);
+		m_Canvas->NotifyDrawDirty(raw);
 	}
 	return raw;
 }
@@ -297,8 +292,8 @@ void View::OnMouseEnter() {
 		return;
 	}
 	m_IsHovered = true;
-	if (m_OnDirty) {
-		m_OnDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
 	}
 }
 void View::OnMouseLeave() {
@@ -306,39 +301,39 @@ void View::OnMouseLeave() {
 		return;
 	}
 	m_IsHovered = false;
-	if (m_OnDirty) {
-		m_OnDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
 	}
 }
 void View::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
 		m_IsPressed = true;
-		if (m_OnDirty) {
-			m_OnDirty(this);
+		if (m_Canvas) {
+			m_Canvas->NotifyStyleDirty(this);
 		}
 	}
-	if (btn == Platform::MouseButton::Right && m_OnContextMenu) {
-		m_OnContextMenu(pos);
+	if (btn == Platform::MouseButton::Right) {
+		onContextMenu(pos);
 	}
 }
 void View::OnMouseRelease(Platform::MouseButton btn, vec2) {
 	if (btn == Platform::MouseButton::Left) {
 		m_IsPressed = false;
-		if (m_OnDirty) {
-			m_OnDirty(this);
+		if (m_Canvas) {
+			m_Canvas->NotifyStyleDirty(this);
 		}
 	}
 }
 void View::OnFocusGained() {
 	m_IsFocused = true;
-	if (m_OnDirty) {
-		m_OnDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
 	}
 }
 void View::OnFocusLost() {
 	m_IsFocused = false;
-	if (m_OnDirty) {
-		m_OnDirty(this);
+	if (m_Canvas) {
+		m_Canvas->NotifyStyleDirty(this);
 	}
 }
 

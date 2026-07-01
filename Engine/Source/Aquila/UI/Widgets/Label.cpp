@@ -76,7 +76,7 @@ void Label::OnDrawSelf(Rendering::DrawList &drawList) {
 	const float fontSize = GetDisplayStyle().fontSize;
 	const int32 z = 3;
 
-	drawList.DrawText(worldRect, m_Text, font, color, fontSize, TextAlign::Center, z);
+	drawList.DrawText(worldRect, m_Text, font, color, fontSize, GetDisplayStyle().textAlign, z);
 }
 
 } // namespace Aquila::UI::Core

@@ -22,4 +22,11 @@ View *ScrollView::AddContent(Unique<View> child) {
 	return m_Inner->AddChild(std::move(child));
 }
 
+void ScrollView::RemoveOldestContent() {
+	const auto &children = m_Inner->GetChildren();
+	if (!children.empty()) {
+		m_Inner->RemoveChild(children.front().get());
+	}
+}
+
 } // namespace Aquila::UI::Core

@@ -3,11 +3,12 @@
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
+#include <type_traits>
+
 namespace Aquila::UI::Rendering {
 
 void DrawList::DrawRect(Rect rect, vec4 color, vec4 radius, f32 borderWidth, vec4 borderColor, int32 z) {
-	DrawCmd command{};
-	command.type = UICommandType::Rect;
+	RectCmd command;
 	command.rect = rect;
 	command.color = color;
 	command.radius = radius;
@@ -18,16 +19,35 @@ void DrawList::DrawRect(Rect rect, vec4 color, vec4 radius, f32 borderWidth, vec
 	m_Commands.push_back(command);
 }
 
+void DrawList::DrawLine(vec2 from, vec2 to, float width, vec4 color, int32 z) {
+	vec2 delta = to - from;
+	float length = glm::length(delta);
+	if (length < 0.5f) {
+		return;
+	}
+
+	vec2 center = (from + to) * 0.5f;
+	float angle = std::atan2(delta.y, delta.x);
+
+	RectCmd command;
+	command.rect = { center - vec2(length * 0.5f, width * 0.5f), { length, width } };
+	command.color = color;
+	command.rotation = angle;
+	command.zOrder = z;
+
+	m_Commands.push_back(command);
+}
+
 void DrawList::DrawShadow(Rect widgetRect, vec2 offset, float blur, float spread, vec4 color, vec4 radius, int32 z) {
-	DrawCmd command{};
-	command.type = UICommandType::Shadow;
+	ShadowCmd command;
 	command.rect = widgetRect;
 	command.color = color;
 	command.radius = radius;
-	command.borderWidth = blur;
-
-	command.borderColor = { offset.x, offset.y, widgetRect.size.x * 0.5f + spread, widgetRect.size.y * 0.5f + spread };
+	command.offset = offset;
+	command.originalHalfSize = { widgetRect.size.x * 0.5f + spread, widgetRect.size.y * 0.5f + spread };
+	command.blur = blur;
 	command.zOrder = z;
+
 	m_Commands.push_back(command);
 }
 
@@ -37,27 +57,24 @@ void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *fon
 		return;
 	}
 
-	DrawCmd command{};
-	command.type = UICommandType::Text;
+	TextCmd command;
 	command.rect = bounds;
 	command.color = color;
 	command.zOrder = z;
 	command.text = std::string(text);
 	command.font = font;
 	command.fontSize = fontSize;
+	command.align = align;
 
-	command.borderWidth = static_cast<float>(static_cast<uint8>(align));
-
-	m_Commands.push_back(command);
+	m_Commands.push_back(std::move(command));
 }
 
 void DrawList::DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint, vec2 uvMin, vec2 uvMax, int32 z) {
-	DrawCmd command{};
-	command.type = UICommandType::Image;
+	ImageCmd command;
 	command.rect = rect;
 	command.texture = tex;
 	command.zOrder = z;
-	command.textureTint = tint;
+	command.tint = tint;
 	command.uvMin = uvMin;
 	command.uvMax = uvMax;
 
@@ -66,8 +83,7 @@ void DrawList::DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint, vec2 uvMin,
 
 void DrawList::PushClip(Rect clipRect) {
 	m_ClipStack.push_back(clipRect);
-	DrawCmd cmd{};
-	cmd.type = UICommandType::ClipPush;
+	ClipPushCmd cmd;
 	cmd.rect = clipRect;
 	m_Commands.push_back(cmd);
 }
@@ -77,154 +93,145 @@ void DrawList::PopClip() {
 		m_ClipStack.pop_back();
 	}
 
-	DrawCmd cmd{};
-	cmd.type = UICommandType::ClipPop;
+	ClipPopCmd cmd;
 	cmd.rect = m_ClipStack.empty() ? Rect{} : m_ClipStack.back();
 	m_Commands.push_back(cmd);
 }
 
 void DrawList::Sort() {
-	std::ranges::stable_sort(m_Commands, {}, &DrawCmd::zOrder);
+	std::ranges::stable_sort(m_Commands, {}, [](const DrawCmd &c) { return DrawCmdZOrder(c); });
 }
 
 void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 	for (auto &command : m_Commands) {
-		switch (command.type) {
-		case UICommandType::Rect: {
-			Graphics::RectSpec spec{};
-			spec.position = command.rect.position;
-			spec.size = command.rect.size;
-			spec.color = command.color;
-			spec.radius = command.radius;
-			spec.borderWidth = command.borderWidth;
-			spec.borderColor = command.borderColor;
-			r2d.DrawRect(spec);
-			break;
-		}
-		case UICommandType::Shadow: {
-			Graphics::ShadowSpec spec{};
-			const vec2 offset = { command.borderColor.x, command.borderColor.y };
-			const vec2 sdfHalfSize = { command.borderColor.z, command.borderColor.w };
-			const float blur = command.borderWidth;
-			spec.position = command.rect.position + offset - vec2(blur + (sdfHalfSize.x - command.rect.size.x * 0.5f));
-			spec.size = command.rect.size +
-				vec2(2.f * (blur + (sdfHalfSize.x - command.rect.size.x * 0.5f)),
-					 2.f * (blur + (sdfHalfSize.y - command.rect.size.y * 0.5f)));
-			spec.color = command.color;
-			spec.offset = offset;
-			spec.originalHalfSize = sdfHalfSize;
-			spec.radius = command.radius;
-			spec.blur = blur;
-			r2d.DrawShadow(spec);
-			break;
-		}
-		case UICommandType::Image: {
-			Graphics::SpriteSpec spec{};
-			spec.position = command.rect.position;
-			spec.size = command.rect.size;
-			spec.tint = command.textureTint;
-			spec.texture = command.texture;
-			spec.uvMin = command.uvMin;
-			spec.uvMax = command.uvMax;
-			r2d.DrawSprite(spec);
-			break;
-		}
-		case UICommandType::Text: {
-			if ((command.font == nullptr) || command.text.empty()) {
-				break;
-			}
+		std::visit(
+			[&](auto &c) {
+				using T = std::decay_t<decltype(c)>;
 
-			Text::FontAtlas *atlas = command.font;
-			const auto depth = 0.f;
-			const auto align = static_cast<TextAlign>(static_cast<uint8>(command.borderWidth));
+				if constexpr (std::is_same_v<T, RectCmd>) {
+					Graphics::RectSpec spec{};
+					spec.position = c.rect.position;
+					spec.size = c.rect.size;
+					spec.color = c.color;
+					spec.radius = c.radius;
+					spec.borderWidth = c.borderWidth;
+					spec.borderColor = c.borderColor;
+					spec.rotation = c.rotation;
+					r2d.DrawRect(spec);
+				} else if constexpr (std::is_same_v<T, ShadowCmd>) {
+					Graphics::ShadowSpec spec{};
+					const vec2 offset = c.offset;
+					const vec2 sdfHalfSize = c.originalHalfSize;
+					const float blur = c.blur;
+					spec.position = c.rect.position + offset - vec2(blur + (sdfHalfSize.x - c.rect.size.x * 0.5f));
+					spec.size = c.rect.size +
+						vec2(2.f * (blur + (sdfHalfSize.x - c.rect.size.x * 0.5f)),
+							 2.f * (blur + (sdfHalfSize.y - c.rect.size.y * 0.5f)));
+					spec.color = c.color;
+					spec.offset = offset;
+					spec.originalHalfSize = sdfHalfSize;
+					spec.radius = c.radius;
+					spec.blur = blur;
+					r2d.DrawShadow(spec);
+				} else if constexpr (std::is_same_v<T, ImageCmd>) {
+					Graphics::SpriteSpec spec{};
+					spec.position = c.rect.position;
+					spec.size = c.rect.size;
+					spec.tint = c.tint;
+					spec.texture = c.texture;
+					spec.uvMin = c.uvMin;
+					spec.uvMax = c.uvMax;
+					r2d.DrawSprite(spec);
+				} else if constexpr (std::is_same_v<T, TextCmd>) {
+					if ((c.font == nullptr) || c.text.empty()) {
+						return;
+					}
 
-			const f32 bakeSize = command.font->GetBakeSize();
-			const f32 renderSize = (command.fontSize > 0.f) ? command.fontSize : bakeSize;
-			const f32 scale = (bakeSize > 0.f) ? (renderSize / bakeSize) : 1.f;
+					Text::FontAtlas *atlas = c.font;
+					const auto depth = 0.f;
+					const auto align = c.align;
 
-			struct CharEntry {
-				const Text::GlyphInfo *glyph;
-				const Text::SlugGlyphData *slug;
-			};
-			CharEntry glyphCache[512];
-			uint32 cacheCount = 0;
-			f32 textWidth = 0.f;
+					const f32 bakeSize = c.font->GetBakeSize();
+					const f32 renderSize = (c.fontSize > 0.f) ? c.fontSize : bakeSize;
+					const f32 scale = (bakeSize > 0.f) ? (renderSize / bakeSize) : 1.f;
 
-			const auto textLen = std::min(command.text.size(), static_cast<size_t>(512));
-			for (size_t ci = 0; ci < textLen; ++ci) {
-				const auto ch = static_cast<unsigned char>(command.text[ci]);
-				const Text::GlyphInfo *g = command.font->GetGlyph(static_cast<uint32>(ch));
-				if (!g) {
-					continue;
+					struct CharEntry {
+						const Text::GlyphInfo *glyph;
+						const Text::SlugGlyphData *slug;
+					};
+					CharEntry glyphCache[512];
+					uint32 cacheCount = 0;
+					f32 textWidth = 0.f;
+
+					const auto textLen = std::min(c.text.size(), static_cast<size_t>(512));
+					for (size_t ci = 0; ci < textLen; ++ci) {
+						const auto ch = static_cast<unsigned char>(c.text[ci]);
+						const Text::GlyphInfo *g = c.font->GetGlyph(static_cast<uint32>(ch));
+						if (!g) {
+							continue;
+						}
+						textWidth += g->advance * scale;
+						glyphCache[cacheCount++] = { g, atlas->GetSlugData(g->glyphID) };
+					}
+
+					f32 cursorX = c.rect.position.x;
+					if (align == TextAlign::Center) {
+						cursorX += (c.rect.size.x - textWidth) * 0.5f;
+					} else if (align == TextAlign::Right) {
+						cursorX += c.rect.size.x - textWidth;
+					} else if (cacheCount > 0) {
+						cursorX -= glyphCache[0].glyph->bearing.x * scale;
+					}
+					const f32 baselineY = c.rect.position.y + c.font->GetAscent() * scale;
+
+					GFX::GfxTexture *curveTexture = atlas->GetCurveTexture();
+					GFX::GfxTexture *bandTexture = atlas->GetBandTexture();
+
+					for (uint32 ci = 0; ci < cacheCount; ++ci) {
+						const Text::GlyphInfo *glyph = glyphCache[ci].glyph;
+						const Text::SlugGlyphData *slug = glyphCache[ci].slug;
+
+						if (slug == nullptr) {
+							cursorX += glyph->advance * scale;
+							continue;
+						}
+
+						const f32 glyphX = cursorX + glyph->bearing.x * scale;
+						const f32 glyphY = baselineY + glyph->bearing.y * scale;
+
+						Graphics::GlyphSpec spec{};
+						spec.position = { glyphX, glyphY };
+						spec.size = glyph->size * scale;
+						spec.color = c.color;
+						spec.depth = depth;
+						spec.glyphLocX = slug->glyphLocX;
+						spec.glyphLocY = slug->glyphLocY;
+						spec.bandMaxX = slug->bandMaxX;
+						spec.bandMaxY = slug->bandMaxY;
+						spec.banding = slug->bandTransform;
+						spec.emMin = slug->emMin;
+						spec.emMax = slug->emMax;
+						spec.curveTexture = curveTexture;
+						spec.bandTexture = bandTexture;
+
+						r2d.DrawGlyph(spec);
+						cursorX += glyph->advance * scale;
+					}
+				} else if constexpr (std::is_same_v<T, ClipPushCmd>) {
+					r2d.Flush();
+					r2d.SetScissor(cmd, static_cast<int32>(c.rect.Left()), static_cast<int32>(c.rect.Top()),
+								   static_cast<uint32>(c.rect.Width()), static_cast<uint32>(c.rect.Height()));
+				} else if constexpr (std::is_same_v<T, ClipPopCmd>) {
+					r2d.Flush();
+					if (c.rect.IsEmpty()) {
+						r2d.SetScissor(cmd, 0, 0, m_CanvasWidth, m_CanvasHeight);
+					} else {
+						r2d.SetScissor(cmd, static_cast<int32>(c.rect.Left()), static_cast<int32>(c.rect.Top()),
+									   static_cast<uint32>(c.rect.Width()), static_cast<uint32>(c.rect.Height()));
+					}
 				}
-				textWidth += g->advance * scale;
-				glyphCache[cacheCount++] = { g, atlas->GetSlugData(g->glyphID) };
-			}
-
-			f32 cursorX = command.rect.position.x;
-			if (align == TextAlign::Center) {
-				cursorX += (command.rect.size.x - textWidth) * 0.5f;
-			} else if (align == TextAlign::Right) {
-				cursorX += command.rect.size.x - textWidth;
-			} else if (cacheCount > 0) {
-				cursorX -= glyphCache[0].glyph->bearing.x * scale;
-			}
-			const f32 baselineY = command.rect.position.y + command.font->GetAscent() * scale;
-
-			GFX::GfxTexture *curveTexture = atlas->GetCurveTexture();
-			GFX::GfxTexture *bandTexture = atlas->GetBandTexture();
-
-			for (uint32 ci = 0; ci < cacheCount; ++ci) {
-				const Text::GlyphInfo *glyph = glyphCache[ci].glyph;
-				const Text::SlugGlyphData *slug = glyphCache[ci].slug;
-
-				if (slug == nullptr) {
-					cursorX += glyph->advance * scale;
-					continue;
-				}
-
-				const f32 glyphX = cursorX + glyph->bearing.x * scale;
-				const f32 glyphY = baselineY + glyph->bearing.y * scale;
-
-				Graphics::GlyphSpec spec{};
-				spec.position = { glyphX, glyphY };
-				spec.size = glyph->size * scale;
-				spec.color = command.color;
-				spec.depth = depth;
-				spec.glyphLocX = slug->glyphLocX;
-				spec.glyphLocY = slug->glyphLocY;
-				spec.bandMaxX = slug->bandMaxX;
-				spec.bandMaxY = slug->bandMaxY;
-				spec.banding = slug->bandTransform;
-				spec.emMin = slug->emMin;
-				spec.emMax = slug->emMax;
-				spec.curveTexture = curveTexture;
-				spec.bandTexture = bandTexture;
-
-				r2d.DrawGlyph(spec);
-				cursorX += glyph->advance * scale;
-			}
-			break;
-		}
-		case UICommandType::ClipPush: {
-			r2d.Flush();
-			r2d.SetScissor(cmd, static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
-						   static_cast<uint32>(command.rect.Width()), static_cast<uint32>(command.rect.Height()));
-			break;
-		}
-		case UICommandType::ClipPop: {
-			r2d.Flush();
-			if (command.rect.IsEmpty()) {
-				r2d.SetScissor(cmd, 0, 0, m_CanvasWidth, m_CanvasHeight);
-			} else {
-				r2d.SetScissor(cmd, static_cast<int32>(command.rect.Left()), static_cast<int32>(command.rect.Top()),
-							   static_cast<uint32>(command.rect.Width()), static_cast<uint32>(command.rect.Height()));
-			}
-			break;
-		}
-		default:
-			break;
-		}
+			},
+			command);
 	}
 }
 
