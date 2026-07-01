@@ -26,6 +26,7 @@ DockPanels EditorDockLayout::Build(UI::Core::View *dockRoot) {
 	rightNode->AddClass("dock-side-right");
 
 	DockPanels panels;
+	panels.dockSpace = dockSpace;
 	panels.hierarchy = leftNode->AddPanel("Hierarchy");
 	panels.viewport = centerNode->AddPanel("Viewport");
 	panels.inspector = rightNode->AddPanel("Inspector");

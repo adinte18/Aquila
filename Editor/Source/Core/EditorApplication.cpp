@@ -4,6 +4,9 @@
 #include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
 #include "UI/Panels/HierarchyPanel.h"
+#include "UI/Debug/FloatingPanelWindow.h"
+#include "UI/Debug/UIDebugPanel.h"
+#include "UI/Debug/UIDebugWindow.h"
 #include "UI/Panels/InspectorPanel.h"
 #include "UI/Panels/ViewportPanel.h"
 
@@ -25,6 +28,13 @@
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/ColorPicker.h"
 #include "Aquila/UI/Widgets/ContextMenu.h"
+#include "Aquila/UI/Widgets/DockNode.h"
+#include "Aquila/UI/Widgets/DockSpace.h"
+#include "Aquila/UI/Widgets/DockTypes.h"
+#include "Aquila/UI/Widgets/Menubar.h"
+#include "Aquila/Application/Events/InputEvent.h"
+
+#include <algorithm>
 
 namespace Editor {
 
@@ -60,6 +70,9 @@ void EditorApplication::OnInit() {
 }
 
 void EditorApplication::OnShutdown() {
+	m_FloatingPanels.clear();
+	m_UIDebugWindow.reset();
+	m_UIDebugPanel.reset();
 	m_HierarchyPanel.reset();
 	m_ViewportPanel.reset();
 	m_InspectorPanel.reset();
@@ -71,11 +84,25 @@ void EditorApplication::OnShutdown() {
 }
 
 void EditorApplication::OnPreRender(f32 deltaTime) {
+	if (m_ConsolePanel) {
+		m_ConsolePanel->FlushPending();
+	}
 	Aquila::UI::Core::CanvasManager::Get()->Update(deltaTime);
 	Aquila::UI::Core::CanvasManager::Get()->Compute();
 }
 
 void EditorApplication::OnEvent(Events::Event &event) {
+	Events::EventDispatcher dispatcher(event);
+	dispatcher.Dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
+		if (e.GetKeyCode() == Events::KeyCode::F1 && !e.IsRepeat()) {
+			if (m_UIDebugPanel) {
+				m_UIDebugPanel->Toggle();
+			}
+			return true;
+		}
+		return false;
+	});
+
 	Aquila::UI::Core::CanvasManager::Get()->OnEvent(event);
 }
 
@@ -172,28 +199,214 @@ void EditorApplication::SetupEditorUI() {
 
 	auto dockPanels = EditorDockLayout::Build(dockRoot);
 
+	m_DockSpace = dockPanels.dockSpace;
+	WireDockSpace(m_DockSpace, GetWindow().GetNativeWindow());
+
 	m_HierarchyPanel = CreateUnique<HierarchyPanel>(*GetScene().GetEntityManager());
 	m_ViewportPanel = CreateUnique<ViewportPanel>(GetRenderOutput());
 	m_InspectorPanel = CreateUnique<InspectorPanel>(GetContext());
-	m_ConsolePanel = CreateUnique<ConsolePanel>();
+	m_ConsolePanel = CreateUnique<ConsolePanel>(m_TextureCache.get());
 
 	m_HierarchyPanel->Build(dockPanels.hierarchy, layoutRoot);
 	m_ViewportPanel->Build(dockPanels.viewport, layoutRoot);
 	m_InspectorPanel->Build(dockPanels.inspector, layoutRoot);
 	m_ConsolePanel->Build(dockPanels.console, layoutRoot);
 
-	m_HierarchyPanel->SetOnEntitySelected([this](Entity entity) { m_InspectorPanel->ShowEntity(entity); });
+	m_HierarchyPanel->onEntitySelected.Connect([this](Entity entity) { m_InspectorPanel->ShowEntity(entity); });
 
 	WireMenubar(layoutRoot);
 
+	m_UIDebugPanel = CreateUnique<UIDebugPanel>();
+	m_UIDebugPanel->Build(layoutRoot, &editorCanvas);
+
+	auto ctxUniq = CreateUnique<Aquila::UI::Core::ContextMenu>();
+	auto *ctx = static_cast<Aquila::UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(ctxUniq)));
+	ctx->AddItem("Open UI Inspector", [this] { OpenUIInspectorWindow(); });
+	layoutRoot->onContextMenu.Connect([ctx](vec2 pos) { ctx->OpenAt(pos); });
+	dockPanels.viewport->onContextMenu.Connect([ctx](vec2 pos) { ctx->OpenAt(pos); });
+
 	editorCanvas.ReloadStyles();
+}
+
+void EditorApplication::OpenUIInspectorWindow() {
+	if (m_UIDebugWindow) {
+		return; // already open
+	}
+
+	auto &editorCanvas = Aquila::UI::Core::CanvasManager::Get()->GetLayer(Aquila::UI::Core::UILayer::Editor);
+	RenderWindow &rw = CreateSecondaryWindow(800, 600, "Aquila - UI Inspector");
+
+	m_UIDebugWindow = CreateUnique<UIDebugWindow>();
+	m_UIDebugWindow->Build(&editorCanvas, 800, 600, Config::GetPreferences().ui.stylePath);
+
+	UIDebugWindow *win = m_UIDebugWindow.get();
+	rw.onUpdate = [win](f32 dt) { win->Update(dt); };
+	rw.onRender = [win](auto &batcher, auto &cmd) { win->Render(batcher, cmd); };
+	rw.onEvent = [win](Events::Event &event) { win->OnEvent(event); };
+	rw.onClose = [this] { m_UIDebugWindow.reset(); };
+}
+
+void EditorApplication::WireDockSpace(Aquila::UI::Core::DockSpace *dockSpace, GLFWwindow *sourceNative) {
+	dockSpace->SetTearOffCallback(
+		[this, sourceNative](Unique<Aquila::UI::Core::View> sub, std::string title, vec2 pos) {
+			HandleTearOff(sourceNative, std::move(sub), std::move(title), pos);
+		});
+	dockSpace->SetExternalDragObserver([this, sourceNative](vec2 pos) { PreviewDockTargets(sourceNative, pos); },
+									   [this] { ClearDockTargetPreviews(); });
+	// For the main dock space this is a no-op — the main window is never in m_FloatingPanels.
+	dockSpace->SetEmptiedCallback([this, sourceNative] { CloseFloatingWindow(sourceNative); });
+}
+
+void EditorApplication::CloseFloatingWindow(GLFWwindow *native) {
+	for (auto &entry : m_FloatingPanels) {
+		if (entry.window->window->GetNativeWindow() == native) {
+			glfwSetWindowShouldClose(native, GLFW_TRUE);
+			return;
+		}
+	}
+}
+
+Aquila::UI::Core::DockSpace *EditorApplication::FindDockTargetAtScreen(vec2 screenPos, GLFWwindow *exclude,
+																	   vec2 &outLocal) {
+	struct Candidate {
+		Aquila::UI::Core::DockSpace *dockSpace;
+		GLFWwindow *native;
+		float width;
+		float height;
+	};
+	std::vector<Candidate> candidates;
+	for (auto &entry : m_FloatingPanels) {
+		candidates.push_back({ entry.panel->GetDockSpace(), entry.window->window->GetNativeWindow(),
+							   static_cast<float>(entry.window->window->GetWidth()),
+							   static_cast<float>(entry.window->window->GetHeight()) });
+	}
+	candidates.push_back({ m_DockSpace, GetWindow().GetNativeWindow(), static_cast<float>(GetWindow().GetWidth()),
+						   static_cast<float>(GetWindow().GetHeight()) });
+
+	for (auto &c : candidates) {
+		if (c.native == exclude) {
+			continue;
+		}
+		int cx = 0, cy = 0;
+		glfwGetWindowPos(c.native, &cx, &cy);
+		const vec2 local = { screenPos.x - static_cast<float>(cx), screenPos.y - static_cast<float>(cy) };
+		if (local.x >= 0.f && local.y >= 0.f && local.x < c.width && local.y < c.height) {
+			outLocal = local;
+			return c.dockSpace;
+		}
+	}
+	return nullptr;
+}
+
+void EditorApplication::PreviewDockTargets(GLFWwindow *sourceNative, vec2 sourceLocal) {
+	int sx = 0, sy = 0;
+	glfwGetWindowPos(sourceNative, &sx, &sy);
+	const vec2 screen = { static_cast<float>(sx) + sourceLocal.x, static_cast<float>(sy) + sourceLocal.y };
+
+	ClearDockTargetPreviews();
+
+	vec2 targetLocal{ 0.f, 0.f };
+	if (Aquila::UI::Core::DockSpace *target = FindDockTargetAtScreen(screen, sourceNative, targetLocal)) {
+		target->PreviewExternalDrag(targetLocal);
+	}
+}
+
+void EditorApplication::ClearDockTargetPreviews() {
+	m_DockSpace->ClearExternalDrag();
+	for (auto &entry : m_FloatingPanels) {
+		entry.panel->GetDockSpace()->ClearExternalDrag();
+	}
+}
+
+void EditorApplication::HandleTearOff(GLFWwindow *sourceNative, Unique<Aquila::UI::Core::View> content,
+									  std::string title, vec2 sourceLocal) {
+	ClearDockTargetPreviews();
+
+	int sx = 0, sy = 0;
+	glfwGetWindowPos(sourceNative, &sx, &sy);
+	const vec2 screen = { static_cast<float>(sx) + sourceLocal.x, static_cast<float>(sy) + sourceLocal.y };
+
+	// A release inside the source window's own bounds floats the panel — the source sits on top
+	int sw = 0, sh = 0;
+	glfwGetWindowSize(sourceNative, &sw, &sh);
+	const bool insideSource = sourceLocal.x >= 0.f && sourceLocal.y >= 0.f && sourceLocal.x < static_cast<float>(sw) &&
+		sourceLocal.y < static_cast<float>(sh);
+
+	vec2 targetLocal{ 0.f, 0.f };
+	Aquila::UI::Core::DockSpace *target =
+		insideSource ? nullptr : FindDockTargetAtScreen(screen, sourceNative, targetLocal);
+	const bool docked = target && target->TryDockExternal(content, title, targetLocal);
+
+	if (!docked) {
+		SpawnFloatingPanel(std::move(content), std::move(title), screen);
+	}
+
+	// A floating window drained of its last tab has nothing left to show — close it.
+	for (auto &entry : m_FloatingPanels) {
+		if (entry.window->window->GetNativeWindow() == sourceNative && !entry.panel->HasContent()) {
+			CloseFloatingWindow(sourceNative);
+			break;
+		}
+	}
+}
+
+void EditorApplication::SpawnFloatingPanel(Unique<Aquila::UI::Core::View> panelSubtree, std::string title,
+										   vec2 screenPos) {
+	RenderWindow &rw = CreateSecondaryWindow(800, 600, title);
+	glfwSetWindowPos(rw.window->GetNativeWindow(), static_cast<int>(screenPos.x) - 60,
+					 static_cast<int>(screenPos.y) - 12);
+
+	auto fpw = CreateUnique<FloatingPanelWindow>();
+	fpw->Build(std::move(panelSubtree), title, 800, 600, Config::GetPreferences().ui.stylePath);
+
+	FloatingPanelWindow *panel = fpw.get();
+	RenderWindow *window = &rw;
+
+	rw.onUpdate = [panel](f32 dt) { panel->Update(dt); };
+	rw.onRender = [panel](auto &batcher, auto &cmd) { panel->Render(batcher, cmd); };
+	rw.onEvent = [panel](Events::Event &event) { panel->OnEvent(event); };
+	rw.onClose = [this, panel] { OnFloatingClosed(panel); };
+
+	WireDockSpace(panel->GetDockSpace(), window->window->GetNativeWindow());
+
+	m_FloatingPanels.push_back({ std::move(fpw), window });
+}
+
+void EditorApplication::OnFloatingClosed(FloatingPanelWindow *panel) {
+	auto it = std::find_if(m_FloatingPanels.begin(), m_FloatingPanels.end(),
+						   [panel](const FloatingEntry &e) { return e.panel.get() == panel; });
+	if (it == m_FloatingPanels.end()) {
+		return;
+	}
+
+	while (panel->HasContent()) {
+		auto content = panel->DetachContent();
+		if (!content) {
+			break;
+		}
+		DockBackToCenter(std::move(content), panel->GetTitle());
+	}
+
+	m_FloatingPanels.erase(it);
+}
+
+void EditorApplication::DockBackToCenter(Unique<Aquila::UI::Core::View> content, const std::string &title) {
+	if (!content || !m_DockSpace) {
+		return;
+	}
+
+	Aquila::UI::Core::DockNode *node = m_DockSpace->GetRootNode()->HitTestNode(m_DockSpace->GetAbsoluteRect().Center());
+	if (!node) {
+		return;
+	}
+	node->AcceptPanel(std::move(content), title, Aquila::UI::Core::DropZone::Center);
 }
 
 void EditorApplication::WireMenubar(Aquila::UI::Core::View *layoutRoot) {
 	auto wireBtn = [&](const char *id, const char *action) {
 		if (auto *v = layoutRoot->FindById(id)) {
 			if (auto *btn = dynamic_cast<Aquila::UI::Core::Button *>(v)) {
-				btn->SetOnClick([action] { AQUILA_LOG_INFO("EditorApplication: {}", action); });
+				btn->onClick.Connect([action] { AQUILA_LOG_INFO("EditorApplication: {}", action); });
 			}
 		}
 	};
@@ -201,46 +414,23 @@ void EditorApplication::WireMenubar(Aquila::UI::Core::View *layoutRoot) {
 	wireBtn("btn-pause", "Pause");
 	wireBtn("btn-stop", "Stop");
 
-	using MenuItem = std::pair<const char *, std::function<void()>>;
-	auto makeMenu = [&](const char *btnId, std::initializer_list<MenuItem> items) {
-		auto menuUniq = CreateUnique<Aquila::UI::Core::ContextMenu>();
-		auto *menu = static_cast<Aquila::UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(menuUniq)));
-		for (auto &[label, cb] : items) {
-			menu->AddItem(label, cb);
-		}
-		if (auto *v = layoutRoot->FindById(btnId)) {
-			if (auto *btn = dynamic_cast<Aquila::UI::Core::Button *>(v)) {
-				btn->SetOnClick([menu, btn] { menu->OpenAt(btn->GetAbsolutePosition()); });
-			}
-		}
-	};
+	auto *menuBarView = layoutRoot->FindById("main-menubar");
+	auto *menuBar = dynamic_cast<Aquila::UI::Core::MenuBar *>(menuBarView);
+	if (!menuBar) {
+		return;
+	}
 
-	makeMenu("btn-file",
-			 {
-				 { "New Scene", [] { AQUILA_LOG_INFO("File: New Scene"); } },
-				 { "Open Scene...", [] { AQUILA_LOG_INFO("File: Open Scene"); } },
-				 { "Save Scene", [] { AQUILA_LOG_INFO("File: Save Scene"); } },
-				 { "Exit", [] { AQUILA_LOG_INFO("File: Exit"); } },
-			 });
-	makeMenu("btn-edit",
-			 {
-				 { "Undo", [] { AQUILA_LOG_INFO("Edit: Undo"); } },
-				 { "Redo", [] { AQUILA_LOG_INFO("Edit: Redo"); } },
-				 { "Duplicate", [] { AQUILA_LOG_INFO("Edit: Duplicate"); } },
-				 { "Delete", [] { AQUILA_LOG_INFO("Edit: Delete"); } },
-			 });
-	makeMenu("btn-view",
-			 {
-				 { "Toggle Grid", [] { AQUILA_LOG_INFO("View: Toggle Grid"); } },
-				 { "Toggle Stats", [] { AQUILA_LOG_INFO("View: Toggle Stats"); } },
-				 { "Fullscreen", [] { AQUILA_LOG_INFO("View: Fullscreen"); } },
-			 });
-	makeMenu("btn-window",
-			 {
-				 { "Scene", [] { AQUILA_LOG_INFO("Window: Scene"); } },
-				 { "Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); } },
-				 { "Console", [] { AQUILA_LOG_INFO("Window: Console"); } },
-			 });
+	menuBar->SetOverlayRoot(layoutRoot);
+
+	auto *fileMenu = menuBar->AddMenu("File");
+	fileMenu->AddItem("Exit", [this] { Close(); });
+
+	auto *windowMenu = menuBar->AddMenu("Window");
+	windowMenu->AddItem("UI Inspector", [this] { OpenUIInspectorWindow(); });
+	windowMenu->AddItem("Hierarchy", [] { AQUILA_LOG_INFO("Window: Hierarchy"); });
+	windowMenu->AddItem("Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); });
+	windowMenu->AddItem("Viewport", [] { AQUILA_LOG_INFO("Window: Viewport"); });
+	windowMenu->AddItem("Console", [] { AQUILA_LOG_INFO("Window: Console"); });
 }
 
 } // namespace Editor

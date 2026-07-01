@@ -2,12 +2,14 @@
 
 namespace Aquila::UI::Core {
 class DockPanel;
+class DockSpace;
 class View;
 } // namespace Aquila::UI::Core
 
 namespace Editor {
 
 struct DockPanels {
+	Aquila::UI::Core::DockSpace *dockSpace = nullptr;
 	Aquila::UI::Core::DockPanel *hierarchy = nullptr;
 	Aquila::UI::Core::DockPanel *viewport = nullptr;
 	Aquila::UI::Core::DockPanel *inspector = nullptr;
