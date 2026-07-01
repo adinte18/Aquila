@@ -17,11 +17,11 @@ class HierarchyPanel : public IEditorPanel {
   public:
 	explicit HierarchyPanel(Aquila::SceneManagement::EntityManager &entityManager);
 	void Build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlayRoot) override;
-	void SetOnEntitySelected(Delegate<void(Aquila::SceneManagement::Entity)> callback);
+	Signal<void(Aquila::SceneManagement::Entity)> onEntitySelected;
+	void AddEntity(Aquila::SceneManagement::Entity entity);
 
   private:
 	Aquila::SceneManagement::EntityManager &m_EntityManager;
-	Delegate<void(Aquila::SceneManagement::Entity)> m_OnEntitySelected;
 	HierarchyTreeView *m_TreeView = nullptr;
 	HierarchyTreeNode *m_SelectedNode = nullptr;
 };

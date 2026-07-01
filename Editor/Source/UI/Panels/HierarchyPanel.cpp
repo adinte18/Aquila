@@ -5,6 +5,7 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/EntityManager.h"
+#include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/ContextMenu.h"
 #include "Aquila/UI/Widgets/DockPanel.h"
 
@@ -19,42 +20,63 @@ HierarchyPanel::HierarchyPanel(EntityManager &entityManager) : m_EntityManager(e
 void HierarchyPanel::Build(UI::Core::DockPanel *panel, UI::Core::View *overlayRoot) {
 	auto ctxUniq = CreateUnique<UI::Core::ContextMenu>();
 	auto *ctx = static_cast<UI::Core::ContextMenu *>(overlayRoot->AddChild(std::move(ctxUniq)));
-	ctx->AddItem("Create Empty", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Empty"); });
-	ctx->AddItem("Create Cube", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Cube"); });
-	panel->SetContextView([ctx](vec2 pos) { ctx->OpenAt(pos); });
-
-	auto treeUniq = CreateUnique<HierarchyTreeView>(m_EntityManager);
-	m_TreeView = static_cast<HierarchyTreeView *>(panel->AddChild(std::move(treeUniq)));
-
-	auto nodeCtxUniq = CreateUnique<UI::Core::ContextMenu>();
-	auto *nodeContextMenu =
-		static_cast<UI::Core::ContextMenu *>(m_TreeView->View::AddChild(std::move(nodeCtxUniq)));
-	nodeContextMenu->AddItem("Add child", [this] {
-		if (m_SelectedNode != nullptr) {
-			AQUILA_LOG_DEBUG("Hello");
-		}
-	});
-
-	m_EntityManager.ForEach<MetadataComponent>([this](Entity entity) {
+	ctx->AddItem("Create Empty", [this] {
+		auto entity = m_EntityManager.CreateEntity("New Entity");
 		m_TreeView->AddEntityNode(entity.GetName(), entity);
 	});
+	ctx->AddItem("Create Cube", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Cube (not yet implemented)"); });
 
-	m_TreeView->SetOnSelected([this](UI::Core::TreeNode *node) {
-		auto *hierarchyNode = static_cast<HierarchyTreeNode *>(node);
-		m_SelectedNode = hierarchyNode;
-		if (m_OnEntitySelected) {
-			m_OnEntitySelected(hierarchyNode->GetEntity());
-		}
-	});
+	{
+		auto toolbar = CreateUnique<UI::Core::View>();
+		toolbar->AddClass("hierarchy-toolbar");
+		auto *toolbarPtr = static_cast<UI::Core::View *>(panel->AddChild(std::move(toolbar)));
 
-	m_TreeView->SetOnRightClicked([nodeContextMenu, this](UI::Core::TreeNode *node, vec2 pos) {
-		m_SelectedNode = static_cast<HierarchyTreeNode *>(node);
-		nodeContextMenu->OpenAt(pos);
-	});
+		auto btn = CreateUnique<UI::Core::Button>();
+		btn->SetText("+ New Entity");
+		btn->AddClass("hierarchy-toolbar-btn");
+		btn->onClick.Connect([this] {
+			auto entity = m_EntityManager.CreateEntity("New Entity");
+			if (m_TreeView) {
+				m_TreeView->AddEntityNode(entity.GetName(), entity);
+			}
+		});
+		toolbarPtr->AddChild(std::move(btn));
+	}
+
+	{
+		auto treeUniq = CreateUnique<HierarchyTreeView>(m_EntityManager);
+		m_TreeView = static_cast<HierarchyTreeView *>(panel->AddChild(std::move(treeUniq)));
+
+		auto nodeCtxUniq = CreateUnique<UI::Core::ContextMenu>();
+		auto *nodeContextMenu =
+			static_cast<UI::Core::ContextMenu *>(m_TreeView->View::AddChild(std::move(nodeCtxUniq)));
+		nodeContextMenu->AddItem("Add child", [this] {
+			if (m_SelectedNode != nullptr) {
+				AQUILA_LOG_DEBUG("Hello");
+			}
+		});
+
+		m_EntityManager.ForEach<MetadataComponent>(
+			[this](Entity entity) { m_TreeView->AddEntityNode(entity.GetName(), entity); });
+
+		m_TreeView->onEntitySelected.Connect([this](Entity entity) {
+			m_SelectedNode = m_TreeView->FindNodeForEntity(entity);
+			onEntitySelected(entity);
+		});
+
+		m_TreeView->onEntityRightClicked.Connect([nodeContextMenu, this](Entity entity, vec2 pos) {
+			m_SelectedNode = m_TreeView->FindNodeForEntity(entity);
+			nodeContextMenu->OpenAt(pos);
+		});
+
+		m_TreeView->SetOnBackgroundRightClicked([ctx](vec2 pos) { ctx->OpenAt(pos); });
+	}
 }
 
-void HierarchyPanel::SetOnEntitySelected(std::function<void(Entity)> callback) {
-	m_OnEntitySelected = std::move(callback);
+void HierarchyPanel::AddEntity(Entity entity) {
+	if (m_TreeView) {
+		m_TreeView->AddEntityNode(entity.GetName(), entity);
+	}
 }
 
 } // namespace Editor

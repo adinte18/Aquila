@@ -20,6 +20,9 @@ class HierarchyTreeView : public Aquila::UI::Core::TreeView {
 	[[nodiscard]] HierarchyTreeNode *FindNodeForEntity(Aquila::SceneManagement::Entity entity) const;
 	[[nodiscard]] Aquila::SceneManagement::EntityManager &GetEntityManager() { return m_EntityManager; }
 
+	Signal<void(Aquila::SceneManagement::Entity)> onEntitySelected;
+	Signal<void(Aquila::SceneManagement::Entity, vec2)> onEntityRightClicked;
+
   private:
 	void OnDrop(Aquila::UI::Core::DragState &state) override;
 

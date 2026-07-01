@@ -14,6 +14,22 @@ using namespace Aquila::UI::Core;
 HierarchyTreeView::HierarchyTreeView(EntityManager &entityManager) : m_EntityManager(entityManager) {
 	m_IsAcceptingPayload = true;
 	m_IsDraggable = false;
+
+	onSelected.Connect([this](Aquila::UI::Core::TreeNode *node) {
+		auto *hierarchyNode = static_cast<HierarchyTreeNode *>(node);
+		auto it = m_NodeEntityMap.find(hierarchyNode);
+		if (it != m_NodeEntityMap.end()) {
+			onEntitySelected(it->second);
+		}
+	});
+
+	onNodeRightClicked.Connect([this](Aquila::UI::Core::TreeNode *node, vec2 pos) {
+		auto *hierarchyNode = static_cast<HierarchyTreeNode *>(node);
+		auto it = m_NodeEntityMap.find(hierarchyNode);
+		if (it != m_NodeEntityMap.end()) {
+			onEntityRightClicked(it->second, pos);
+		}
+	});
 }
 
 HierarchyTreeNode *HierarchyTreeView::AddEntityNode(std::string label, Entity entity) {
