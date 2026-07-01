@@ -17,7 +17,7 @@ class TabView : public View {
 
 	void SetActiveTab(int index);
 	[[nodiscard]] int GetActiveTab() const { return m_ActiveTab; }
-	void SetOnTabChanged(Delegate<void(int)> callback);
+	Signal<void(int)> onTabChanged;
 
   private:
 	void ApplyActiveTab();
@@ -31,7 +31,6 @@ class TabView : public View {
 	View *m_Panels = nullptr;
 	std::vector<Tab> m_Tabs;
 	int m_ActiveTab = -1;
-	Delegate<void(int)> m_OnTabChanged;
 };
 
 } // namespace Aquila::UI::Core

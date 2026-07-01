@@ -14,7 +14,7 @@ Dropdown::Dropdown() {
 		header->SetStyle(hp);
 		header->AddClass("dropdown-header");
 	}
-	header->SetOnClick([this] { m_Popup->Toggle(); });
+	header->onClick.Connect([this] { m_Popup->Toggle(); });
 	m_Header = static_cast<Button *>(AddChild(std::move(header)));
 
 	auto popup = CreateUnique<Popup>();
@@ -56,9 +56,6 @@ void Dropdown::SetPlaceholder(std::string text) {
 	UpdateHeaderText();
 }
 
-void Dropdown::SetOnChanged(Delegate<void(const std::string &)> callback) {
-	m_OnChanged = std::move(callback);
-}
 
 void Dropdown::Rebuild() {
 	for (View *v : m_OptionButtons) {
@@ -75,7 +72,7 @@ void Dropdown::Rebuild() {
 			bp.width = StyleLength::Grow();
 			btn->SetStyle(bp);
 		}
-		btn->SetOnClick([this, value = opt.value] {
+		btn->onClick.Connect([this, value = opt.value] {
 			Select(value);
 			m_Popup->Close();
 		});
@@ -86,9 +83,7 @@ void Dropdown::Rebuild() {
 void Dropdown::Select(const std::string &value) {
 	m_Value = value;
 	UpdateHeaderText();
-	if (m_OnChanged) {
-		m_OnChanged(m_Value);
-	}
+	onChanged(m_Value);
 }
 
 void Dropdown::UpdateHeaderText() {

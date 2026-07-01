@@ -14,7 +14,7 @@ class NumberInput : public TextInput {
 	void SetRange(f64 min, f64 max);
 	void SetStep(f64 step);
 	void SetPrecision(int decimals);
-	void SetOnValueChanged(Delegate<void(f64)> callback);
+	Signal<void(f64)> onValueChanged;
 
 	[[nodiscard]] f64 GetValue() const { return m_Value; }
 
@@ -30,7 +30,6 @@ class NumberInput : public TextInput {
 	f64 m_Max = 1e18;
 	f64 m_Step = 1.0;
 	int m_Precision = 3;
-	Delegate<void(f64)> m_OnValueChanged;
 };
 
 } // namespace Aquila::UI::Core

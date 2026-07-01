@@ -6,11 +6,9 @@ Collapsible::Collapsible(std::string title) {
 	auto header = CreateUnique<Button>();
 	header->SetText(std::move(title));
 	header->AddClass("collapsible-header");
-	header->SetOnClick([this] {
+	header->onClick.Connect([this] {
 		SetExpanded(!m_Expanded);
-		if (m_OnToggled) {
-			m_OnToggled(m_Expanded);
-		}
+		onToggled(m_Expanded);
 	});
 	m_Header = static_cast<Button *>(AddChild(std::move(header)));
 
@@ -32,9 +30,6 @@ void Collapsible::SetExpanded(bool expanded) {
 	ApplyState();
 }
 
-void Collapsible::SetOnToggled(Delegate<void(bool)> callback) {
-	m_OnToggled = std::move(callback);
-}
 
 View *Collapsible::AddContent(Unique<View> child) {
 	return m_Content->AddChild(std::move(child));

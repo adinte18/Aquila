@@ -22,8 +22,9 @@ class TreeView : public View {
 	void OnDragEnter(DragState &state) override;
 	void OnDragLeave(DragState &state) override;
 
-	void SetOnSelected(Delegate<void(TreeNode *node)> callback);
-	void SetOnRightClicked(Delegate<void(TreeNode *node, vec2 position)> callback);
+	Signal<void(TreeNode *)> onSelected;
+	Signal<void(TreeNode *, vec2)> onNodeRightClicked;
+	void SetOnBackgroundRightClicked(Delegate<void(vec2)> callback);
 
 	void SelectNode(TreeNode *node);
 	[[nodiscard]] TreeNode *GetSelected() const { return m_Selected; }
@@ -37,8 +38,6 @@ class TreeView : public View {
 	void NotifyRightClicked(TreeNode *node, vec2 pos);
 
 	TreeNode *m_Selected = nullptr;
-	Delegate<void(TreeNode *node)> m_OnSelected;
-	Delegate<void(TreeNode *node, vec2 position)> m_OnRightClicked;
 };
 
 class TreeNode : public View {

@@ -17,8 +17,8 @@ class TextInput : public View {
 	void SetText(const std::string &text);
 	void SetFont(Text::FontAtlas *font) override;
 	void SetPlaceholder(std::string text);
-	void SetOnChanged(Delegate<void(const std::string &)> callback);
-	void SetOnSubmit(Delegate<void(const std::string &)> callback);
+	Signal<void(const std::string &)> onChanged;
+	Signal<void(const std::string &)> onSubmit;
 
 	[[nodiscard]] const std::string &GetText() const { return m_State.text; }
 	[[nodiscard]] vec2 GetIntrinsicSize() const override;
@@ -41,8 +41,6 @@ class TextInput : public View {
 	Text::FontAtlas *m_Font = nullptr;
 	float m_ScrollOffsetX = 0.f; // horizontal scroll offset in pixels
 
-	Delegate<void(const std::string &)> m_OnChanged;
-	Delegate<void(const std::string &)> m_OnSubmit;
 };
 
 } // namespace Aquila::UI::Core

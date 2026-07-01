@@ -30,6 +30,8 @@ template <typename T> using Unique = std::unique_ptr<T>;
 template <typename T> using WeakRef = std::weak_ptr<T>;
 template <typename T> using Delegate = std::function<T>;
 
+#include "Aquila/Foundation/Signal.h"
+
 template <typename T> using Option = std::optional<T>;
 template <typename... Ts> using Variant = std::variant<Ts...>;
 template <typename Ok, typename Err> using Result = std::variant<Ok, Err>;

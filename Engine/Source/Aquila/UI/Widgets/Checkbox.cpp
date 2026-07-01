@@ -18,16 +18,11 @@ void Checkbox::SetChecked(bool checked) {
 	QueueRedraw();
 }
 
-void Checkbox::SetOnChanged(Delegate<void(bool)> callback) {
-	m_OnChanged = std::move(callback);
-}
 
 void Checkbox::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left && m_IsHovered) {
 		m_Checked = !m_Checked;
-		if (m_OnChanged) {
-			m_OnChanged(m_Checked);
-		}
+		onChanged(m_Checked);
 		QueueRedraw();
 	}
 	View::OnMouseRelease(btn, pos);

@@ -7,6 +7,7 @@ namespace Aquila::UI::Core {
 
 static void InitTextInput(TextInput *self) {
 	self->SetInputLeaf(true);
+	self->AddClass("text-input");
 }
 
 TextInput::TextInput() {
@@ -32,13 +33,6 @@ void TextInput::SetPlaceholder(std::string text) {
 	QueueRedraw();
 }
 
-void TextInput::SetOnChanged(Delegate<void(const std::string &)> callback) {
-	m_OnChanged = std::move(callback);
-}
-
-void TextInput::SetOnSubmit(Delegate<void(const std::string &)> callback) {
-	m_OnSubmit = std::move(callback);
-}
 
 Text::FontAtlas *TextInput::ResolveFont() const {
 	if (Text::FontAtlas *css = GetResolvedFont()) {
@@ -117,9 +111,7 @@ void TextInput::OnMouseMove(vec2 pos) {
 void TextInput::OnKeyPress(Platform::KeyCode key, int mods) {
 	const bool handled = m_State.HandleKeyPress(key, mods);
 	if (handled) {
-		if (m_OnChanged) {
-			m_OnChanged(m_State.text);
-		}
+		onChanged(m_State.text);
 		if (Text::FontAtlas *font = ResolveFont()) {
 			const float fontSize = GetDisplayStyle().fontSize;
 			const float bakeSize = font->GetBakeSize();
@@ -133,17 +125,13 @@ void TextInput::OnKeyPress(Platform::KeyCode key, int mods) {
 	}
 
 	if (key == Platform::KeyCode::Enter) {
-		if (m_OnSubmit) {
-			m_OnSubmit(m_State.text);
-		}
+		onSubmit(m_State.text);
 	}
 }
 
 void TextInput::OnCharInput(uint32 codepoint) {
 	if (m_State.HandleCharInput(codepoint)) {
-		if (m_OnChanged) {
-			m_OnChanged(m_State.text);
-		}
+		onChanged(m_State.text);
 		QueueRedraw();
 	}
 }
@@ -202,14 +190,14 @@ void TextInput::OnDrawSelf(Rendering::DrawList &drawList) {
 		const float x0 = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.SelectionMin());
 		const float x1 = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.SelectionMax());
 		const Rect selRect = { .position = { x0, textY }, .size = { x1 - x0, lineH } };
-		const vec4 selColor = vec4(style.color.r, style.color.g, style.color.b, 0.3f);
+		const vec4 selColor = style.EffectiveSelectionColor();
 		drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z);
 	}
 
 	if (!m_State.text.empty()) {
 		drawList.DrawText(textRect, m_State.text, font, style.color, fontSize, TextAlign::Left, z + 1);
 	} else if (!m_Placeholder.empty() && !m_IsFocused) {
-		const vec4 muted = vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.45f);
+		const vec4 muted = style.EffectivePlaceholderColor();
 		drawList.DrawText(textRect, m_Placeholder, font, muted, fontSize, TextAlign::Left, z + 1);
 	}
 

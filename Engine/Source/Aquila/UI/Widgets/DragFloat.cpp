@@ -5,6 +5,15 @@ namespace Aquila::UI::Core {
 
 DragFloat::DragFloat() {
 	SetInputLeaf(true);
+	AddClass("drag-float");
+}
+
+DragFloat::DragFloat(const Config &config) : DragFloat() {
+	SetRange(config.min, config.max);
+	SetStep(config.step);
+	SetSpeed(config.speed);
+	SetPrecision(config.precision);
+	SetPrefix(config.prefix);
 }
 
 void DragFloat::SetValue(float value) {
@@ -39,9 +48,6 @@ void DragFloat::SetPrefix(std::string prefix) {
 	QueueRedraw();
 }
 
-void DragFloat::SetOnChanged(Delegate<void(float)> callback) {
-	m_OnChanged = std::move(callback);
-}
 
 std::string DragFloat::FormatValue() const {
 	std::ostringstream ss;
@@ -66,9 +72,7 @@ void DragFloat::CommitEdit() {
 		const float parsed = std::stof(m_EditState.text);
 		SetValue(parsed);
 		OnValueCommitted();
-		if (m_OnChanged) {
-			m_OnChanged(m_Value);
-		}
+		onChanged(m_Value);
 	} catch (...) {
 		// Restore last valid value on parse failure.
 	}
@@ -114,9 +118,7 @@ void DragFloat::OnMouseMove(vec2 pos) {
 	if (m_HasDragged) {
 		SetValue(m_DragStartValue + delta);
 		OnValueCommitted();
-		if (m_OnChanged) {
-			m_OnChanged(m_Value);
-		}
+		onChanged(m_Value);
 	}
 }
 
@@ -182,7 +184,7 @@ void DragFloat::OnDrawSelf(Rendering::DrawList &drawList) {
 			const float x0 = textRect.position.x + m_EditState.MeasureToPos(*font, scale, m_EditState.SelectionMin());
 			const float x1 = textRect.position.x + m_EditState.MeasureToPos(*font, scale, m_EditState.SelectionMax());
 			const Rect selRect = { .position = { x0, textY }, .size = { x1 - x0, lineH } };
-			const vec4 selColor = vec4(style.color.r, style.color.g, style.color.b, 0.3f);
+			const vec4 selColor = style.EffectiveSelectionColor();
 			drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z);
 		}
 

@@ -20,8 +20,12 @@ class ColorPicker : public View {
 	[[nodiscard]] std::string_view GetTypeName() const override { return "ColorPicker"; }
 
 	void SetColor(vec4 color);
-	void SetOnChanged(Delegate<void(vec4)> callback);
 	[[nodiscard]] vec4 GetColor() const { return m_Color; }
+
+	void SetValue(vec4 color) { SetColor(color); }
+	[[nodiscard]] vec4 GetValue() const { return m_Color; }
+
+	Signal<void(vec4)> onChanged;
 
 	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
@@ -80,7 +84,6 @@ class ColorPicker : public View {
 	View *m_HexRow = nullptr;
 	TextInput *m_HexInput = nullptr;
 
-	Delegate<void(vec4)> m_OnChanged;
 
 	static constexpr float kSwatchH = 28.f;
 	static constexpr float kPopupW = 272.f;

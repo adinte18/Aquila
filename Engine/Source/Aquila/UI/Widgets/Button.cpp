@@ -28,15 +28,11 @@ void Button::SetFont(Text::FontAtlas *font) {
 	m_Label->SetFont(font);
 }
 
-void Button::SetOnClick(Delegate<void()> callback) {
-	m_OnClick = std::move(callback);
-}
-
 void Button::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	if (btn == Platform::MouseButton::Left && m_IsHovered && m_OnClick) {
-		m_OnClick();
-	}
 	View::OnMouseRelease(btn, pos);
+	if (btn == Platform::MouseButton::Left && m_IsHovered) {
+		onClick();
+	}
 }
 
 void Button::OnStyleResolved() {

@@ -12,7 +12,7 @@ FloatingOverlay::FloatingOverlay(int16_t backdropZTier) {
 	bfc.parentPoint = FloatingAttachPoint::LeftTop;
 	bfc.zIndex = backdropZTier;
 	bd->SetFloating(bfc);
-	bd->SetOnClick([this] {
+	bd->onClick.Connect([this] {
 		if (m_DismissOnClickAway) {
 			Close();
 		}

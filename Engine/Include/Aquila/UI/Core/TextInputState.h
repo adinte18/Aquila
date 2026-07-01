@@ -2,7 +2,6 @@
 
 #include "Aquila/Platform/Input.h"
 #include "Aquila/UI/Text/FontAtlas.h"
-#include <string>
 
 namespace Aquila::UI::Core {
 

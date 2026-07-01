@@ -27,23 +27,16 @@ void NumberInput::SetPrecision(int decimals) {
 	UpdateDisplayText();
 }
 
-void NumberInput::SetOnValueChanged(Delegate<void(double)> callback) {
-	m_OnValueChanged = std::move(callback);
-}
 
 void NumberInput::OnKeyPress(Platform::KeyCode key, int mods) {
 	if (key == Platform::KeyCode::Up) {
 		SetValue(m_Value + m_Step);
-		if (m_OnValueChanged) {
-			m_OnValueChanged(m_Value);
-		}
+		onValueChanged(m_Value);
 		return;
 	}
 	if (key == Platform::KeyCode::Down) {
 		SetValue(m_Value - m_Step);
-		if (m_OnValueChanged) {
-			m_OnValueChanged(m_Value);
-		}
+		onValueChanged(m_Value);
 		return;
 	}
 	if (key == Platform::KeyCode::Enter) {
@@ -62,9 +55,7 @@ void NumberInput::CommitText() {
 	try {
 		const double parsed = std::stod(m_State.text);
 		m_Value = std::clamp(parsed, m_Min, m_Max);
-		if (m_OnValueChanged) {
-			m_OnValueChanged(m_Value);
-		}
+		onValueChanged(m_Value);
 	} catch (...) {
 	}
 	UpdateDisplayText();

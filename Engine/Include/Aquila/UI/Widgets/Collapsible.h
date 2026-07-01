@@ -14,9 +14,13 @@ class Collapsible : public View {
 	void SetTitle(std::string title);
 	void SetExpanded(bool expanded);
 	[[nodiscard]] bool IsExpanded() const { return m_Expanded; }
-	void SetOnToggled(Delegate<void(bool)> callback);
+	Signal<void(bool)> onToggled;
 
 	View *AddContent(Unique<View> child);
+
+	template <typename T, typename... Args> T *AddContent(Args &&...args) {
+		return static_cast<T *>(AddContent(CreateUnique<T>(std::forward<Args>(args)...)));
+	}
 
   private:
 	void ApplyState();
@@ -24,7 +28,6 @@ class Collapsible : public View {
 	bool m_Expanded = true;
 	Button *m_Header = nullptr;
 	View *m_Content = nullptr;
-	Delegate<void(bool)> m_OnToggled;
 };
 
 } // namespace Aquila::UI::Core

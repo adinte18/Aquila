@@ -21,7 +21,7 @@ class Dropdown : public View {
 	[[nodiscard]] const std::string &GetValue() const { return m_Value; }
 
 	void SetPlaceholder(std::string text);
-	void SetOnChanged(Delegate<void(const std::string &)> callback);
+	Signal<void(const std::string &)> onChanged;
 
   private:
 	struct Option {
@@ -40,7 +40,6 @@ class Dropdown : public View {
 	std::string m_Value;
 	std::string m_Placeholder = "Select…";
 	std::vector<View *> m_OptionButtons;
-	Delegate<void(const std::string &)> m_OnChanged;
 };
 
 } // namespace Aquila::UI::Core

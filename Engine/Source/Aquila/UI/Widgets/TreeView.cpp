@@ -65,12 +65,8 @@ void TreeView::RemoveNode(TreeNode *node) {
 	node->GetParent()->RemoveChild(node);
 }
 
-void TreeView::SetOnSelected(Delegate<void(TreeNode *)> callback) {
-	m_OnSelected = std::move(callback);
-}
-
-void TreeView::SetOnRightClicked(Delegate<void(TreeNode *, vec2)> callback) {
-	m_OnRightClicked = std::move(callback);
+void TreeView::SetOnBackgroundRightClicked(Delegate<void(vec2)> callback) {
+	m_Content->onContextMenu.Set(std::move(callback));
 }
 
 void TreeView::SelectNode(TreeNode *node) {
@@ -85,15 +81,11 @@ void TreeView::SelectNode(TreeNode *node) {
 
 void TreeView::NotifySelected(TreeNode *node) {
 	SelectNode(node);
-	if (m_OnSelected) {
-		m_OnSelected(node);
-	}
+	onSelected(node);
 }
 
 void TreeView::NotifyRightClicked(TreeNode *node, vec2 pos) {
-	if (m_OnRightClicked) {
-		m_OnRightClicked(node, pos);
-	}
+	onNodeRightClicked(node, pos);
 }
 
 static constexpr float kIndentPerDepth = 16.f;
@@ -119,8 +111,8 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 		header->SetStyle(hp);
 		header->AddClass("tree-node-header");
 	}
-	header->SetOnClick([this] { OnHeaderClicked(); });
-	header->SetContextView([this](vec2 pos) { OnHeaderRightClicked(pos); });
+	header->onClick.Connect([this] { OnHeaderClicked(); });
+	header->onContextMenu.Connect([this](vec2 pos) { OnHeaderRightClicked(pos); });
 	m_Header = static_cast<Button *>(View::AddChild(std::move(header)));
 
 	auto children = CreateUnique<View>();

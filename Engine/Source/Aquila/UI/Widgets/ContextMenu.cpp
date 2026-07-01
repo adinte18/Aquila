@@ -40,7 +40,7 @@ void ContextMenu::Rebuild() {
 		auto btn = CreateUnique<Button>();
 		btn->SetText(item.text);
 		btn->AddClass("context-item");
-		btn->SetOnClick([this, cb = item.callback] {
+		btn->onClick.Connect([this, cb = item.callback] {
 			cb();
 			Close();
 		});

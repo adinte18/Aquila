@@ -14,7 +14,7 @@ class Slider : public View {
 	void SetValue(float value);
 	void SetRange(float min, float max);
 	void SetStep(float step);
-	void SetOnChanged(Delegate<void(float)> callback);
+	Signal<void(float)> onChanged;
 	void SetTrackTexture(GFX::GfxTexture *tex) {
 		m_TrackTex = tex;
 		QueueRedraw();
@@ -36,7 +36,6 @@ class Slider : public View {
 	float m_Max = 1.f;
 	float m_Step = 0.f; // 0 = continuous
 
-	Delegate<void(float)> m_OnChanged;
 	GFX::GfxTexture *m_TrackTex = nullptr;
 };
 

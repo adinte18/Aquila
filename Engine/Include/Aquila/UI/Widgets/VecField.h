@@ -18,61 +18,62 @@ class LabeledDragFloat : public View {
 	DragFloat *m_Drag = nullptr;
 };
 
-class Vec2Field : public View {
+template <int N, typename VecT> class VecFieldBase : public View {
+  public:
+	void SetValue(VecT v) {
+		for (int i = 0; i < N; ++i) {
+			m_Components[i]->SetValue(v[i]);
+		}
+	}
+
+	[[nodiscard]] VecT GetValue() const {
+		VecT v{};
+		for (int i = 0; i < N; ++i) {
+			v[i] = m_Components[i]->GetValue();
+		}
+		return v;
+	}
+
+	void SetStep(float step) {
+		for (int i = 0; i < N; ++i) {
+			m_Components[i]->SetStep(step);
+		}
+	}
+
+	void SetSpeed(float speed) {
+		for (int i = 0; i < N; ++i) {
+			m_Components[i]->SetSpeed(speed);
+		}
+	}
+
+	Signal<void(VecT)> onChanged;
+
+  protected:
+	void RegisterComponent(int index, DragFloat *drag) {
+		m_Components[index] = drag;
+		drag->onChanged.Connect([this](float) { onChanged(GetValue()); });
+	}
+
+  private:
+	DragFloat *m_Components[N] = {};
+};
+
+class Vec2Field : public VecFieldBase<2, vec2> {
   public:
 	Vec2Field();
-
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec2Field"; }
-
-	void SetValue(vec2 v);
-	[[nodiscard]] vec2 GetValue() const;
-	void SetOnChanged(Delegate<void(vec2)> callback);
-	void SetStep(float step);
-	void SetSpeed(float speed);
-
-  private:
-	DragFloat *m_X = nullptr;
-	DragFloat *m_Y = nullptr;
-	Delegate<void(vec2)> m_OnChanged;
 };
 
-class Vec3Field : public View {
+class Vec3Field : public VecFieldBase<3, vec3> {
   public:
 	Vec3Field();
-
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec3Field"; }
-
-	void SetValue(vec3 v);
-	[[nodiscard]] vec3 GetValue() const;
-	void SetOnChanged(Delegate<void(vec3)> callback);
-	void SetStep(float step);
-	void SetSpeed(float speed);
-
-  private:
-	DragFloat *m_X = nullptr;
-	DragFloat *m_Y = nullptr;
-	DragFloat *m_Z = nullptr;
-	Delegate<void(vec3)> m_OnChanged;
 };
 
-class Vec4Field : public View {
+class Vec4Field : public VecFieldBase<4, vec4> {
   public:
 	Vec4Field();
-
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec4Field"; }
-
-	void SetValue(vec4 v);
-	[[nodiscard]] vec4 GetValue() const;
-	void SetOnChanged(Delegate<void(vec4)> callback);
-	void SetStep(float step);
-	void SetSpeed(float speed);
-
-  private:
-	DragFloat *m_X = nullptr;
-	DragFloat *m_Y = nullptr;
-	DragFloat *m_Z = nullptr;
-	DragFloat *m_W = nullptr;
-	Delegate<void(vec4)> m_OnChanged;
 };
 
 } // namespace Aquila::UI::Core

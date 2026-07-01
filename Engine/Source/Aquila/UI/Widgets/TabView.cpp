@@ -37,7 +37,7 @@ View *TabView::AddTab(std::string title) {
 	auto btn = CreateUnique<Button>();
 	btn->SetText(title);
 	btn->AddClass("tab-button");
-	btn->SetOnClick([this, idx] { SetActiveTab(idx); });
+	btn->onClick.Connect([this, idx] { SetActiveTab(idx); });
 	Button *btnRaw = static_cast<Button *>(m_TabBar->AddChild(std::move(btn)));
 
 	auto panel = CreateUnique<View>();
@@ -67,14 +67,9 @@ void TabView::SetActiveTab(int index) {
 	}
 	m_ActiveTab = index;
 	ApplyActiveTab();
-	if (m_OnTabChanged) {
-		m_OnTabChanged(m_ActiveTab);
-	}
+	onTabChanged(m_ActiveTab);
 }
 
-void TabView::SetOnTabChanged(Delegate<void(int)> callback) {
-	m_OnTabChanged = std::move(callback);
-}
 
 void TabView::ApplyActiveTab() {
 	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {

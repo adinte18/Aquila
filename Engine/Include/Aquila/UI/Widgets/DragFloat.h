@@ -8,7 +8,17 @@ namespace Aquila::UI::Core {
 
 class DragFloat : public View {
   public:
+	struct Config {
+		float min = -1e18f;
+		float max = 1e18f;
+		float step = 0.f;
+		float speed = 1.f;
+		int precision = 3;
+		std::string prefix;
+	};
+
 	DragFloat();
+	explicit DragFloat(const Config &config);
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "DragFloat"; }
 
@@ -18,7 +28,7 @@ class DragFloat : public View {
 	void SetSpeed(float pixelsPerUnit);
 	void SetPrecision(int decimals);
 	void SetPrefix(std::string prefix);
-	void SetOnChanged(Delegate<void(float)> callback);
+	Signal<void(float)> onChanged;
 
 	[[nodiscard]] float GetValue() const { return m_Value; }
 
@@ -59,7 +69,6 @@ class DragFloat : public View {
 
 	static constexpr float kDragThreshold = 3.f;
 
-	Delegate<void(float)> m_OnChanged;
 };
 
 } // namespace Aquila::UI::Core

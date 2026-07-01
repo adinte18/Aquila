@@ -12,15 +12,18 @@ class Checkbox : public View {
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Checkbox"; }
 
 	void SetChecked(bool checked);
-	void SetOnChanged(Delegate<void(bool)> callback);
 	[[nodiscard]] bool IsChecked() const { return m_Checked; }
+
+	void SetValue(bool checked) { SetChecked(checked); }
+	[[nodiscard]] bool GetValue() const { return m_Checked; }
+
+	Signal<void(bool)> onChanged;
 
 	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 
   private:
 	bool m_Checked = false;
-	Delegate<void(bool)> m_OnChanged;
 };
 
 } // namespace Aquila::UI::Core

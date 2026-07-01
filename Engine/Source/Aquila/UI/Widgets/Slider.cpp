@@ -8,6 +8,7 @@ static constexpr float kHandlePad = kHandleSize * 0.5f;
 
 Slider::Slider() {
 	SetInputLeaf(true);
+	AddClass("slider");
 }
 
 void Slider::SetValue(float value) {
@@ -33,9 +34,6 @@ void Slider::SetStep(float step) {
 	SetValue(m_Value); // re-snap
 }
 
-void Slider::SetOnChanged(Delegate<void(float)> callback) {
-	m_OnChanged = std::move(callback);
-}
 
 float Slider::ValueFromX(float x) const {
 	const Rect rect = GetAbsoluteRect();
@@ -54,9 +52,7 @@ void Slider::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 		const float newVal = ValueFromX(pos.x);
 		if (newVal != m_Value) {
 			m_Value = newVal;
-			if (m_OnChanged) {
-				m_OnChanged(m_Value);
-			}
+			onChanged(m_Value);
 			QueueRedraw();
 		}
 	}
@@ -67,9 +63,7 @@ void Slider::OnMouseMove(vec2 pos) {
 	const float newVal = ValueFromX(pos.x);
 	if (newVal != m_Value) {
 		m_Value = newVal;
-		if (m_OnChanged) {
-			m_OnChanged(m_Value);
-		}
+		onChanged(m_Value);
 		QueueRedraw();
 	}
 }
@@ -85,6 +79,8 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 
 	const float t = (m_Max > m_Min) ? (m_Value - m_Min) / (m_Max - m_Min) : 0.f;
 
+	const vec4 accentColor = style.EffectiveAccentColor();
+
 	if (m_TrackTex) {
 		const float trackH = rect.size.y;
 		const Rect track = {
@@ -96,11 +92,10 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 		const float hx = rect.position.x + t * rect.size.x - kHandleSize * 0.5f;
 		const float hy = cy - kHandleSize * 0.5f;
 		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
-		drawList.DrawRect(handle, vec4(1.f), vec4(kHandleSize * 0.5f), 1.5f, vec4(0.f, 0.f, 0.f, 0.7f), z + 2);
+		const vec4 handleBorder = (style.borderColor.a > 0.f) ? style.borderColor : vec4(0.f, 0.f, 0.f, 0.7f);
+		const float handleBorderW = (style.borderWidth > 0.f) ? style.borderWidth : 1.5f;
+		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), handleBorderW, handleBorder, z + 2);
 	} else {
-		// Use accent-color for the fill; fall back to text color when accent-color was not set (alpha==0).
-		const vec4 accentColor = (style.accentColor.a > 0.f) ? style.accentColor : style.color;
-
 		const Rect track = {
 			.position = { rect.position.x + kHandlePad, cy - kTrackHeight * 0.5f },
 			.size = { rect.size.x - kHandlePad * 2.f, kTrackHeight },

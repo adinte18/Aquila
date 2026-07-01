@@ -13,14 +13,19 @@ class Toggle : public View {
 
 	void SetOn(bool on);
 	[[nodiscard]] bool IsOn() const { return m_On; }
-	void SetOnChanged(Delegate<void(bool)> callback);
+
+	void SetValue(bool on) { SetOn(on); }
+	[[nodiscard]] bool GetValue() const { return m_On; }
+
+	Signal<void(bool)> onChanged;
 
 	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 
   private:
+	void SyncStateClass();
+
 	bool m_On = false;
-	Delegate<void(bool)> m_OnChanged;
 };
 
 } // namespace Aquila::UI::Core

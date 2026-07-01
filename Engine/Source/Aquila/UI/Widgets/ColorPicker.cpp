@@ -140,9 +140,6 @@ void ColorPicker::SetColor(vec4 color) {
 	SyncAll();
 }
 
-void ColorPicker::SetOnChanged(Delegate<void(vec4)> callback) {
-	m_OnChanged = std::move(callback);
-}
 
 void ColorPicker::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	View::OnMousePress(btn, pos);
@@ -311,9 +308,7 @@ void ColorPicker::ApplyChannelValue(int idx, float rawValue) {
 	}
 
 	SyncAll();
-	if (m_OnChanged) {
-		m_OnChanged(m_Color);
-	}
+	onChanged(m_Color);
 }
 
 void ColorPicker::TogglePopup() {
@@ -402,7 +397,7 @@ void ColorPicker::Init() {
 	{
 		auto btn = CreateUnique<Button>();
 		btn->AddClass("cp-swatch");
-		btn->SetOnClick([this] { TogglePopup(); });
+		btn->onClick.Connect([this] { TogglePopup(); });
 		m_Swatch = AddChild(std::move(btn));
 	}
 
@@ -439,9 +434,7 @@ void ColorPicker::Init() {
 			m_Color.b = rgb.b;
 			RebuildAlphaTexture();
 			SyncAll();
-			if (m_OnChanged) {
-				m_OnChanged(m_Color);
-			}
+			onChanged(m_Color);
 		};
 		m_SVArea = static_cast<PickerArea *>(m_Popup->AddChild(std::move(sv)));
 	}
@@ -469,9 +462,7 @@ void ColorPicker::Init() {
 				}
 				RebuildAlphaTexture();
 				SyncAll();
-				if (m_OnChanged) {
-					m_OnChanged(m_Color);
-				}
+				onChanged(m_Color);
 			};
 			m_HueBar = static_cast<PickerArea *>(rowRaw->AddChild(std::move(hue)));
 		}
@@ -492,9 +483,7 @@ void ColorPicker::Init() {
 		alpha->m_OnPick = [this](vec2 n) {
 			m_Color.a = n.x;
 			SyncAll();
-			if (m_OnChanged) {
-				m_OnChanged(m_Color);
-			}
+			onChanged(m_Color);
 		};
 		m_AlphaBar = static_cast<PickerArea *>(m_Popup->AddChild(std::move(alpha)));
 	}
@@ -512,9 +501,9 @@ void ColorPicker::Init() {
 		m_RGBBtn = makeBtn("RGB");
 		m_HSVBtn = makeBtn("HSV");
 		m_HEXBtn = makeBtn("HEX");
-		m_RGBBtn->SetOnClick([this] { SetMode(Mode::RGB); });
-		m_HSVBtn->SetOnClick([this] { SetMode(Mode::HSV); });
-		m_HEXBtn->SetOnClick([this] { SetMode(Mode::HEX); });
+		m_RGBBtn->onClick.Connect([this] { SetMode(Mode::RGB); });
+		m_HSVBtn->onClick.Connect([this] { SetMode(Mode::HSV); });
+		m_HEXBtn->onClick.Connect([this] { SetMode(Mode::HEX); });
 	}
 
 	const char *labels[4] = { "R", "G", "B", "A" };
@@ -542,11 +531,11 @@ void ColorPicker::Init() {
 		}
 
 		const int idx = i;
-		m_Ch[i].slider->SetOnChanged([this, idx](float val) {
+		m_Ch[i].slider->onChanged.Connect([this, idx](float val) {
 			m_Ch[idx].input->SetText(FmtInt(static_cast<int>(std::round(val))));
 			ApplyChannelValue(idx, val);
 		});
-		m_Ch[i].input->SetOnSubmit([this, idx](const std::string &s) {
+		m_Ch[i].input->onSubmit.Connect([this, idx](const std::string &s) {
 			try {
 				const float val = static_cast<float>(std::stoi(s));
 				m_Ch[idx].slider->SetValue(val);
@@ -569,7 +558,7 @@ void ColorPicker::Init() {
 		{
 			auto ti = CreateUnique<TextInput>();
 			ti->AddClass("cp-hex-input");
-			ti->SetOnSubmit([this](const std::string &s) {
+			ti->onSubmit.Connect([this](const std::string &s) {
 				vec4 c;
 				if (ParseHex(s, c)) {
 					m_Color = c;
@@ -580,9 +569,7 @@ void ColorPicker::Init() {
 					RebuildSVTexture();
 					RebuildAlphaTexture();
 					SyncAll();
-					if (m_OnChanged) {
-						m_OnChanged(m_Color);
-					}
+					onChanged(m_Color);
 				}
 			});
 			m_HexInput = static_cast<TextInput *>(m_HexRow->AddChild(std::move(ti)));
