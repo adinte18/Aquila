@@ -1,4 +1,4 @@
-# Aquila - Vulkan PBR Rendering Engine
+# Aquila
 
 This project is my personal Vulkan-based engine built entirely from scratch with the primary goal of learning and exploring graphics programming and scalable (and maintanable) project architecture. It is still a work in progress, and its lacking comments and documentation (I am pretty inconsistent with this :/). It should come pretty soon though.
 

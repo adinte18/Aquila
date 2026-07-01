@@ -45,7 +45,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(${MODULE_NAME} PRIVATE
         -Wall -Wextra -Wpedantic
         -Wno-unused-parameter
-        -Wno-nullability-extension   # VMA uses _Nullable/_Nonnull (Apple Clang extension)
+        -Wno-nullability-extension
         -fcolor-diagnostics
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer -fno-inline>
         $<$<CONFIG:Release>:-O3>

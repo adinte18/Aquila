@@ -7,6 +7,23 @@
             "generator": "Ninja",
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
+                "CMAKE_EXPORT_COMPILE_COMMANDS": "ON"
+            }
+        },
+        {
+            "name": "windows-base",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
+                "CMAKE_C_COMPILER": "clang-cl",
+                "CMAKE_CXX_COMPILER": "clang-cl"
+            }
+        },
+        {
+            "name": "linux-base",
+            "hidden": true,
+            "inherits": "base",
+            "cacheVariables": {
                 "CMAKE_C_COMPILER": "clang",
                 "CMAKE_CXX_COMPILER": "clang++"
             }
@@ -14,7 +31,7 @@
         {
             "name": "windows-editor-debug",
             "displayName": "Windows | Editor | Debug",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -28,7 +45,7 @@
         {
             "name": "windows-editor-release",
             "displayName": "Windows | Editor | Release",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -42,7 +59,7 @@
         {
             "name": "windows-editor-relwithdebinfo",
             "displayName": "Windows | Editor | RelWithDebInfo",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -56,7 +73,7 @@
         {
             "name": "windows-engine-debug",
             "displayName": "Windows | Engine | Debug",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -70,7 +87,7 @@
         {
             "name": "windows-engine-release",
             "displayName": "Windows | Engine | Release",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -84,7 +101,7 @@
         {
             "name": "windows-engine-relwithdebinfo",
             "displayName": "Windows | Engine | RelWithDebInfo",
-            "inherits": "base",
+            "inherits": "windows-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -98,7 +115,7 @@
         {
             "name": "linux-editor-debug",
             "displayName": "Linux | Editor | Debug",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -112,7 +129,7 @@
         {
             "name": "linux-editor-release",
             "displayName": "Linux | Editor | Release",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -126,7 +143,7 @@
         {
             "name": "linux-editor-relwithdebinfo",
             "displayName": "Linux | Editor | RelWithDebInfo",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -140,7 +157,7 @@
         {
             "name": "linux-engine-debug",
             "displayName": "Linux | Engine | Debug",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -154,7 +171,7 @@
         {
             "name": "linux-engine-release",
             "displayName": "Linux | Engine | Release",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",
@@ -168,7 +185,7 @@
         {
             "name": "linux-engine-relwithdebinfo",
             "displayName": "Linux | Engine | RelWithDebInfo",
-            "inherits": "base",
+            "inherits": "linux-base",
             "condition": {
                 "type": "equals",
                 "lhs": "${hostSystemName}",

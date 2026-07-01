@@ -112,6 +112,23 @@ endif ()
 
 if (WIN32)
     add_compile_definitions(AQUILA_PLATFORM_WINDOWS)
+    # clang targets MSVC ABI (_M_AMD64) but the Windows SDK also checks _AMD64_ (DDK macro)
+    # in headers like winnt.h; define it explicitly.
+    add_compile_definitions(_AMD64_)
+    # Use the Windows SDK rc.exe directly. cmake_llvm_rc invokes clang via an 8.3 short path
+    # which can prevent clang from locating its resource directory; rc.exe has its own
+    # preprocessor and handles the .rc files correctly without the two-step wrapper.
+    file(GLOB _wdk_rc_candidates
+        "C:/Program Files (x86)/Windows Kits/10/bin/10.*/x64/rc.exe"
+    )
+    list(SORT _wdk_rc_candidates ORDER DESCENDING)
+    if (_wdk_rc_candidates)
+        list(GET _wdk_rc_candidates 0 _wdk_rc)
+        set(CMAKE_RC_COMPILER "${_wdk_rc}" CACHE FILEPATH "Windows SDK RC compiler" FORCE)
+    endif()
+    set(CMAKE_RC_COMPILER_LAUNCHER "" CACHE STRING "" FORCE)
+    set(CMAKE_RC_COMPILE_OBJECT
+        "<CMAKE_RC_COMPILER> <DEFINES> <INCLUDES> /fo<OBJECT> <SOURCE>")
 elseif (UNIX AND NOT APPLE)
     add_compile_definitions(AQUILA_PLATFORM_LINUX)
 elseif (APPLE)

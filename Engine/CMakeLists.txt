@@ -83,7 +83,19 @@ if(UNIX)
     set(ASSIMP_BUILD_MINIZIP ON CACHE BOOL "" FORCE)
 endif()
 
+set(ASSIMP_BUILD_USE_CCACHE OFF CACHE BOOL "" FORCE)
+
 add_subdirectory(${VENDOR_DIR}/assimp)
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    target_compile_options(assimp PRIVATE
+        -Wno-padded
+        -Wno-unsafe-buffer-usage
+        -Wno-unsafe-buffer-usage-in-libc-call
+        -Wno-switch-default
+        -Wno-nrvo
+        -Wno-unique-object-duplication
+    )
+endif()
 
 
 set(VMA_BUILD_DOCUMENTATION OFF CACHE BOOL "" FORCE)
