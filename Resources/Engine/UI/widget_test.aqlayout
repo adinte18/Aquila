@@ -5,23 +5,8 @@
             <View id="engine-logo">
                 <Image id="image-logo" src="Logo/16px.png"/>
             </View>
-            <Button id="btn-file" class="menu-btn">File</Button>
-            <Button id="btn-edit" class="menu-btn">Edit</Button>
-            <Button id="btn-view" class="menu-btn">View</Button>
-            <Button id="btn-window" class="menu-btn">Window</Button>
-        </View>
-        <View id="toolbar-center">
-            <Button id="btn-play" class="run-btn">
-                <Image id="image-play" src="Engine/UI/Icons/play.png"/>
-            </Button>
-            <Button id="btn-pause" class="run-btn">
-                <Image id="image-pause" src="Engine/UI/Icons/pause.png"/>
-            </Button>
-            <Button id="btn-stop" class="run-btn run-stop">
-                <Image id="image-stop" src="Engine/UI/Icons/square.png"/>
-            </Button>
-        </View>
-        <View id="toolbar-right">
+            <MenuBar id="main-menubar">
+            </MenuBar>
         </View>
     </View>
 

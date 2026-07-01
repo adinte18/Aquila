@@ -2,10 +2,17 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
+#include <sstream>
 
 namespace Aquila::UI::Core {
 
-Image::Image(GFX::GfxTexture *texture, vec4 tint) : m_Texture(texture), m_Tint(tint) {}
+Image::Image() {
+	m_ShouldSkipHitTest = true;
+}
+
+Image::Image(GFX::GfxTexture *texture, vec4 tint) : m_Texture(texture), m_Tint(tint) {
+	m_ShouldSkipHitTest = true;
+}
 
 void Image::SetTexture(GFX::GfxTexture *texture) {
 	if (texture == m_Texture) {
@@ -62,9 +69,35 @@ void Image::ApplyXmlAttribute(std::string_view name, std::string_view value, voi
 		}
 		return;
 	}
-	// icon/bank/uv: the LayoutLoader handles these together (they require cross-attribute
-	// coordination) — ignore them here so we don't double-apply them.
-	if (name == "icon" || name == "bank" || name == "uv") {
+	if (name == "bank") {
+		m_IconBank = std::string(value);
+		return;
+	}
+	if (name == "icon") {
+		auto *loader = static_cast<Core::LayoutLoader *>(loaderCtx);
+		if (loader == nullptr) {
+			return;
+		}
+		const std::string &bankName = m_IconBank.empty() ? std::string("default") : m_IconBank;
+		TextureIconBank *bank = loader->ResolveTextureIconBank(m_IconBank);
+		if (bank == nullptr) {
+			AQUILA_LOG_WARNING("Image: no TextureIconBank registered as '{}'", bankName);
+			return;
+		}
+		if (const IconEntry *entry = bank->GetIcon(std::string(value))) {
+			SetTexture(entry->texture);
+			SetUVRegion(entry->uvMin, entry->uvMax);
+		} else {
+			AQUILA_LOG_WARNING("Image: icon '{}' not found in bank '{}'", value, bankName);
+		}
+		return;
+	}
+	if (name == "uv") {
+		float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 1.f;
+		std::istringstream ss{ std::string(value) };
+		if (ss >> u0 >> v0 >> u1 >> v1) {
+			SetUVRegion({ u0, v0 }, { u1, v1 });
+		}
 		return;
 	}
 	View::ApplyXmlAttribute(name, value, loaderCtx);

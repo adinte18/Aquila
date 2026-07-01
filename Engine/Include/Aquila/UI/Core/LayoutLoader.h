@@ -41,6 +41,10 @@ class LayoutLoader {
 	TextureCache *m_TextureCache = nullptr;
 	std::unordered_map<std::string, TextureIconBank *> m_IconBanks;
 
+	template <typename T> void Register(const std::string &typeName) {
+		m_Factories[typeName] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<T>(); };
+	}
+
 	void RegisterBuiltins();
 };
 

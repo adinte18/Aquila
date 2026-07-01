@@ -20,6 +20,14 @@
 #include "Aquila/UI/Widgets/VecField.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
 #include "Aquila/UI/Widgets/TreeView.h"
+#include "Aquila/UI/Widgets/Separator.h"
+#include "Aquila/UI/Widgets/ProgressBar.h"
+#include "Aquila/UI/Widgets/Tooltip.h"
+#include "Aquila/UI/Widgets/Menubar.h"
+#include "Aquila/UI/Widgets/SearchBox.h"
+#include "Aquila/UI/Widgets/ListBox.h"
+#include "Aquila/UI/Widgets/AssetSlot.h"
+#include "Aquila/UI/Widgets/AssetCard.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 
@@ -141,7 +149,7 @@ struct Parser {
 		std::string imageIcon;
 		std::string imageBank;
 		std::string imageUV;
-		vec4 imageTint = vec4(1.f);
+		std::string imageTint;
 
 		SkipWS();
 		while (!AtEnd() && Peek() != '>' && Peek() != '/') {
@@ -203,9 +211,7 @@ struct Parser {
 			} else if (attrName == "uv") {
 				imageUV = attrValue;
 			} else if (attrName == "tint") {
-				if (auto parsed = UI::ParserHelper::ParseColor(attrValue)) {
-					imageTint = *parsed;
-				}
+				imageTint = attrValue;
 			} else {
 				UI::StyleParser::ApplyProperty(props, attrName, attrValue);
 			}
@@ -236,36 +242,21 @@ struct Parser {
 			view->SetFont(font);
 		}
 
-		if (imageTint != vec4(1.f)) {
-			if (auto *img = dynamic_cast<Image *>(view.get())) {
-				img->SetTint(imageTint);
-			}
+		LayoutLoader *loaderCtx = const_cast<LayoutLoader *>(&loader);
+		if (!imageTint.empty()) {
+			view->ApplyXmlAttribute("tint", imageTint, loaderCtx);
 		}
 		if (!imageSrc.empty()) {
-			view->ApplyXmlAttribute("src", imageSrc, const_cast<LayoutLoader *>(&loader));
+			view->ApplyXmlAttribute("src", imageSrc, loaderCtx);
 		}
-		if (auto *img = dynamic_cast<Image *>(view.get())) {
-			if (!imageIcon.empty()) {
-				if (TextureIconBank *bank = loader.ResolveTextureIconBank(imageBank)) {
-					if (const IconEntry *entry = bank->GetIcon(imageIcon)) {
-						img->SetTexture(entry->texture);
-						img->SetUVRegion(entry->uvMin, entry->uvMax);
-					} else {
-						AQUILA_LOG_WARNING("LayoutLoader: icon '{}' not found in bank '{}'", imageIcon,
-										   imageBank.empty() ? "default" : imageBank);
-					}
-				} else {
-					AQUILA_LOG_WARNING("LayoutLoader: no TextureIconBank registered as '{}'",
-									   imageBank.empty() ? "default" : imageBank);
-				}
-			}
-			if (!imageUV.empty()) {
-				float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 1.f;
-				std::istringstream ss(imageUV);
-				if (ss >> u0 >> v0 >> u1 >> v1) {
-					img->SetUVRegion({ u0, v0 }, { u1, v1 });
-				}
-			}
+		if (!imageBank.empty()) {
+			view->ApplyXmlAttribute("bank", imageBank, loaderCtx);
+		}
+		if (!imageIcon.empty()) {
+			view->ApplyXmlAttribute("icon", imageIcon, loaderCtx);
+		}
+		if (!imageUV.empty()) {
+			view->ApplyXmlAttribute("uv", imageUV, loaderCtx);
 		}
 
 		if (!AtEnd() && Peek() == '/') {
@@ -422,61 +413,41 @@ Unique<View> LayoutLoader::LoadString(std::string_view xml) {
 }
 
 void LayoutLoader::RegisterBuiltins() {
-	m_Factories["View"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<View>(); };
 	m_Factories["Label"] = [](std::string_view text, Text::FontAtlas *font) -> Unique<View> {
-		auto lbl = CreateUnique<Label>(std::string(text), font);
-		return lbl;
-	};
-	m_Factories["Button"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Button>(); };
-	m_Factories["Image"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Image>(); };
-	m_Factories["Checkbox"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Checkbox>();
-	};
-	m_Factories["Slider"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Slider>(); };
-	m_Factories["TextInput"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<TextInput>();
-	};
-	m_Factories["Popup"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Popup>(); };
-	m_Factories["ContextMenu"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<ContextMenu>();
-	};
-	m_Factories["NumberInput"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<NumberInput>();
-	};
-	m_Factories["DragFloat"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<DragFloat>();
-	};
-	m_Factories["DragInt"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<DragInt>();
-	};
-	m_Factories["Toggle"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<Toggle>(); };
-	m_Factories["ScrollView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<ScrollView>();
+		return CreateUnique<Label>(std::string(text), font);
 	};
 	m_Factories["Collapsible"] = [](std::string_view text, Text::FontAtlas *) -> Unique<View> {
 		return CreateUnique<Collapsible>(std::string(text));
 	};
-	m_Factories["TabView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<TabView>();
-	};
-	m_Factories["Dropdown"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Dropdown>();
-	};
-	m_Factories["Vec2Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Vec2Field>();
-	};
-	m_Factories["Vec3Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Vec3Field>();
-	};
-	m_Factories["Vec4Field"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<Vec4Field>();
-	};
-	m_Factories["PropertyGrid"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<PropertyGrid>();
-	};
-	m_Factories["TreeView"] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
-		return CreateUnique<TreeView>();
-	};
+
+	Register<View>("View");
+	Register<Button>("Button");
+	Register<Image>("Image");
+	Register<Checkbox>("Checkbox");
+	Register<Slider>("Slider");
+	Register<TextInput>("TextInput");
+	Register<Popup>("Popup");
+	Register<ContextMenu>("ContextMenu");
+	Register<NumberInput>("NumberInput");
+	Register<DragFloat>("DragFloat");
+	Register<DragInt>("DragInt");
+	Register<Toggle>("Toggle");
+	Register<ScrollView>("ScrollView");
+	Register<TabView>("TabView");
+	Register<Dropdown>("Dropdown");
+	Register<Vec2Field>("Vec2Field");
+	Register<Vec3Field>("Vec3Field");
+	Register<Vec4Field>("Vec4Field");
+	Register<PropertyGrid>("PropertyGrid");
+	Register<TreeView>("TreeView");
+	Register<Separator>("Separator");
+	Register<ProgressBar>("ProgressBar");
+	Register<Tooltip>("Tooltip");
+	Register<MenuBar>("MenuBar");
+	Register<SearchBox>("SearchBox");
+	Register<ListBox>("ListBox");
+	Register<AssetSlot>("AssetSlot");
+	Register<AssetCard>("AssetCard");
 }
 
 } // namespace Aquila::UI::Core

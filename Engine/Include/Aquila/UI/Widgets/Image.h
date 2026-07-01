@@ -7,7 +7,7 @@ namespace Aquila::UI::Core {
 
 class Image : public View {
   public:
-	Image() = default;
+	Image();
 	Image(GFX::GfxTexture *texture, vec4 tint = vec4(1.f));
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Image"; }
@@ -39,6 +39,7 @@ class Image : public View {
 	vec4 m_Tint = vec4(1.f);
 	vec2 m_UVMin = { 0.f, 0.f };
 	vec2 m_UVMax = { 1.f, 1.f };
+	std::string m_IconBank; // remembers the "bank" attribute so a later "icon" resolves against it
 };
 
 } // namespace Aquila::UI::Core
