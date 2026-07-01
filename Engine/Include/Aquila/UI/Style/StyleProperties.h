@@ -22,6 +22,8 @@ struct StyleProperties {
 	Option<StyleLength> paddingLeft, paddingRight, paddingTop, paddingBottom;
 	Option<f32> gap;
 
+	Option<f32> aspectRatio;
+
 	Option<FlexDirection> flexDirection;
 	Option<JustifyContent> justifyContent;
 	Option<AlignItems> alignItems;
@@ -34,6 +36,8 @@ struct StyleProperties {
 
 	Option<vec4> color;
 	Option<vec4> accentColor;
+	Option<vec4> selectionColor;
+	Option<vec4> placeholderColor;
 	Option<f32> fontSize;
 	Option<std::string> fontFamily;
 	Option<TextAlign> textAlign;

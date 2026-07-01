@@ -1,5 +1,6 @@
 #include "Aquila/UI/Style/StyleSheet.h"
 #include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Style/StylePropertyList.h"
 #include <cmath>
 
 namespace Aquila::UI {
@@ -87,9 +88,10 @@ ComputedStyle StyleSheet::Resolve(const Core::View &view, const ComputedStyle *p
 	ComputedStyle result;
 
 	if (parentComputed) {
-		result.color = parentComputed->color;
-		result.fontSize = parentComputed->fontSize;
-		result.fontFamily = parentComputed->fontFamily;
+#define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
+	AQ_STYLE_WHEN(inherit, result.cs = parentComputed->cs;)
+		AQ_STYLE_PROPERTY_LIST
+#undef AQ_STYLE_PROP
 	}
 
 	std::vector<const StyleRule *> matching;
@@ -160,34 +162,6 @@ bool StyleSheet::Matches(const StyleRule &rule, const Core::View &view) const {
 }
 
 void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &props) const {
-	if (props.backgroundColor) {
-		out.backgroundColor = *props.backgroundColor;
-	}
-	if (props.borderColor) {
-		out.borderColor = *props.borderColor;
-	}
-	if (props.borderWidth) {
-		out.borderWidth = *props.borderWidth;
-	}
-	if (props.borderRadius) {
-		out.borderRadius = *props.borderRadius;
-	}
-	if (props.opacity) {
-		out.opacity = *props.opacity;
-	}
-	if (props.overflow) {
-		out.overflow = *props.overflow;
-	}
-	if (props.display) {
-		out.display = *props.display;
-	}
-	if (props.width) {
-		out.width = *props.width;
-	}
-	if (props.height) {
-		out.height = *props.height;
-	}
-
 	if (props.min) {
 		out.minWidth = *props.min;
 		out.minHeight = *props.min;
@@ -196,22 +170,14 @@ void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &prop
 		out.maxWidth = *props.max;
 		out.maxHeight = *props.max;
 	}
-	if (props.minWidth) {
-		out.minWidth = *props.minWidth;
-	}
-	if (props.maxWidth) {
-		out.maxWidth = *props.maxWidth;
-	}
-	if (props.minHeight) {
-		out.minHeight = *props.minHeight;
-	}
-	if (props.maxHeight) {
-		out.maxHeight = *props.maxHeight;
-	}
 
-	if (props.padding) {
-		out.padding = *props.padding;
+#define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
+	if (props.sp) {                                        \
+		out.cs = *props.sp;                                \
 	}
+	AQ_STYLE_PROPERTY_LIST
+#undef AQ_STYLE_PROP
+
 	if (props.paddingLeft) {
 		out.padding.left = *props.paddingLeft;
 	}
@@ -223,69 +189,6 @@ void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &prop
 	}
 	if (props.paddingBottom) {
 		out.padding.bottom = *props.paddingBottom;
-	}
-	if (props.gap) {
-		out.gap = *props.gap;
-	}
-
-	if (props.flexDirection) {
-		out.flexDirection = *props.flexDirection;
-	}
-	if (props.justifyContent) {
-		out.justify = *props.justifyContent;
-	}
-	if (props.alignItems) {
-		out.align = *props.alignItems;
-	}
-	if (props.flexWrap) {
-		out.wrap = *props.flexWrap;
-	}
-	if (props.flexGrow) {
-		out.flexGrow = *props.flexGrow;
-	}
-
-	if (props.position) {
-		out.position = *props.position;
-	}
-	if (props.top) {
-		out.top = *props.top;
-	}
-	if (props.right) {
-		out.right = *props.right;
-	}
-	if (props.bottom) {
-		out.bottom = *props.bottom;
-	}
-	if (props.left) {
-		out.left = *props.left;
-	}
-	if (props.zIndex) {
-		out.zIndex = *props.zIndex;
-	}
-
-	if (props.color) {
-		out.color = *props.color;
-	}
-	if (props.accentColor) {
-		out.accentColor = *props.accentColor;
-	}
-	if (props.fontSize) {
-		out.fontSize = *props.fontSize;
-	}
-	if (props.fontFamily) {
-		out.fontFamily = *props.fontFamily;
-	}
-	if (props.transitionDuration) {
-		out.transitionDuration = *props.transitionDuration;
-	}
-	if (props.transitionEasing) {
-		out.transitionEasing = *props.transitionEasing;
-	}
-	if (props.textAlign) {
-		out.textAlign = *props.textAlign;
-	}
-	if (props.boxShadows) {
-		out.boxShadows = *props.boxShadows;
 	}
 }
 

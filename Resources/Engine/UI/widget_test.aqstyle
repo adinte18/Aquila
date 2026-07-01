@@ -1,34 +1,36 @@
 :root {
 
-    --bg-deep: #141414;
-    --bg-base: #1A1A1A;
-    --bg-panel: #1E1E1E;
-    --bg-muted: #222222;
-    --bg-surface: #252525;
-    --bg-widget: #2A2A2A;
-    --bg-hover: #2E2E2E;
+    --bg-deep: #0f1118;
+    --bg-base: #15171d;
+    --bg-panel: #1e212a;
+    --bg-muted: #252935;
+    --bg-surface: #2a2f3d;
+    --bg-widget: #2f3545;
+    --bg-hover: #363d50;
 
-    --border: #141414;
-    --border-ui: #333333;
-    --border-dim: #3A3A3A;
+    --border: #1a1d25;
+    --border-ui: #2f343f;
+    --border-dim: #3a4150;
 
-    --text: #CCCCCC;
-    --text-dim: #AAAAAA;
-    --text-muted: #888888;
-    --text-bright: #FFFFFF;
+    --text: #edeff3;
+    --text-dim: #9aa0ad;
+    --text-muted: #646b79;
+    --text-bright: #f8fafc;
 
-    --accent: #4A8FD4;
-    --accent-dark: #0D4A7A;
-    --accent-press: #0A3A60;
-    --accent-muted: #3A6EA8;
+    --accent: #3a92ff;
+    --accent-dark: #1a3a6e;
+    --accent-press: #0f2448;
+    --accent-muted: #5a80b8;
 
+    --danger: #e05a40;
+    --success: #4ab870;
 
-    --input-bg: #1A1A1A;
-    --input-border: #333333;
+    --input-bg: #0f1118;
+    --input-border: #2f343f;
+
+    --shadow-sm: 0px 2px 6px 0px rgba(0,0,0,0.45);
+    --shadow-pop: 0px 6px 22px 0px rgba(0,0,0,0.55);
 }
-
-
-
 
 #root {
     width: grow;
@@ -38,6 +40,7 @@
 }
 
 #toolbar {
+    box-shadow: var(--shadow-sm);
     width: 100%;
     height: 40px;
     flex-direction: row;
@@ -90,10 +93,10 @@
 
 .menu-btn {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text-dim);
     padding: 4px 10px;
-    border-radius: 3px;
+    border-radius: 5px;
     align-items: center;
     justify-content: center;
     transition: 80ms ease-out;
@@ -109,28 +112,84 @@
     color: var(--text-bright);
 }
 
+.menu-bar-item {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 4px 10px;
+    border-radius: 5px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.menu-bar-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.menu-bar-item:pressed {
+    background-color: var(--bg-surface);
+    color: var(--text);
+}
+
+.menu-dropdown {
+    box-shadow: var(--shadow-pop);
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-dim);
+    border-radius: 8px;
+    padding: 4px 0px;
+}
+
+.menu-item {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text);
+    padding: 5px 14px;
+    width: 100%;
+    align-items: center;
+    transition: 60ms ease-out;
+}
+
+.menu-item:hover {
+    background-color: var(--accent);
+    color: var(--text-bright);
+}
+
+.menu-item:pressed {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.menu-separator {
+    height: 1px;
+    width: 100%;
+    background-color: var(--border-dim);
+}
+
 .run-btn {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text);
     padding: 4px 16px;
-    border-radius: 3px;
+    border-radius: 6px;
     border-width: 1px;
-    border-color: #444444;
-    background-color: #333333;
+    border-color: var(--border-dim);
+    background-color: var(--bg-surface);
     align-items: center;
     justify-content: center;
     transition: 80ms ease-out;
 }
 
 .run-btn:hover {
-    background-color: #3D3D3D;
-    border-color: #666666;
+    background-color: var(--bg-hover);
+    border-color: var(--accent-muted);
     color: var(--text-bright);
 }
 
 .run-stop {
-    color: #E06060;
+    color: var(--danger);
     border-color: #5A2828;
     background-color: #2E1A1A;
 }
@@ -200,11 +259,29 @@
     gap: 0px;
 }
 
+.dock-tab-wrapper {
+    flex-direction: row;
+    flex-grow: 1;
+    height: 100%;
+    align-items: center;
+    transition: 60ms linear;
+}
+
+.dock-tab-wrapper:hover {
+    background-color: var(--bg-hover);
+}
+
+.dock-tab-active {
+    background-color: var(--bg-base);
+    border-color: var(--accent);
+    border-width: 1px;
+}
+
 .dock-tab-btn {
     font-family: regular;
     font-size: 13px;
     color: var(--text-muted);
-    padding: 0px 14px;
+    padding: 0px 10px;
     height: 100%;
     flex-grow: 1;
     border-radius: 0px;
@@ -213,16 +290,34 @@
     transition: 60ms linear;
 }
 
-.dock-tab-btn:hover {
-    background-color: var(--bg-hover);
+.dock-tab-btn-active {
+    color: var(--text-bright);
+}
+
+.dock-tab-close-btn {
+    font-family: regular;
+    font-size: 11px;
+    color: var(--text-muted);
+    width: 18px;
+    height: 18px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    transition: 60ms linear;
+}
+
+.dock-tab-close-btn:hover {
+    background-color: rgba(255, 80, 80, 0.18);
     color: var(--text);
 }
 
-.dock-tab-active {
-    background-color: var(--bg-base);
-    color: var(--text-bright);
-    border-color: var(--accent);
-    border-width: 1px;
+.dock-tab-close-btn:pressed {
+    background-color: rgba(255, 80, 80, 0.35);
+}
+
+.dock-node-empty {
+    align-items: center;
+    justify-content: center;
 }
 
 .dock-panel {
@@ -250,7 +345,7 @@
 .dock-drop-target {
     border-color: var(--accent-muted);
     border-width: 1px;
-    background-color: rgba(74, 143, 212, 0.04);
+    background-color: rgba(58, 146, 255, 0.04);
 }
 
 .dock-zone-center-ind {
@@ -261,7 +356,7 @@
 .dock-zone-indicator {
     width: 40px;
     height: 40px;
-    background-color: rgba(74, 143, 212, 0.18);
+    background-color: rgba(58, 146, 255, 0.18);
     border-color: var(--accent);
     border-width: 2px;
     border-radius: 6px;
@@ -272,17 +367,16 @@
 }
 
 .dock-zone-indicator-active {
-    background-color: rgba(74, 143, 212, 0.55);
+    background-color: rgba(58, 146, 255, 0.55);
     border-color: var(--text-bright);
 }
 
-.dock-tab-btn:pressed {
-    color: var(--text-muted);
+.dock-tab-wrapper:pressed {
     background-color: var(--bg-surface);
 }
 
 .dock-drop-preview {
-    background-color: rgba(74, 143, 212, 0.20);
+    background-color: rgba(58, 146, 255, 0.18);
     border-color: var(--accent);
     border-width: 2px;
     border-radius: 3px;
@@ -334,7 +428,7 @@
 
 .tree-item {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text);
     width: 100%;
     height: 24px;
@@ -375,20 +469,156 @@
     height: grow;
 }
 
+#console-root {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+}
+
+#console-toolbar {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 32px;
+    padding: 0px 6px;
+    gap: 6px;
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.console-clear-btn {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-muted);
+    padding: 3px 8px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    transition: 60ms ease-out;
+}
+
+.console-clear-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.console-clear-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.console-toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background-color: var(--border-dim);
+}
+
+.console-filter-btn {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border-radius: 3px;
+    transition: 60ms ease-out;
+}
+
+.console-filter-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.console-filter-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.console-filter-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.console-filter-count {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
 #console-scroll {
     flex-direction: column;
     width: 100%;
-    padding: 8px;
-    background-color : #db2f2f
 }
 
-.console-text {
-    font-family: medium;
-    font-size: 256px;
-    color: #F0F0F0;
+.console-row {
+    flex-direction: row;
+    align-items: center;
     width: 100%;
-    padding: 6px 2px;
-    background-color: #0A3A60;
+    height: 22px;
+    padding: 0px 6px;
+    gap: 6px;
+    transition: 60ms ease-out;
+}
+
+.console-row-even {
+    background-color: var(--bg-panel);
+}
+
+.console-row-odd {
+    background-color: var(--bg-base);
+}
+
+.console-row:hover {
+    background-color: var(--bg-hover);
+}
+
+.console-row-selected {
+    background-color: var(--accent-press);
+    border-color: var(--accent-muted);
+    border-width: 1px;
+}
+
+.console-warning {
+    background-color: rgba(180, 140, 40, 0.08);
+}
+
+.console-error {
+    background-color: rgba(180, 70, 70, 0.10);
+}
+
+.console-critical {
+    background-color: rgba(220, 50, 50, 0.14);
+}
+
+.console-row-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.console-row-text {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+    flex-grow: 1;
+}
+
+#console-divider {
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-dim);
+}
+
+#console-detail {
+    flex-direction: column;
+    width: 100%;
+    height: 60px;
+    padding: 6px 8px;
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+#console-detail-text {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 100%;
 }
 
 #inspector-scroll {
@@ -401,7 +631,7 @@
 .inspector-entity-name {
     font-family: medium;
     font-size: 16px;
-    color: #F0F0F0;
+    color: var(--text-bright);
     width: 100%;
     height: 24px;
     padding: 100px;
@@ -416,28 +646,28 @@
     width: 100%;
     height: auto;
     padding: 0px 10px;
-    background-color: #2D2D2D;
+    background-color: var(--bg-surface);
     border-color: var(--border-dim);
     border-width: 1px;
-    border-radius: 4px;
+    border-radius: 7px;
     align-items: center;
     justify-content: start;
     transition: 60ms linear;
 }
 
 .collapsible-header:hover {
-    background-color: #383838;
-    color: #EEEEEE;
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
 }
 
 .collapsible-content {
     flex-direction: column;
     align-items: stretch;
     width: 100%;
-    background-color: #262626;
+    background-color: var(--bg-muted);
     border-color: var(--border-ui);
     border-width: 1px;
-    border-radius: 4px;
+    border-radius: 7px;
     padding: 8px;
     gap: 5px;
 }
@@ -474,8 +704,8 @@
 .comp-block {
     flex-direction: column;
     width: 100%;
-    background-color: #282828;
-    border-radius: 3px;
+    background-color: var(--bg-surface);
+    border-radius: 7px;
     border-width: 1px;
     border-color: var(--border-ui);
     padding: 6px;
@@ -493,9 +723,9 @@
 }
 
 .comp-name {
-    font-family: regular;
-    font-size: 15px;
-    color: var(--text);
+    font-family: medium;
+    font-size: 13px;
+    color: var(--text-bright);
     width: grow;
 }
 
@@ -508,8 +738,8 @@
 
 .prop-lbl {
     font-family: regular;
-    font-size: 15px;
-    color: #999999;
+    font-size: 13px;
+    color: var(--text-dim);
     width: 64px;
 }
 
@@ -522,7 +752,7 @@
 
 .axis-label {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text-muted);
     width: 16px;
 }
@@ -544,10 +774,10 @@
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 3px;
-    color: #DDDDDD;
+    border-radius: 5px;
+    color: var(--text);
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
@@ -559,12 +789,12 @@
     flex-grow: 1;
     height: 24px;
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text-dim);
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 3px;
+    border-radius: 5px;
     align-items: center;
     justify-content: center;
     transition: 60ms ease-out;
@@ -572,7 +802,7 @@
 
 .asset-ref:hover {
     background-color: var(--bg-muted);
-    border-color: #555555;
+    border-color: var(--border-dim);
     color: var(--text);
 }
 
@@ -595,10 +825,10 @@
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--border-dim);
-    border-radius: 3px;
-    color: #EEEEEE;
+    border-radius: 5px;
+    color: var(--text-bright);
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     transition: 80ms ease-out;
 }
 
@@ -612,10 +842,10 @@
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 3px;
-    color: #DDDDDD;
+    border-radius: 5px;
+    color: var(--text);
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
@@ -646,24 +876,33 @@ TextInput {
     overflow: hidden;
 }
 
+.text-input {
+    selection-color: #3a92ff38;
+    placeholder-color: var(--text-muted);
+}
+
+.drag-float {
+    selection-color: #3a92ff38;
+}
+
 Checkbox {
     width: 16px;
     height: 16px;
     background-color: var(--input-bg);
-    border-radius: 3px;
+    border-radius: 4px;
     border-width: 1px;
-    border-color: #444444;
+    border-color: var(--border-dim);
     color: var(--accent);
     transition: 80ms ease-out;
 }
 
 Checkbox:hover {
     background-color: var(--bg-surface);
-    border-color: #666666;
+    border-color: var(--accent-muted);
 }
 
 Checkbox:pressed {
-    background-color: #111111;
+    background-color: var(--input-bg);
     border-color: var(--accent);
 }
 
@@ -672,9 +911,22 @@ Slider {
     color: var(--accent);
 }
 
+.slider {
+    accent-color: var(--accent);
+}
+
 Toggle {
     width: 38px;
     height: 20px;
+}
+
+.toggle {
+    accent-color: #1e2535;
+    color: var(--text-bright);
+}
+
+.toggle-on {
+    accent-color: var(--accent);
 }
 
 
@@ -684,19 +936,19 @@ DragFloat {
     width: grow;
     height: 24px;
     min-width: 0px;
-    background-color: #1C1C1C;
+    background-color: var(--input-bg);
     border-width: 1px;
-    border-color: #3C3C3C;
-    border-radius: 3px;
-    color: #E0E0E0;
+    border-color: var(--input-border);
+    border-radius: 5px;
+    color: var(--text);
     font-family: regular;
     font-size: 13px;
     transition: 60ms ease-out;
 }
 
 DragFloat:hover {
-    border-color: #5A5A5A;
-    background-color: #232323;
+    border-color: var(--accent-muted);
+    background-color: var(--bg-muted);
 }
 
 DragFloat:focus {
@@ -787,24 +1039,25 @@ Vec4Field {
 
 
 ContextMenu {
+    box-shadow: var(--shadow-pop);
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border);
-    border-radius: 3px;
+    border-radius: 8px;
     padding: 5px;
     width: 160px;
 }
 
 .context-item {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text);
     width: 100%;
     height: 24px;
     padding: 0px 12px;
     align-items: center;
     justify-content: start;
-    border-radius: 3px;
+    border-radius: 5px;
     transition: 60ms ease-out;
 }
 
@@ -827,7 +1080,7 @@ ContextMenu {
 
 .tree-node-header {
     font-family: regular;
-    font-size: 15px;
+    font-size: 13px;
     color: var(--text);
     width: 100%;
     height: 24px;
@@ -875,14 +1128,15 @@ ContextMenu {
 }
 
 .cp-popup {
+    box-shadow: var(--shadow-pop);
     flex-direction: column;
     gap: 6px;
     padding: 8px;
     width: 220px;
-    background-color: #212125;
-    border-radius: 6px;
+    background-color: var(--bg-panel);
+    border-radius: 10px;
     border-width: 1px;
-    border-color: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.07);
 }
 
 .cp-sv-area {
@@ -1022,6 +1276,153 @@ ContextMenu {
 
 .cp-hex-input:focus {
     border-color: var(--accent);
+}
+
+.ui-debug-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+.floating-panel-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+.floating-panel-header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 26px;
+    padding: 0px 10px;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.floating-panel-title {
+    font-family: medium;
+    font-size: 12px;
+    color: var(--text-dim);
+    width: grow;
+}
+
+.floating-panel-body {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+}
+
+.ui-debug-window {
+    width: 380px;
+    height: 480px;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border-width: 1px;
+    border-color: var(--border-dim);
+    border-radius: 8px;
+    box-shadow: var(--shadow-pop);
+    overflow: hidden;
+}
+
+.ui-debug-header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    padding: 0px 10px;
+    gap: 8px;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.ui-debug-title {
+    font-family: medium;
+    font-size: 13px;
+    color: var(--text-bright);
+    width: grow;
+}
+
+.ui-debug-refresh {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+    padding: 3px 10px;
+    border-radius: 4px;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.ui-debug-refresh:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.ui-debug-body {
+    width: 100%;
+    height: grow;
+}
+
+.ui-debug-tree-host {
+    flex-direction: column;
+    width: 100%;
+    padding: 4px;
+}
+
+.ui-debug-tree-pane {
+    width: 100%;
+    height: grow;
+}
+
+.ui-debug-detail-pane {
+    width: 100%;
+    height: grow;
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.ui-debug-details {
+    flex-direction: column;
+    width: 100%;
+    padding: 6px 8px;
+    gap: 2px;
+}
+
+.ui-debug-section {
+    font-family: medium;
+    font-size: 12px;
+    color: var(--accent-muted);
+    width: 100%;
+    padding: 6px 0px 2px 0px;
+}
+
+.ui-debug-row {
+    flex-direction: row;
+    width: 100%;
+    gap: 8px;
+}
+
+.ui-debug-key {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 110px;
+}
+
+.ui-debug-val {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+    flex-grow: 1;
 }
 
 .floating-backdrop {

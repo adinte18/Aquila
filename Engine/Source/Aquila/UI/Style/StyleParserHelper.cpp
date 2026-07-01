@@ -330,6 +330,14 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 		if (auto color = ParseColor(value)) {
 			props.accentColor = *color;
 		}
+	} else if (prop == "selection-color") {
+		if (auto color = ParseColor(value)) {
+			props.selectionColor = *color;
+		}
+	} else if (prop == "placeholder-color") {
+		if (auto color = ParseColor(value)) {
+			props.placeholderColor = *color;
+		}
 
 		// ── border ──
 	} else if (prop == "border-width") {
@@ -395,6 +403,15 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 	} else if (prop == "gap") {
 		if (auto l = ParseLength(value)) {
 			props.gap = l->unit == LengthUnit::Pixel ? l->value : 0.f;
+		}
+	} else if (prop == "aspect-ratio") {
+		const size_t slash = value.find('/');
+		if (slash != std::string_view::npos) {
+			const float w = ParseFloat(value.substr(0, slash));
+			const float h = ParseFloat(value.substr(slash + 1));
+			props.aspectRatio = (h != 0.f) ? (w / h) : 0.f;
+		} else {
+			props.aspectRatio = ParseFloat(value);
 		}
 	} else if (prop == "padding") {
 		if (auto e = ParseEdges(value)) {

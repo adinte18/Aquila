@@ -24,6 +24,7 @@ struct ComputedStyle {
 
 	StyleEdges padding = StyleDefaults::Padding;
 	f32 gap = 0.f;
+	f32 aspectRatio = 0.f; // 0 = unset (width/height ratio when one axis is auto)
 
 	FlexDirection flexDirection = StyleDefaults::FlexDir;
 	JustifyContent justify = StyleDefaults::Justify;
@@ -42,6 +43,8 @@ struct ComputedStyle {
 	Overflow overflow = StyleDefaults::Overflow;
 	vec4 color = StyleDefaults::Color;
 	vec4 accentColor = vec4(0.f); // transparent sentinel; if alpha==0 widgets fall back to style.color
+	vec4 selectionColor = vec4(0.f); // transparent sentinel; if alpha==0 widgets derive from style.color
+	vec4 placeholderColor = vec4(0.f); // transparent sentinel; if alpha==0 widgets derive from style.color
 
 	f32 fontSize = StyleDefaults::FontSize; // 0 = unset / inherit from parent
 	std::string fontFamily; // "" = unset / inherit from parent
@@ -52,19 +55,15 @@ struct ComputedStyle {
 	f32 transitionDuration = StyleDefaults::TransitionDuration; // ms
 	TransitionEasing transitionEasing = StyleDefaults::TransitionEase;
 
-	bool operator==(const ComputedStyle &b) const {
-		return backgroundColor == b.backgroundColor && borderColor == b.borderColor && borderRadius == b.borderRadius &&
-			borderWidth == b.borderWidth && opacity == b.opacity && width == b.width && height == b.height &&
-			minWidth == b.minWidth && maxWidth == b.maxWidth && minHeight == b.minHeight && maxHeight == b.maxHeight &&
-			padding == b.padding && gap == b.gap && flexDirection == b.flexDirection && justify == b.justify &&
-			align == b.align && wrap == b.wrap && flexGrow == b.flexGrow && position == b.position && top == b.top &&
-			bottom == b.bottom && left == b.left && right == b.right && zIndex == b.zIndex && display == b.display &&
-			overflow == b.overflow && color == b.color && accentColor == b.accentColor && fontSize == b.fontSize &&
-			fontFamily == b.fontFamily && textAlign == b.textAlign && boxShadows == b.boxShadows &&
-			transitionDuration == b.transitionDuration && transitionEasing == b.transitionEasing;
-	}
+	bool operator==(const ComputedStyle &b) const = default;
 
-	bool operator!=(const ComputedStyle &b) const { return !(*this == b); }
+	[[nodiscard]] vec4 EffectiveAccentColor() const { return accentColor.a > 0.f ? accentColor : color; }
+	[[nodiscard]] vec4 EffectiveSelectionColor() const {
+		return selectionColor.a > 0.f ? selectionColor : vec4(color.r, color.g, color.b, 0.3f);
+	}
+	[[nodiscard]] vec4 EffectivePlaceholderColor() const {
+		return placeholderColor.a > 0.f ? placeholderColor : vec4(color.r, color.g, color.b, color.a * 0.45f);
+	}
 };
 
 } // namespace Aquila::UI
