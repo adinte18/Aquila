@@ -13,7 +13,7 @@ class IRHISwapchain {
 	IRHISwapchain &operator=(const IRHISwapchain &) = delete;
 
 	// Returns false when the swapchain is out-of-date (must call Resize before next frame).
-	virtual bool AcquireNextImage(uint32 &outImageIndex) = 0;
+	virtual bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) = 0;
 
 	[[nodiscard]] virtual uint32 GetWidth() const = 0;
 	[[nodiscard]] virtual uint32 GetHeight() const = 0;

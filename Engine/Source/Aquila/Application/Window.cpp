@@ -10,10 +10,12 @@ static void GLFWErrorCallback(int error, const char *description) {
 	AQUILA_LOG_ERROR("GLFW Error ({}): {}", error, description);
 }
 
-Window::Window(const uint32 width, const uint32 height, const std::string &title) {
+Window::Window(const uint32 width, const uint32 height, const std::string &title, bool maximized) {
 	m_Data.Title = title;
 	m_Data.Width = width;
 	m_Data.Height = height;
+	m_Data.Owner = this;
+	m_StartMaximized = maximized;
 
 	Initialize();
 }
@@ -36,7 +38,9 @@ void Window::Initialize() {
 	m_Window = glfwCreateWindow(m_Data.Width, m_Data.Height, m_Data.Title.c_str(), nullptr, nullptr);
 
 	glfwSetWindowUserPointer(m_Window, &m_Data);
-	glfwMaximizeWindow(m_Window);
+	if (m_StartMaximized) {
+		glfwMaximizeWindow(m_Window);
+	}
 	SetupCallbacks();
 
 	// Sync dimensions after maximize — the WM_SIZE fires before SetupCallbacks so
@@ -53,7 +57,7 @@ void Window::SetTitle(const std::string &text) const {
 	const auto title = std::string(m_Data.Title + " | " + text);
 	glfwSetWindowTitle(m_Window, title.c_str());
 }
-void Window::SetupCallbacks() const {
+void Window::SetupCallbacks() {
 	glfwSetWindowSizeCallback(m_Window, [](GLFWwindow *window, int width, int height) {
 		WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		data.Width = width;
@@ -61,31 +65,38 @@ void Window::SetupCallbacks() const {
 		data.Resized = true;
 
 		Events::WindowResizeEvent event(width, height);
+		event.SetSource(data.Owner);
 		data.EventCallback(event);
 	});
 
 	glfwSetWindowCloseCallback(m_Window, [](GLFWwindow *window) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Events::WindowCloseEvent event(static_cast<bool>(glfwWindowShouldClose(window)));
+		event.SetSource(data.Owner);
 		data.EventCallback(event);
 	});
 
 	glfwSetKeyCallback(m_Window, [](GLFWwindow *window, int key, int scancode, int action, int mods) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-
 		switch (action) {
 		case GLFW_PRESS: {
 			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 0, mods);
+			event.SetSource(data.Owner);
+
 			data.EventCallback(event);
 			break;
 		}
 		case GLFW_RELEASE: {
 			Events::KeyReleasedEvent event(static_cast<Events::KeyCode>(key));
+			event.SetSource(data.Owner);
+
 			data.EventCallback(event);
 			break;
 		}
 		case GLFW_REPEAT: {
 			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 1, mods);
+			event.SetSource(data.Owner);
+
 			data.EventCallback(event);
 			break;
 		}
@@ -96,6 +107,8 @@ void Window::SetupCallbacks() const {
 	glfwSetCharCallback(m_Window, [](GLFWwindow *window, unsigned int keycode) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Events::KeyTypedEvent event(static_cast<Events::KeyCode>(keycode));
+		event.SetSource(data.Owner);
+
 		data.EventCallback(event);
 	});
 
@@ -105,11 +118,15 @@ void Window::SetupCallbacks() const {
 		switch (action) {
 		case GLFW_PRESS: {
 			Events::MouseButtonPressedEvent event(static_cast<Events::MouseButton>(button));
+			event.SetSource(data.Owner);
+
 			data.EventCallback(event);
 			break;
 		}
 		case GLFW_RELEASE: {
 			Events::MouseButtonReleasedEvent event(static_cast<Events::MouseButton>(button));
+			event.SetSource(data.Owner);
+
 			data.EventCallback(event);
 			break;
 		}
@@ -120,6 +137,8 @@ void Window::SetupCallbacks() const {
 	glfwSetScrollCallback(m_Window, [](GLFWwindow *window, const f64 xOffset, const f64 yOffset) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Events::MouseScrolledEvent event(static_cast<f32>(xOffset), static_cast<f32>(yOffset));
+		event.SetSource(data.Owner);
+
 		data.EventCallback(event);
 	});
 
@@ -134,6 +153,8 @@ void Window::SetupCallbacks() const {
 	glfwSetWindowFocusCallback(m_Window, [](GLFWwindow *window, const int focused) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Events::WindowFocusEvent event(focused == GLFW_TRUE);
+		event.SetSource(data.Owner);
+
 		data.EventCallback(event);
 	});
 
@@ -149,22 +170,22 @@ void Window::SetupCallbacks() const {
 	});
 }
 
-void Window::PollEvents() {
-	glfwPollEvents();
+void Window::FlushPendingEvents() {
 	if (m_Data.HasPendingMouseMove) {
 		Events::MouseMovedEvent event(m_Data.LastMouseX, m_Data.LastMouseY);
+		event.SetSource(m_Data.Owner);
+
 		m_Data.EventCallback(event);
 		m_Data.HasPendingMouseMove = false;
 	}
 }
 
+void Window::PollEvents() {
+	glfwPollEvents();
+}
+
 void Window::WaitEvents() {
 	glfwWaitEvents();
-	if (m_Data.HasPendingMouseMove) {
-		Events::MouseMovedEvent event(m_Data.LastMouseX, m_Data.LastMouseY);
-		m_Data.EventCallback(event);
-		m_Data.HasPendingMouseMove = false;
-	}
 }
 
 bool Window::ShouldClose() const {

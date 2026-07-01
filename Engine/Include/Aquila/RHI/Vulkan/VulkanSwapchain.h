@@ -15,12 +15,13 @@ class VulkanSwapchain final : public IRHISwapchain {
   public:
 	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync);
 	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, Ref<VulkanSwapchain> previous);
+	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, VkSurfaceKHR surface, bool ownsSurface);
 	~VulkanSwapchain() override;
 
 	AQUILA_NONCOPYABLE(VulkanSwapchain);
 
 	// IRHISwapchain semaphores managed internally per frame
-	bool AcquireNextImage(uint32 &outImageIndex) override;
+	bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) override;
 	[[nodiscard]] bool NeedsResize() const override { return m_NeedsResize; }
 	void Resize(uint32 width, uint32 height) override;
 
@@ -86,6 +87,8 @@ class VulkanSwapchain final : public IRHISwapchain {
 	VulkanDevice &m_Device;
 	VkExtent2D m_WindowExtent;
 	bool m_VSyncEnabled = false;
+	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+	bool m_OwnsSurface = false;
 	VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
 	Ref<VulkanSwapchain> m_OldSwapchain;
 

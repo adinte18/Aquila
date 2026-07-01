@@ -273,6 +273,7 @@ struct SwapchainDesc {
 	TextureFormat format = TextureFormat::BGRA8;
 	uint32 imageCount = 2;
 	bool vsync = true;
+	void *nativeWindowHandle = nullptr;
 };
 
 enum class PrimitiveTopology : uint8 {

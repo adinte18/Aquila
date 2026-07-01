@@ -19,12 +19,13 @@ class Window {
   public:
 	using EventCallbackFn = std::function<void(Events::Event &)>;
 
-	Window(uint32 width, uint32 height, const std::string &title);
+	Window(uint32 width, uint32 height, const std::string &title, bool maximized = true);
 	~Window();
 
 	void PollEvents();
 	void WaitEvents();
 	bool ShouldClose() const;
+	void FlushPendingEvents();
 
 	uint32 GetWidth() const { return m_Data.Width; }
 	uint32 GetHeight() const { return m_Data.Height; }
@@ -45,10 +46,11 @@ class Window {
   private:
 	void Initialize();
 	void Shutdown() const;
-	void SetupCallbacks() const;
+	void SetupCallbacks();
 	GLFWwindow *m_Window;
 
 	struct WindowData {
+		Window *Owner = nullptr;
 		std::string Title;
 		uint32 Width, Height;
 		bool Resized = false;
@@ -59,6 +61,7 @@ class Window {
 	};
 
 	WindowData m_Data;
+	bool m_StartMaximized = true;
 };
 
 } // namespace Aquila::Application

@@ -118,7 +118,33 @@ Unique<IRHICommandList> VulkanDevice::CreateCommandList(CommandListType type, co
 
 Unique<IRHISwapchain> VulkanDevice::CreateSwapchain(const SwapchainDesc &desc) {
 	VkExtent2D extent{ desc.width, desc.height };
+	if (desc.nativeWindowHandle != nullptr) {
+		VkSurfaceKHR surface = CreateSurfaceForWindow(static_cast<GLFWwindow *>(desc.nativeWindowHandle));
+		return CreateUnique<VulkanSwapchain>(*this, extent, desc.vsync, surface, true);
+	}
 	return CreateUnique<VulkanSwapchain>(*this, extent, desc.vsync);
+}
+
+VkSurfaceKHR VulkanDevice::CreateSurfaceForWindow(GLFWwindow *window) const {
+	VkSurfaceKHR surface = VK_NULL_HANDLE;
+	if (glfwCreateWindowSurface(m_VulkanInstance, window, nullptr, &surface) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create window surface for secondary window!");
+	}
+
+	const VkQueueFamilyIndices indices = FindQueueFamilies(m_PhysicalDevice);
+	VkBool32 presentSupported = VK_FALSE;
+	vkGetPhysicalDeviceSurfaceSupportKHR(m_PhysicalDevice, indices.m_PresentFamily.value(), surface, &presentSupported);
+	if (presentSupported != VK_TRUE) {
+		AQUILA_LOG_ERROR("VulkanDevice: present queue family does not support the secondary window surface");
+	}
+
+	return surface;
+}
+
+void VulkanDevice::DestroySurfaceHandle(VkSurfaceKHR surface) const {
+	if (surface != VK_NULL_HANDLE) {
+		vkDestroySurfaceKHR(m_VulkanInstance, surface, nullptr);
+	}
 }
 
 Unique<IRHIRenderPass> VulkanDevice::CreateRenderPass(const RHI::RenderPassDesc &desc) {
@@ -953,7 +979,7 @@ bool VulkanDevice::IsSuitable(const VkPhysicalDevice vkPhysicalDevice) {
 
 	bool swapChainAdequate = false;
 	if (extensionSupported) {
-		const VkSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(vkPhysicalDevice);
+		const VkSwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(vkPhysicalDevice, m_Surface);
 		swapChainAdequate = !swapChainSupport.m_Formats.empty() && !swapChainSupport.m_PresentModes.empty();
 	}
 
@@ -1032,23 +1058,24 @@ VkQueueFamilyIndices VulkanDevice::FindQueueFamilies(const VkPhysicalDevice vkPh
 	return indices;
 }
 
-VkSwapChainSupportDetails VulkanDevice::QuerySwapChainSupport(VkPhysicalDevice vkPhysicalDevice) const {
+VkSwapChainSupportDetails VulkanDevice::QuerySwapChainSupport(VkPhysicalDevice vkPhysicalDevice,
+															  VkSurfaceKHR surface) const {
 	VkSwapChainSupportDetails details;
 
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, m_Surface, &details.m_SurfaceCapabilities);
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vkPhysicalDevice, surface, &details.m_SurfaceCapabilities);
 
 	uint32 formatCount = 0;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, m_Surface, &formatCount, nullptr);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, surface, &formatCount, nullptr);
 	if (formatCount != 0) {
 		details.m_Formats.resize(formatCount);
-		vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, m_Surface, &formatCount, details.m_Formats.data());
+		vkGetPhysicalDeviceSurfaceFormatsKHR(vkPhysicalDevice, surface, &formatCount, details.m_Formats.data());
 	}
 
 	uint32 presentModeCount = 0;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, m_Surface, &presentModeCount, nullptr);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, surface, &presentModeCount, nullptr);
 	if (presentModeCount != 0) {
 		details.m_PresentModes.resize(presentModeCount);
-		AQUILA_VULKAN_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, m_Surface, &presentModeCount,
+		AQUILA_VULKAN_CHECK(vkGetPhysicalDeviceSurfacePresentModesKHR(vkPhysicalDevice, surface, &presentModeCount,
 																	  details.m_PresentModes.data()));
 	}
 

@@ -8,14 +8,21 @@
 namespace Aquila::RHI {
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync)
-	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync) {
+	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync), m_Surface(device.GetSurface()) {
 	Initialize();
 }
 
 VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, Ref<VulkanSwapchain> previous)
-	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync), m_OldSwapchain(std::move(previous)) {
+	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync), m_Surface(device.GetSurface()),
+	  m_OldSwapchain(std::move(previous)) {
 	Initialize();
 	m_OldSwapchain = nullptr;
+}
+
+VulkanSwapchain::VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, VkSurfaceKHR surface,
+								 bool ownsSurface)
+	: m_Device(device), m_WindowExtent(extent), m_VSyncEnabled(vsync), m_Surface(surface), m_OwnsSurface(ownsSurface) {
+	Initialize();
 }
 
 VulkanSwapchain::~VulkanSwapchain() {
@@ -54,6 +61,11 @@ VulkanSwapchain::~VulkanSwapchain() {
 		m_Swapchain = VK_NULL_HANDLE;
 	}
 
+	if (m_OwnsSurface && m_Surface != VK_NULL_HANDLE) {
+		m_Device.DestroySurfaceHandle(m_Surface);
+		m_Surface = VK_NULL_HANDLE;
+	}
+
 	auto &deletionQueue = m_Device.GetDeletionQueue();
 
 	for (auto *sem : m_ImageAvailableSemaphores) {
@@ -81,7 +93,7 @@ void VulkanSwapchain::Initialize() {
 }
 
 void VulkanSwapchain::CreateSwapchain(VkSwapchainKHR oldHandle) {
-	VkSwapChainSupportDetails support = m_Device.GetSwapChainSupport();
+	VkSwapChainSupportDetails support = m_Device.GetSwapChainSupport(m_Surface);
 
 	VkSurfaceFormatKHR surfaceFormat = ChooseSwapSurfaceFormat(support.m_Formats);
 	VkPresentModeKHR presentMode = ChooseSwapPresentMode(support.m_PresentModes);
@@ -94,7 +106,7 @@ void VulkanSwapchain::CreateSwapchain(VkSwapchainKHR oldHandle) {
 
 	VkSwapchainCreateInfoKHR createInfo{};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = m_Device.GetSurface();
+	createInfo.surface = m_Surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = surfaceFormat.format;
 	createInfo.imageColorSpace = surfaceFormat.colorSpace;
@@ -200,23 +212,24 @@ void VulkanSwapchain::CreateSyncObjects() {
 	}
 }
 
-bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex) {
+bool VulkanSwapchain::AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) {
 	VkDevice dev = m_Device.GetDevice();
 
 	if (m_SlotSubmitted[m_NextFrameSlot]) {
 		vkWaitForFences(dev, 1, &m_InFlightFences[m_NextFrameSlot], VK_TRUE, UINT64_MAX);
 		m_SlotSubmitted[m_NextFrameSlot] = false;
 	}
-	m_Device.GetDeletionQueue().Flush(m_NextFrameSlot);
 
 	for (auto &p : m_PendingCmdBufs[m_NextFrameSlot]) {
 		vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
 	}
 	m_PendingCmdBufs[m_NextFrameSlot].clear();
 
-	m_Device.ResetFrameCommandPool(m_NextFrameSlot);
-
-	m_Device.GetDeletionQueue().SetCurrentSlot(m_NextFrameSlot);
+	if (driveDeviceFrame) {
+		m_Device.GetDeletionQueue().Flush(m_NextFrameSlot);
+		m_Device.ResetFrameCommandPool(m_NextFrameSlot);
+		m_Device.GetDeletionQueue().SetCurrentSlot(m_NextFrameSlot);
+	}
 
 	VkSemaphore sem = m_ImageAvailableSemaphores[m_NextFrameSlot];
 	// we should use 0 for non blocking poll and UINT64_MAX for render on demand

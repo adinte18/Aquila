@@ -4,6 +4,10 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Profiler.h"
 
+namespace Aquila::Application {
+class Window;
+}
+
 namespace Aquila::Application::Events {
 
 enum class EventCategory : uint8 {
@@ -32,7 +36,13 @@ class Event {
 	[[nodiscard]] virtual EventCategory GetCategory() const = 0;
 	[[nodiscard]] virtual std::type_index GetTypeIndex() const = 0;
 	[[nodiscard]] virtual std::string ToString() const { return GetName(); }
+	[[nodiscard]] Window *GetSource() const { return m_Source; }
+
+	void SetSource(Window *window) { m_Source = window; };
 	bool handled = false;
+
+  private:
+	Window *m_Source = nullptr;
 };
 
 class EventDispatcher {

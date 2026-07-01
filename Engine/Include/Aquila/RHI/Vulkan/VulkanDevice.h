@@ -229,8 +229,14 @@ class VulkanDevice final : public IRHIDevice {
 	[[nodiscard]] VmaAllocator GetAllocator() const { return m_Allocator; }
 	[[nodiscard]] VkQueueFamilyIndices FindPhysicalQF() const { return FindQueueFamilies(m_PhysicalDevice); }
 	[[nodiscard]] VkSwapChainSupportDetails GetSwapChainSupport() const {
-		return QuerySwapChainSupport(m_PhysicalDevice);
+		return QuerySwapChainSupport(m_PhysicalDevice, m_Surface);
 	}
+	[[nodiscard]] VkSwapChainSupportDetails GetSwapChainSupport(VkSurfaceKHR surface) const {
+		return QuerySwapChainSupport(m_PhysicalDevice, surface);
+	}
+
+	[[nodiscard]] VkSurfaceKHR CreateSurfaceForWindow(GLFWwindow *window) const;
+	void DestroySurfaceHandle(VkSurfaceKHR surface) const;
 
   private:
 	void CreateInstance();
@@ -245,7 +251,7 @@ class VulkanDevice final : public IRHIDevice {
 	bool CheckValidationLayerSupport() const;
 	std::vector<const char *> GetRequiredExtensions() const;
 	VkQueueFamilyIndices FindQueueFamilies(VkPhysicalDevice vkPhysicalDevice) const;
-	VkSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice vkPhysicalDevice) const;
+	VkSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) const;
 	void LogDeviceInfo() const;
 
 	template <typename Func>

@@ -4,8 +4,8 @@ namespace Aquila::GFX {
 
 GfxSwapchain::GfxSwapchain(Unique<RHI::IRHISwapchain> swapchain) : m_Swapchain(std::move(swapchain)) {}
 
-bool GfxSwapchain::AcquireNextImage(uint32 &outImageIndex) {
-	return m_Swapchain->AcquireNextImage(outImageIndex);
+bool GfxSwapchain::AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) {
+	return m_Swapchain->AcquireNextImage(outImageIndex, driveDeviceFrame);
 }
 
 uint32 GfxSwapchain::GetWidth() const {

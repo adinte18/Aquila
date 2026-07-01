@@ -12,7 +12,7 @@ class GfxSwapchain {
 	~GfxSwapchain() = default;
 	AQUILA_NONCOPYABLE(GfxSwapchain);
 
-	bool AcquireNextImage(uint32 &outImageIndex);
+	bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame = true);
 
 	[[nodiscard]] uint32 GetWidth() const;
 	[[nodiscard]] uint32 GetHeight() const;
