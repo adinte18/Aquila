@@ -28,11 +28,17 @@ class DockNode : public View {
 	[[nodiscard]] int GetActivePanel() const { return m_ActivePanel; }
 	[[nodiscard]] bool IsEmpty() const { return m_IsLeaf && m_Tabs.empty(); }
 	[[nodiscard]] int GetTabCount() const { return static_cast<int>(m_Tabs.size()); }
-
+	[[nodiscard]] DockPanel *GetActivePanelPtr() const;
+	[[nodiscard]] View *GetTabBar() const { return m_TabBar; }
 	// Drag-drop
 	DockNode *HitTestNode(vec2 absPos);
 	Unique<View> DetachPanel(DockPanel *panel);
 	void AcceptPanel(Unique<View> panelView, std::string title, DropZone zone = DropZone::Center);
+
+	// Close a tab (no destination — panel is destroyed). Triggers CollapseNode if empty.
+	void ClosePanel(DockPanel *panel);
+
+	void ReorderPanel(DockPanel *panel, vec2 cursorPos);
 
 	// Drop zone visual feedback
 	void ShowDropZones(bool show);
@@ -42,6 +48,7 @@ class DockNode : public View {
   private:
 	View *MakeZoneIndicator(FloatingAttachPoint elemPt, FloatingAttachPoint parentPt, vec2 offset, const char *cls);
 	void ApplyActivePanel();
+	void AppendTab(DockPanel *panel, std::string title);
 
 	DockDragContext *m_DragCtx = nullptr;
 	bool m_IsLeaf = true;
@@ -55,6 +62,7 @@ class DockNode : public View {
 	View *m_ZoneBottom = nullptr;
 
 	struct Tab {
+		View *wrapper = nullptr;
 		DockTabButton *button = nullptr;
 		DockPanel *panel = nullptr;
 		std::string title;

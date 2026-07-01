@@ -1,9 +1,13 @@
 #include "Aquila/UI/Widgets/DockNode.h"
+#include "Aquila/UI/Widgets/DockCloseButton.h"
 #include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockSplitter.h"
 #include "Aquila/UI/Widgets/DockTabButton.h"
 
 #include "Aquila/UI/Style/StyleTypes.h"
+
+#include <algorithm>
+
 namespace Aquila::UI::Core {
 
 View *DockNode::MakeZoneIndicator(FloatingAttachPoint elemPt, FloatingAttachPoint parentPt, vec2 offset,
@@ -162,23 +166,52 @@ DockNode *DockNode::AppendLeaf(SplitDirection dir) {
 	return leafRaw;
 }
 
-DockPanel *DockNode::AddPanel(std::string title) {
+void DockNode::AppendTab(DockPanel *panel, std::string title) {
+	auto wrapper = CreateUnique<View>();
+	{
+		StyleProperties wp;
+		wp.flexDirection = FlexDirection::Row;
+		wp.flexGrow = 1.f;
+		wp.height = StyleLength::Percent(100.f);
+		wrapper->SetStyle(wp);
+		wrapper->AddClass("dock-tab-wrapper");
+	}
+	View *wrapperRaw = m_TabBar->AddChild(std::move(wrapper));
+
 	auto btn = CreateUnique<DockTabButton>();
 	btn->SetText(title);
 	btn->AddClass("dock-tab-btn");
-	DockTabButton *btnRaw = static_cast<DockTabButton *>(m_TabBar->AddChild(std::move(btn)));
+	{
+		StyleProperties bs;
+		bs.flexGrow = 1.f;
+		bs.height = StyleLength::Percent(100.f);
+		btn->MergeStyle(bs);
+	}
+	DockTabButton *btnRaw = static_cast<DockTabButton *>(wrapperRaw->AddChild(std::move(btn)));
 
+	auto closeBtn = CreateUnique<DockCloseButton>();
+	closeBtn->SetText("x");
+	closeBtn->AddClass("dock-tab-close-btn");
+	closeBtn->SetCloseInfo(this, panel);
+	wrapperRaw->AddChild(std::move(closeBtn));
+
+	btnRaw->SetDragInfo(m_DragCtx, panel, this);
+	btnRaw->onClick.Connect([this, panel] { SetActivePanelByPtr(panel); });
+
+	m_Tabs.push_back({ wrapperRaw, btnRaw, panel, std::move(title) });
+}
+
+DockPanel *DockNode::AddPanel(std::string title) {
 	auto panel = CreateUnique<DockPanel>(title);
 	DockPanel *panelRaw = static_cast<DockPanel *>(m_PanelArea->AddChild(std::move(panel)));
 
-	btnRaw->SetDragInfo(m_DragCtx, panelRaw, this);
-	btnRaw->SetOnClick([this, panelRaw] { SetActivePanelByPtr(panelRaw); });
-
-	m_Tabs.push_back({ btnRaw, panelRaw, title });
+	AppendTab(panelRaw, std::move(title));
 
 	if (m_ActivePanel < 0) {
 		SetActivePanel(0);
 	}
+
+	RemoveClass("dock-node-empty");
 
 	return panelRaw;
 }
@@ -207,11 +240,21 @@ void DockNode::ApplyActivePanel() {
 		sp.display = active ? Display::Flex : Display::None;
 		m_Tabs[i].panel->MergeStyle(sp);
 		if (active) {
-			m_Tabs[i].button->AddClass("dock-tab-active");
+			m_Tabs[i].wrapper->AddClass("dock-tab-active");
+			m_Tabs[i].button->AddClass("dock-tab-btn-active");
 		} else {
-			m_Tabs[i].button->RemoveClass("dock-tab-active");
+			m_Tabs[i].wrapper->RemoveClass("dock-tab-active");
+			m_Tabs[i].button->RemoveClass("dock-tab-btn-active");
 		}
 	}
+}
+
+DockPanel *DockNode::GetActivePanelPtr() const {
+	if (m_ActivePanel < 0 || m_ActivePanel >= static_cast<int>(m_Tabs.size())) {
+		return nullptr;
+	}
+
+	return m_Tabs[m_ActivePanel].panel;
 }
 
 Unique<View> DockNode::DetachPanel(DockPanel *panel) {
@@ -220,18 +263,78 @@ Unique<View> DockNode::DetachPanel(DockPanel *panel) {
 		return nullptr;
 	}
 
-	m_TabBar->RemoveChild(it->button);
+	m_TabBar->RemoveChild(it->wrapper);
 	auto owned = m_PanelArea->DetachChild(panel);
 	m_Tabs.erase(it);
 
 	if (m_Tabs.empty()) {
 		m_ActivePanel = -1;
+		AddClass("dock-node-empty");
 	} else {
 		m_ActivePanel = std::clamp(m_ActivePanel, 0, static_cast<int>(m_Tabs.size()) - 1);
 		ApplyActivePanel();
 	}
 
 	return owned;
+}
+
+void DockNode::ClosePanel(DockPanel *panel) {
+	auto owned = DetachPanel(panel);
+	// `owned` destroyed at end of scope — panel is gone.
+
+	if (m_Tabs.empty() && m_DragCtx && m_DragCtx->onNodeEmptied) {
+		m_DragCtx->onNodeEmptied(this);
+	}
+}
+
+void DockNode::ReorderPanel(DockPanel *panel, vec2 cursorPos) {
+	auto it = std::find_if(m_Tabs.begin(), m_Tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
+	if (it == m_Tabs.end()) {
+		return;
+	}
+
+	int targetIndex = static_cast<int>(m_Tabs.size()) - 1;
+	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {
+		const Rect r = m_Tabs[i].wrapper->GetAbsoluteRect();
+		if (cursorPos.x <= r.position.x + r.size.x * 0.5f) {
+			targetIndex = i;
+			break;
+		}
+	}
+
+	int sourceIndex = static_cast<int>(std::distance(m_Tabs.begin(), it));
+	if (sourceIndex == targetIndex) {
+		return;
+	}
+
+	if (sourceIndex < targetIndex) {
+		std::rotate(m_Tabs.begin() + sourceIndex, m_Tabs.begin() + sourceIndex + 1, m_Tabs.begin() + targetIndex + 1);
+	} else {
+		std::rotate(m_Tabs.begin() + targetIndex, m_Tabs.begin() + sourceIndex, m_Tabs.begin() + sourceIndex + 1);
+	}
+
+	if (m_ActivePanel == sourceIndex) {
+		m_ActivePanel = targetIndex;
+	} else if (sourceIndex < targetIndex) {
+		if (m_ActivePanel > sourceIndex && m_ActivePanel <= targetIndex) {
+			m_ActivePanel--;
+		}
+	} else {
+		if (m_ActivePanel >= targetIndex && m_ActivePanel < sourceIndex) {
+			m_ActivePanel++;
+		}
+	}
+
+	std::vector<Unique<View>> wrappers;
+	wrappers.reserve(m_Tabs.size());
+	for (auto &t : m_Tabs) {
+		wrappers.push_back(m_TabBar->DetachChild(t.wrapper));
+	}
+	for (size_t i = 0; i < m_Tabs.size(); ++i) {
+		m_Tabs[i].wrapper = m_TabBar->AddChild(std::move(wrappers[i]));
+	}
+
+	ApplyActivePanel();
 }
 
 void DockNode::AcceptPanel(Unique<View> panelView, std::string title, DropZone zone) {
@@ -241,17 +344,9 @@ void DockNode::AcceptPanel(Unique<View> panelView, std::string title, DropZone z
 
 	if (zone == DropZone::Center) {
 		DockPanel *panelRaw = static_cast<DockPanel *>(m_PanelArea->AddChild(std::move(panelView)));
-
-		auto btn = CreateUnique<DockTabButton>();
-		btn->SetText(title);
-		btn->AddClass("dock-tab-btn");
-		DockTabButton *btnRaw = static_cast<DockTabButton *>(m_TabBar->AddChild(std::move(btn)));
-
-		btnRaw->SetDragInfo(m_DragCtx, panelRaw, this);
-		btnRaw->SetOnClick([this, panelRaw] { SetActivePanelByPtr(panelRaw); });
-
-		m_Tabs.push_back({ btnRaw, panelRaw, std::move(title) });
+		AppendTab(panelRaw, std::move(title));
 		SetActivePanel(static_cast<int>(m_Tabs.size()) - 1);
+		RemoveClass("dock-node-empty");
 		return;
 	}
 
@@ -263,7 +358,7 @@ void DockNode::AcceptPanel(Unique<View> panelView, std::string title, DropZone z
 	existing.reserve(m_Tabs.size());
 
 	for (auto &tab : m_Tabs) {
-		m_TabBar->RemoveChild(tab.button);
+		m_TabBar->RemoveChild(tab.wrapper);
 		existing.push_back({ m_PanelArea->DetachChild(tab.panel), tab.title });
 	}
 	m_Tabs.clear();
@@ -365,7 +460,7 @@ DropZone DockNode::HitTestDropZone(vec2 absPos) const {
 		return DropZone::Bottom;
 	}
 
-	// Fallback: position within the node rect — no need to hit a tiny indicator.
+	// explicit center indicator above — the neutral interior returns None so a release there tears
 	const Rect r = GetAbsoluteRect();
 	if (!r.Contains(absPos)) {
 		return DropZone::None;
@@ -387,7 +482,7 @@ DropZone DockNode::HitTestDropZone(vec2 absPos) const {
 	if (relY > 1.f - kEdge) {
 		return DropZone::Bottom;
 	}
-	return DropZone::Center;
+	return DropZone::None;
 }
 
 } // namespace Aquila::UI::Core
