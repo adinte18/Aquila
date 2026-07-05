@@ -61,8 +61,58 @@ void Canvas::NotifyFocusRequest(View *view) {
 void Canvas::NotifyViewRemoved(View *view) {
 	m_StyleEngine.Remove(view);
 	m_InputRouter.OnViewRemoved(view);
+	UnregisterPopup(view);
+	UnregisterTick(view);
+	if (m_ScrollTarget == view) {
+		m_ScrollTarget = nullptr;
+	}
 	if (auto it = std::ranges::find(m_ActiveAnims, view); it != m_ActiveAnims.end()) {
 		m_ActiveAnims.erase(it);
+	}
+}
+
+void Canvas::RegisterPopup(View *popup, Delegate<void()> onDismiss) {
+	UnregisterPopup(popup);
+	m_OpenPopups.push_back({ popup, std::move(onDismiss) });
+}
+
+void Canvas::UnregisterPopup(View *popup) {
+	std::erase_if(m_OpenPopups, [popup](const OpenPopup &p) { return p.root == popup; });
+}
+
+void Canvas::RegisterTick(View *view) {
+	if (std::ranges::find(m_Ticking, view) == m_Ticking.end()) {
+		m_Ticking.push_back(view);
+	}
+}
+
+void Canvas::UnregisterTick(View *view) {
+	std::erase(m_Ticking, view);
+}
+
+static bool IsWithin(View *node, View *root) {
+	for (View *v = node; v; v = v->GetParent()) {
+		if (v == root) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void Canvas::DismissPopupsOutside(View *hit) {
+	if (m_OpenPopups.empty()) {
+		return;
+	}
+	std::vector<Delegate<void()>> toDismiss;
+	for (const auto &popup : m_OpenPopups) {
+		if (!IsWithin(hit, popup.root)) {
+			toDismiss.push_back(popup.onDismiss);
+		}
+	}
+	for (auto &dismiss : toDismiss) {
+		if (dismiss) {
+			dismiss();
+		}
 	}
 }
 
@@ -119,6 +169,13 @@ void Canvas::Compute() {
 		m_DrawCompositor.InvalidateAll(m_Root.get());
 	}
 
+	if (m_ScrollTarget) {
+		m_LayoutEngine.ScrollIntoView(m_ScrollTarget);
+		m_ScrollTarget = nullptr;
+		m_LayoutEngine.RunLayout(m_Root.get(), m_InputRouter.MousePos(), m_InputRouter.MouseDown(), {}, m_DeltaTime);
+		m_DrawCompositor.InvalidateAll(m_Root.get());
+	}
+
 	if (m_DrawCompositor.RebuildDirty(m_Root.get())) {
 		m_DrawListDirty = true;
 	}
@@ -141,8 +198,24 @@ void Canvas::OnEvent(Application::Events::Event &e) {
 	m_InputRouter.OnEvent(e);
 }
 
+View *Canvas::HitTest(vec2 pos) {
+	return m_DrawCompositor.HitTest(pos);
+}
+
+void Canvas::ScrollIntoView(View *target) {
+	m_ScrollTarget = target;
+	m_LayoutDirty = true;
+	MarkDirty();
+}
+
 void Canvas::Update(f32 deltaTime) {
 	m_DeltaTime = deltaTime;
+	if (!m_Ticking.empty()) {
+		for (View *view : m_Ticking) {
+			view->OnUpdate(deltaTime);
+		}
+		Aquila::Rendering::FrameScheduler::Get()->RequestFrame();
+	}
 	StylePass();
 	AnimationPass(deltaTime);
 }

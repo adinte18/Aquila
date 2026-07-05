@@ -55,6 +55,9 @@ class View {
 	void AddClass(std::string cls);
 	void RemoveClass(std::string_view cls);
 
+	void SetClass(std::string cls, bool enabled);
+	void SetHidden(bool hidden);
+
 	void SetId(std::string id) { m_Id = std::move(id); }
 	void SetStyle(StyleProperties props) { m_Style = std::move(props); }
 
@@ -132,9 +135,13 @@ class View {
 
 	virtual void OnStyleResolved();
 
+	virtual void OnUpdate(f32 deltaTime) { (void)deltaTime; }
+
 	virtual void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr);
 
 	virtual void ApplyXmlTextContent(std::string_view text) { (void)text; }
+
+	virtual void OnXmlLoaded() {}
 
 	virtual void SetFont(Text::FontAtlas * /*font*/) {}
 

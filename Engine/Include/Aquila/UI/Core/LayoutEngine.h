@@ -13,6 +13,10 @@ class LayoutEngine {
 
 	void RunLayout(View *root, vec2 mousePos, bool mouseDown, vec2 scrollDelta, float deltaTime);
 
+	// Adjusts the scroll offset of target's nearest scrolling ancestor so target is visible.
+	// Must be called after RunLayout so rects and Clay scroll state are current.
+	void ScrollIntoView(View *target);
+
   private:
 	void LayoutPass(View *node);
 	void UpdateRects(View *node, vec2 parentAbsPos = {});

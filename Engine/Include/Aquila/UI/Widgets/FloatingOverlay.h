@@ -24,7 +24,6 @@ class FloatingOverlay : public View {
 
 	bool m_Open = false;
 	bool m_DismissOnClickAway = true;
-	Button *m_Backdrop = nullptr;
 };
 
 } // namespace Aquila::UI::Core

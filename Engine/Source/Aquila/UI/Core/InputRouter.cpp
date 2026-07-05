@@ -96,6 +96,7 @@ void InputRouter::OnEvent(Application::Events::Event &e) {
 		if (e.GetMouseButton() == MouseButton::Left) {
 			m_MouseDown = true;
 		}
+		m_Canvas.DismissPopupsOutside(m_HoveredView);
 		if (!m_HoveredView) {
 			return false;
 		}

@@ -152,6 +152,54 @@ void LayoutEngine::RunLayout(View *root, vec2 mousePos, bool mouseDown, vec2 scr
 	UpdateRects(root);
 }
 
+void LayoutEngine::ScrollIntoView(View *target) {
+	if (!target) {
+		return;
+	}
+
+	View *container = nullptr;
+	for (View *v = target->GetParent(); v; v = v->GetParent()) {
+		if (v->GetDisplayStyle().overflow == Overflow::Scroll) {
+			container = v;
+			break;
+		}
+	}
+	if (!container) {
+		return;
+	}
+
+	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_ClayCtx));
+	Clay_ElementId id = {};
+	id.id = container->GetClayId();
+	Clay_ScrollContainerData data = Clay_GetScrollContainerData(id);
+	if (!data.found || data.scrollPosition == nullptr) {
+		return;
+	}
+
+	const Rect containerRect = container->GetAbsoluteRect();
+	const Rect targetRect = target->GetAbsoluteRect();
+	const float rel = targetRect.position.y - containerRect.position.y;
+	const float viewH = containerRect.size.y;
+	const float nodeH = targetRect.size.y;
+
+	float sy = data.scrollPosition->y;
+	if (rel < 0.f) {
+		sy -= rel;
+	} else if (rel + nodeH > viewH) {
+		sy -= (rel + nodeH - viewH);
+	}
+
+	const float maxScroll = data.contentDimensions.height - viewH;
+	if (maxScroll <= 0.f) {
+		sy = 0.f;
+	} else if (sy < -maxScroll) {
+		sy = -maxScroll;
+	} else if (sy > 0.f) {
+		sy = 0.f;
+	}
+	data.scrollPosition->y = sy;
+}
+
 void LayoutEngine::LayoutPass(View *node) {
 	const ComputedStyle &cs = node->GetDisplayStyle();
 
@@ -229,7 +277,7 @@ void LayoutEngine::LayoutPass(View *node) {
 				 { .layout = layout,
 				   .aspectRatio = aspectCfg,
 				   .floating = floatCfg,
-				   .clip = { .horizontal = true, .vertical = true } }) {
+				   .clip = { .horizontal = true, .vertical = false } }) {
 				emitChildren();
 			}
 			break;
@@ -259,7 +307,7 @@ void LayoutEngine::LayoutPass(View *node) {
 			 {
 				 .layout = layout,
 				 .aspectRatio = aspectCfg,
-				 .clip = { .horizontal = true, .vertical = true },
+				 .clip = { .horizontal = true, .vertical = false },
 			 }) {
 			emitChildren();
 		}

@@ -148,6 +148,9 @@ void View::MergeStyle(const StyleProperties &o) {
 }
 
 void View::AddClass(std::string cls) {
+	if (std::ranges::find(m_Classes, cls) != m_Classes.end()) {
+		return;
+	}
 	m_Classes.push_back(std::move(cls));
 	if (m_Canvas) {
 		m_Canvas->NotifyStyleDirty(this);
@@ -162,6 +165,18 @@ void View::RemoveClass(std::string_view cls) {
 			m_Canvas->NotifyStyleDirty(this);
 		}
 	}
+}
+
+void View::SetClass(std::string cls, bool enabled) {
+	if (enabled) {
+		AddClass(std::move(cls));
+	} else {
+		RemoveClass(cls);
+	}
+}
+
+void View::SetHidden(bool hidden) {
+	SetClass("hidden", hidden);
 }
 
 View *View::AddChild(Unique<View> child) {

@@ -26,6 +26,8 @@ class Canvas {
 
 	StyleSheet &GetStyleSheet();
 	View *GetRoot();
+	View *HitTest(vec2 pos);
+	void ScrollIntoView(View *target);
 	uint32 GetWidth() const { return m_Width; }
 	uint32 GetHeight() const { return m_Height; }
 	void NotifyStyleDirty(View *view);
@@ -37,11 +39,26 @@ class Canvas {
 	void ReloadStyles();
 	void MarkSubtreeDirty(View *node);
 
+	void RegisterPopup(View *popup, Delegate<void()> onDismiss);
+	void UnregisterPopup(View *popup);
+
+	void RegisterTick(View *view);
+	void UnregisterTick(View *view);
+
 	bool IsDrawListDirty() const { return m_DrawListDirty; }
 	void ClearDrawListDirty() { m_DrawListDirty = false; }
 
   private:
 	void MarkNodeDrawDirty(View *node);
+	void DismissPopupsOutside(View *hit);
+
+	struct OpenPopup {
+		View *root;
+		Delegate<void()> onDismiss;
+	};
+	std::vector<OpenPopup> m_OpenPopups;
+	std::vector<View *> m_Ticking;
+	View *m_ScrollTarget = nullptr;
 
 	Unique<View> m_Root;
 	StyleEngine m_StyleEngine;

@@ -3,18 +3,10 @@
 namespace Aquila::UI::Core {
 
 ScrollView::ScrollView() {
-	StyleProperties sp;
-	sp.overflow = Overflow::Scroll;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	sp.height = StyleLength::Grow();
-	SetStyle(sp);
+	AddClass("scroll-view");
 
 	auto inner = CreateUnique<View>();
-	StyleProperties ip;
-	ip.flexDirection = FlexDirection::Column;
-	ip.width = StyleLength::Grow();
-	inner->SetStyle(ip);
+	inner->AddClass("scroll-inner");
 	m_Inner = AddChild(std::move(inner));
 }
 

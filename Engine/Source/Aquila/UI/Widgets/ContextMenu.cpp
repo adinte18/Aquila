@@ -3,11 +3,6 @@
 namespace Aquila::UI::Core {
 
 ContextMenu::ContextMenu() : FloatingOverlay(4) {
-	StyleProperties sp;
-	sp.display = Display::None;
-	sp.flexDirection = FlexDirection::Column;
-	SetStyle(sp);
-
 	FloatingConfig fc;
 	fc.attachTo = FloatingAttachTo::Root;
 	fc.elementPoint = FloatingAttachPoint::LeftTop;

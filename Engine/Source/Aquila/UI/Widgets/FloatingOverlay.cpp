@@ -1,23 +1,10 @@
 #include "Aquila/UI/Widgets/FloatingOverlay.h"
-#include "Aquila/UI/Widgets/Button.h"
+#include "Aquila/UI/Core/Canvas.h"
 
 namespace Aquila::UI::Core {
 
-FloatingOverlay::FloatingOverlay(int16_t backdropZTier) {
-	auto bd = CreateUnique<Button>();
-	bd->AddClass("floating-backdrop");
-	FloatingConfig bfc;
-	bfc.attachTo = FloatingAttachTo::Root;
-	bfc.elementPoint = FloatingAttachPoint::LeftTop;
-	bfc.parentPoint = FloatingAttachPoint::LeftTop;
-	bfc.zIndex = backdropZTier;
-	bd->SetFloating(bfc);
-	bd->onClick.Connect([this] {
-		if (m_DismissOnClickAway) {
-			Close();
-		}
-	});
-	m_Backdrop = static_cast<Button *>(AddChild(std::move(bd)));
+FloatingOverlay::FloatingOverlay(int16_t /*backdropZTier*/) {
+	SetHidden(true);
 }
 
 void FloatingOverlay::Open() {
@@ -26,6 +13,11 @@ void FloatingOverlay::Open() {
 	}
 	m_Open = true;
 	ApplyDisplayState();
+	if (m_DismissOnClickAway) {
+		if (Canvas *canvas = GetCanvas()) {
+			canvas->RegisterPopup(this, [this] { Close(); });
+		}
+	}
 }
 
 void FloatingOverlay::Close() {
@@ -34,6 +26,9 @@ void FloatingOverlay::Close() {
 	}
 	m_Open = false;
 	ApplyDisplayState();
+	if (Canvas *canvas = GetCanvas()) {
+		canvas->UnregisterPopup(this);
+	}
 }
 
 void FloatingOverlay::Toggle() {
@@ -42,27 +37,20 @@ void FloatingOverlay::Toggle() {
 
 void FloatingOverlay::SetDismissOnClickAway(bool v) {
 	m_DismissOnClickAway = v;
-	if (m_Backdrop && m_Open) {
-		StyleProperties p;
-		p.display = v ? Display::Flex : Display::None;
-		m_Backdrop->MergeStyle(p);
+	if (!m_Open) {
+		return;
+	}
+	if (Canvas *canvas = GetCanvas()) {
+		if (v) {
+			canvas->RegisterPopup(this, [this] { Close(); });
+		} else {
+			canvas->UnregisterPopup(this);
+		}
 	}
 }
 
 void FloatingOverlay::ApplyDisplayState() {
-	const Display overlayDisplay = m_Open ? Display::Flex : Display::None;
-	const Display bdDisplay = (m_Open && m_DismissOnClickAway) ? Display::Flex : Display::None;
-
-	{
-		StyleProperties p;
-		p.display = overlayDisplay;
-		MergeStyle(p);
-	}
-	if (m_Backdrop) {
-		StyleProperties p;
-		p.display = bdDisplay;
-		m_Backdrop->MergeStyle(p);
-	}
+	SetHidden(!m_Open);
 }
 
 View *FloatingOverlay::HitTestAbsolute(vec2 canvasPos) {
@@ -70,13 +58,8 @@ View *FloatingOverlay::HitTestAbsolute(vec2 canvasPos) {
 		return nullptr;
 	}
 
-	// Test non-backdrop children first; they have priority over the backdrop.
 	for (int i = static_cast<int>(GetChildren().size()) - 1; i >= 0; --i) {
-		View *child = GetChildren()[i].get();
-		if (child == m_Backdrop) {
-			continue;
-		}
-		if (View *hit = child->HitTestAbsolute(canvasPos)) {
+		if (View *hit = GetChildren()[i]->HitTestAbsolute(canvasPos)) {
 			return hit;
 		}
 	}
@@ -84,10 +67,6 @@ View *FloatingOverlay::HitTestAbsolute(vec2 canvasPos) {
 	const Rect r = GetAbsoluteRect();
 	if (r.Contains(canvasPos)) {
 		return this;
-	}
-
-	if (m_Backdrop) {
-		return m_Backdrop->HitTestAbsolute(canvasPos);
 	}
 	return nullptr;
 }
