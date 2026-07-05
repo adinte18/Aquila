@@ -5,12 +5,6 @@ namespace Aquila::UI::Core {
 ListBox::ListBox() {
 	AddClass("list-box");
 
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	sp.height = StyleLength::Grow();
-	MergeStyle(sp);
-
 	auto scroll = CreateUnique<ScrollView>();
 	scroll->AddClass("list-box-scroll");
 	m_Scroll = static_cast<ScrollView *>(AddChild(std::move(scroll)));

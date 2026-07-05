@@ -6,11 +6,6 @@ AssetCard::AssetCard() {
 	m_IsDraggable = true;
 	AddClass("asset-card");
 
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.alignItems = AlignItems::Center;
-	MergeStyle(sp);
-
 	auto thumbnail = CreateUnique<Image>();
 	thumbnail->AddClass("asset-card-thumbnail");
 	m_Thumbnail = static_cast<Image *>(AddChild(std::move(thumbnail)));
@@ -35,9 +30,7 @@ void AssetCard::SetAsset(AssetPayload payload) {
 void AssetCard::SetThumbnail(GFX::GfxTexture *texture) {
 	m_Thumbnail->SetTexture(texture);
 
-	StyleProperties sp;
-	sp.display = texture ? Display::Flex : Display::None;
-	m_Thumbnail->MergeStyle(sp);
+	m_Thumbnail->SetHidden(texture == nullptr);
 }
 
 void AssetCard::OnDragStart(DragState &state) {

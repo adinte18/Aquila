@@ -3,17 +3,9 @@
 namespace Aquila::UI::Core {
 
 DockSplitter::DockSplitter(SplitDirection dir) : m_Dir(dir) {
-	StyleProperties sp;
-	if (dir == SplitDirection::Horizontal) {
-		sp.width = StyleLength::Pixel(5.f);
-		sp.height = StyleLength::Percent(100.f);
-	} else {
-		sp.width = StyleLength::Percent(100.f);
-		sp.height = StyleLength::Pixel(5.f);
-	}
-	SetStyle(sp);
 	SetInputLeaf(true);
 	AddClass("dock-splitter");
+	AddClass(dir == SplitDirection::Horizontal ? "dock-splitter-h" : "dock-splitter-v");
 }
 
 void DockSplitter::SetSiblings(View *before, View *after) {

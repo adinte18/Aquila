@@ -5,11 +5,6 @@ namespace Aquila::UI::Core {
 ProgressBar::ProgressBar() {
 	AddClass("progress-bar");
 
-	StyleProperties sp;
-	sp.width = StyleLength::Grow();
-	sp.overflow = Overflow::Hidden;
-	MergeStyle(sp);
-
 	auto fill = CreateUnique<View>();
 	fill->AddClass("progress-fill");
 	m_Fill = AddChild(std::move(fill));

@@ -6,11 +6,6 @@ MenuDropdown::MenuDropdown(MenuBar *owner) : FloatingOverlay(10), m_Owner(owner)
 	AddClass("menu-dropdown");
 	SetDismissOnClickAway(true);
 
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.minWidth = StyleLength::Pixel(140.f);
-	MergeStyle(sp);
-
 	FloatingConfig fc;
 	fc.attachTo = FloatingAttachTo::Root;
 	fc.elementPoint = FloatingAttachPoint::LeftTop;
@@ -77,12 +72,6 @@ void MenuDropdown::Rebuild() {
 
 MenuBar::MenuBar() {
 	AddClass("menu-bar");
-
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Row;
-	sp.alignItems = AlignItems::Center;
-	sp.width = StyleLength::Grow();
-	MergeStyle(sp);
 }
 
 MenuDropdown *MenuBar::AddMenu(std::string title) {

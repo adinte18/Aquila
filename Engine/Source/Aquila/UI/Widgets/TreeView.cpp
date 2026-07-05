@@ -3,22 +3,10 @@
 namespace Aquila::UI::Core {
 
 TreeView::TreeView() {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	sp.height = StyleLength::Grow();
-	sp.overflow = Overflow::Hidden;
-	SetStyle(sp);
 	AddClass("tree-view");
 
 	auto content = CreateUnique<View>();
-	{
-		StyleProperties cp;
-		cp.flexDirection = FlexDirection::Column;
-		cp.width = StyleLength::Grow();
-		cp.height = StyleLength::Grow();
-		content->SetStyle(cp);
-	}
+	content->AddClass("tree-view-content");
 	m_Content = View::AddChild(std::move(content));
 }
 
@@ -92,15 +80,11 @@ static constexpr float kIndentPerDepth = 16.f;
 
 TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	: m_Owner(owner), m_Label(std::move(label)), m_Depth(depth) {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	SetStyle(sp);
+	AddClass("tree-node");
 
 	auto header = CreateUnique<Button>();
 	{
 		StyleProperties hp;
-		hp.width = StyleLength::Grow();
 		const float indent = kIndentPerDepth * static_cast<float>(m_Depth);
 		hp.padding = StyleEdges{
 			StyleLength::Pixel(2.f),
@@ -116,13 +100,7 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	m_Header = static_cast<Button *>(View::AddChild(std::move(header)));
 
 	auto children = CreateUnique<View>();
-	{
-		StyleProperties cp;
-		cp.flexDirection = FlexDirection::Column;
-		cp.width = StyleLength::Grow();
-		children->SetStyle(cp);
-		children->AddClass("tree-node-children");
-	}
+	children->AddClass("tree-node-children");
 	m_Children = View::AddChild(std::move(children));
 	UpdateHeaderText();
 }

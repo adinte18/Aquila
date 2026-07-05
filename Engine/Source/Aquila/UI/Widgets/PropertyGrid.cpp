@@ -20,11 +20,6 @@ View *PropertyGrid::AddRow(std::string label, Unique<View> widget) {
 	row->AddChild(std::move(lbl));
 
 	widget->AddClass("property-value");
-	{
-		StyleProperties wp;
-		wp.flexGrow = 1.f;
-		widget->MergeStyle(wp);
-	}
 	View *widgetRaw = row->AddChild(std::move(widget));
 
 	AddChild(std::move(row));

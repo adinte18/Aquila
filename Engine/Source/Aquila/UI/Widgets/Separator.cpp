@@ -29,17 +29,11 @@ void Separator::ApplyXmlAttribute(std::string_view name, std::string_view value,
 }
 
 void Separator::ApplyOrientation() {
-	StyleProperties sp;
 	if (m_Vertical) {
-		sp.width = StyleLength::Pixel(1.f);
-		sp.height = StyleLength::Grow();
-		sp.minHeight = StyleLength::Pixel(0.f);
+		AddClass("separator-v");
 	} else {
-		sp.width = StyleLength::Grow();
-		sp.height = StyleLength::Pixel(1.f);
-		sp.minWidth = StyleLength::Pixel(0.f);
+		RemoveClass("separator-v");
 	}
-	MergeStyle(sp);
 }
 
 } // namespace Aquila::UI::Core

@@ -6,19 +6,9 @@ AssetSlot::AssetSlot() {
 	m_IsAcceptingPayload = true;
 	AddClass("asset-slot");
 
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Row;
-	sp.alignItems = AlignItems::Center;
-	sp.width = StyleLength::Grow();
-	MergeStyle(sp);
-
 	auto label = CreateUnique<Label>("");
 	label->AddClass("asset-slot-label");
 	m_Label = static_cast<Label *>(AddChild(std::move(label)));
-
-	StyleProperties lblStyle;
-	lblStyle.flexGrow = 1.f;
-	m_Label->MergeStyle(lblStyle);
 
 	auto clearBtn = CreateUnique<Button>("×");
 	clearBtn->AddClass("asset-slot-clear");
@@ -102,9 +92,7 @@ void AssetSlot::ApplyXmlAttribute(std::string_view name, std::string_view value,
 }
 
 void AssetSlot::UpdateDisplay() {
-	StyleProperties clearStyle;
-	clearStyle.display = m_HasValue ? Display::Flex : Display::None;
-	m_ClearButton->MergeStyle(clearStyle);
+	m_ClearButton->SetHidden(!m_HasValue);
 
 	if (m_HasValue) {
 		m_Label->SetText(m_Value.displayName.empty() ? m_Value.assetPath : m_Value.displayName);
