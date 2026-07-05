@@ -66,22 +66,13 @@ void ConsolePanel::Build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 		m_ErrorIcon = m_TextureCache->Load("Engine/UI/Icons/circle-x.png");
 	}
 
-	auto root = CreateUnique<UI::Core::View>();
-	root->SetId("console-root");
-	UI::Core::View *rootPtr = panel->AddChild(std::move(root));
+	m_ScrollView = panel->FindById<UI::Core::ScrollView>("console-scroll");
+	m_DetailLabel = panel->FindById<UI::Core::Label>("console-detail-text");
 
-	auto toolbar = CreateUnique<UI::Core::View>();
-	toolbar->SetId("console-toolbar");
-	UI::Core::View *toolbarPtr = rootPtr->AddChild(std::move(toolbar));
-
-	auto clearBtn = CreateUnique<UI::Core::Button>("Clear");
-	clearBtn->AddClass("console-clear-btn");
-	clearBtn->onClick.Connect([this]() { ClearAll(); });
-	toolbarPtr->AddChild(std::move(clearBtn));
-
-	auto sep = CreateUnique<UI::Core::View>();
-	sep->AddClass("console-toolbar-sep");
-	toolbarPtr->AddChild(std::move(sep));
+	UI::Core::View *toolbarPtr = panel->FindById("console-toolbar");
+	if (toolbarPtr == nullptr) {
+		return;
+	}
 
 	auto makeFilterBtn = [&](vec4 iconTint, FilterGroup group, UI::Core::View *&btnOut, UI::Core::Label *&countOut) {
 		auto btn = CreateUnique<ClickableView>();
@@ -115,23 +106,6 @@ void ConsolePanel::Build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 	makeFilterBtn({ 0.42f, 0.69f, 0.86f, 1.f }, FilterGroup::Info, m_InfoFilterBtn, m_InfoCountLabel);
 	makeFilterBtn({ 0.83f, 0.67f, 0.29f, 1.f }, FilterGroup::Warning, m_WarningFilterBtn, m_WarningCountLabel);
 	makeFilterBtn({ 0.83f, 0.42f, 0.42f, 1.f }, FilterGroup::Error, m_ErrorFilterBtn, m_ErrorCountLabel);
-
-	auto scrollView = CreateUnique<UI::Core::ScrollView>();
-	scrollView->SetId("console-scroll");
-	m_ScrollView = static_cast<UI::Core::ScrollView *>(rootPtr->AddChild(std::move(scrollView)));
-
-	auto divider = CreateUnique<UI::Core::View>();
-	divider->SetId("console-divider");
-	rootPtr->AddChild(std::move(divider));
-
-	auto detail = CreateUnique<UI::Core::View>();
-	detail->SetId("console-detail");
-
-	auto detailLabel = CreateUnique<UI::Core::Label>("");
-	detailLabel->SetId("console-detail-text");
-	m_DetailLabel = static_cast<UI::Core::Label *>(detail->AddChild(std::move(detailLabel)));
-
-	rootPtr->AddChild(std::move(detail));
 }
 
 void ConsolePanel::FlushPending() {
@@ -248,25 +222,19 @@ void ConsolePanel::ToggleFilter(FilterGroup group) {
 	case FilterGroup::Info:
 		m_ShowInfo = !m_ShowInfo;
 		if (m_InfoFilterBtn) {
-			StyleProperties sp;
-			sp.opacity = m_ShowInfo ? 1.0f : 0.35f;
-			m_InfoFilterBtn->MergeStyle(sp);
+			m_InfoFilterBtn->SetClass("dimmed", !m_ShowInfo);
 		}
 		break;
 	case FilterGroup::Warning:
 		m_ShowWarning = !m_ShowWarning;
 		if (m_WarningFilterBtn) {
-			StyleProperties sp;
-			sp.opacity = m_ShowWarning ? 1.0f : 0.35f;
-			m_WarningFilterBtn->MergeStyle(sp);
+			m_WarningFilterBtn->SetClass("dimmed", !m_ShowWarning);
 		}
 		break;
 	case FilterGroup::Error:
 		m_ShowError = !m_ShowError;
 		if (m_ErrorFilterBtn) {
-			StyleProperties sp;
-			sp.opacity = m_ShowError ? 1.0f : 0.35f;
-			m_ErrorFilterBtn->MergeStyle(sp);
+			m_ErrorFilterBtn->SetClass("dimmed", !m_ShowError);
 		}
 		break;
 	}
@@ -292,9 +260,7 @@ void ConsolePanel::ApplyRowVisibility(int index) {
 		visible = m_ShowError;
 		break;
 	}
-	StyleProperties sp;
-	sp.display = visible ? Display::Flex : Display::None;
-	m_Rows[index]->MergeStyle(sp);
+	m_Rows[index]->SetHidden(!visible);
 }
 
 void ConsolePanel::UpdateFilterButtons() {

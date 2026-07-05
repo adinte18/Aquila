@@ -20,7 +20,9 @@ class InspectorPanel;
 class ConsolePanel;
 class UIDebugPanel;
 class UIDebugWindow;
+class WidgetGalleryWindow;
 class FloatingPanelWindow;
+class PickerOverlay;
 
 class EditorApplication : public Aquila::Application::Application {
   public:
@@ -39,6 +41,8 @@ class EditorApplication : public Aquila::Application::Application {
 	void SetupEditorUI();
 	void WireMenubar(Aquila::UI::Core::View *layoutRoot);
 	void OpenUIInspectorWindow();
+	void OpenWidgetGalleryWindow();
+	void StartPick();
 
 	void WireDockSpace(Aquila::UI::Core::DockSpace *dockSpace, GLFWwindow *sourceNative);
 	void HandleTearOff(GLFWwindow *sourceNative, Unique<Aquila::UI::Core::View> content, std::string title,
@@ -59,6 +63,10 @@ class EditorApplication : public Aquila::Application::Application {
 	Unique<ConsolePanel> m_ConsolePanel;
 	Unique<UIDebugPanel> m_UIDebugPanel;
 	Unique<UIDebugWindow> m_UIDebugWindow;
+	Unique<WidgetGalleryWindow> m_WidgetGalleryWindow;
+
+	PickerOverlay *m_Picker = nullptr;
+	bool m_PickMode = false;
 
 	Aquila::UI::Core::DockSpace *m_DockSpace = nullptr;
 

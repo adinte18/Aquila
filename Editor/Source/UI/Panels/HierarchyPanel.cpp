@@ -27,23 +27,6 @@ void HierarchyPanel::Build(UI::Core::DockPanel *panel, UI::Core::View *overlayRo
 	ctx->AddItem("Create Cube", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Cube (not yet implemented)"); });
 
 	{
-		auto toolbar = CreateUnique<UI::Core::View>();
-		toolbar->AddClass("hierarchy-toolbar");
-		auto *toolbarPtr = static_cast<UI::Core::View *>(panel->AddChild(std::move(toolbar)));
-
-		auto btn = CreateUnique<UI::Core::Button>();
-		btn->SetText("+ New Entity");
-		btn->AddClass("hierarchy-toolbar-btn");
-		btn->onClick.Connect([this] {
-			auto entity = m_EntityManager.CreateEntity("New Entity");
-			if (m_TreeView) {
-				m_TreeView->AddEntityNode(entity.GetName(), entity);
-			}
-		});
-		toolbarPtr->AddChild(std::move(btn));
-	}
-
-	{
 		auto treeUniq = CreateUnique<HierarchyTreeView>(m_EntityManager);
 		m_TreeView = static_cast<HierarchyTreeView *>(panel->AddChild(std::move(treeUniq)));
 

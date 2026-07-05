@@ -25,7 +25,6 @@ class InspectorPanel : public IEditorPanel {
 	void ShowEntity(Aquila::SceneManagement::Entity entity);
 
   private:
-	std::pair<Aquila::UI::Core::Collapsible *, Aquila::UI::Core::PropertyGrid *> BuildSection(const std::string &title);
 	void SetVisible(Aquila::UI::Core::View *v, bool visible);
 
 	Aquila::GFX::GfxContext &m_Context;

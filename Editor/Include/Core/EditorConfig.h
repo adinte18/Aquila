@@ -30,7 +30,7 @@ struct FontSettings {
 
 struct UISettings {
 	std::string resourcesPath = "/resources";
-	std::string layoutPath = "/resources/Engine/UI/widget_test.aqlayout";
+	std::string layoutPath = "/resources/Engine/UI/editor.aqlayout";
 	std::string stylePath = "/resources/Engine/UI/widget_test.aqstyle";
 };
 

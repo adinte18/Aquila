@@ -11,19 +11,14 @@ using namespace Aquila;
 ViewportPanel::ViewportPanel(GFX::GfxTexture &initialTexture) : m_InitialTexture(initialTexture) {}
 
 void ViewportPanel::Build(UI::Core::DockPanel *panel, UI::Core::View *) {
-	auto imgUniq = CreateUnique<UI::Core::Image>();
-	auto *img = static_cast<UI::Core::Image *>(panel->AddChild(std::move(imgUniq)));
-	img->SetId("viewport");
-	img->SetTexture(&m_InitialTexture);
-	img->SetPassThroughScroll(true);
+	m_Image = panel->FindById<UI::Core::Image>("viewport");
+	if (m_Image == nullptr) {
+		AQUILA_LOG_ERROR("ViewportPanel: 'viewport' image not found in layout");
+		return;
+	}
 
-	UI::StyleProperties sp;
-	sp.width = UI::StyleLength::Grow();
-	sp.height = UI::StyleLength::Grow();
-	sp.flexGrow = 1.f;
-	img->SetStyle(sp);
-
-	m_Image = img;
+	m_Image->SetTexture(&m_InitialTexture);
+	m_Image->SetPassThroughScroll(true);
 }
 
 void ViewportPanel::SetTexture(GFX::GfxTexture *texture) {

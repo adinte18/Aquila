@@ -1,0 +1,36 @@
+<View id="root">
+
+    <View id="toolbar">
+        <View id="toolbar-left">
+            <View id="engine-logo">
+                <Image id="image-logo" src="Logo/16px.png"/>
+            </View>
+            <MenuBar id="main-menubar">
+            </MenuBar>
+        </View>
+    </View>
+
+    <View id="workspace">
+        <View id="dock-root">
+            <DockSpace id="editor-dock">
+                <DockNode split="vertical">
+                    <DockNode split="horizontal">
+                        <DockPanel id="panel-hierarchy">Hierarchy
+                            <Include src="hierarchy.aqlayout"/>
+                        </DockPanel>
+                        <DockPanel id="panel-viewport" src="Engine/UI/Icons/square-asterisk.png">Viewport
+                            <Include src="viewport.aqlayout"/>
+                        </DockPanel>
+                        <DockPanel id="panel-inspector" src="Engine/UI/Icons/book-open-text.png">Inspector
+                            <Include src="inspector.aqlayout"/>
+                        </DockPanel>
+                    </DockNode>
+                    <DockPanel id="panel-console">Console
+                        <Include src="console.aqlayout"/>
+                    </DockPanel>
+                </DockNode>
+            </DockSpace>
+        </View>
+    </View>
+
+</View>

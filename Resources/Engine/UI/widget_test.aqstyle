@@ -1,5 +1,4 @@
 :root {
-
     --bg-deep: #0f1118;
     --bg-base: #15171d;
     --bg-panel: #1e212a;
@@ -32,6 +31,283 @@
     --shadow-pop: 0px 6px 22px 0px rgba(0,0,0,0.55);
 }
 
+
+TabView {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 6px;
+}
+
+.tab-bar {
+    flex-direction: row;
+    width: 100%;
+    height: 30px;
+    background-color: var(--bg-muted);
+    border-color: var(--border-ui);
+    border-width: 1px;
+}
+
+.tab-button {
+    padding: 0px 14px;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    background-color: transparent;
+    border-width: 0px;
+    transition: 80ms ease-out;
+}
+
+.tab-button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.tab-active {
+    background-color: var(--bg-base);
+    color: var(--text-bright);
+    border-color: var(--accent);
+    border-width: 1px;
+}
+
+.tab-panels {
+    flex-direction: column;
+    width: grow;
+    flex-grow: 1;
+}
+
+.tab-panel {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+    flex-grow: 1;
+    background-color: var(--bg-panel);
+}
+
+ProgressBar {
+    width: 100%;
+    height: 14px;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--accent);
+    border-radius: 8px;
+}
+
+ListBox {
+    width: 100%;
+    height: grow;
+    background-color: var(--bg-panel);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 6px;
+    padding: 4px;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.list-item {
+    padding: 6px 10px;
+    width: grow;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+    transition: 60ms ease-out;
+}
+
+.list-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.selected {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.dropdown-header {
+    width: grow;
+    height: 100%;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 6px;
+    align-items: center;
+    justify-content: start;
+    padding: 0px 10px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 14px;
+    transition: 60ms ease-out;
+}
+
+.dropdown-header:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--accent-muted);
+}
+
+.tooltip {
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--border-dim);
+    border-radius: 5px;
+    padding: 5px 9px;
+    box-shadow: var(--shadow-pop);
+}
+
+.tooltip-label {
+    color: var(--text-bright);
+    font-family: regular;
+    font-size: 14px;
+}
+
+.picker-overlay {
+    width: 100%;
+    height: 100%;
+    color: var(--accent);
+}
+
+Separator {
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-dim);
+}
+
+.separator-v {
+    width: 1px;
+    height: grow;
+    min-width: 0px;
+    min-height: 0px;
+}
+
+ScrollView {
+    overflow: scroll;
+    flex-direction: column;
+    width: grow;
+    height: grow;
+}
+
+.scroll-inner {
+    flex-direction: column;
+    width: grow;
+}
+
+MenuBar {
+    flex-direction: row;
+    align-items: center;
+    width: grow;
+}
+
+.property-value {
+    flex-grow: 1;
+}
+
+Dropdown {
+    min-width: 120px;
+    height: 28px;
+    flex-direction: column;
+}
+
+.dropdown-popup {
+    flex-direction: column;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 6px;
+    box-shadow: var(--shadow-pop);
+    padding: 4px 0px;
+}
+
+.dropdown-option {
+    width: grow;
+    padding: 6px 12px;
+    color: var(--text);
+}
+
+.dropdown-option:hover {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+AssetSlot {
+    width: 100%;
+    min-height: 60px;
+    flex-direction: row;
+    background-color: var(--bg-surface);
+    border-width: 2px;
+    border-color: var(--border-dim);
+    border-style: dashed;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+AssetSlot:hover {
+    border-color: var(--accent-muted);
+    background-color: var(--bg-hover);
+}
+
+.asset-slot-filled {
+    border-style: solid;
+    border-color: var(--accent);
+}
+
+.asset-slot-label {
+    flex-grow: 1;
+}
+
+AssetCard {
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 8px;
+    padding: 10px;
+    gap: 8px;
+    box-shadow: var(--shadow-sm);
+    transition: 80ms ease-out;
+}
+
+AssetCard:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--accent-muted);
+}
+
+.asset-card-name {
+    font-family: medium;
+    font-size: 16px;
+    color: var(--text-bright);
+}
+
+.asset-card-type {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+.asset-card-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    background-color: var(--bg-muted);
+}
+
 #root {
     width: grow;
     height: grow;
@@ -59,31 +335,11 @@
     width: grow;
 }
 
-#toolbar-center {
-    flex-direction: row;
-    align-items: center;
-    gap: 4px;
-}
-
-#toolbar-right {
-    flex-direction: row;
-    align-items: center;
-    justify-content: end;
-    width: grow;
-    padding: 0px 4px;
-}
-
 #engine-logo {
     font-family: regular;
-    font-size: 14px;
+    font-size: 16px;
     color: var(--text-bright);
     padding: 4px 10px;
-}
-
-.toolbar-sep {
-    width: 1px;
-    height: 20px;
-    background-color: var(--border-dim);
 }
 
 #image-logo {
@@ -91,30 +347,9 @@
     height: 32px;
 }
 
-.menu-btn {
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text-dim);
-    padding: 4px 10px;
-    border-radius: 5px;
-    align-items: center;
-    justify-content: center;
-    transition: 80ms ease-out;
-}
-
-.menu-btn:hover {
-    background-color: var(--border-dim);
-    color: var(--text-bright);
-}
-
-.menu-btn:pressed {
-    background-color: var(--bg-surface);
-    color: var(--text-bright);
-}
-
 .menu-bar-item {
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-dim);
     padding: 4px 10px;
     border-radius: 5px;
@@ -134,17 +369,20 @@
 }
 
 .menu-dropdown {
+    flex-direction: column;
+    min-width: 140px;
     box-shadow: var(--shadow-pop);
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-dim);
     border-radius: 8px;
-    padding: 4px 0px;
+    padding: 6px 6px;
+    gap: 4px;
 }
 
 .menu-item {
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text);
     padding: 5px 14px;
     width: 100%;
@@ -168,38 +406,6 @@
     background-color: var(--border-dim);
 }
 
-.run-btn {
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text);
-    padding: 4px 16px;
-    border-radius: 6px;
-    border-width: 1px;
-    border-color: var(--border-dim);
-    background-color: var(--bg-surface);
-    align-items: center;
-    justify-content: center;
-    transition: 80ms ease-out;
-}
-
-.run-btn:hover {
-    background-color: var(--bg-hover);
-    border-color: var(--accent-muted);
-    color: var(--text-bright);
-}
-
-.run-stop {
-    color: var(--danger);
-    border-color: #5A2828;
-    background-color: #2E1A1A;
-}
-
-.run-stop:hover {
-    background-color: #3A2020;
-    border-color: #884444;
-    color: #FF8080;
-}
-
 
 
 
@@ -221,6 +427,8 @@
 .dock-space {
     width: 100%;
     height: grow;
+    flex-direction: column;
+    flex-grow: 1;
 }
 
 .dock-side-left {
@@ -241,6 +449,8 @@
 .dock-node {
     width: grow;
     height: grow;
+    flex-direction: column;
+    flex-grow: 1;
     background-color: var(--bg-panel);
 }
 
@@ -279,7 +489,7 @@
 
 .dock-tab-btn {
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-muted);
     padding: 0px 10px;
     height: 100%;
@@ -296,7 +506,7 @@
 
 .dock-tab-close-btn {
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
     width: 18px;
     height: 18px;
@@ -321,16 +531,34 @@
 }
 
 .dock-panel {
+    flex-direction: column;
+    width: grow;
+    height: grow;
+    flex-grow: 1;
     background-color: var(--bg-panel);
 }
 
 .dock-panel-area {
+    flex-direction: column;
+    width: grow;
+    height: grow;
+    flex-grow: 1;
     background-color: var(--bg-panel);
 }
 
 .dock-splitter {
     background-color: var(--bg-base);
     transition: 80ms ease-out;
+}
+
+.dock-splitter-h {
+    width: 5px;
+    height: 100%;
+}
+
+.dock-splitter-v {
+    width: 100%;
+    height: 5px;
 }
 
 .dock-splitter:hover {
@@ -383,90 +611,10 @@
     display: none;
 }
 
-.panel-header {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    height: 28px;
-    padding: 0px 10px;
-    background-color: var(--bg-surface);
-    border-color: var(--border);
-    border-width: 1px;
-    gap: 6px;
-}
-
-.panel-title {
-    font-family: regular;
-    font-size: 11px;
-    color: var(--text-muted);
-    width: grow;
-}
-
-.icon-btn {
-    font-family: regular;
-    font-size: 12px;
-    color: var(--text-muted);
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
-    align-items: center;
-    justify-content: center;
-    transition: 80ms ease-out;
-}
-
-.icon-btn:hover {
-    background-color: var(--border-dim);
-    color: var(--text);
-}
-
-#scene-tree {
-    flex-direction: column;
-    width: 100%;
-    padding: 2px 0px;
-    gap: 0px;
-}
-
-.tree-item {
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text);
-    width: 100%;
-    height: 24px;
-    padding: 0px 12px;
-    align-items: center;
-    justify-content: start;
-    border-radius: 0px;
-    transition: 60ms linear;
-}
-
-.tree-item:hover {
-    background-color: var(--bg-hover);
-    color: var(--text-bright);
-}
-
-.tree-item:pressed {
-    background-color: var(--bg-panel);
-    color: var(--text-bright);
-}
-
-.tree-selected {
-    background-color: var(--accent-dark);
-    color: var(--text-bright);
-}
-
-.tree-l1 {
-    padding: 0px 0px 0px 24px;
-    color: var(--text-dim);
-}
-
-.tree-l2 {
-    padding: 0px 0px 0px 40px;
-    color: var(--text-muted);
-}
-
 #viewport {
-    width: 100%;
+    width: grow;
     height: grow;
+    flex-grow: 1;
 }
 
 #console-root {
@@ -489,7 +637,7 @@
 
 .console-clear-btn {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-muted);
     padding: 3px 8px;
     border-radius: 3px;
@@ -537,7 +685,7 @@
 
 .console-filter-count {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
 }
 
@@ -593,7 +741,7 @@
 
 .console-row-text {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text);
     flex-grow: 1;
 }
@@ -616,7 +764,7 @@
 
 #console-detail-text {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
     width: 100%;
 }
@@ -630,7 +778,7 @@
 
 .inspector-entity-name {
     font-family: medium;
-    font-size: 16px;
+    font-size: 18px;
     color: var(--text-bright);
     width: 100%;
     height: 24px;
@@ -639,9 +787,20 @@
     border-color: var(--border-dim);
 }
 
+IconLabel {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.icon {
+    width: 16px;
+    height: 16px;
+}
+
 .collapsible-header {
     font-family: medium;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text);
     width: 100%;
     height: auto;
@@ -690,7 +849,7 @@
 
 .property-label {
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-dim);
     width: 80px;
 }
@@ -701,165 +860,32 @@
     background-color: rgba(255, 255, 255, 0.08);
 }
 
-.comp-block {
-    flex-direction: column;
-    width: 100%;
-    background-color: var(--bg-surface);
-    border-radius: 7px;
-    border-width: 1px;
-    border-color: var(--border-ui);
-    padding: 6px;
-    gap: 4px;
-}
-
-.comp-header {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    padding: 0px 0px 4px 0px;
-    border-color: var(--border-ui);
-    border-width: 1px;
-    gap: 6px;
-}
-
-.comp-name {
-    font-family: medium;
-    font-size: 13px;
-    color: var(--text-bright);
-    width: grow;
-}
-
-.prop-row {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-}
-
-.prop-lbl {
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text-dim);
-    width: 64px;
-}
-
-.prop-xyz {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    gap: 2px;
-}
-
-.axis-label {
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text-muted);
-    width: 16px;
-}
-
-.prop-check {
-    width: 14px;
-    height: 14px;
-}
-
-.prop-slider {
-    flex-grow: 1;
-    height: 18px;
-    color: var(--accent);
-}
-
-.prop-input {
-    flex-grow: 1;
-    height: 24px;
-    background-color: var(--input-bg);
-    border-width: 1px;
-    border-color: var(--input-border);
-    border-radius: 5px;
-    color: var(--text);
-    font-family: regular;
-    font-size: 13px;
-    transition: 60ms ease-out;
-}
-
-.prop-input:focus {
-    border-color: var(--accent);
-}
-
-.asset-ref {
-    flex-grow: 1;
-    height: 24px;
-    font-family: regular;
-    font-size: 13px;
-    color: var(--text-dim);
-    background-color: var(--input-bg);
-    border-width: 1px;
-    border-color: var(--input-border);
-    border-radius: 5px;
-    align-items: center;
-    justify-content: center;
-    transition: 60ms ease-out;
-}
-
-.asset-ref:hover {
-    background-color: var(--bg-muted);
-    border-color: var(--border-dim);
-    color: var(--text);
-}
-
-#obj-header {
-    flex-direction: row;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-    padding: 4px 0px;
-}
-
-#obj-active {
-    width: 16px;
-    height: 16px;
-}
-
-#obj-name-input {
-    width: grow;
-    height: 24px;
-    background-color: var(--input-bg);
-    border-width: 1px;
-    border-color: var(--border-dim);
-    border-radius: 5px;
-    color: var(--text-bright);
-    font-family: regular;
-    font-size: 13px;
-    transition: 80ms ease-out;
-}
-
-#obj-name-input:focus {
-    border-color: var(--accent);
-}
-
-.xyz-input {
-    flex-grow: 1;
-    height: 24px;
-    background-color: var(--input-bg);
-    border-width: 1px;
-    border-color: var(--input-border);
-    border-radius: 5px;
-    color: var(--text);
-    font-family: regular;
-    font-size: 13px;
-    transition: 60ms ease-out;
-}
-
-.xyz-input:focus {
-    border-color: var(--accent);
-}
-
 
 
 
 Button {
     align-items: center;
     justify-content: center;
-    border-radius: 3px;
+    border-radius: 4px;
+    padding: 5px 12px;
+    background-color: var(--bg-widget);
+    color: var(--text);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    font-family: regular;
+    font-size: 14px;
+    transition: 80ms ease-out;
+}
+
+Button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+    border-color: var(--accent-muted);
+}
+
+Button:pressed {
+    background-color: var(--accent-press);
+    border-color: var(--accent);
 }
 
 Collapsible {
@@ -874,6 +900,22 @@ ColorPicker {
 
 TextInput {
     overflow: hidden;
+    width: grow;
+    min-width: 0px;
+    height: 26px;
+    padding: 0px 8px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 14px;
+    transition: 60ms ease-out;
+}
+
+TextInput:focus {
+    border-color: var(--accent);
 }
 
 .text-input {
@@ -907,6 +949,8 @@ Checkbox:pressed {
 }
 
 Slider {
+    width: grow;
+    min-width: 0px;
     height: 16px;
     color: var(--accent);
 }
@@ -942,8 +986,41 @@ DragFloat {
     border-radius: 5px;
     color: var(--text);
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     transition: 60ms ease-out;
+}
+
+DragInt {
+    width: grow;
+    height: 24px;
+    min-width: 0px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 14px;
+    transition: 60ms ease-out;
+}
+
+NumberInput {
+    width: grow;
+    height: 26px;
+    min-width: 0px;
+    padding: 0px 8px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 14px;
+    transition: 60ms ease-out;
+}
+
+NumberInput:focus {
+    border-color: var(--accent);
 }
 
 DragFloat:hover {
@@ -985,25 +1062,13 @@ Vec4Field {
 
 .vec-label {
     font-family: bold;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-bright);
     width: auto;
     height: 20px;
     border-radius: 2px;
     align-items: center;
     justify-content: center;
-}
-
-.vec-label-x {
-    background-color: #7A2020;
-}
-
-.vec-label-y {
-    background-color: #1E5E1E;
-}
-
-.vec-label-z {
-    background-color: #1E3E7A;
 }
 
 .vec-drag {
@@ -1039,6 +1104,7 @@ Vec4Field {
 
 
 ContextMenu {
+    flex-direction: column;
     box-shadow: var(--shadow-pop);
     background-color: var(--bg-widget);
     border-width: 1px;
@@ -1050,7 +1116,7 @@ ContextMenu {
 
 .context-item {
     font-family: regular;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text);
     width: 100%;
     height: 24px;
@@ -1071,23 +1137,42 @@ ContextMenu {
     color: var(--text-bright);
 }
 
-
-
+.tree-view-content{
+    flex-direction: column;
+    width: grow;
+    gap: 2px;
+    padding: 4px 4px;
+}
 
 .tree-view {
-    padding: 2px;
+    flex-direction: column;
+    width: grow;
+    height: grow;
+    overflow: scroll;
+    padding: 4px 4px;
+}
+
+.tree-node {
+    flex-direction: column;
+    width: grow;
+}
+
+.tree-node-children {
+    flex-direction: column;
+    width: grow;
 }
 
 .tree-node-header {
     font-family: regular;
-    font-size: 13px;
+    font-size: 16px;
     color: var(--text);
-    width: 100%;
+    width: grow;
     height: 24px;
     align-items: center;
     justify-content: start;
-    border-radius: 0px;
+    border-radius: 5px;
     transition: 60ms linear;
+    padding: 4px 4px;
 }
 
 .tree-node-header:hover {
@@ -1109,9 +1194,6 @@ ContextMenu {
     border-color: var(--accent);
     border-radius: 4px;
 }
-
-
-
 
 .color-picker {
     flex-direction: column;
@@ -1185,7 +1267,7 @@ ContextMenu {
     width: grow;
     height: 22px;
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-dim);
     background-color: var(--bg-widget);
     border-width: 1px;
@@ -1219,7 +1301,7 @@ ContextMenu {
 
 .cp-ch-lbl {
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
     width: 12px;
 }
@@ -1233,7 +1315,7 @@ ContextMenu {
     width: 38px;
     height: 20px;
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text);
     background-color: var(--input-bg);
     border-width: 1px;
@@ -1256,7 +1338,7 @@ ContextMenu {
 
 .cp-hex-lbl {
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text-muted);
     width: 8px;
 }
@@ -1265,7 +1347,7 @@ ContextMenu {
     width: grow;
     height: 20px;
     font-family: regular;
-    font-size: 11px;
+    font-size: 14px;
     color: var(--text);
     background-color: var(--input-bg);
     border-width: 1px;
@@ -1285,29 +1367,76 @@ ContextMenu {
     background-color: var(--bg-base);
 }
 
-.floating-panel-root {
+.gallery-root {
     width: 100%;
     height: 100%;
     flex-direction: column;
     background-color: var(--bg-base);
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
 }
 
-.floating-panel-header {
+.gallery-header {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    height: 26px;
-    padding: 0px 10px;
+    height: 30px;
+    padding: 0px 12px;
     background-color: var(--bg-surface);
     border-color: var(--border);
     border-width: 1px;
 }
 
-.floating-panel-title {
+.gallery-title {
     font-family: medium;
-    font-size: 12px;
-    color: var(--text-dim);
+    font-size: 14px;
+    color: var(--text-bright);
     width: grow;
+}
+
+.gallery-scroll {
+    width: 100%;
+    height: grow;
+}
+
+.gallery-content {
+    flex-direction: column;
+    width: 100%;
+    padding: 12px;
+    gap: 14px;
+}
+
+.gallery-item {
+    flex-direction: column;
+    width: 100%;
+    gap: 5px;
+}
+
+.gallery-heading {
+    font-family: medium;
+    font-size: 14px;
+    color: var(--accent-muted);
+}
+
+.gallery-tabview {
+    height: 150px;
+}
+
+.gallery-listbox {
+    height: 108px;
+}
+
+.gallery-image {
+    width: 32px;
+    height: 32px;
+}
+
+.floating-panel-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
 }
 
 .floating-panel-body {
@@ -1342,14 +1471,14 @@ ContextMenu {
 
 .ui-debug-title {
     font-family: medium;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--text-bright);
     width: grow;
 }
 
 .ui-debug-refresh {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
     padding: 3px 10px;
     border-radius: 4px;
@@ -1399,7 +1528,7 @@ ContextMenu {
 
 .ui-debug-section {
     font-family: medium;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--accent-muted);
     width: 100%;
     padding: 6px 0px 2px 0px;
@@ -1413,30 +1542,17 @@ ContextMenu {
 
 .ui-debug-key {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text-dim);
     width: 110px;
 }
 
 .ui-debug-val {
     font-family: regular;
-    font-size: 12px;
+    font-size: 14px;
     color: var(--text);
     flex-grow: 1;
 }
-
-.floating-backdrop {
-    display: none;
-    width: 9999px;
-    height: 9999px;
-    background-color: rgba(0, 0, 0, 0);
-    padding: 0px;
-}
-
-.popup {
-    display: none;
-}
-
 
 @media (max-width: 1100px) {
     .dock-side-left {
@@ -1457,10 +1573,6 @@ ContextMenu {
         width: 220px;
     }
 
-    .menu-btn {
-        padding: 4px 7px;
-        font-size: 13px;
-    }
 }
 
 @media (max-width: 600px) {
@@ -1472,9 +1584,6 @@ ContextMenu {
         display: none;
     }
 
-    .run-btn {
-        padding: 4px 8px;
-    }
 }
 
 @media (max-width: 500px) {
@@ -1483,19 +1592,9 @@ ContextMenu {
         padding: 0px 4px;
     }
 
-    .menu-btn {
-        padding: 3px 5px;
-        font-size: 12px;
-    }
-
-    .run-btn {
-        padding: 3px 6px;
-        font-size: 13px;
-    }
-
     #engine-logo {
         padding: 3px 6px;
-        font-size: 12px;
+        font-size: 14px;
     }
 }
 
@@ -1504,7 +1603,7 @@ ContextMenu {
 @container (max-width: 220px) {
     .dock-tab-btn {
         padding: 0px 8px;
-        font-size: 11px;
+        font-size: 14px;
     }
 }
 
@@ -1524,24 +1623,9 @@ ContextMenu {
 
     .property-label {
         width: 100%;
-        font-size: 11px;
+        font-size: 14px;
     }
 
-    .prop-row {
-        flex-direction: column;
-        align-items: start;
-        gap: 3px;
-    }
-
-    .prop-lbl {
-        width: 100%;
-    }
-
-    .comp-header {
-        flex-direction: column;
-        align-items: start;
-        gap: 2px;
-    }
 }
 
 @container (max-width: 180px) {
@@ -1561,10 +1645,6 @@ ContextMenu {
         width: 100%;
     }
 
-    .prop-xyz {
-        flex-direction: column;
-    }
-
     .collapsible-content {
         padding: 4px;
         gap: 3px;
@@ -1573,18 +1653,26 @@ ContextMenu {
 
 @container (max-width: 130px) {
     .inspector-entity-name {
-        font-size: 13px;
+        font-size: 14px;
         padding: 3px 2px;
     }
 
     .collapsible-header {
         height: 22px;
-        font-size: 11px;
+        font-size: 14px;
         padding: 0px 6px;
     }
 
     DragFloat {
         height: 20px;
-        font-size: 11px;
+        font-size: 14px;
     }
+}
+
+.hidden {
+    display: none;
+}
+
+.dimmed {
+    opacity: 0.35;
 }

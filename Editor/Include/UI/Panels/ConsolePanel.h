@@ -38,6 +38,7 @@ class ConsolePanel : public IEditorPanel {
 
 	void Build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlayRoot) override;
 	void FlushPending();
+	void ClearAll();
 
   private:
 	struct LogEntry {
@@ -49,7 +50,6 @@ class ConsolePanel : public IEditorPanel {
 
 	void AppendEntry(LogEntry entry);
 	void SelectRow(int index);
-	void ClearAll();
 	void ToggleFilter(FilterGroup group);
 	void ApplyRowVisibility(int index);
 	void UpdateFilterButtons();

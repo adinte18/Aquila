@@ -41,9 +41,7 @@ void LightComponentUI::Show(Entity entity) {
 	bind.Bind(m_Active, &LightComponent::IsActive, &LightComponent::SetActive);
 
 	const bool isPoint = light.GetType() == LightComponent::Type::Point;
-	UI::StyleProperties rangeSp;
-	rangeSp.display = isPoint ? UI::Display::Flex : UI::Display::None;
-	m_Range->GetParent()->MergeStyle(rangeSp);
+	m_Range->GetParent()->SetHidden(!isPoint);
 	if (isPoint) {
 		bind.Bind(m_Range, &LightComponent::GetRange, &LightComponent::SetRange);
 	}

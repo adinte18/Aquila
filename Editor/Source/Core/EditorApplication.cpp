@@ -1,12 +1,13 @@
 #include "Core/EditorApplication.h"
 
-#include "UI/EditorDockLayout.h"
 #include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
 #include "UI/Panels/HierarchyPanel.h"
 #include "UI/Debug/FloatingPanelWindow.h"
 #include "UI/Debug/UIDebugPanel.h"
 #include "UI/Debug/UIDebugWindow.h"
+#include "UI/Debug/WidgetGalleryWindow.h"
+#include "UI/Debug/PickerOverlay.h"
 #include "UI/Panels/InspectorPanel.h"
 #include "UI/Panels/ViewportPanel.h"
 
@@ -29,6 +30,7 @@
 #include "Aquila/UI/Widgets/ColorPicker.h"
 #include "Aquila/UI/Widgets/ContextMenu.h"
 #include "Aquila/UI/Widgets/DockNode.h"
+#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockSpace.h"
 #include "Aquila/UI/Widgets/DockTypes.h"
 #include "Aquila/UI/Widgets/Menubar.h"
@@ -71,6 +73,7 @@ void EditorApplication::OnInit() {
 
 void EditorApplication::OnShutdown() {
 	m_FloatingPanels.clear();
+	m_WidgetGalleryWindow.reset();
 	m_UIDebugWindow.reset();
 	m_UIDebugPanel.reset();
 	m_HierarchyPanel.reset();
@@ -93,6 +96,44 @@ void EditorApplication::OnPreRender(f32 deltaTime) {
 
 void EditorApplication::OnEvent(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
+
+	if (m_PickMode) {
+		bool consumed = false;
+		dispatcher.Dispatch<Events::MouseMovedEvent>([&](Events::MouseMovedEvent &e) {
+			auto &editorCanvas = Aquila::UI::Core::CanvasManager::Get()->GetLayer(Aquila::UI::Core::UILayer::Editor);
+			Aquila::UI::Core::View *hit = editorCanvas.HitTest({ e.GetX(), e.GetY() });
+			if (m_Picker) {
+				hit ? m_Picker->SetTarget(hit->GetAbsoluteRect()) : m_Picker->Clear();
+			}
+			if (m_UIDebugWindow && hit) {
+				m_UIDebugWindow->SelectView(hit);
+			}
+			consumed = true;
+			return true;
+		});
+		dispatcher.Dispatch<Events::MouseButtonPressedEvent>([&](Events::MouseButtonPressedEvent &) {
+			m_PickMode = false;
+			if (m_Picker) {
+				m_Picker->Clear();
+			}
+			consumed = true;
+			return true;
+		});
+		dispatcher.Dispatch<Events::KeyPressedEvent>([&](Events::KeyPressedEvent &e) {
+			if (e.GetKeyCode() == Events::KeyCode::Escape) {
+				m_PickMode = false;
+				if (m_Picker) {
+					m_Picker->Clear();
+				}
+			}
+			consumed = true;
+			return true;
+		});
+		if (consumed) {
+			return;
+		}
+	}
+
 	dispatcher.Dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
 		if (e.GetKeyCode() == Events::KeyCode::F1 && !e.IsRepeat()) {
 			if (m_UIDebugPanel) {
@@ -183,6 +224,18 @@ void EditorApplication::SetupEditorUI() {
 							  return CreateUnique<Aquila::UI::Core::ColorPicker>(GetContext());
 						  });
 
+	loader.RegisterCommand("entity.create", [this] {
+		auto entity = GetScene().GetEntityManager()->CreateEntity("New Entity");
+		if (m_HierarchyPanel) {
+			m_HierarchyPanel->AddEntity(entity);
+		}
+	});
+	loader.RegisterCommand("console.clear", [this] {
+		if (m_ConsolePanel) {
+			m_ConsolePanel->ClearAll();
+		}
+	});
+
 	auto root = loader.LoadFile(cfg.ui.layoutPath);
 	if (!root) {
 		AQUILA_LOG_ERROR("EditorApplication: failed to load editor layout from {}", cfg.ui.layoutPath);
@@ -191,15 +244,16 @@ void EditorApplication::SetupEditorUI() {
 
 	Aquila::UI::Core::View *layoutRoot = editorCanvas.GetRoot()->AddChild(std::move(root));
 
-	auto *dockRoot = layoutRoot->FindById("dock-root");
-	if (!dockRoot) {
-		AQUILA_LOG_ERROR("EditorApplication: dock-root not found in layout");
+	m_DockSpace = layoutRoot->FindById<Aquila::UI::Core::DockSpace>("editor-dock");
+	auto *hierarchyPanel = layoutRoot->FindById<Aquila::UI::Core::DockPanel>("panel-hierarchy");
+	auto *viewportPanel = layoutRoot->FindById<Aquila::UI::Core::DockPanel>("panel-viewport");
+	auto *inspectorPanel = layoutRoot->FindById<Aquila::UI::Core::DockPanel>("panel-inspector");
+	auto *consolePanel = layoutRoot->FindById<Aquila::UI::Core::DockPanel>("panel-console");
+	if (!m_DockSpace || !hierarchyPanel || !viewportPanel || !inspectorPanel || !consolePanel) {
+		AQUILA_LOG_ERROR("EditorApplication: editor dock layout not found — check editor.aqlayout");
 		return;
 	}
 
-	auto dockPanels = EditorDockLayout::Build(dockRoot);
-
-	m_DockSpace = dockPanels.dockSpace;
 	WireDockSpace(m_DockSpace, GetWindow().GetNativeWindow());
 
 	m_HierarchyPanel = CreateUnique<HierarchyPanel>(*GetScene().GetEntityManager());
@@ -207,10 +261,10 @@ void EditorApplication::SetupEditorUI() {
 	m_InspectorPanel = CreateUnique<InspectorPanel>(GetContext());
 	m_ConsolePanel = CreateUnique<ConsolePanel>(m_TextureCache.get());
 
-	m_HierarchyPanel->Build(dockPanels.hierarchy, layoutRoot);
-	m_ViewportPanel->Build(dockPanels.viewport, layoutRoot);
-	m_InspectorPanel->Build(dockPanels.inspector, layoutRoot);
-	m_ConsolePanel->Build(dockPanels.console, layoutRoot);
+	m_HierarchyPanel->Build(hierarchyPanel, layoutRoot);
+	m_ViewportPanel->Build(viewportPanel, layoutRoot);
+	m_InspectorPanel->Build(inspectorPanel, layoutRoot);
+	m_ConsolePanel->Build(consolePanel, layoutRoot);
 
 	m_HierarchyPanel->onEntitySelected.Connect([this](Entity entity) { m_InspectorPanel->ShowEntity(entity); });
 
@@ -222,8 +276,11 @@ void EditorApplication::SetupEditorUI() {
 	auto ctxUniq = CreateUnique<Aquila::UI::Core::ContextMenu>();
 	auto *ctx = static_cast<Aquila::UI::Core::ContextMenu *>(layoutRoot->AddChild(std::move(ctxUniq)));
 	ctx->AddItem("Open UI Inspector", [this] { OpenUIInspectorWindow(); });
+	ctx->AddItem("Open Widget Gallery", [this] { OpenWidgetGalleryWindow(); });
 	layoutRoot->onContextMenu.Connect([ctx](vec2 pos) { ctx->OpenAt(pos); });
-	dockPanels.viewport->onContextMenu.Connect([ctx](vec2 pos) { ctx->OpenAt(pos); });
+	viewportPanel->onContextMenu.Connect([ctx](vec2 pos) { ctx->OpenAt(pos); });
+
+	m_Picker = editorCanvas.GetRoot()->AddChild<PickerOverlay>();
 
 	editorCanvas.ReloadStyles();
 }
@@ -239,11 +296,44 @@ void EditorApplication::OpenUIInspectorWindow() {
 	m_UIDebugWindow = CreateUnique<UIDebugWindow>();
 	m_UIDebugWindow->Build(&editorCanvas, 800, 600, Config::GetPreferences().ui.stylePath);
 
+	m_UIDebugWindow->onPickRequested = [this] { StartPick(); };
+
 	UIDebugWindow *win = m_UIDebugWindow.get();
 	rw.onUpdate = [win](f32 dt) { win->Update(dt); };
 	rw.onRender = [win](auto &batcher, auto &cmd) { win->Render(batcher, cmd); };
 	rw.onEvent = [win](Events::Event &event) { win->OnEvent(event); };
-	rw.onClose = [this] { m_UIDebugWindow.reset(); };
+	rw.onClose = [this] {
+		m_PickMode = false;
+		if (m_Picker) {
+			m_Picker->Clear();
+		}
+		m_UIDebugWindow.reset();
+	};
+}
+
+void EditorApplication::StartPick() {
+	if (!m_UIDebugWindow) {
+		return;
+	}
+	m_UIDebugWindow->Refresh();
+	m_PickMode = true;
+}
+
+void EditorApplication::OpenWidgetGalleryWindow() {
+	if (m_WidgetGalleryWindow) {
+		return;
+	}
+
+	RenderWindow &rw = CreateSecondaryWindow(420, 720, "Aquila - Widget Gallery");
+
+	m_WidgetGalleryWindow = CreateUnique<WidgetGalleryWindow>();
+	m_WidgetGalleryWindow->Build(GetContext(), m_TextureCache.get(), 420, 720, Config::GetPreferences().ui.stylePath);
+
+	WidgetGalleryWindow *win = m_WidgetGalleryWindow.get();
+	rw.onUpdate = [win](f32 dt) { win->Update(dt); };
+	rw.onRender = [win](auto &batcher, auto &cmd) { win->Render(batcher, cmd); };
+	rw.onEvent = [win](Events::Event &event) { win->OnEvent(event); };
+	rw.onClose = [this] { m_WidgetGalleryWindow.reset(); };
 }
 
 void EditorApplication::WireDockSpace(Aquila::UI::Core::DockSpace *dockSpace, GLFWwindow *sourceNative) {
@@ -427,6 +517,7 @@ void EditorApplication::WireMenubar(Aquila::UI::Core::View *layoutRoot) {
 
 	auto *windowMenu = menuBar->AddMenu("Window");
 	windowMenu->AddItem("UI Inspector", [this] { OpenUIInspectorWindow(); });
+	windowMenu->AddItem("Widget Gallery", [this] { OpenWidgetGalleryWindow(); });
 	windowMenu->AddItem("Hierarchy", [] { AQUILA_LOG_INFO("Window: Hierarchy"); });
 	windowMenu->AddItem("Inspector", [] { AQUILA_LOG_INFO("Window: Inspector"); });
 	windowMenu->AddItem("Viewport", [] { AQUILA_LOG_INFO("Window: Viewport"); });
