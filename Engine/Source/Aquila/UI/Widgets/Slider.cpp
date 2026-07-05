@@ -11,27 +11,23 @@ Slider::Slider() {
 	AddClass("slider");
 }
 
-void Slider::SetValue(float value) {
+float Slider::Coerce(const float &value) const {
 	float clamped = std::clamp(value, m_Min, m_Max);
 	if (m_Step > 0.f) {
 		clamped = std::round((clamped - m_Min) / m_Step) * m_Step + m_Min;
 	}
-	if (clamped == m_Value) {
-		return;
-	}
-	m_Value = clamped;
-	QueueRedraw();
+	return clamped;
 }
 
 void Slider::SetRange(float min, float max) {
 	m_Min = min;
 	m_Max = max;
-	SetValue(m_Value); // re-clamp
+	SetValueWithoutNotify(GetValue());
 }
 
 void Slider::SetStep(float step) {
 	m_Step = step;
-	SetValue(m_Value); // re-snap
+	SetValueWithoutNotify(GetValue());
 }
 
 
@@ -49,23 +45,13 @@ float Slider::ValueFromX(float x) const {
 
 void Slider::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
-		const float newVal = ValueFromX(pos.x);
-		if (newVal != m_Value) {
-			m_Value = newVal;
-			onChanged(m_Value);
-			QueueRedraw();
-		}
+		SetValue(ValueFromX(pos.x));
 	}
 	View::OnMousePress(btn, pos);
 }
 
 void Slider::OnMouseMove(vec2 pos) {
-	const float newVal = ValueFromX(pos.x);
-	if (newVal != m_Value) {
-		m_Value = newVal;
-		onChanged(m_Value);
-		QueueRedraw();
-	}
+	SetValue(ValueFromX(pos.x));
 }
 
 void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
@@ -77,7 +63,7 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 	const int32 z = 0;
 	const float cy = rect.position.y + rect.size.y * 0.5f;
 
-	const float t = (m_Max > m_Min) ? (m_Value - m_Min) / (m_Max - m_Min) : 0.f;
+	const float t = (m_Max > m_Min) ? (GetValue() - m_Min) / (m_Max - m_Min) : 0.f;
 
 	const vec4 accentColor = style.EffectiveAccentColor();
 
@@ -92,9 +78,7 @@ void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
 		const float hx = rect.position.x + t * rect.size.x - kHandleSize * 0.5f;
 		const float hy = cy - kHandleSize * 0.5f;
 		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
-		const vec4 handleBorder = (style.borderColor.a > 0.f) ? style.borderColor : vec4(0.f, 0.f, 0.f, 0.7f);
-		const float handleBorderW = (style.borderWidth > 0.f) ? style.borderWidth : 1.5f;
-		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), handleBorderW, handleBorder, z + 2);
+		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), style.borderWidth, style.borderColor, z + 2);
 	} else {
 		const Rect track = {
 			.position = { rect.position.x + kHandlePad, cy - kTrackHeight * 0.5f },

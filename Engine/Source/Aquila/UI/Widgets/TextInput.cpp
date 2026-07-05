@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/TextInput.h"
+#include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/Application/Events/InputEvent.h"
 #include "Aquila/Platform/Input.h"
@@ -32,7 +33,6 @@ void TextInput::SetPlaceholder(std::string text) {
 	m_Placeholder = std::move(text);
 	QueueRedraw();
 }
-
 
 Text::FontAtlas *TextInput::ResolveFont() const {
 	if (Text::FontAtlas *css = GetResolvedFont()) {
@@ -81,6 +81,7 @@ void TextInput::OnMousePress(Platform::MouseButton btn, vec2 pos) {
 		m_State.selectAnchor = hit;
 	}
 	ClampScrollOffset(font, scale, visibleWidth);
+	ResetBlink();
 	QueueRedraw();
 }
 
@@ -120,6 +121,7 @@ void TextInput::OnKeyPress(Platform::KeyCode key, int mods) {
 			const float visibleWidth = GetLayoutRect().size.x - kPadX * 2.f;
 			ClampScrollOffset(font, scale, visibleWidth);
 		}
+		ResetBlink();
 		QueueRedraw();
 		return;
 	}
@@ -132,12 +134,17 @@ void TextInput::OnKeyPress(Platform::KeyCode key, int mods) {
 void TextInput::OnCharInput(uint32 codepoint) {
 	if (m_State.HandleCharInput(codepoint)) {
 		onChanged(m_State.text);
+		ResetBlink();
 		QueueRedraw();
 	}
 }
 
 void TextInput::OnFocusGained() {
 	View::OnFocusGained();
+	ResetBlink();
+	if (Canvas *canvas = GetCanvas()) {
+		canvas->RegisterTick(this);
+	}
 	QueueRedraw();
 }
 
@@ -145,7 +152,25 @@ void TextInput::OnFocusLost() {
 	View::OnFocusLost();
 	m_State.selectAnchor = m_State.cursor;
 	m_ScrollOffsetX = 0.f;
+	if (Canvas *canvas = GetCanvas()) {
+		canvas->UnregisterTick(this);
+	}
 	QueueRedraw();
+}
+
+void TextInput::OnUpdate(f32 deltaTime) {
+	constexpr float kBlinkPeriod = 0.53f;
+	m_BlinkTimer += deltaTime;
+	if (m_BlinkTimer >= kBlinkPeriod) {
+		m_BlinkTimer -= kBlinkPeriod;
+		m_CaretVisible = !m_CaretVisible;
+		QueueRedraw();
+	}
+}
+
+void TextInput::ResetBlink() {
+	m_BlinkTimer = 0.f;
+	m_CaretVisible = true;
 }
 
 vec2 TextInput::GetIntrinsicSize() const {
@@ -191,7 +216,7 @@ void TextInput::OnDrawSelf(Rendering::DrawList &drawList) {
 		const float x1 = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.SelectionMax());
 		const Rect selRect = { .position = { x0, textY }, .size = { x1 - x0, lineH } };
 		const vec4 selColor = style.EffectiveSelectionColor();
-		drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z);
+		drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z + 1);
 	}
 
 	if (!m_State.text.empty()) {
@@ -201,11 +226,10 @@ void TextInput::OnDrawSelf(Rendering::DrawList &drawList) {
 		drawList.DrawText(textRect, m_Placeholder, font, muted, fontSize, TextAlign::Left, z + 1);
 	}
 
-	if (m_IsFocused && !m_State.HasSelection()) {
+	if (m_IsFocused && !m_State.HasSelection() && m_CaretVisible) {
 		const float cx = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.cursor);
 		const float cy = rect.position.y + (rect.size.y - lineH) * 0.5f;
-		const Rect cursor = { .position = { cx - 0.75f, cy }, .size = { 1.5f, lineH } };
-		drawList.DrawRect(cursor, style.color, vec4(0.f), 0.f, vec4(0.f), z);
+		drawList.DrawLine({ cx, cy }, { cx, cy + lineH }, 0.5f, style.color, z + 2);
 	}
 }
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/Control.h"
 #include "Aquila/UI/Widgets/DragFloat.h"
 #include "Aquila/UI/Widgets/Label.h"
 
@@ -18,7 +18,7 @@ class LabeledDragFloat : public View {
 	DragFloat *m_Drag = nullptr;
 };
 
-template <int N, typename VecT> class VecFieldBase : public View {
+template <int N, typename VecT> class VecFieldBase : public Control {
   public:
 	void SetValue(VecT v) {
 		for (int i = 0; i < N; ++i) {

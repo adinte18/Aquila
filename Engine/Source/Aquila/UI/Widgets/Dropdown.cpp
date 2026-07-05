@@ -3,27 +3,13 @@
 namespace Aquila::UI::Core {
 
 Dropdown::Dropdown() {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	SetStyle(sp);
-
 	auto header = CreateUnique<Button>();
-	{
-		StyleProperties hp;
-		hp.width = StyleLength::Grow();
-		header->SetStyle(hp);
-		header->AddClass("dropdown-header");
-	}
+	header->AddClass("dropdown-header");
 	header->onClick.Connect([this] { m_Popup->Toggle(); });
 	m_Header = static_cast<Button *>(AddChild(std::move(header)));
 
 	auto popup = CreateUnique<Popup>();
-	{
-		StyleProperties pp;
-		pp.flexDirection = FlexDirection::Column;
-		popup->MergeStyle(pp);
-		popup->AddClass("dropdown-popup");
-	}
+	popup->AddClass("dropdown-popup");
 	m_Popup = static_cast<Popup *>(AddChild(std::move(popup)));
 
 	UpdateHeaderText();
@@ -67,11 +53,6 @@ void Dropdown::Rebuild() {
 		auto btn = CreateUnique<Button>();
 		btn->SetText(opt.Label());
 		btn->AddClass("dropdown-option");
-		{
-			StyleProperties bp;
-			bp.width = StyleLength::Grow();
-			btn->SetStyle(bp);
-		}
 		btn->onClick.Connect([this, value = opt.value] {
 			Select(value);
 			m_Popup->Close();

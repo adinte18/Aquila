@@ -203,7 +203,7 @@ void ColorPicker::SyncChannelDisplays() {
 		vals[2] = m_Color.b * 255.f;
 		vals[3] = m_Color.a * 255.f;
 		for (int i = 0; i < 4; ++i) {
-			m_Ch[i].slider->SetValue(vals[i]);
+			m_Ch[i].slider->SetValueWithoutNotify(vals[i]);
 			m_Ch[i].input->SetText(FmtInt(static_cast<int>(std::round(vals[i]))));
 		}
 	} else if (m_Mode == Mode::HSV) {
@@ -212,11 +212,11 @@ void ColorPicker::SyncChannelDisplays() {
 		vals[2] = m_V * 100.f;
 		vals[3] = m_Color.a * 255.f;
 		for (int i = 0; i < 4; ++i) {
-			m_Ch[i].slider->SetValue(vals[i]);
+			m_Ch[i].slider->SetValueWithoutNotify(vals[i]);
 			m_Ch[i].input->SetText(FmtInt(static_cast<int>(std::round(vals[i]))));
 		}
 	} else { // HEX
-		m_Ch[3].slider->SetValue(m_Color.a * 255.f);
+		m_Ch[3].slider->SetValueWithoutNotify(m_Color.a * 255.f);
 		m_Ch[3].input->SetText(FmtInt(static_cast<int>(std::round(m_Color.a * 255.f))));
 	}
 }
@@ -353,16 +353,10 @@ void ColorPicker::SetMode(Mode mode) {
 	const bool isHex = (mode == Mode::HEX);
 	const bool isHSV = (mode == Mode::HSV);
 
-	{
-		StyleProperties p;
-		p.display = isHex ? Display::Flex : Display::None;
-		m_HexRow->MergeStyle(p);
-	}
+	m_HexRow->SetHidden(!isHex);
 
 	for (int i = 0; i < 3; ++i) {
-		StyleProperties p;
-		p.display = isHex ? Display::None : Display::Flex;
-		m_Ch[i].row->MergeStyle(p);
+		m_Ch[i].row->SetHidden(isHex);
 	}
 
 	if (!isHex) {
@@ -538,7 +532,7 @@ void ColorPicker::Init() {
 		m_Ch[i].input->onSubmit.Connect([this, idx](const std::string &s) {
 			try {
 				const float val = static_cast<float>(std::stoi(s));
-				m_Ch[idx].slider->SetValue(val);
+				m_Ch[idx].slider->SetValueWithoutNotify(val);
 				ApplyChannelValue(idx, val);
 			} catch (...) {
 			}

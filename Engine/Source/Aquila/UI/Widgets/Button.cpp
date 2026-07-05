@@ -1,4 +1,6 @@
 #include "Aquila/UI/Widgets/Button.h"
+#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::UI::Core {
 
@@ -8,24 +10,30 @@ Button::Button() {
 
 Button::Button(std::string text, Text::FontAtlas *font) {
 	SetInputLeaf(true);
-	auto label = CreateUnique<Label>(std::move(text), font);
-	m_Label = dynamic_cast<Label *>(AddChild(std::move(label)));
+	m_Content = dynamic_cast<IconLabel *>(AddChild(CreateUnique<IconLabel>(std::move(text), font)));
+}
+
+void Button::EnsureContent() {
+	if (m_Content == nullptr) {
+		m_Content = static_cast<IconLabel *>(AddChild(CreateUnique<IconLabel>()));
+	}
 }
 
 void Button::SetText(std::string text) {
-	if (m_Label == nullptr) {
-		auto label = CreateUnique<Label>(text);
-		m_Label = static_cast<Label *>(AddChild(std::move(label)));
-		return;
-	}
-	m_Label->SetText(std::move(text));
+	EnsureContent();
+	m_Content->SetText(std::move(text));
 }
 
 void Button::SetFont(Text::FontAtlas *font) {
-	if (m_Label == nullptr) {
+	if (m_Content == nullptr) {
 		return;
 	}
-	m_Label->SetFont(font);
+	m_Content->SetFont(font);
+}
+
+void Button::SetIcon(GFX::GfxTexture *texture) {
+	EnsureContent();
+	m_Content->SetIconTexture(texture);
 }
 
 void Button::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
@@ -37,12 +45,31 @@ void Button::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
 
 void Button::OnStyleResolved() {
 	View::OnStyleResolved();
-	if (m_Label == nullptr) {
+	if (m_Content == nullptr) {
 		return;
 	}
 	if (Text::FontAtlas *font = GetResolvedFont()) {
-		m_Label->SetFont(font);
+		m_Content->SetFont(font);
 	}
+}
+
+void Button::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
+		EnsureContent();
+		m_Content->ApplyXmlAttribute(name, value, loaderCtx);
+		return;
+	}
+	if (name == "on-click") {
+		if (auto *loader = static_cast<LayoutLoader *>(loaderCtx)) {
+			if (Delegate<void()> command = loader->ResolveCommand(std::string(value))) {
+				onClick.Connect(std::move(command));
+			} else {
+				AQUILA_LOG_WARNING("Button: on-click references unknown command '{}'", value);
+			}
+		}
+		return;
+	}
+	View::ApplyXmlAttribute(name, value, loaderCtx);
 }
 
 } // namespace Aquila::UI::Core

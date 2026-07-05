@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/Control.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Popup.h"
@@ -11,7 +11,7 @@
 
 namespace Aquila::UI::Core {
 
-class ColorPicker : public View {
+class ColorPicker : public Control {
   public:
 	class PickerArea;
 

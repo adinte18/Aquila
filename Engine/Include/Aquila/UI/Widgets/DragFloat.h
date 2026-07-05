@@ -1,12 +1,12 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/Control.h"
 #include "Aquila/UI/Core/TextInputState.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
 namespace Aquila::UI::Core {
 
-class DragFloat : public View {
+class DragFloat : public Control {
   public:
 	struct Config {
 		float min = -1e18f;

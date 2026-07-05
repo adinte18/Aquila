@@ -1,29 +1,24 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/BaseField.h"
 
 namespace Aquila::UI::Core {
 
-class Checkbox : public View {
+class Checkbox : public BaseField<bool> {
   public:
 	Checkbox();
 	explicit Checkbox(bool checked);
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Checkbox"; }
 
-	void SetChecked(bool checked);
-	[[nodiscard]] bool IsChecked() const { return m_Checked; }
-
-	void SetValue(bool checked) { SetChecked(checked); }
-	[[nodiscard]] bool GetValue() const { return m_Checked; }
-
-	Signal<void(bool)> onChanged;
+	void SetChecked(bool checked) { SetValue(checked); }
+	[[nodiscard]] bool IsChecked() const { return GetValue(); }
 
 	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 
-  private:
-	bool m_Checked = false;
+  protected:
+	void OnValueUpdated() override;
 };
 
 } // namespace Aquila::UI::Core

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/Control.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Popup.h"
 #include <string>
@@ -8,7 +8,7 @@
 
 namespace Aquila::UI::Core {
 
-class Dropdown : public View {
+class Dropdown : public Control {
   public:
 	Dropdown();
 

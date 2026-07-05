@@ -6,24 +6,18 @@ Checkbox::Checkbox() {
 	SetInputLeaf(true);
 }
 
-Checkbox::Checkbox(bool checked) : m_Checked(checked) {
+Checkbox::Checkbox(bool checked) {
 	SetInputLeaf(true);
+	SetValueWithoutNotify(checked);
 }
 
-void Checkbox::SetChecked(bool checked) {
-	if (checked == m_Checked) {
-		return;
-	}
-	m_Checked = checked;
+void Checkbox::OnValueUpdated() {
 	QueueRedraw();
 }
 
-
 void Checkbox::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		m_Checked = !m_Checked;
-		onChanged(m_Checked);
-		QueueRedraw();
+		SetValue(!GetValue());
 	}
 	View::OnMouseRelease(btn, pos);
 }
@@ -31,7 +25,7 @@ void Checkbox::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
 void Checkbox::OnDrawSelf(Rendering::DrawList &drawList) {
 	View::OnDrawSelf(drawList); // draws background + border from style
 
-	if (!m_Checked) {
+	if (!GetValue()) {
 		return;
 	}
 

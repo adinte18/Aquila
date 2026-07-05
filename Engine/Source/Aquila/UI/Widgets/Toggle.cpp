@@ -7,37 +7,24 @@ Toggle::Toggle() {
 	AddClass("toggle");
 }
 
-Toggle::Toggle(bool on) : m_On(on) {
+Toggle::Toggle(bool on) {
 	SetInputLeaf(true);
 	AddClass("toggle");
-	if (on) {
-		AddClass("toggle-on");
-	}
+	SetValueWithoutNotify(on);
 }
 
-void Toggle::SetOn(bool on) {
-	if (on == m_On) {
-		return;
-	}
-	m_On = on;
-	SyncStateClass();
-	QueueRedraw();
-}
-
-void Toggle::SyncStateClass() {
-	if (m_On) {
+void Toggle::OnValueUpdated() {
+	if (GetValue()) {
 		AddClass("toggle-on");
 	} else {
 		RemoveClass("toggle-on");
 	}
+	QueueRedraw();
 }
 
 void Toggle::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
 	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		m_On = !m_On;
-		SyncStateClass();
-		onChanged(m_On);
-		QueueRedraw();
+		SetValue(!GetValue());
 	}
 	View::OnMouseRelease(btn, pos);
 }
@@ -62,7 +49,7 @@ void Toggle::OnDrawSelf(Rendering::DrawList &drawList) {
 	// Thumb — drawn on top of track
 	const float thumbDiam = rect.size.y - 4.f;
 	const float thumbY = rect.position.y + 2.f;
-	const float thumbX = m_On ? rect.position.x + rect.size.x - thumbDiam - 2.f : rect.position.x + 2.f;
+	const float thumbX = GetValue() ? rect.position.x + rect.size.x - thumbDiam - 2.f : rect.position.x + 2.f;
 	const Rect thumb = { .position = { thumbX, thumbY }, .size = { thumbDiam, thumbDiam } };
 	drawList.DrawRect(thumb, thumbColor, vec4(thumbDiam * 0.5f), 0.f, vec4(0.f), z + 3);
 }

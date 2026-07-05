@@ -13,7 +13,7 @@ class TabView : public View {
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "TabView"; }
 
-	View *AddTab(std::string title);
+	View *AddTab(std::string title, GFX::GfxTexture *icon = nullptr);
 
 	void SetActiveTab(int index);
 	[[nodiscard]] int GetActiveTab() const { return m_ActiveTab; }

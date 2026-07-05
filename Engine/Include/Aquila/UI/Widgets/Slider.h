@@ -1,26 +1,23 @@
 #pragma once
 
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/BaseField.h"
 #include "Aquila/GFX/GfxTexture.h"
 
 namespace Aquila::UI::Core {
 
-class Slider : public View {
+class Slider : public BaseField<float> {
   public:
 	Slider();
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Slider"; }
 
-	void SetValue(float value);
 	void SetRange(float min, float max);
 	void SetStep(float step);
-	Signal<void(float)> onChanged;
 	void SetTrackTexture(GFX::GfxTexture *tex) {
 		m_TrackTex = tex;
 		QueueRedraw();
 	}
 
-	[[nodiscard]] float GetValue() const { return m_Value; }
 	[[nodiscard]] float GetMin() const { return m_Min; }
 	[[nodiscard]] float GetMax() const { return m_Max; }
 
@@ -28,10 +25,13 @@ class Slider : public View {
 	void OnMouseMove(vec2 pos) override;
 	void OnDrawSelf(Rendering::DrawList &drawList) override;
 
+  protected:
+	float Coerce(const float &value) const override;
+	void OnValueUpdated() override { QueueRedraw(); }
+
   private:
 	float ValueFromX(float x) const;
 
-	float m_Value = 0.f;
 	float m_Min = 0.f;
 	float m_Max = 1.f;
 	float m_Step = 0.f; // 0 = continuous
