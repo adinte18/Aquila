@@ -11,12 +11,6 @@
 namespace Aquila::UI::Core {
 
 DockSpace::DockSpace() {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.width = StyleLength::Grow();
-	sp.height = StyleLength::Grow();
-	sp.flexGrow = 1.f;
-	SetStyle(sp);
 	AddClass("dock-space");
 
 	auto preview = CreateUnique<View>();
@@ -29,11 +23,7 @@ DockSpace::DockSpace() {
 		cfg.zIndex = 30;
 		preview->SetFloating(cfg);
 	}
-	{
-		StyleProperties psp;
-		psp.display = Display::None;
-		preview->SetStyle(psp);
-	}
+	preview->SetHidden(true);
 	m_DropPreview = AddChild(std::move(preview));
 
 	m_DragCtx.onNodeEmptied = [this](DockNode *node) {
@@ -153,6 +143,100 @@ DockSpace::DockSpace() {
 	m_Root = static_cast<DockNode *>(AddChild(std::move(root)));
 }
 
+namespace {
+
+std::vector<View *> DeclaredDockChildren(View *node) {
+	std::vector<View *> out;
+	for (auto &child : node->GetChildren()) {
+		View *c = child.get();
+		if (dynamic_cast<DockNode *>(c) != nullptr || dynamic_cast<DockPanel *>(c) != nullptr) {
+			out.push_back(c);
+		}
+	}
+	return out;
+}
+
+} // namespace
+
+void DockSpace::OnXmlLoaded() {
+	DockNode *declRoot = nullptr;
+	for (auto &child : GetChildren()) {
+		auto *dn = dynamic_cast<DockNode *>(child.get());
+		if (dn != nullptr && dn != m_Root) {
+			declRoot = dn;
+			break;
+		}
+	}
+	if (declRoot == nullptr) {
+		return; // no declarative layout — keep the default empty root
+	}
+
+	CompileDeclaration(m_Root, declRoot);
+	RemoveChild(declRoot);
+}
+
+void DockSpace::CompileDeclaration(DockNode *realNode, DockNode *declNode) {
+	const Option<SplitDirection> split = declNode->GetDeclaredSplit();
+	const std::vector<View *> slots = DeclaredDockChildren(declNode);
+
+	if (!split.has_value()) {
+		for (View *slot : slots) {
+			if (auto *panel = dynamic_cast<DockPanel *>(slot)) {
+				RealizePanel(realNode, panel);
+			}
+		}
+		return;
+	}
+
+	if (slots.empty()) {
+		return;
+	}
+	if (slots.size() == 1) {
+		RealizeSlot(realNode, slots[0]);
+		return;
+	}
+
+	std::vector<DockNode *> leaves;
+	auto [first, second] = realNode->Split(*split);
+	leaves.push_back(first);
+	leaves.push_back(second);
+	for (size_t i = 2; i < slots.size(); ++i) {
+		DockNode *leaf = realNode->AppendLeaf(*split);
+		if (leaf == nullptr) {
+			break;
+		}
+		leaves.push_back(leaf);
+	}
+
+	for (size_t i = 0; i < leaves.size(); ++i) {
+		RealizeSlot(leaves[i], slots[i]);
+	}
+}
+
+void DockSpace::RealizeSlot(DockNode *realLeaf, View *slot) {
+	if (auto *childNode = dynamic_cast<DockNode *>(slot)) {
+		CompileDeclaration(realLeaf, childNode);
+	} else if (auto *panel = dynamic_cast<DockPanel *>(slot)) {
+		RealizePanel(realLeaf, panel);
+	}
+}
+
+void DockSpace::RealizePanel(DockNode *realLeaf, DockPanel *declPanel) {
+	DockPanel *realPanel = realLeaf->AddPanel(declPanel->GetTitle(), declPanel->GetTabIcon());
+	realPanel->SetId(declPanel->GetId());
+	for (const auto &cls : declPanel->GetClasses()) {
+		realPanel->AddClass(cls);
+	}
+
+	std::vector<View *> content;
+	for (const auto &child : declPanel->GetChildren()) {
+		content.push_back(child.get());
+	}
+	for (View *child : content) {
+		realPanel->AddChild(declPanel->DetachChild(child));
+	}
+}
+
 static DockNode *FindLeafWithTabs(View *view) {
 	if (auto *node = dynamic_cast<DockNode *>(view)) {
 		if (node->GetTabCount() > 0) {
@@ -181,9 +265,7 @@ void DockSpace::UpdatePreview(DockNode *target, DropZone zone) {
 	}
 
 	if (!target || zone == DropZone::None) {
-		StyleProperties sp;
-		sp.display = Display::None;
-		m_DropPreview->MergeStyle(sp);
+		m_DropPreview->SetHidden(true);
 		return;
 	}
 
@@ -222,10 +304,10 @@ void DockSpace::UpdatePreview(DockNode *target, DropZone zone) {
 	m_DropPreview->InvalidateLayout();
 
 	StyleProperties sp;
-	sp.display = Display::Flex;
 	sp.width = StyleLength::Pixel(preview.size.x);
 	sp.height = StyleLength::Pixel(preview.size.y);
 	m_DropPreview->MergeStyle(sp);
+	m_DropPreview->SetHidden(false);
 }
 
 void DockSpace::ExecuteDrop(DockNode *target, DropZone zone, vec2 releasePos) {

@@ -7,6 +7,10 @@
 #include <utility>
 #include <vector>
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Aquila::UI::Core {
 
 class DockPanel;
@@ -21,7 +25,10 @@ class DockNode : public View {
 	std::pair<DockNode *, DockNode *> Split(SplitDirection dir, bool anchorFirst = true);
 	DockNode *AppendLeaf(SplitDirection dir);
 
-	DockPanel *AddPanel(std::string title);
+	DockPanel *AddPanel(std::string title, GFX::GfxTexture *tabIcon = nullptr);
+
+	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	[[nodiscard]] Option<SplitDirection> GetDeclaredSplit() const { return m_DeclaredSplit; }
 
 	void SetActivePanel(int index);
 	void SetActivePanelByPtr(DockPanel *panel);
@@ -69,6 +76,7 @@ class DockNode : public View {
 	};
 	std::vector<Tab> m_Tabs;
 	int m_ActivePanel = -1;
+	Option<SplitDirection> m_DeclaredSplit;
 };
 
 } // namespace Aquila::UI::Core

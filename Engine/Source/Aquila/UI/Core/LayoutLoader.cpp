@@ -4,6 +4,7 @@
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Checkbox.h"
 #include "Aquila/UI/Widgets/Image.h"
+#include "Aquila/UI/Widgets/IconLabel.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Slider.h"
 #include "Aquila/UI/Widgets/Popup.h"
@@ -24,12 +25,16 @@
 #include "Aquila/UI/Widgets/ProgressBar.h"
 #include "Aquila/UI/Widgets/Tooltip.h"
 #include "Aquila/UI/Widgets/Menubar.h"
-#include "Aquila/UI/Widgets/SearchBox.h"
 #include "Aquila/UI/Widgets/ListBox.h"
 #include "Aquila/UI/Widgets/AssetSlot.h"
 #include "Aquila/UI/Widgets/AssetCard.h"
+#include "Aquila/UI/Widgets/DockSpace.h"
+#include "Aquila/UI/Widgets/DockNode.h"
+#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
+#include <algorithm>
+#include <utility>
 
 namespace Aquila::UI::Core {
 
@@ -38,7 +43,7 @@ namespace {
 struct Parser {
 	std::string_view src;
 	size_t pos = 0;
-	const LayoutLoader &loader;
+	LayoutLoader &loader;
 
 	[[nodiscard]] bool AtEnd() const { return pos >= src.size(); }
 	[[nodiscard]] char Peek() const { return AtEnd() ? '\0' : src[pos]; }
@@ -150,6 +155,7 @@ struct Parser {
 		std::string imageBank;
 		std::string imageUV;
 		std::string imageTint;
+		std::vector<std::pair<std::string, std::string>> genericAttrs;
 
 		SkipWS();
 		while (!AtEnd() && Peek() != '>' && Peek() != '/') {
@@ -213,8 +219,20 @@ struct Parser {
 			} else if (attrName == "tint") {
 				imageTint = attrValue;
 			} else {
-				UI::StyleParser::ApplyProperty(props, attrName, attrValue);
+				genericAttrs.emplace_back(std::move(attrName), std::move(attrValue));
 			}
+		}
+
+		if (tagName == "Include") {
+			if (!AtEnd() && Peek() == '/') {
+				Advance();
+			}
+			Expect('>');
+			if (imageSrc.empty()) {
+				AQUILA_LOG_ERROR("LayoutLoader: <Include> is missing a 'src' attribute");
+				return nullptr;
+			}
+			return loader.LoadFile(imageSrc);
 		}
 
 		Unique<View> view = loader.CreateWidget(tagName, "", font);
@@ -257,6 +275,10 @@ struct Parser {
 		}
 		if (!imageUV.empty()) {
 			view->ApplyXmlAttribute("uv", imageUV, loaderCtx);
+		}
+
+		for (const auto &attr : genericAttrs) {
+			view->ApplyXmlAttribute(attr.first, attr.second, loaderCtx);
 		}
 
 		if (!AtEnd() && Peek() == '/') {
@@ -305,6 +327,7 @@ struct Parser {
 			}
 		}
 
+		view->OnXmlLoaded();
 		return view;
 	}
 
@@ -377,6 +400,15 @@ void LayoutLoader::RegisterTextureIconBank(const std::string &name, TextureIconB
 	m_IconBanks[name] = bank;
 }
 
+void LayoutLoader::RegisterCommand(const std::string &name, Delegate<void()> command) {
+	m_Commands[name] = std::move(command);
+}
+
+Delegate<void()> LayoutLoader::ResolveCommand(const std::string &name) const {
+	auto it = m_Commands.find(name);
+	return (it != m_Commands.end()) ? it->second : Delegate<void()>{};
+}
+
 TextureIconBank *LayoutLoader::ResolveTextureIconBank(const std::string &name) const {
 	const std::string &key = name.empty() ? "default" : name;
 	auto it = m_IconBanks.find(key);
@@ -399,12 +431,32 @@ Unique<View> LayoutLoader::CreateWidget(const std::string &type, std::string_vie
 }
 
 Unique<View> LayoutLoader::LoadFile(const std::string &path) {
-	const std::string src = Platform::Filesystem::VirtualFileSystem::Get()->ReadTextFile(path);
-	if (src.empty()) {
-		AQUILA_LOG_ERROR("LayoutLoader: cannot open '{}'", path);
+	std::string resolved = path;
+	if (!path.empty() && path.front() != '/' && !m_CurrentDir.empty()) {
+		resolved = m_CurrentDir + "/" + path;
+	}
+
+	if (std::find(m_IncludeStack.begin(), m_IncludeStack.end(), resolved) != m_IncludeStack.end()) {
+		AQUILA_LOG_ERROR("LayoutLoader: include cycle detected at '{}'", resolved);
 		return nullptr;
 	}
-	return LoadString(src);
+
+	const std::string src = Platform::Filesystem::VirtualFileSystem::Get()->ReadTextFile(resolved);
+	if (src.empty()) {
+		AQUILA_LOG_ERROR("LayoutLoader: cannot open '{}'", resolved);
+		return nullptr;
+	}
+
+	const std::string prevDir = m_CurrentDir;
+	const auto slash = resolved.find_last_of('/');
+	m_CurrentDir = (slash != std::string::npos) ? resolved.substr(0, slash) : std::string();
+	m_IncludeStack.push_back(resolved);
+
+	Unique<View> result = LoadString(src);
+
+	m_IncludeStack.pop_back();
+	m_CurrentDir = prevDir;
+	return result;
 }
 
 Unique<View> LayoutLoader::LoadString(std::string_view xml) {
@@ -423,6 +475,7 @@ void LayoutLoader::RegisterBuiltins() {
 	Register<View>("View");
 	Register<Button>("Button");
 	Register<Image>("Image");
+	Register<IconLabel>("IconLabel");
 	Register<Checkbox>("Checkbox");
 	Register<Slider>("Slider");
 	Register<TextInput>("TextInput");
@@ -444,10 +497,12 @@ void LayoutLoader::RegisterBuiltins() {
 	Register<ProgressBar>("ProgressBar");
 	Register<Tooltip>("Tooltip");
 	Register<MenuBar>("MenuBar");
-	Register<SearchBox>("SearchBox");
 	Register<ListBox>("ListBox");
 	Register<AssetSlot>("AssetSlot");
 	Register<AssetCard>("AssetCard");
+	Register<DockSpace>("DockSpace");
+	Register<DockNode>("DockNode");
+	Register<DockPanel>("DockPanel");
 }
 
 } // namespace Aquila::UI::Core

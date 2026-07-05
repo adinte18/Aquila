@@ -22,6 +22,14 @@ void Collapsible::SetTitle(std::string title) {
 	m_Header->SetText(std::move(title));
 }
 
+void Collapsible::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
+		m_Header->ApplyXmlAttribute(name, value, loaderCtx);
+		return;
+	}
+	View::ApplyXmlAttribute(name, value, loaderCtx);
+}
+
 void Collapsible::SetExpanded(bool expanded) {
 	if (expanded == m_Expanded) {
 		return;
@@ -36,9 +44,7 @@ View *Collapsible::AddContent(Unique<View> child) {
 }
 
 void Collapsible::ApplyState() {
-	StyleProperties p;
-	p.display = m_Expanded ? Display::Flex : Display::None;
-	m_Content->MergeStyle(p);
+	m_Content->SetHidden(!m_Expanded);
 }
 
 } // namespace Aquila::UI::Core

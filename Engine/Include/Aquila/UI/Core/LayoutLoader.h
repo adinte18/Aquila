@@ -5,6 +5,8 @@
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/TextureIconBank.h"
 #include "Aquila/UI/Text/FontAtlas.h"
+#include <string>
+#include <vector>
 
 namespace Aquila::UI::Core {
 
@@ -26,6 +28,9 @@ class LayoutLoader {
 	void RegisterTextureIconBank(const std::string &name, TextureIconBank *bank);
 	[[nodiscard]] TextureIconBank *ResolveTextureIconBank(const std::string &name) const;
 
+	void RegisterCommand(const std::string &name, Delegate<void()> command);
+	[[nodiscard]] Delegate<void()> ResolveCommand(const std::string &name) const;
+
 	Unique<View> LoadFile(const std::string &path);
 	Unique<View> LoadString(std::string_view xml);
 
@@ -40,6 +45,10 @@ class LayoutLoader {
 
 	TextureCache *m_TextureCache = nullptr;
 	std::unordered_map<std::string, TextureIconBank *> m_IconBanks;
+	std::unordered_map<std::string, Delegate<void()>> m_Commands;
+
+	std::string m_CurrentDir;
+	std::vector<std::string> m_IncludeStack;
 
 	template <typename T> void Register(const std::string &typeName) {
 		m_Factories[typeName] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<T>(); };

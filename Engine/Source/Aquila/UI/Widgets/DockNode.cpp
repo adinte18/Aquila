@@ -23,42 +23,20 @@ View *DockNode::MakeZoneIndicator(FloatingAttachPoint elemPt, FloatingAttachPoin
 	cfg.offset = offset;
 	cfg.zIndex = 50;
 	zone->SetFloating(cfg);
-
-	StyleProperties sp;
-	sp.display = Display::None;
-	zone->SetStyle(sp);
+	zone->SetHidden(true);
 
 	return AddChild(std::move(zone));
 }
 
 DockNode::DockNode(DockDragContext *dragCtx) : m_DragCtx(dragCtx) {
-	StyleProperties sp;
-	sp.flexDirection = FlexDirection::Column;
-	sp.flexGrow = 1.f;
-	SetStyle(sp);
 	AddClass("dock-node");
 
 	auto tabBar = CreateUnique<View>();
-	{
-		StyleProperties tb;
-		tb.flexDirection = FlexDirection::Row;
-		tb.width = StyleLength::Grow();
-		tb.height = StyleLength::Pixel(30.f);
-		tabBar->SetStyle(tb);
-		tabBar->AddClass("dock-tab-bar");
-	}
+	tabBar->AddClass("dock-tab-bar");
 	m_TabBar = AddChild(std::move(tabBar));
 
 	auto panelArea = CreateUnique<View>();
-	{
-		StyleProperties pa;
-		pa.flexDirection = FlexDirection::Column;
-		pa.width = StyleLength::Grow();
-		pa.height = StyleLength::Grow();
-		pa.flexGrow = 1.f;
-		panelArea->SetStyle(pa);
-		panelArea->AddClass("dock-panel-area");
-	}
+	panelArea->AddClass("dock-panel-area");
 	m_PanelArea = AddChild(std::move(panelArea));
 
 	using AP = FloatingAttachPoint;
@@ -168,25 +146,15 @@ DockNode *DockNode::AppendLeaf(SplitDirection dir) {
 
 void DockNode::AppendTab(DockPanel *panel, std::string title) {
 	auto wrapper = CreateUnique<View>();
-	{
-		StyleProperties wp;
-		wp.flexDirection = FlexDirection::Row;
-		wp.flexGrow = 1.f;
-		wp.height = StyleLength::Percent(100.f);
-		wrapper->SetStyle(wp);
-		wrapper->AddClass("dock-tab-wrapper");
-	}
+	wrapper->AddClass("dock-tab-wrapper");
 	View *wrapperRaw = m_TabBar->AddChild(std::move(wrapper));
 
 	auto btn = CreateUnique<DockTabButton>();
 	btn->SetText(title);
-	btn->AddClass("dock-tab-btn");
-	{
-		StyleProperties bs;
-		bs.flexGrow = 1.f;
-		bs.height = StyleLength::Percent(100.f);
-		btn->MergeStyle(bs);
+	if (panel != nullptr && panel->GetTabIcon() != nullptr) {
+		btn->SetIcon(panel->GetTabIcon());
 	}
+	btn->AddClass("dock-tab-btn");
 	DockTabButton *btnRaw = static_cast<DockTabButton *>(wrapperRaw->AddChild(std::move(btn)));
 
 	auto closeBtn = CreateUnique<DockCloseButton>();
@@ -201,9 +169,10 @@ void DockNode::AppendTab(DockPanel *panel, std::string title) {
 	m_Tabs.push_back({ wrapperRaw, btnRaw, panel, std::move(title) });
 }
 
-DockPanel *DockNode::AddPanel(std::string title) {
+DockPanel *DockNode::AddPanel(std::string title, GFX::GfxTexture *tabIcon) {
 	auto panel = CreateUnique<DockPanel>(title);
 	DockPanel *panelRaw = static_cast<DockPanel *>(m_PanelArea->AddChild(std::move(panel)));
+	panelRaw->SetTabIcon(tabIcon);
 
 	AppendTab(panelRaw, std::move(title));
 
@@ -214,6 +183,18 @@ DockPanel *DockNode::AddPanel(std::string title) {
 	RemoveClass("dock-node-empty");
 
 	return panelRaw;
+}
+
+void DockNode::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+	if (name == "split") {
+		if (value == "horizontal" || value == "row") {
+			m_DeclaredSplit = SplitDirection::Horizontal;
+		} else if (value == "vertical" || value == "column") {
+			m_DeclaredSplit = SplitDirection::Vertical;
+		}
+		return;
+	}
+	View::ApplyXmlAttribute(name, value, loaderCtx);
 }
 
 void DockNode::SetActivePanel(int index) {
@@ -236,9 +217,7 @@ void DockNode::SetActivePanelByPtr(DockPanel *panel) {
 void DockNode::ApplyActivePanel() {
 	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {
 		const bool active = (i == m_ActivePanel);
-		StyleProperties sp;
-		sp.display = active ? Display::Flex : Display::None;
-		m_Tabs[i].panel->MergeStyle(sp);
+		m_Tabs[i].panel->SetHidden(!active);
 		if (active) {
 			m_Tabs[i].wrapper->AddClass("dock-tab-active");
 			m_Tabs[i].button->AddClass("dock-tab-btn-active");
@@ -397,11 +376,9 @@ void DockNode::ShowDropZones(bool show) {
 	if (!m_IsLeaf) {
 		return;
 	}
-	StyleProperties sp;
-	sp.display = show ? Display::Flex : Display::None;
 	for (View *z : { m_ZoneCenter, m_ZoneLeft, m_ZoneRight, m_ZoneTop, m_ZoneBottom }) {
 		if (z) {
-			z->MergeStyle(sp);
+			z->SetHidden(!show);
 		}
 	}
 	if (show) {

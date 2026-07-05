@@ -7,6 +7,7 @@
 namespace Aquila::UI::Core {
 
 class DockNode;
+class DockPanel;
 class DockSplitter;
 
 class DockSpace : public View {
@@ -15,6 +16,9 @@ class DockSpace : public View {
 
 	[[nodiscard]] std::string_view GetTypeName() const override { return "DockSpace"; }
 	[[nodiscard]] DockNode *GetRootNode() const { return m_Root; }
+
+	// Compiles a declared <DockNode>/<DockPanel> child tree into the runtime dock structure.
+	void OnXmlLoaded() override;
 
 	[[nodiscard]] bool HasAnyPanels() const;
 	[[nodiscard]] DockNode *FirstLeafWithTabs() const;
@@ -32,6 +36,10 @@ class DockSpace : public View {
 	void BeginExternalDrag(DockPanel *panel, const std::string &title);
 
   private:
+	void CompileDeclaration(DockNode *realNode, DockNode *declNode);
+	void RealizeSlot(DockNode *realLeaf, View *slot);
+	void RealizePanel(DockNode *realLeaf, DockPanel *declPanel);
+
 	void ExecuteDrop(DockNode *target, DropZone zone, vec2 releasePos);
 	void CollapseNode(DockNode *node);
 	void HoistSingleChild(DockNode *container, DockNode *only);

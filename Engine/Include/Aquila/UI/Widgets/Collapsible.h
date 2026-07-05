@@ -12,6 +12,8 @@ class Collapsible : public View {
 	[[nodiscard]] std::string_view GetTypeName() const override { return "Collapsible"; }
 
 	void SetTitle(std::string title);
+	void ApplyXmlTextContent(std::string_view text) override { SetTitle(std::string(text)); }
+	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
 	void SetExpanded(bool expanded);
 	[[nodiscard]] bool IsExpanded() const { return m_Expanded; }
 	Signal<void(bool)> onToggled;
