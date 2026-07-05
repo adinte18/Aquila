@@ -134,10 +134,16 @@ void UIDebugWindow::Build(Canvas *target, uint32 width, uint32 height, const std
 	refresh->AddClass("ui-debug-refresh");
 	refresh->onClick.Connect([this] { Refresh(); });
 
-	auto *treeScroll = root->AddChild<ScrollView>();
-	treeScroll->AddClass("ui-debug-tree-pane");
-	m_TreeHost = treeScroll->AddContent<View>();
-	m_TreeHost->AddClass("ui-debug-tree-host");
+	auto *pick = header->AddChild<Button>(std::string("Pick"));
+	pick->AddClass("ui-debug-refresh");
+	pick->onClick.Connect([this] {
+		if (onPickRequested) {
+			onPickRequested();
+		}
+	});
+
+	m_TreeHost = root->AddChild<View>();
+	m_TreeHost->AddClass("ui-debug-tree-pane");
 
 	auto *detailScroll = root->AddChild<ScrollView>();
 	detailScroll->AddClass("ui-debug-detail-pane");
@@ -198,6 +204,37 @@ void UIDebugWindow::Refresh() {
 	for (const auto &child : m_Target->GetRoot()->GetChildren()) {
 		AddViewNode(child.get(), nullptr);
 	}
+}
+
+void UIDebugWindow::SelectView(View *view) {
+	if (!view || !m_Tree) {
+		ShowDetails(view);
+		return;
+	}
+
+	TreeNode *node = nullptr;
+	for (auto &[n, v] : m_NodeToView) {
+		if (v == view) {
+			node = n;
+			break;
+		}
+	}
+	if (!node) {
+		ShowDetails(view);
+		return;
+	}
+
+	for (View *parent = view->GetParent(); parent; parent = parent->GetParent()) {
+		for (auto &[n, v] : m_NodeToView) {
+			if (v == parent) {
+				n->SetExpanded(true);
+				break;
+			}
+		}
+	}
+	m_Tree->SelectNode(node);
+	ShowDetails(view);
+	m_Canvas->ScrollIntoView(node);
 }
 
 void UIDebugWindow::ShowDetails(View *view) {

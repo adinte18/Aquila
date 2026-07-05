@@ -58,9 +58,7 @@ void UIDebugPanel::Build(View *overlayRoot, Canvas *target) {
 	m_TreeHost = scroll->AddContent<View>();
 	m_TreeHost->AddClass("ui-debug-tree-host");
 
-	UI::StyleProperties hidden;
-	hidden.display = UI::Display::None;
-	m_Window->MergeStyle(hidden);
+	m_Window->SetHidden(true);
 }
 
 void UIDebugPanel::Toggle() {
@@ -70,9 +68,7 @@ void UIDebugPanel::Toggle() {
 
 	m_Visible = !m_Visible;
 
-	UI::StyleProperties sp;
-	sp.display = m_Visible ? UI::Display::Flex : UI::Display::None;
-	m_Window->MergeStyle(sp);
+	m_Window->SetHidden(!m_Visible);
 
 	if (m_Visible) {
 		Refresh();

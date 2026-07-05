@@ -34,6 +34,9 @@ class UIDebugWindow {
 	void Render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
 	void OnEvent(Aquila::Application::Events::Event &event);
 	void Refresh();
+	void SelectView(Aquila::UI::Core::View *view);
+
+	Delegate<void()> onPickRequested;
 
   private:
 	Aquila::UI::Core::TreeNode *AddViewNode(Aquila::UI::Core::View *view, Aquila::UI::Core::TreeNode *parentNode);
