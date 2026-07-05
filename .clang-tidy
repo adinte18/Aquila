@@ -59,23 +59,37 @@ CheckOptions:
   - key:   readability-identifier-naming.EnumConstantCase
     value: CamelCase
   - key:   readability-identifier-naming.FunctionCase
-    value: CamelCase
+    value: lower_case
   - key:   readability-identifier-naming.MethodCase
-    value: CamelCase
-  - key:   readability-identifier-naming.MemberPrefix
+    value: lower_case
+  - key:   readability-identifier-naming.PublicMemberCase
+    value: lower_case
+  - key:   readability-identifier-naming.PublicMemberPrefix
+    value: ''
+  - key:   readability-identifier-naming.ProtectedMemberCase
+    value: lower_case
+  - key:   readability-identifier-naming.ProtectedMemberPrefix
     value: 'm_'
-  - key:   readability-identifier-naming.MemberCase
-    value: CamelCase
+  - key:   readability-identifier-naming.PrivateMemberCase
+    value: lower_case
   - key:   readability-identifier-naming.StaticMemberPrefix
     value: 's_'
   - key:   readability-identifier-naming.StaticMemberCase
-    value: CamelCase
+    value: lower_case
   - key:   readability-identifier-naming.PrivateMemberPrefix
     value: 'm_'
   - key:   readability-identifier-naming.ParameterCase
-    value: camelBack
+    value: lower_case
+  - key:   readability-identifier-naming.ConstantParameterCase
+    value: lower_case
+  - key:   readability-identifier-naming.ConstantPointerParameterCase
+    value: lower_case
   - key:   readability-identifier-naming.LocalVariableCase
-    value: camelBack
+    value: lower_case
+  - key:   readability-identifier-naming.LocalConstantCase
+    value: lower_case
+  - key:   readability-identifier-naming.LocalConstantPointerCase
+    value: lower_case
   - key:   readability-identifier-naming.ConstantCase
     value: UPPER_CASE
   - key:   readability-identifier-naming.GlobalConstantCase
@@ -152,4 +166,3 @@ CheckOptions:
 
   - key:   misc-include-cleaner.IgnoreHeaders
     value: 'stb/.*;vulkan/.*;slang.*'
-...
