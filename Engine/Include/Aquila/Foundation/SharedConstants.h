@@ -44,11 +44,17 @@ constexpr uint32 VERTS_PER_QUAD = 4;
 constexpr uint32 INDICES_PER_QUAD = 6;
 
 constexpr int FONT_FIRST_CODEPOINT = 32;
-constexpr int FONT_GLYPH_COUNT = 96; // ASCII 32-127
+constexpr int FONT_GLYPH_COUNT = 96; // ASCII 32-127, seeded at atlas creation
 constexpr uint32 FONT_TEX_WIDTH = 4096;
 constexpr uint32 FONT_BAND_COUNT = 16;
 constexpr uint32 FONT_BAND_MAX = FONT_BAND_COUNT - 1;
 constexpr uint32 FONT_TEXELS_PER_CURVE = 2;
+
+// Reserved rows for the on-demand glyph atlas. Glyphs are appended into these
+// pre-allocated textures so the GPU texture pointer stays stable as new
+// codepoints are loaded at runtime.
+constexpr uint32 FONT_CURVE_RESERVE_ROWS = 48;
+constexpr uint32 FONT_BAND_RESERVE_ROWS = 48;
 
 constexpr uint8 Z_MIN = -4096;
 constexpr uint8 Z_MAX = 4096;

@@ -1,4 +1,5 @@
 #include "Aquila/UI/Rendering/DrawList.h"
+#include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
@@ -56,6 +57,8 @@ void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *fon
 	if ((font == nullptr) || text.empty()) {
 		return;
 	}
+
+	font->EnsureGlyphs(text);
 
 	TextCmd command;
 	command.rect = bounds;
@@ -164,9 +167,10 @@ void DrawList::Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					f32 textWidth = 0.f;
 
 					const auto textLen = std::min(c.text.size(), static_cast<size_t>(512));
-					for (size_t ci = 0; ci < textLen; ++ci) {
-						const auto ch = static_cast<unsigned char>(c.text[ci]);
-						const Text::GlyphInfo *g = c.font->GetGlyph(static_cast<uint32>(ch));
+					for (size_t ci = 0; ci < textLen && cacheCount < 512;) {
+						const Foundation::Utf8::Decoded d = Foundation::Utf8::Decode(c.text, ci);
+						ci += (d.size > 0 ? d.size : 1u);
+						const Text::GlyphInfo *g = c.font->GetGlyph(d.codepoint);
 						if (!g) {
 							continue;
 						}

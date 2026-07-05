@@ -10,6 +10,9 @@
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/UI/Text/FontAtlasBuilder.h"
 
+#include <string_view>
+#include <unordered_set>
+
 namespace Aquila::UI::Text {
 
 // CPU-side per-glyph placement data (used by DrawList for cursor math).
@@ -51,6 +54,11 @@ class FontAtlas {
 	const GlyphInfo *GetGlyph(uint32 codepoint) const;
 	const SlugGlyphData *GetSlugData(uint32 glyphID) const;
 
+	// Loads any codepoints in `text` that are not yet resident, then re-uploads the
+	// GPU textures if anything was added. Must be called on the main thread outside a
+	// render pass (it submits an immediate copy). No-op when every glyph is present.
+	void EnsureGlyphs(std::string_view text);
+
 	GFX::GfxTexture *GetCurveTexture() const { return m_CurveTexture.get(); }
 	GFX::GfxTexture *GetBandTexture() const { return m_BandTexture.get(); }
 
@@ -65,13 +73,33 @@ class FontAtlas {
 	static void BuildGlyphCurves(const stbtt_fontinfo &fontInfo, int glyphIndex, f32 scale, GlyphBuild &out);
 	static GlyphInfo BuildGlyphInfo(const stbtt_fontinfo &fontInfo, int glyphIndex, uint32 glyphID, f32 scale);
 
+	// Appends one glyph's curves + bands into the CPU shadow arrays. Returns true when a
+	// glyph was actually added (false if already resident, absent from the font, or the
+	// reserved capacity is exhausted). Does not touch the GPU — see ReuploadTextures().
+	bool AppendGlyph(uint32 codepoint);
+	void ReuploadTextures();
+
 	GFX::GfxContext *m_Ctx = nullptr;
+
+	std::vector<uint8> m_FontData; // owns the TTF bytes; m_FontInfo points into this
+	stbtt_fontinfo m_FontInfo{};
+	f32 m_Scale = 0.f;
 
 	Ref<GFX::GfxTexture> m_CurveTexture; // RGBA32F: 2 texels per curve (p0+p1, p2)
 	Ref<GFX::GfxTexture> m_BandTexture; // RGBA32U: band headers + curve index lists
 
+	// CPU shadow copies of the GPU texture contents, sized to the reserved capacity.
+	// New glyphs are appended at the cursors, then the full arrays are re-uploaded.
+	std::vector<std::array<f32, 4>> m_CurveTexels;
+	std::vector<std::array<uint32, 4>> m_BandTexels;
+	uint32 m_CurveCursor = 0;
+	uint32 m_BandCursor = 0;
+	uint32 m_CurveCapacityTexels = 0;
+	uint32 m_BandCapacityTexels = 0;
+
 	std::unordered_map<uint32, GlyphInfo> m_Glyphs;
 	std::vector<SlugGlyphData> m_SlugGlyphs;
+	std::unordered_set<uint32> m_MissingCodepoints; // absent from the font; don't retry
 
 	f32 m_LineHeight = 0.f;
 	f32 m_Ascent = 0.f;

@@ -1,5 +1,6 @@
 #include "Aquila/UI/Core/TextInputState.h"
 #include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/UI/Core/Clipboard.h"
 
 namespace Aquila::UI::Core {
@@ -54,8 +55,9 @@ bool TextInputState::HandleKeyPress(Platform::KeyCode key, int mods) {
 		if (HasSelection()) {
 			DeleteSelection();
 		} else if (cursor > 0) {
-			text.erase(cursor - 1, 1);
-			--cursor;
+			const size_t prev = Foundation::Utf8::PrevIndex(text, cursor);
+			text.erase(prev, cursor - prev);
+			cursor = prev;
 			selectAnchor = cursor;
 		}
 		return true;
@@ -63,7 +65,8 @@ bool TextInputState::HandleKeyPress(Platform::KeyCode key, int mods) {
 		if (HasSelection()) {
 			DeleteSelection();
 		} else if (cursor < text.size()) {
-			text.erase(cursor, 1);
+			const size_t next = Foundation::Utf8::NextIndex(text, cursor);
+			text.erase(cursor, next - cursor);
 		}
 		return true;
 	case KeyCode::Left:
@@ -71,7 +74,7 @@ bool TextInputState::HandleKeyPress(Platform::KeyCode key, int mods) {
 			cursor = SelectionMin();
 			selectAnchor = cursor;
 		} else if (cursor > 0) {
-			--cursor;
+			cursor = Foundation::Utf8::PrevIndex(text, cursor);
 			if (!shift) {
 				selectAnchor = cursor;
 			}
@@ -82,7 +85,7 @@ bool TextInputState::HandleKeyPress(Platform::KeyCode key, int mods) {
 			cursor = SelectionMax();
 			selectAnchor = cursor;
 		} else if (cursor < text.size()) {
-			++cursor;
+			cursor = Foundation::Utf8::NextIndex(text, cursor);
 			if (!shift) {
 				selectAnchor = cursor;
 			}
@@ -109,14 +112,16 @@ bool TextInputState::HandleKeyPress(Platform::KeyCode key, int mods) {
 }
 
 bool TextInputState::HandleCharInput(uint32 codepoint) {
-	if (codepoint < 32 || codepoint > 126) {
+	if (codepoint < 32 || codepoint == 127) {
 		return false;
 	}
 	if (HasSelection()) {
 		DeleteSelection();
 	}
-	text.insert(cursor, 1, static_cast<char>(codepoint));
-	++cursor;
+	char encoded[4];
+	const uint32 count = Foundation::Utf8::Encode(codepoint, encoded);
+	text.insert(cursor, encoded, count);
+	cursor += count;
 	selectAnchor = cursor;
 	return true;
 }
@@ -124,26 +129,30 @@ bool TextInputState::HandleCharInput(uint32 codepoint) {
 float TextInputState::MeasureToPos(const Text::FontAtlas &font, float scale, size_t pos) const {
 	float x = 0.f;
 	const size_t end = std::min(pos, text.size());
-	for (size_t i = 0; i < end; ++i) {
-		const Text::GlyphInfo *g = font.GetGlyph(static_cast<uint32>(static_cast<unsigned char>(text[i])));
+	for (size_t i = 0; i < end;) {
+		const Foundation::Utf8::Decoded d = Foundation::Utf8::Decode(text, i);
+		const Text::GlyphInfo *g = font.GetGlyph(d.codepoint);
 		if (g) {
 			x += g->advance * scale;
 		}
+		i += (d.size > 0 ? d.size : 1u);
 	}
 	return x;
 }
 
 size_t TextInputState::HitTestPos(const Text::FontAtlas &font, float scale, float localX) const {
 	float acc = 0.f;
-	for (size_t i = 0; i < text.size(); ++i) {
-		const Text::GlyphInfo *g = font.GetGlyph(static_cast<uint32>(static_cast<unsigned char>(text[i])));
-		if (!g) {
-			continue;
+	for (size_t i = 0; i < text.size();) {
+		const Foundation::Utf8::Decoded d = Foundation::Utf8::Decode(text, i);
+		const size_t step = (d.size > 0 ? d.size : 1u);
+		const Text::GlyphInfo *g = font.GetGlyph(d.codepoint);
+		if (g) {
+			if (localX < acc + g->advance * scale * 0.5f) {
+				return i;
+			}
+			acc += g->advance * scale;
 		}
-		if (localX < acc + g->advance * scale * 0.5f) {
-			return i;
-		}
-		acc += g->advance * scale;
+		i += step;
 	}
 	return text.size();
 }
