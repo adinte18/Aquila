@@ -16,28 +16,28 @@ class Input {
   public:
 	Input() = delete;
 
-	[[nodiscard]] static bool IsKeyPressed(KeyCode key) {
+	[[nodiscard]] static bool is_key_pressed(KeyCode key) {
 		if (!s_ActiveWindow) {
 			return false;
 		}
-		return s_States[s_ActiveWindow].KeyStates.at((uint8)key);
+		return s_States[s_ActiveWindow].key_states.at((Uint8)key);
 	}
-	[[nodiscard]] static bool IsMouseButtonPressed(MouseButton button) {
+	[[nodiscard]] static bool is_mouse_button_pressed(MouseButton button) {
 		if (!s_ActiveWindow) {
 			return false;
 		}
-		return s_States[s_ActiveWindow].MouseButtonStates.at((uint8)button);
+		return s_States[s_ActiveWindow].mouse_button_states.at((Uint8)button);
 	}
-	[[nodiscard]] static vec2 GetMousePosition() {
+	[[nodiscard]] static Vec2 get_mouse_position() {
 		if (!s_ActiveWindow) {
 			return {};
 		}
 		auto &state = s_States[s_ActiveWindow];
-		return { state.MouseX, state.MouseY };
+		return { state.mouse_x, state.mouse_y };
 	}
 
-	static void OnEvent(Event &event) {
-		auto *window = event.GetSource();
+	static void on_event(Event &event) {
+		auto *window = event.get_source();
 		if (!window) {
 			return;
 		}
@@ -47,34 +47,34 @@ class Input {
 
 		EventDispatcher dispatcher(event);
 
-		dispatcher.Dispatch<KeyPressedEvent>([&](KeyPressedEvent &e) {
-			state.KeyStates.at((uint8)e.GetKeyCode()) = true;
+		dispatcher.dispatch<KeyPressedEvent>([&](KeyPressedEvent &e) {
+			state.key_states.at((Uint8)e.get_key_code()) = true;
 			return false;
 		});
 
-		dispatcher.Dispatch<KeyReleasedEvent>([&](KeyReleasedEvent &e) {
-			state.KeyStates.at((uint8)e.GetKeyCode()) = false;
+		dispatcher.dispatch<KeyReleasedEvent>([&](KeyReleasedEvent &e) {
+			state.key_states.at((Uint8)e.get_key_code()) = false;
 			return false;
 		});
 
-		dispatcher.Dispatch<MouseButtonPressedEvent>([&](MouseButtonPressedEvent &e) {
-			state.MouseButtonStates.at((uint8)e.GetMouseButton()) = true;
+		dispatcher.dispatch<MouseButtonPressedEvent>([&](MouseButtonPressedEvent &e) {
+			state.mouse_button_states.at((Uint8)e.get_mouse_button()) = true;
 			return false;
 		});
 
-		dispatcher.Dispatch<MouseButtonReleasedEvent>([&](MouseButtonReleasedEvent &e) {
-			state.MouseButtonStates.at((uint8)e.GetMouseButton()) = false;
+		dispatcher.dispatch<MouseButtonReleasedEvent>([&](MouseButtonReleasedEvent &e) {
+			state.mouse_button_states.at((Uint8)e.get_mouse_button()) = false;
 			return false;
 		});
 
-		dispatcher.Dispatch<MouseMovedEvent>([&](MouseMovedEvent &e) {
-			state.MouseX = e.GetX();
-			state.MouseY = e.GetY();
+		dispatcher.dispatch<MouseMovedEvent>([&](MouseMovedEvent &e) {
+			state.mouse_x = e.get_x();
+			state.mouse_y = e.get_y();
 			return false;
 		});
 	}
 
-	static void OnWindowDestroyed(Application::Window *window) {
+	static void on_window_destroyed(Application::Window *window) {
 		s_States.erase(window);
 		if (s_ActiveWindow == window) {
 			s_ActiveWindow = nullptr;
@@ -83,10 +83,10 @@ class Input {
 
   private:
 	struct InputState {
-		std::array<bool, SharedConstants::MAX_KEY_STATES> KeyStates{};
-		std::array<bool, SharedConstants::MAX_MOUSE_STATES> MouseButtonStates{};
-		f32 MouseX = 0.0f;
-		f32 MouseY = 0.0f;
+		std::array<bool, SharedConstants::MAX_KEY_STATES> key_states{};
+		std::array<bool, SharedConstants::MAX_MOUSE_STATES> mouse_button_states{};
+		F32 mouse_x = 0.0f;
+		F32 mouse_y = 0.0f;
 	};
 
 	inline static std::unordered_map<Application::Window *, InputState> s_States;

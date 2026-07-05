@@ -7,26 +7,26 @@ namespace Editor {
 
 template <typename Component> class ComponentBinder {
   public:
-	explicit ComponentBinder(Aquila::SceneManagement::Entity entity) : m_Entity(entity) {}
+	explicit ComponentBinder(Aquila::SceneManagement::Entity entity) : m_entity(entity) {}
 
 	template <typename Widget, typename Getter, typename Setter>
-	void Bind(Widget *widget, Getter getter, Setter setter) {
-		widget->onChanged.Set([entity = m_Entity, setter](auto value) mutable {
-			std::invoke(setter, entity.GetComponent<Component>(), value);
+	void bind(Widget *widget, Getter getter, Setter setter) {
+		widget->on_changed.set([entity = m_entity, setter](auto value) mutable {
+			std::invoke(setter, entity.get_component<Component>(), value);
 		});
-		widget->SetValue(std::invoke(getter, m_Entity.GetComponent<Component>()));
+		widget->set_value(std::invoke(getter, m_entity.get_component<Component>()));
 	}
 
 	template <typename Widget, typename Projection>
-	void Bind(Widget *widget, Projection project) {
-		widget->onChanged.Set([entity = m_Entity, project](auto value) mutable {
-			project(entity.GetComponent<Component>()) = value;
+	void bind(Widget *widget, Projection project) {
+		widget->on_changed.set([entity = m_entity, project](auto value) mutable {
+			project(entity.get_component<Component>()) = value;
 		});
-		widget->SetValue(project(m_Entity.GetComponent<Component>()));
+		widget->set_value(project(m_entity.get_component<Component>()));
 	}
 
   private:
-	Aquila::SceneManagement::Entity m_Entity;
+	Aquila::SceneManagement::Entity m_entity;
 };
 
 } // namespace Editor

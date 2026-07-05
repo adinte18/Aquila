@@ -15,17 +15,17 @@ namespace Aquila::Rendering {
 
 using Aquila::SharedConstants::SHADERS_DIR;
 
-void LightCullingSystem::OnInit(GFX::GfxContext &ctx) {
-	RenderingSystemBase::OnInit(ctx);
+void LightCullingSystem::on_init(GFX::GfxContext &ctx) {
+	RenderingSystemBase::on_init(ctx);
 
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "LightCullCompute.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "LightCullCompute.slang", stages, err)) {
 		AQUILA_LOG_ERROR("LightCullingSystem: shader compile failed: {}", err);
 		return;
 	}
 
-	m_StorageLayout = ctx.CreateDescriptorSetLayout({
+	m_storage_layout = ctx.create_descriptor_set_layout({
 		.bindings = {
 			{ .binding = 0, .type = RHI::DescriptorType::StorageBuffer, .stages = RHI::ShaderStageFlags::Compute, .count = 1 },
 			{ .binding = 1, .type = RHI::DescriptorType::StorageBuffer, .stages = RHI::ShaderStageFlags::Compute, .count = 1 },
@@ -34,72 +34,72 @@ void LightCullingSystem::OnInit(GFX::GfxContext &ctx) {
 		},
 	});
 
-	RHI::ComputePipelineDesc pipelineDesc{};
-	pipelineDesc.computeShader = {
+	RHI::ComputePipelineDesc pipeline_desc{};
+	pipeline_desc.compute_shader = {
 		.stage = RHI::ShaderStageFlags::Compute,
 		.spirv = stages[0].spirv,
-		.entryPoint = stages[0].entryPointName,
+		.entry_point = stages[0].entry_point_name,
 	};
-	pipelineDesc.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI(), &m_StorageLayout->GetRHI() };
-	pipelineDesc.debugName = "LightCull";
-	m_Pipeline = ctx.CreateComputePipeline(pipelineDesc);
+	pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
+	pipeline_desc.debug_name = "LightCull";
+	m_pipeline = ctx.create_compute_pipeline(pipeline_desc);
 
-	m_GlobalIndexCounter = ctx.CreateBuffer({
-		.size = sizeof(uint32),
+	m_global_index_counter = ctx.create_buffer({
+		.size = sizeof(Uint32),
 		.usage = RHI::BufferUsage::StorageBuffer,
-		.domain = RHI::MemoryDomain::GPU_ONLY,
-		.debugName = "GlobalIndexCounter",
+		.domain = RHI::MemoryDomain::GpuOnly,
+		.debug_name = "GlobalIndexCounter",
 	});
 
-	auto *sfd = SceneFrameData::Get();
-	m_StorageSet = ctx.AllocateDescriptorSet(*m_StorageLayout);
-	m_StorageSet->SetBuffer(1, sfd->GetLightIndexListBuffer())
-		.SetBuffer(2, sfd->GetClusterLightInfoBuffer())
-		.SetBuffer(3, *m_GlobalIndexCounter)
-		.Flush();
+	auto *sfd = SceneFrameData::get();
+	m_storage_set = ctx.allocate_descriptor_set(*m_storage_layout);
+	m_storage_set->set_buffer(1, sfd->get_light_index_list_buffer())
+		.set_buffer(2, sfd->get_cluster_light_info_buffer())
+		.set_buffer(3, *m_global_index_counter)
+		.flush();
 }
 
-void LightCullingSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_Pipeline) {
+void LightCullingSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+	if (!m_pipeline) {
 		return;
 	}
 
-	auto *frameData = ctx.frameData;
-	const uint32 frameSlot = ctx.frameSlot;
+	auto *frame_data = ctx.frame_data;
+	const Uint32 frame_slot = ctx.frame_slot;
 
-	if (ctx.hClusterAABBs.IsValid() && !m_AABBBufferBound) {
-		GFX::GfxBuffer &aabbBuffer = graph.GetRegistry().GetBuffer(ctx.hClusterAABBs);
-		m_StorageSet->SetBuffer(0, aabbBuffer).Flush();
-		m_AABBBufferBound = true;
+	if (ctx.h_cluster_aab_bs.is_valid() && !m_aabb_buffer_bound) {
+		GFX::GfxBuffer &aabb_buffer = graph.get_registry().get_buffer(ctx.h_cluster_aab_bs);
+		m_storage_set->set_buffer(0, aabb_buffer).flush();
+		m_aabb_buffer_bound = true;
 	}
 
-	auto hAABBs = ctx.hClusterAABBs;
-	auto hLightList = graph.ImportBuffer(&SceneFrameData::Get()->GetLightIndexListBuffer(), "LightList",
+	auto h_aab_bs = ctx.h_cluster_aab_bs;
+	auto h_light_list = graph.import_buffer(&SceneFrameData::get()->get_light_index_list_buffer(), "LightList",
 										 Graphics::RG::ResourceState::UnorderedAccess);
-	auto hClusterLightInfo = graph.ImportBuffer(&SceneFrameData::Get()->GetClusterLightInfoBuffer(), "ClusterLightInfo",
+	auto h_cluster_light_info = graph.import_buffer(&SceneFrameData::get()->get_cluster_light_info_buffer(), "ClusterLightInfo",
 												Graphics::RG::ResourceState::UnorderedAccess);
-	auto hGlobalCounter = graph.ImportBuffer(m_GlobalIndexCounter.get(), "GlobalIndexCounter",
+	auto h_global_counter = graph.import_buffer(m_global_index_counter.get(), "GlobalIndexCounter",
 											 Graphics::RG::ResourceState::UnorderedAccess);
 
-	graph.AddPass(
+	graph.add_pass(
 		"LightCull",
-		[&hAABBs, &hLightList, &hClusterLightInfo, &hGlobalCounter](Graphics::RG::RGPassBuilder &builder) {
-			builder.ReadBuffer(hAABBs, Graphics::RG::ResourceState::ShaderRead);
-			hLightList = builder.WriteBuffer(hLightList);
-			hClusterLightInfo = builder.WriteBuffer(hClusterLightInfo);
-			hGlobalCounter = builder.WriteBuffer(hGlobalCounter);
+		[&h_aab_bs, &h_light_list, &h_cluster_light_info, &h_global_counter](Graphics::RG::RGPassBuilder &builder) {
+			builder.read_buffer(h_aab_bs, Graphics::RG::ResourceState::ShaderRead);
+			h_light_list = builder.write_buffer(h_light_list);
+			h_cluster_light_info = builder.write_buffer(h_cluster_light_info);
+			h_global_counter = builder.write_buffer(h_global_counter);
 		},
-		[this, frameData, frameSlot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
-			cmd.FillBuffer(*m_GlobalIndexCounter, 0u);
-			cmd.BindPipeline(*m_Pipeline);
-			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
-			cmd.BindDescriptorSet(1, *m_StorageSet);
-			cmd.Dispatch(4, 3, 6);
+		[this, frame_data, frame_slot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
+			cmd.fill_buffer(*m_global_index_counter, 0u);
+			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
+			cmd.bind_descriptor_set(1, *m_storage_set);
+			cmd.dispatch(4, 3, 6);
 		});
 
-	if (ctx.hClusterAABBs.IsValid()) {
-		ctx.hLightList = hLightList;
-		ctx.hClusterLightInfo = hClusterLightInfo;
+	if (ctx.h_cluster_aab_bs.is_valid()) {
+		ctx.h_light_list = h_light_list;
+		ctx.h_cluster_light_info = h_cluster_light_info;
 	}
 }
 

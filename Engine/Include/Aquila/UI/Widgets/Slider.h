@@ -9,34 +9,34 @@ class Slider : public BaseField<float> {
   public:
 	Slider();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Slider"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Slider"; }
 
-	void SetRange(float min, float max);
-	void SetStep(float step);
-	void SetTrackTexture(GFX::GfxTexture *tex) {
-		m_TrackTex = tex;
-		QueueRedraw();
+	void set_range(float min, float max);
+	void set_step(float step);
+	void set_track_texture(GFX::GfxTexture *tex) {
+		m_track_tex = tex;
+		queue_redraw();
 	}
 
-	[[nodiscard]] float GetMin() const { return m_Min; }
-	[[nodiscard]] float GetMax() const { return m_Max; }
+	[[nodiscard]] float get_min() const { return m_min; }
+	[[nodiscard]] float get_max() const { return m_max; }
 
-	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
-	void OnMouseMove(vec2 pos) override;
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void on_mouse_press(Platform::MouseButton btn, Vec2 pos) override;
+	void on_mouse_move(Vec2 pos) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   protected:
-	float Coerce(const float &value) const override;
-	void OnValueUpdated() override { QueueRedraw(); }
+	float coerce(const float &value) const override;
+	void on_value_updated() override { queue_redraw(); }
 
   private:
-	float ValueFromX(float x) const;
+	float value_from_x(float x) const;
 
-	float m_Min = 0.f;
-	float m_Max = 1.f;
-	float m_Step = 0.f; // 0 = continuous
+	float m_min = 0.F;
+	float m_max = 1.F;
+	float m_step = 0.F; // 0 = continuous
 
-	GFX::GfxTexture *m_TrackTex = nullptr;
+	GFX::GfxTexture *m_track_tex = nullptr;
 };
 
 } // namespace Aquila::UI::Core

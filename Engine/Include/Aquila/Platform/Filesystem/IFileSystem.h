@@ -13,23 +13,23 @@ class IFileSystem {
 	IFileSystem() = default;
 	virtual ~IFileSystem() = default;
 
-	virtual Unique<NativeFile> FileOpen(const std::string &path, AccessMode accessMode, OpenMode openMode) = 0;
-	virtual bool FileExists(const std::string &path) = 0;
-	virtual bool FileRemove(const std::string &path) = 0;
-	virtual bool FileMove(const std::string &oldPath, const std::string &newPath) = 0;
-	virtual bool FileCopy(const std::string &srcPath, const std::string &dstPath) = 0;
-	virtual int64 FileGetSize(const std::string &path) = 0;
-	virtual uint64 FileGetLastWriteTime(const std::string &path) = 0;
+	virtual Unique<NativeFile> file_open(const std::string &path, AccessMode access_mode, OpenMode open_mode) = 0;
+	virtual bool file_exists(const std::string &path) = 0;
+	virtual bool file_remove(const std::string &path) = 0;
+	virtual bool file_move(const std::string &old_path, const std::string &new_path) = 0;
+	virtual bool file_copy(const std::string &src_path, const std::string &dst_path) = 0;
+	virtual Int64 file_get_size(const std::string &path) = 0;
+	virtual Uint64 file_get_last_write_time(const std::string &path) = 0;
 
 	// Directory operations
-	virtual bool DirExists(const std::string &path) = 0;
-	virtual bool DirCreate(const std::string &path) = 0;
-	virtual bool DirRemove(const std::string &path) = 0;
-	virtual std::vector<std::string> DirList(const std::string &path) = 0;
+	virtual bool dir_exists(const std::string &path) = 0;
+	virtual bool dir_create(const std::string &path) = 0;
+	virtual bool dir_remove(const std::string &path) = 0;
+	virtual std::vector<std::string> dir_list(const std::string &path) = 0;
 
 	// Filesystem properties
-	[[nodiscard]] virtual bool IsReadOnly() const = 0;
-	[[nodiscard]] virtual std::string GetDisplayName() const = 0;
+	[[nodiscard]] virtual bool is_read_only() const = 0;
+	[[nodiscard]] virtual std::string get_display_name() const = 0;
 };
 } // namespace Aquila::Platform::Filesystem
 

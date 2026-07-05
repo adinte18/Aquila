@@ -4,44 +4,44 @@
 #include "Aquila/Foundation/Macros.h"
 
 struct Rect {
-	vec2 position{ 0.f, 0.f }; // top-left
-	vec2 size{ 0.f, 0.f };
+	Vec2 position{ 0.F, 0.F }; // top-left
+	Vec2 size{ 0.F, 0.F };
 
-	[[nodiscard]] AQUILA_FORCE_INLINE float Left() const { return position.x; }
-	[[nodiscard]] AQUILA_FORCE_INLINE float Top() const { return position.y; }
-	[[nodiscard]] AQUILA_FORCE_INLINE float Right() const { return position.x + size.x; }
-	[[nodiscard]] AQUILA_FORCE_INLINE float Bottom() const { return position.y + size.y; }
-	[[nodiscard]] AQUILA_FORCE_INLINE float Width() const { return size.x; }
-	[[nodiscard]] AQUILA_FORCE_INLINE float Height() const { return size.y; }
-	[[nodiscard]] AQUILA_FORCE_INLINE vec2 Center() const { return position + size * 0.5f; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float left() const { return position.x; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float top() const { return position.y; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float right() const { return position.x + size.x; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float bottom() const { return position.y + size.y; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float width() const { return size.x; }
+	[[nodiscard]] AQUILA_FORCE_INLINE float height() const { return size.y; }
+	[[nodiscard]] AQUILA_FORCE_INLINE Vec2 center() const { return position + size * 0.5f; }
 
-	[[nodiscard]] AQUILA_FORCE_INLINE bool Contains(vec2 p) const {
-		return p.x >= Left() && p.x < Right() && p.y >= Top() && p.y < Bottom();
+	[[nodiscard]] AQUILA_FORCE_INLINE bool contains(Vec2 p) const {
+		return p.x >= left() && p.x < right() && p.y >= top() && p.y < bottom();
 	}
 
-	[[nodiscard]] AQUILA_FORCE_INLINE bool Overlaps(const Rect &other) const {
-		return Left() <= other.Right() && Right() >= other.Left() && Top() <= other.Bottom() && Bottom() >= other.Top();
+	[[nodiscard]] AQUILA_FORCE_INLINE bool overlaps(const Rect &other) const {
+		return left() <= other.right() && right() >= other.left() && top() <= other.bottom() && bottom() >= other.top();
 	}
 
 	[[nodiscard]] AQUILA_FORCE_INLINE Rect Union(const Rect &other) const {
-		const float x = std::min(Left(), other.Left());
-		const float y = std::min(Top(), other.Top());
-		const float r = std::max(Right(), other.Right());
-		const float b = std::max(Bottom(), other.Bottom());
-		return { { x, y }, { r - x, b - y } };
+		const float x = std::min(left(), other.left());
+		const float y = std::min(top(), other.top());
+		const float r = std::max(right(), other.right());
+		const float b = std::max(bottom(), other.bottom());
+		return { .position = { x, y }, .size = { r - x, b - y } };
 	}
 
-	[[nodiscard]] AQUILA_FORCE_INLINE Rect Intersect(const Rect &other) const {
-		float left = std::max(Left(), other.Left());
-		float top = std::max(Top(), other.Top());
-		float right = std::min(Right(), other.Right());
-		float bottom = std::min(Bottom(), other.Bottom());
-		return { { left, top }, { std::max(0.f, right - left), std::max(0.f, bottom - top) } };
+	[[nodiscard]] AQUILA_FORCE_INLINE Rect intersect(const Rect &other) const {
+		float l = std::max(left(), other.left());
+		float t = std::max(top(), other.top());
+		float r = std::min(right(), other.right());
+		float b = std::min(bottom(), other.bottom());
+		return { .position = { l, t }, .size = { std::max(0.F, r - l), std::max(0.F, b - t) } };
 	}
 
-	static AQUILA_FORCE_INLINE Rect FromMinMax(vec2 min, vec2 max) { return { .position = min, .size = max - min }; }
+	static AQUILA_FORCE_INLINE Rect from_min_max(Vec2 min, Vec2 max) { return { .position = min, .size = max - min }; }
 
-	[[nodiscard]] AQUILA_FORCE_INLINE bool IsEmpty() const { return size.x <= 0.f || size.y <= 0.f; }
+	[[nodiscard]] AQUILA_FORCE_INLINE bool is_empty() const { return size.x <= 0.F || size.y <= 0.F; }
 
 	[[nodiscard]] AQUILA_FORCE_INLINE bool operator==(const Rect &other) const {
 		return position == other.position && size == other.size;

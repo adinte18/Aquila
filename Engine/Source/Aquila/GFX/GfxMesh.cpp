@@ -3,46 +3,46 @@
 
 namespace Aquila::GFX {
 
-Ref<GfxMesh> GfxMesh::Create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh) {
-	auto gfxMesh = Ref<GfxMesh>(new GfxMesh());
-	gfxMesh->m_IndexCount = mesh.GetIndexCount();
+Ref<GfxMesh> GfxMesh::create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh) {
+	auto gfx_mesh = Ref<GfxMesh>(new GfxMesh());
+	gfx_mesh->m_index_count = mesh.get_index_count();
 
-	const uint64 vbSize = mesh.GetVertexCount() * sizeof(RHI::Vertex);
-	const uint64 ibSize = mesh.GetIndexCount() * sizeof(uint32);
+	const Uint64 vb_size = mesh.get_vertex_count() * sizeof(RHI::Vertex);
+	const Uint64 ib_size = mesh.get_index_count() * sizeof(Uint32);
 
-	gfxMesh->m_VertexBuffer = ctx.CreateBuffer({
-		.size = vbSize,
+	gfx_mesh->m_vertex_buffer = ctx.create_buffer({
+		.size = vb_size,
 		.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::TransferDst,
-		.domain = RHI::MemoryDomain::GPU_ONLY,
-		.debugName = "GfxMesh_VB",
+		.domain = RHI::MemoryDomain::GpuOnly,
+		.debug_name = "GfxMesh_VB",
 	});
-	gfxMesh->m_IndexBuffer = ctx.CreateBuffer({
-		.size = ibSize,
+	gfx_mesh->m_index_buffer = ctx.create_buffer({
+		.size = ib_size,
 		.usage = RHI::BufferUsage::IndexBuffer | RHI::BufferUsage::TransferDst,
-		.domain = RHI::MemoryDomain::GPU_ONLY,
-		.debugName = "GfxMesh_IB",
+		.domain = RHI::MemoryDomain::GpuOnly,
+		.debug_name = "GfxMesh_IB",
 	});
 
-	auto vbStage = ctx.CreateBuffer({
-		.size = vbSize,
+	auto vb_stage = ctx.create_buffer({
+		.size = vb_size,
 		.usage = RHI::BufferUsage::TransferSrc,
-		.domain = RHI::MemoryDomain::CPU_ONLY,
-		.debugName = "GfxMesh_VB_Stage",
+		.domain = RHI::MemoryDomain::CpuOnly,
+		.debug_name = "GfxMesh_VB_Stage",
 	});
-	auto ibStage = ctx.CreateBuffer({
-		.size = ibSize,
+	auto ib_stage = ctx.create_buffer({
+		.size = ib_size,
 		.usage = RHI::BufferUsage::TransferSrc,
-		.domain = RHI::MemoryDomain::CPU_ONLY,
-		.debugName = "GfxMesh_IB_Stage",
+		.domain = RHI::MemoryDomain::CpuOnly,
+		.debug_name = "GfxMesh_IB_Stage",
 	});
 
-	vbStage->Write(mesh.GetVertices().data(), vbSize);
-	ibStage->Write(mesh.GetIndices().data(), ibSize);
+	vb_stage->write(mesh.get_vertices().data(), vb_size);
+	ib_stage->write(mesh.get_indices().data(), ib_size);
 
-	ctx.CopyBuffer(*vbStage, *gfxMesh->m_VertexBuffer, vbSize);
-	ctx.CopyBuffer(*ibStage, *gfxMesh->m_IndexBuffer, ibSize);
+	ctx.copy_buffer(*vb_stage, *gfx_mesh->m_vertex_buffer, vb_size);
+	ctx.copy_buffer(*ib_stage, *gfx_mesh->m_index_buffer, ib_size);
 
-	return gfxMesh;
+	return gfx_mesh;
 }
 
 } // namespace Aquila::GFX

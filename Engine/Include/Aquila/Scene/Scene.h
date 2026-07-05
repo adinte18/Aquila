@@ -27,40 +27,40 @@ class Scene final {
 
 	~Scene();
 
-	void OnStart();
+	void on_start();
 
-	[[nodiscard]] entt::registry &GetRegistry() const;
-	[[nodiscard]] EntityManager *GetEntityManager() const;
-	[[nodiscard]] const std::string &GetSceneName() const;
-	[[nodiscard]] Entity GetActiveCameraEntity() const;
-	[[nodiscard]] bool HasActiveCamera() const;
-	[[nodiscard]] Entity FindPrimaryCamera() const;
-	[[nodiscard]] const Utils::UUID GetHandle() const;
+	[[nodiscard]] entt::registry &get_registry() const;
+	[[nodiscard]] EntityManager *get_entity_manager() const;
+	[[nodiscard]] const std::string &get_scene_name() const;
+	[[nodiscard]] Entity get_active_camera_entity() const;
+	[[nodiscard]] bool has_active_camera() const;
+	[[nodiscard]] Entity find_primary_camera() const;
+	[[nodiscard]] Foundation::UUID get_handle() const;
 
-	void UpdateTransformHierarchy();
-	void UpdateTransformRecursive(Entity entity, const glm::mat4 &parentWorld);
-	void MarkTransformDirty(entt::entity entity);
+	void update_transform_hierarchy();
+	void update_transform_recursive(Entity entity, const glm::mat4 &parent_world);
+	void mark_transform_dirty(entt::entity entity);
 
-	bool Serialize(const std::string &filepath);
-	bool Deserialize(const std::string &filepath, Assets::AssetManager &assetManager);
+	bool serialize(const std::string &filepath);
+	bool deserialize(const std::string &filepath, Assets::AssetManager &asset_manager);
 
-	void SetAssetManager(Assets::AssetManager *assetManager) { m_AssetManager = assetManager; }
+	void set_asset_manager(Assets::AssetManager *asset_manager) { m_asset_manager = asset_manager; }
 
-	void SetActiveCamera(Entity cameraEntity);
+	void set_active_camera(Entity camera_entity);
 
   protected:
-	std::string m_SceneName;
-	Unique<EntityManager> m_EntityManager;
+	std::string m_scene_name;
+	Unique<EntityManager> m_entity_manager;
 
   private:
-	Foundation::UUID m_SceneID;
-	entt::entity m_ActiveCameraEntity = entt::null;
-	Assets::AssetManager *m_AssetManager = nullptr;
-	Foundation::DirtySet<entt::entity> m_DirtyTransforms;
+	Foundation::UUID m_scene_id;
+	entt::entity m_active_camera_entity = entt::null;
+	Assets::AssetManager *m_asset_manager = nullptr;
+	Foundation::DirtySet<entt::entity> m_dirty_transforms;
 
-	void OnTransformConstruct(entt::registry &registry, entt::entity entity);
-	[[nodiscard]] bool HasDirtyAncestor(entt::entity entity) const;
-	[[nodiscard]] int GetEntityDepth(entt::entity entity) const;
+	void on_transform_construct(entt::registry &registry, entt::entity entity);
+	[[nodiscard]] bool has_dirty_ancestor(entt::entity entity) const;
+	[[nodiscard]] int get_entity_depth(entt::entity entity) const;
 
 	friend class Entity;
 	friend class EntityManager;

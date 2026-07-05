@@ -15,12 +15,12 @@ using namespace Aquila::UI::Core;
 
 namespace {
 
-std::string MakeLabel(View *view) {
-	std::string label(view->GetTypeName());
-	if (!view->GetId().empty()) {
-		label += " #" + view->GetId();
+std::string make_label(View *view) {
+	std::string label(view->get_type_name());
+	if (!view->get_id().empty()) {
+		label += " #" + view->get_id();
 	}
-	for (const auto &cls : view->GetClasses()) {
+	for (const auto &cls : view->get_classes()) {
 		label += " ." + cls;
 	}
 	return label;
@@ -28,83 +28,83 @@ std::string MakeLabel(View *view) {
 
 } // namespace
 
-void UIDebugPanel::Build(View *overlayRoot, Canvas *target) {
-	m_Target = target;
+void UIDebugPanel::build(View *overlay_root, Canvas *target) {
+	m_target = target;
 
-	m_Window = overlayRoot->AddChild<View>();
-	m_Window->SetId("ui-debug-window");
-	m_Window->AddClass("ui-debug-window");
+	m_window = overlay_root->add_child<View>();
+	m_window->set_id("ui-debug-window");
+	m_window->add_class("ui-debug-window");
 
 	UI::FloatingConfig floating;
-	floating.attachTo = UI::FloatingAttachTo::Root;
-	floating.parentPoint = UI::FloatingAttachPoint::LeftTop;
-	floating.elementPoint = UI::FloatingAttachPoint::LeftTop;
-	floating.offset = { 60.f, 60.f };
-	floating.zIndex = 1000;
-	m_Window->SetFloating(floating);
+	floating.attach_to = UI::FloatingAttachTo::Root;
+	floating.parent_point = UI::FloatingAttachPoint::LeftTop;
+	floating.element_point = UI::FloatingAttachPoint::LeftTop;
+	floating.offset = { 60.F, 60.F };
+	floating.z_index = 1000;
+	m_window->set_floating(floating);
 
-	auto *header = m_Window->AddChild<View>();
-	header->AddClass("ui-debug-header");
+	auto *header = m_window->add_child<View>();
+	header->add_class("ui-debug-header");
 
-	auto *title = header->AddChild<Label>(std::string("UI Inspector"));
-	title->AddClass("ui-debug-title");
+	auto *title = header->add_child<Label>(std::string("UI Inspector"));
+	title->add_class("ui-debug-title");
 
-	auto *refresh = header->AddChild<Button>(std::string("Refresh"));
-	refresh->AddClass("ui-debug-refresh");
-	refresh->onClick.Connect([this] { Refresh(); });
+	auto *refresh = header->add_child<Button>(std::string("Refresh"));
+	refresh->add_class("ui-debug-refresh");
+	refresh->on_click.connect([this] { this->refresh(); });
 
-	auto *scroll = m_Window->AddChild<ScrollView>();
-	scroll->AddClass("ui-debug-body");
-	m_TreeHost = scroll->AddContent<View>();
-	m_TreeHost->AddClass("ui-debug-tree-host");
+	auto *scroll = m_window->add_child<ScrollView>();
+	scroll->add_class("ui-debug-body");
+	m_tree_host = scroll->add_content<View>();
+	m_tree_host->add_class("ui-debug-tree-host");
 
-	m_Window->SetHidden(true);
+	m_window->set_hidden(true);
 }
 
-void UIDebugPanel::Toggle() {
-	if (!m_Window) {
+void UIDebugPanel::toggle() {
+	if (!m_window) {
 		return;
 	}
 
-	m_Visible = !m_Visible;
+	m_visible = !m_visible;
 
-	m_Window->SetHidden(!m_Visible);
+	m_window->set_hidden(!m_visible);
 
-	if (m_Visible) {
-		Refresh();
+	if (m_visible) {
+		refresh();
 	}
 }
 
-TreeNode *UIDebugPanel::AddViewNode(View *view, TreeNode *parentNode) {
-	TreeNode *node = parentNode ? parentNode->AddChildNode(MakeLabel(view)) : m_Tree->AddNode(MakeLabel(view));
-	m_NodeToView[node] = view;
+TreeNode *UIDebugPanel::add_view_node(View *view, TreeNode *parent_node) {
+	TreeNode *node = parent_node ? parent_node->add_child_node(make_label(view)) : m_tree->add_node(make_label(view));
+	m_node_to_view[node] = view;
 
-	for (const auto &child : view->GetChildren()) {
-		if (child.get() == m_Window) {
+	for (const auto &child : view->get_children()) {
+		if (child.get() == m_window) {
 			continue; // never inspect the inspector
 		}
-		AddViewNode(child.get(), node);
+		add_view_node(child.get(), node);
 	}
 	return node;
 }
 
-void UIDebugPanel::Refresh() {
-	if (!m_Target || !m_TreeHost) {
+void UIDebugPanel::refresh() {
+	if (!m_target || !m_tree_host) {
 		return;
 	}
 
-	m_NodeToView.clear();
-	while (!m_TreeHost->GetChildren().empty()) {
-		m_TreeHost->RemoveChild(m_TreeHost->GetChildren().front().get());
+	m_node_to_view.clear();
+	while (!m_tree_host->get_children().empty()) {
+		m_tree_host->remove_child(m_tree_host->get_children().front().get());
 	}
 
-	m_Tree = m_TreeHost->AddChild<TreeView>();
+	m_tree = m_tree_host->add_child<TreeView>();
 
-	for (const auto &child : m_Target->GetRoot()->GetChildren()) {
-		if (child.get() == m_Window) {
+	for (const auto &child : m_target->get_root()->get_children()) {
+		if (child.get() == m_window) {
 			continue;
 		}
-		AddViewNode(child.get(), nullptr);
+		add_view_node(child.get(), nullptr);
 	}
 }
 

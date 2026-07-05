@@ -10,20 +10,20 @@ class ListBox : public View {
   public:
 	ListBox();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "ListBox"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "ListBox"; }
 
-	void AddItem(std::string id, std::string display);
-	void RemoveItem(const std::string &id);
-	void ClearItems();
+	void add_item(std::string id, std::string display);
+	void remove_item(const std::string &id);
+	void clear_items();
 
-	void SetSelectedId(const std::string &id);
-	[[nodiscard]] const std::string &GetSelectedId() const { return m_SelectedId; }
+	void set_selected_id(const std::string &id);
+	[[nodiscard]] const std::string &get_selected_id() const { return m_selected_id; }
 
-	Signal<void(const std::string &)> onSelectionChanged;
+	Signal<void(const std::string &)> on_selection_changed;
 
   private:
-	void SelectItem(const std::string &id);
-	void UpdateSelectionStyles();
+	void select_item(const std::string &id);
+	void update_selection_styles();
 
 	struct Item {
 		std::string id;
@@ -31,9 +31,9 @@ class ListBox : public View {
 		Button *button = nullptr;
 	};
 
-	ScrollView *m_Scroll = nullptr;
-	std::vector<Item> m_Items;
-	std::string m_SelectedId;
+	ScrollView *m_scroll = nullptr;
+	std::vector<Item> m_items;
+	std::string m_selected_id;
 };
 
 } // namespace Aquila::UI::Core

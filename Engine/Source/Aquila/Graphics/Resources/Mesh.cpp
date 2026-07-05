@@ -6,29 +6,29 @@
 
 namespace Aquila::Graphics::Resources {
 
-Mesh::Mesh(const std::string &debugName) : m_DebugName(debugName) {}
+Mesh::Mesh(const std::string &debug_name) : m_debug_name(debug_name) {}
 
-void Mesh::Load(const std::string &filepath) {
+void Mesh::load(const std::string &filepath) {
 	Assimp::Importer importer;
 
 	const auto file =
-		Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filepath, AccessMode::Read, OpenMode::Binary);
-	if (!file || !file->IsValid()) {
+		Platform::Filesystem::VirtualFileSystem::get()->open_file(filepath, AccessMode::Read, OpenMode::Binary);
+	if (!file || !file->is_valid()) {
 		throw std::runtime_error("Failed to open mesh via VFS: " + filepath);
 	}
 
-	const int64 fileSize = file->Size();
-	if (fileSize <= 0) {
+	const Int64 file_size = file->size();
+	if (file_size <= 0) {
 		throw std::runtime_error("Mesh file is empty: " + filepath);
 	}
 
-	std::vector<uint8> buffer(fileSize);
-	if (const size_t bytesRead = file->Read(buffer.data(), buffer.size()); bytesRead != buffer.size()) {
+	std::vector<Uint8> buffer(file_size);
+	if (const size_t bytes_read = file->read(buffer.data(), buffer.size()); bytes_read != buffer.size()) {
 		throw std::runtime_error("Failed to read entire mesh buffer from VFS");
 	}
 
-	uint32 flags = aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
-	if (fileSize < 5 * 1024 * 1024) {
+	Uint32 flags = aiProcess_Triangulate | aiProcess_JoinIdenticalVertices | aiProcess_ImproveCacheLocality;
+	if (file_size < 5 * 1024 * 1024) {
 		flags |= aiProcess_GenSmoothNormals | aiProcess_CalcTangentSpace | aiProcess_GenUVCoords;
 	}
 
@@ -37,135 +37,135 @@ void Mesh::Load(const std::string &filepath) {
 		throw std::runtime_error("Assimp failed: " + std::string(importer.GetErrorString()));
 	}
 
-	m_Path = filepath;
-	m_Vertices.clear();
-	m_Indices.clear();
-	m_Primitives.clear();
+	m_path = filepath;
+	m_vertices.clear();
+	m_indices.clear();
+	m_primitives.clear();
 
-	size_t totalVertices = 0, totalIndices = 0;
-	Delegate<void(aiNode *)> Count = [&](aiNode *node) {
-		for (uint32 i = 0; i < node->mNumMeshes; i++) {
+	size_t total_vertices = 0, total_indices = 0;
+	Delegate<void(aiNode *)> count = [&](aiNode *node) {
+		for (Uint32 i = 0; i < node->mNumMeshes; i++) {
 			aiMesh *mesh = scene->mMeshes[node->mMeshes[i]];
-			totalVertices += mesh->mNumVertices;
-			totalIndices += mesh->mNumFaces * 3;
+			total_vertices += mesh->mNumVertices;
+			total_indices += mesh->mNumFaces * 3;
 		}
-		for (uint32 i = 0; i < node->mNumChildren; i++) {
-			Count(node->mChildren[i]);
+		for (Uint32 i = 0; i < node->mNumChildren; i++) {
+			count(node->mChildren[i]);
 		}
 	};
-	Count(scene->mRootNode);
+	count(scene->mRootNode);
 
-	m_Vertices.reserve(totalVertices);
-	m_Indices.reserve(totalIndices);
+	m_vertices.reserve(total_vertices);
+	m_indices.reserve(total_indices);
 
-	Delegate<void(aiNode *, const aiScene *)> ProcessNode;
-	ProcessNode = [&](aiNode *node, const aiScene *s) {
-		for (uint32 i = 0; i < node->mNumMeshes; i++) {
+	Delegate<void(aiNode *, const aiScene *)> process_node;
+	process_node = [&](aiNode *node, const aiScene *s) {
+		for (Uint32 i = 0; i < node->mNumMeshes; i++) {
 			aiMesh *mesh = s->mMeshes[node->mMeshes[i]];
 
-			uint32 vertexOffset = static_cast<uint32>(m_Vertices.size());
-			uint32 indexOffset = static_cast<uint32>(m_Indices.size());
+			Uint32 vertex_offset = static_cast<Uint32>(m_vertices.size());
+			Uint32 index_offset = static_cast<Uint32>(m_indices.size());
 
-			for (uint32 j = 0; j < mesh->mNumVertices; j++) {
+			for (Uint32 j = 0; j < mesh->mNumVertices; j++) {
 				RHI::Vertex v{};
-				v.pos = glm::vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.f);
+				v.pos = glm::vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.F);
 				v.normals = mesh->HasNormals()
-					? glm::normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
-					: vec3(0, 1, 0);
+					? glm::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
+					: Vec3(0, 1, 0);
 				v.texcoord = mesh->HasTextureCoords(0)
-					? vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y)
-					: vec2(0);
+					? Vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y)
+					: Vec2(0);
 
 				if (mesh->HasTangentsAndBitangents()) {
-					vec3 T = glm::normalize(vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z));
-					vec3 B =
-						glm::normalize(vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y, mesh->mBitangents[j].z));
-					vec3 N = glm::normalize(vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
-					f32 h = (glm::dot(glm::cross(N, T), B) < 0.f) ? -1.f : 1.f;
-					v.tangent = glm::vec4(T, h);
+					Vec3 t = glm::normalize(Vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z));
+					Vec3 b =
+						glm::normalize(Vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y, mesh->mBitangents[j].z));
+					Vec3 n = glm::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
+					F32 h = (glm::dot(glm::cross(n, t), b) < 0.F) ? -1.F : 1.F;
+					v.tangent = glm::vec4(t, h);
 				} else {
 					v.tangent = glm::vec4(1, 0, 0, 1);
 				}
-				m_Vertices.push_back(v);
+				m_vertices.push_back(v);
 			}
 
-			for (uint32 j = 0; j < mesh->mNumFaces; j++) {
+			for (Uint32 j = 0; j < mesh->mNumFaces; j++) {
 				const aiFace &face = mesh->mFaces[j];
-				for (uint32 k = 0; k < face.mNumIndices; k++) {
-					m_Indices.push_back(face.mIndices[k] + vertexOffset);
+				for (Uint32 k = 0; k < face.mNumIndices; k++) {
+					m_indices.push_back(face.mIndices[k] + vertex_offset);
 				}
 			}
 
 			RHI::GPUMeshPrimitive prim{};
-			prim.firstVertex = vertexOffset;
-			prim.vertexCount = mesh->mNumVertices;
-			prim.firstIndex = indexOffset;
-			prim.indexCount = mesh->mNumFaces * 3;
-			m_Primitives.push_back(prim);
+			prim.first_vertex = vertex_offset;
+			prim.vertex_count = mesh->mNumVertices;
+			prim.first_index = index_offset;
+			prim.index_count = mesh->mNumFaces * 3;
+			m_primitives.push_back(prim);
 		}
-		for (uint32 i = 0; i < node->mNumChildren; i++) {
-			ProcessNode(node->mChildren[i], s);
+		for (Uint32 i = 0; i < node->mNumChildren; i++) {
+			process_node(node->mChildren[i], s);
 		}
 	};
-	ProcessNode(scene->mRootNode, scene);
+	process_node(scene->mRootNode, scene);
 
-	CenterMeshAtOrigin();
+	center_mesh_at_origin();
 
-	m_VertexCount = static_cast<uint32>(m_Vertices.size());
-	m_IndexCount = static_cast<uint32>(m_Indices.size());
-	m_HasIndexBuffer = m_IndexCount > 0;
+	m_vertex_count = static_cast<Uint32>(m_vertices.size());
+	m_index_count = static_cast<Uint32>(m_indices.size());
+	m_has_index_buffer = m_index_count > 0;
 
-	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_DebugName, m_VertexCount, m_IndexCount);
+	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_debug_name, m_vertex_count, m_index_count);
 }
 
-void Mesh::LoadFromData(const MeshData &meshData) {
-	if (meshData.vertices.empty()) {
-		AQUILA_LOG_ERROR("Mesh data has no vertices: {}", m_DebugName);
+void Mesh::load_from_data(const MeshData &mesh_data) {
+	if (mesh_data.vertices.empty()) {
+		AQUILA_LOG_ERROR("Mesh data has no vertices: {}", m_debug_name);
 		return;
 	}
 
-	m_Vertices = meshData.vertices;
-	m_Indices = meshData.indices;
-	m_Path = meshData.path;
+	m_vertices = mesh_data.vertices;
+	m_indices = mesh_data.indices;
+	m_path = mesh_data.path;
 
-	m_VertexCount = static_cast<uint32>(m_Vertices.size());
-	m_IndexCount = static_cast<uint32>(m_Indices.size());
-	m_HasIndexBuffer = m_IndexCount > 0;
+	m_vertex_count = static_cast<Uint32>(m_vertices.size());
+	m_index_count = static_cast<Uint32>(m_indices.size());
+	m_has_index_buffer = m_index_count > 0;
 
 	RHI::GPUMeshPrimitive prim{};
-	prim.firstVertex = 0;
-	prim.vertexCount = m_VertexCount;
-	prim.firstIndex = 0;
-	prim.indexCount = m_IndexCount;
-	m_Primitives = { prim };
+	prim.first_vertex = 0;
+	prim.vertex_count = m_vertex_count;
+	prim.first_index = 0;
+	prim.index_count = m_index_count;
+	m_primitives = { prim };
 
-	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_DebugName, m_VertexCount, m_IndexCount);
+	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_debug_name, m_vertex_count, m_index_count);
 }
 
-void Mesh::CenterMeshAtOrigin() {
-	if (m_Vertices.empty()) {
+void Mesh::center_mesh_at_origin() {
+	if (m_vertices.empty()) {
 		return;
 	}
 
-	vec3 minB = vec3(m_Vertices[0].pos);
-	vec3 maxB = vec3(m_Vertices[0].pos);
-	for (const auto &v : m_Vertices) {
-		vec3 p = vec3(v.pos);
-		minB = glm::min(minB, p);
-		maxB = glm::max(maxB, p);
+	Vec3 min_b = Vec3(m_vertices[0].pos);
+	Vec3 max_b = Vec3(m_vertices[0].pos);
+	for (const auto &v : m_vertices) {
+		Vec3 p = Vec3(v.pos);
+		min_b = glm::min(min_b, p);
+		max_b = glm::max(max_b, p);
 	}
-	vec3 center = (minB + maxB) * 0.5f;
-	for (auto &v : m_Vertices) {
-		v.pos = vec4(vec3(v.pos) - center, 1.f);
+	Vec3 center = (min_b + max_b) * 0.5f;
+	for (auto &v : m_vertices) {
+		v.pos = Vec4(Vec3(v.pos) - center, 1.F);
 	}
 
-	AQUILA_LOG_INFO("Centered mesh '{}' by ({}, {}, {})", m_DebugName, center.x, center.y, center.z);
+	AQUILA_LOG_INFO("Centered mesh '{}' by ({}, {}, {})", m_debug_name, center.x, center.y, center.z);
 }
 
-MeshData Mesh::GenerateCube(f32 size) {
+MeshData Mesh::generate_cube(F32 size) {
 	MeshData data;
 	data.path = "procedural://cube";
-	constexpr vec3 white = { 1, 1, 1 };
+	constexpr Vec3 white = { 1, 1, 1 };
 
 	data.vertices = {
 		{ { -size, -size, size }, white, { 0, 0, 1 }, { 0, 0 }, { 1, 0, 0, 1 } },
@@ -200,102 +200,102 @@ MeshData Mesh::GenerateCube(f32 size) {
 	return data;
 }
 
-MeshData Mesh::GenerateSphere(f32 radius, uint32 segments, uint32 rings) {
+MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 	MeshData data;
 	data.path = "procedural://sphere";
-	constexpr vec3 white = { 1, 1, 1 };
+	constexpr Vec3 white = { 1, 1, 1 };
 
-	data.vertices.push_back({ { 0, radius, 0 }, white, { 0, 1, 0 }, { 0.5f, 1.f }, { 1, 0, 0, 1 } });
-	for (uint32 stack = 1; stack < rings; ++stack) {
-		f32 phi = Math::PI * f32(stack) / f32(rings);
-		for (uint32 slice = 0; slice < segments; ++slice) {
-			f32 theta = 2.f * Math::PI * f32(slice) / f32(segments);
-			vec3 pos = { radius * sin(phi) * cos(theta), radius * cos(phi), radius * sin(phi) * sin(theta) };
+	data.vertices.push_back({ { 0, radius, 0 }, white, { 0, 1, 0 }, { 0.5f, 1.F }, { 1, 0, 0, 1 } });
+	for (Uint32 stack = 1; stack < rings; ++stack) {
+		F32 phi = Math::PI * F32(stack) / F32(rings);
+		for (Uint32 slice = 0; slice < segments; ++slice) {
+			F32 theta = 2.F * Math::PI * F32(slice) / F32(segments);
+			Vec3 pos = { radius * sin(phi) * cos(theta), radius * cos(phi), radius * sin(phi) * sin(theta) };
 			data.vertices.push_back({ pos,
 									  white,
 									  glm::normalize(pos),
-									  { f32(slice) / f32(segments), 1.f - f32(stack) / f32(rings) },
-									  glm::normalize(vec4(-sin(theta), 0, cos(theta), 1)) });
+									  { F32(slice) / F32(segments), 1.F - F32(stack) / F32(rings) },
+									  glm::normalize(Vec4(-sin(theta), 0, cos(theta), 1)) });
 		}
 	}
-	data.vertices.push_back({ { 0, -radius, 0 }, white, { 0, -1, 0 }, { 0.5f, 0.f }, { 1, 0, 0, 1 } });
+	data.vertices.push_back({ { 0, -radius, 0 }, white, { 0, -1, 0 }, { 0.5f, 0.F }, { 1, 0, 0, 1 } });
 
-	uint32 top = 0;
-	uint32 bottom = static_cast<uint32>(data.vertices.size() - 1);
+	Uint32 top = 0;
+	Uint32 bottom = static_cast<Uint32>(data.vertices.size() - 1);
 
-	for (uint32 i = 0; i < segments; ++i) {
+	for (Uint32 i = 0; i < segments; ++i) {
 		data.indices.push_back(top);
 		data.indices.push_back(1 + (i + 1) % segments);
 		data.indices.push_back(1 + i);
 	}
-	uint32 lastRing = 1 + (rings - 2) * segments;
-	for (uint32 i = 0; i < segments; ++i) {
+	Uint32 last_ring = 1 + (rings - 2) * segments;
+	for (Uint32 i = 0; i < segments; ++i) {
 		data.indices.push_back(bottom);
-		data.indices.push_back(lastRing + i);
-		data.indices.push_back(lastRing + (i + 1) % segments);
+		data.indices.push_back(last_ring + i);
+		data.indices.push_back(last_ring + (i + 1) % segments);
 	}
-	for (uint32 stack = 0; stack < rings - 2; ++stack) {
-		uint32 curr = 1 + stack * segments;
-		uint32 next = curr + segments;
-		for (uint32 slice = 0; slice < segments; ++slice) {
-			uint32 i0 = curr + slice, i1 = curr + (slice + 1) % segments;
-			uint32 i2 = next + (slice + 1) % segments, i3 = next + slice;
+	for (Uint32 stack = 0; stack < rings - 2; ++stack) {
+		Uint32 curr = 1 + stack * segments;
+		Uint32 next = curr + segments;
+		for (Uint32 slice = 0; slice < segments; ++slice) {
+			Uint32 i0 = curr + slice, i1 = curr + (slice + 1) % segments;
+			Uint32 i2 = next + (slice + 1) % segments, i3 = next + slice;
 			data.indices.insert(data.indices.end(), { i0, i1, i2, i0, i2, i3 });
 		}
 	}
 	return data;
 }
 
-MeshData Mesh::GenerateCylinder(f32 radius, f32 height, uint32 segments) {
+MeshData Mesh::generate_cylinder(F32 radius, F32 height, Uint32 segments) {
 	MeshData data;
 	data.path = "procedural://cylinder";
-	constexpr vec3 white = { 1, 1, 1 };
-	f32 half = height * 0.5f;
+	constexpr Vec3 white = { 1, 1, 1 };
+	F32 half = height * 0.5f;
 
 	data.vertices.push_back({ { 0, half, 0 }, white, { 0, 1, 0 }, { 0.5f, 0.5f }, { 1, 0, 0, 1 } });
 	data.vertices.push_back({ { 0, -half, 0 }, white, { 0, -1, 0 }, { 0.5f, 0.5f }, { 1, 0, 0, 1 } });
 
-	constexpr uint32 sideStart = 2;
-	for (uint32 i = 0; i <= segments; i++) {
-		f32 angle = 2.f * Math::PI * i / segments;
-		f32 x = radius * cos(angle), z = radius * sin(angle);
-		vec3 n = glm::normalize(vec3(x, 0, z));
-		vec4 t = glm::normalize(vec4(-sin(angle), 0, cos(angle), 1));
-		f32 u = f32(i) / segments;
+	constexpr Uint32 side_start = 2;
+	for (Uint32 i = 0; i <= segments; i++) {
+		F32 angle = 2.F * Math::PI * i / segments;
+		F32 x = radius * cos(angle), z = radius * sin(angle);
+		Vec3 n = glm::normalize(Vec3(x, 0, z));
+		Vec4 t = glm::normalize(Vec4(-sin(angle), 0, cos(angle), 1));
+		F32 u = F32(i) / segments;
 		data.vertices.push_back({ { x, half, z }, white, n, { u, 0 }, t });
 		data.vertices.push_back({ { x, -half, z }, white, n, { u, 1 }, t });
 	}
-	for (uint32 i = 0; i < segments; i++) {
-		uint32 tc = sideStart + i * 2, bc = tc + 1, tn = sideStart + (i + 1) * 2, bn = tn + 1;
+	for (Uint32 i = 0; i < segments; i++) {
+		Uint32 tc = side_start + i * 2, bc = tc + 1, tn = side_start + (i + 1) * 2, bn = tn + 1;
 		data.indices.insert(data.indices.end(), { tc, tn, bc, tn, bn, bc });
 	}
-	for (uint32 i = 0; i < segments; i++) {
-		uint32 curr = sideStart + i * 2, next = sideStart + ((i + 1) % segments) * 2;
+	for (Uint32 i = 0; i < segments; i++) {
+		Uint32 curr = side_start + i * 2, next = side_start + ((i + 1) % segments) * 2;
 		data.indices.insert(data.indices.end(), { 0u, next, curr });
 	}
-	for (uint32 i = 0; i < segments; i++) {
-		uint32 curr = sideStart + i * 2 + 1, next = sideStart + ((i + 1) % segments) * 2 + 1;
+	for (Uint32 i = 0; i < segments; i++) {
+		Uint32 curr = side_start + i * 2 + 1, next = side_start + ((i + 1) % segments) * 2 + 1;
 		data.indices.insert(data.indices.end(), { 1u, curr, next });
 	}
 	return data;
 }
 
-MeshData Mesh::GeneratePlane(f32 width, f32 height, uint32 wSegs, uint32 hSegs) {
+MeshData Mesh::generate_plane(F32 width, F32 height, Uint32 w_segs, Uint32 h_segs) {
 	MeshData data;
 	data.path = "procedural://plane";
-	constexpr vec3 white = { 1, 1, 1 };
+	constexpr Vec3 white = { 1, 1, 1 };
 
-	for (uint32 y = 0; y <= hSegs; y++) {
-		for (uint32 x = 0; x <= wSegs; x++) {
-			f32 u = f32(x) / wSegs, v = f32(y) / hSegs;
+	for (Uint32 y = 0; y <= h_segs; y++) {
+		for (Uint32 x = 0; x <= w_segs; x++) {
+			F32 u = F32(x) / w_segs, v = F32(y) / h_segs;
 			data.vertices.push_back(
 				{ { (u - 0.5f) * width, 0, (v - 0.5f) * height }, white, { 0, 1, 0 }, { u, v }, { 1, 0, 0, 1 } });
 		}
 	}
-	for (uint32 y = 0; y < hSegs; y++) {
-		for (uint32 x = 0; x < wSegs; x++) {
-			uint32 tl = y * (wSegs + 1) + x, tr = tl + 1;
-			uint32 bl = (y + 1) * (wSegs + 1) + x, br = bl + 1;
+	for (Uint32 y = 0; y < h_segs; y++) {
+		for (Uint32 x = 0; x < w_segs; x++) {
+			Uint32 tl = y * (w_segs + 1) + x, tr = tl + 1;
+			Uint32 bl = (y + 1) * (w_segs + 1) + x, br = bl + 1;
 			data.indices.insert(data.indices.end(), { tl, bl, tr, tr, bl, br });
 		}
 	}

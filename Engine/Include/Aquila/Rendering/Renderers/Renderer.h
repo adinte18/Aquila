@@ -20,37 +20,37 @@ class Renderer : public IRenderer {
 	AQUILA_NONCOPYABLE(Renderer);
 	AQUILA_NONMOVEABLE(Renderer);
 
-	void OnInit(GFX::GfxContext &ctx) override;
-	void OnShutdown() override;
-	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
-	void BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
-	void OnResize(uint32 width, uint32 height) override;
-	void SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex);
+	void on_init(GFX::GfxContext &ctx) override;
+	void on_shutdown() override;
+	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void on_resize(Uint32 width, Uint32 height) override;
+	void set_swapchain_target(GFX::GfxSwapchain &swapchain, Uint32 image_index);
 
-	template <typename T, typename... Args> T &AddSystem(Args &&...args) {
+	template <typename T, typename... Args> T &add_system(Args &&...args) {
 		static_assert(std::is_base_of_v<IRenderingSystem, T>);
-		auto sys = CreateUnique<T>(std::forward<Args>(args)...);
+		auto sys = create_unique<T>(std::forward<Args>(args)...);
 		T &ref = *sys;
-		sys->OnInit(*m_Ctx);
-		m_Systems.push_back(std::move(sys));
+		sys->on_init(*m_ctx);
+		m_systems.push_back(std::move(sys));
 		return ref;
 	}
 
   private:
-	GFX::GfxContext *m_Ctx = nullptr;
-	std::vector<Unique<IRenderingSystem>> m_Systems;
+	GFX::GfxContext *m_ctx = nullptr;
+	std::vector<Unique<IRenderingSystem>> m_systems;
 
 	// Swapchain blit resources
-	Ref<GFX::GfxDescriptorSetLayout> m_BlitLayout;
-	Ref<GFX::GfxPipeline> m_BlitPipeline;
+	Ref<GFX::GfxDescriptorSetLayout> m_blit_layout;
+	Ref<GFX::GfxPipeline> m_blit_pipeline;
 	// One descriptor set per frame-in-flight so the GPU can read set[N-1] while the CPU updates set[N].
-	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_BlitSets;
-	Ref<GFX::GfxRenderPass> m_SwapchainPass;
+	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_blit_sets;
+	Ref<GFX::GfxRenderPass> m_swapchain_pass;
 
-	GFX::GfxSwapchain *m_Swapchain = nullptr;
-	uint32 m_SwapchainImageIndex = 0;
+	GFX::GfxSwapchain *m_swapchain = nullptr;
+	Uint32 m_swapchain_image_index = 0;
 	// Rotates 0..MAX_FRAMES_IN_FLIGHT-1; advanced in SetSwapchainTarget (once per frame).
-	uint32 m_FrameSlot = SharedConstants::MAX_FRAMES_IN_FLIGHT - 1;
+	Uint32 m_frame_slot = SharedConstants::MAX_FRAMES_IN_FLIGHT - 1;
 };
 
 } // namespace Aquila::Rendering

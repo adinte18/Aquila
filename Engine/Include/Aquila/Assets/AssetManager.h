@@ -15,7 +15,7 @@
 // enum class AssetType { Unknown = 0, Mesh, Texture, Material, Shader, Scene, Model, Audio };
 
 // struct AssetMetadata {
-// 	Utils::UUID uuid;
+// 	Foundation::UUID uuid;
 // 	std::string filepath;
 // 	AssetType type = AssetType::Unknown;
 // 	bool isLoaded = false;
@@ -26,7 +26,7 @@
 
 // class AssetEntry {
 //   public:
-// 	Utils::UUID uuid;
+// 	Foundation::UUID uuid;
 // 	AssetMetadata metadata;
 // 	AssetType type;
 // 	Ref<void> asset; // Type-erased asset pointer
@@ -60,7 +60,7 @@
 
 // 	// Get cached mesh or load if not present
 // 	Ref<Graphics::Resources::Mesh> GetMesh(const std::string &filepath);
-// 	Ref<Graphics::Resources::Mesh> GetMesh(const Utils::UUID &uuid);
+// 	Ref<Graphics::Resources::Mesh> GetMesh(const Foundation::UUID &uuid);
 
 // 	// Procedural meshes (CPU-only, immediate)
 // 	Ref<Graphics::Resources::Mesh> CreateProceduralMesh(const std::string &type, const std::string &name = "");
@@ -82,16 +82,16 @@
 
 // 	// Get cached texture
 // 	Ref<Graphics::Resources::Texture2D> GetTexture(const std::string &filepath);
-// 	Ref<Graphics::Resources::Texture2D> GetTexture(const Utils::UUID &uuid);
+// 	Ref<Graphics::Resources::Texture2D> GetTexture(const Foundation::UUID &uuid);
 
 // 	Ref<Graphics::Resources::Texture2D> TryGetTexture(const std::string &filepath);
-// 	Ref<Graphics::Resources::Texture2D> TryGetTexture(const Utils::UUID &uuid);
+// 	Ref<Graphics::Resources::Texture2D> TryGetTexture(const Foundation::UUID &uuid);
 
 // 	Ref<Graphics::Resources::Mesh> TryGetMesh(const std::string &filepath);
-// 	Ref<Graphics::Resources::Mesh> TryGetMesh(const Utils::UUID &uuid);
+// 	Ref<Graphics::Resources::Mesh> TryGetMesh(const Foundation::UUID &uuid);
 
 // 	bool IsAssetLoading(const std::string &filepath) const;
-// 	bool IsAssetLoading(const Utils::UUID &uuid) const;
+// 	bool IsAssetLoading(const Foundation::UUID &uuid) const;
 
 // 	Ref<Graphics::Shader::ShaderProgram> LoadShader(const std::string &filepath);
 // 	Ref<Graphics::Shader::ShaderProgram> TryGetShader(const std::string &filepath);
@@ -130,28 +130,28 @@
 // 	// ASSET MANAGEMENT
 
 // 	// Check asset status
-// 	bool IsAssetLoaded(const Utils::UUID &uuid) const;
+// 	bool IsAssetLoaded(const Foundation::UUID &uuid) const;
 // 	bool IsAssetLoaded(const std::string &filepath) const;
-// 	AssetLoadState GetAssetState(const Utils::UUID &uuid) const;
+// 	AssetLoadState GetAssetState(const Foundation::UUID &uuid) const;
 // 	AssetLoadState GetAssetState(const std::string &filepath) const;
 
 // 	// Get metadata
-// 	AssetMetadata GetAssetMetadata(const Utils::UUID &uuid) const;
+// 	AssetMetadata GetAssetMetadata(const Foundation::UUID &uuid) const;
 // 	AssetMetadata GetAssetMetadata(const std::string &filepath) const;
 
 // 	// Unload assets
-// 	void UnloadAsset(const Utils::UUID &uuid);
+// 	void UnloadAsset(const Foundation::UUID &uuid);
 // 	void UnloadAsset(const std::string &filepath);
 // 	void UnloadAllAssets();
 
 // 	// Reload (hot-reload support)
-// 	void ReloadAsset(const Utils::UUID &uuid);
+// 	void ReloadAsset(const Foundation::UUID &uuid);
 // 	void ReloadAsset(const std::string &filepath);
 // 	void CheckForModifiedAssets(); // Checks file timestamps
 
 // 	// QUERIES
 
-// 	std::vector<Utils::UUID> GetAllAssetsOfType(AssetType type) const;
+// 	std::vector<Foundation::UUID> GetAllAssetsOfType(AssetType type) const;
 // 	std::vector<std::string> GetAllAssetPaths() const;
 
 // 	size_t GetAssetCount() const;
@@ -170,30 +170,30 @@
 // 	SceneManagement::Scene *LoadScene(const std::string &filepath);
 // 	SceneManagement::Scene *LoadSceneAsync(const std::string &filepath,
 // 										   const Delegate<void(SceneManagement::Scene *)> &onLoaded);
-// 	SceneManagement::Scene *GetScene(const Utils::UUID &uuid) const;
+// 	SceneManagement::Scene *GetScene(const Foundation::UUID &uuid) const;
 // 	SceneManagement::Scene *GetScene(const std::string &name);
 // 	SceneManagement::Scene *GetActiveScene() const;
 
-// 	void ActivateScene(const Utils::UUID &uuid);
+// 	void ActivateScene(const Foundation::UUID &uuid);
 // 	void ActivateScene(const std::string &name);
 // 	void ActivateScene(const SceneManagement::Scene *scene);
 
-// 	bool SaveScene(const Utils::UUID &uuid, const std::string &filepath);
+// 	bool SaveScene(const Foundation::UUID &uuid, const std::string &filepath);
 // 	bool SaveActiveScene(const std::string &filepath);
 
-// 	void UnloadScene(const Utils::UUID &uuid);
-// 	void RemoveScene(const Utils::UUID &uuid);
-// 	void ChangeScene(const Utils::UUID &uuid);
+// 	void UnloadScene(const Foundation::UUID &uuid);
+// 	void RemoveScene(const Foundation::UUID &uuid);
+// 	void ChangeScene(const Foundation::UUID &uuid);
 
-// 	SceneManagement::Scene *DuplicateScene(const Utils::UUID &uuid, const std::string &newName);
+// 	SceneManagement::Scene *DuplicateScene(const Foundation::UUID &uuid, const std::string &newName);
 // 	std::vector<SceneManagement::Scene *> GetAllScenes() const;
 // 	std::vector<SceneManagement::Scene *> GetInactiveScenes() const;
-// 	bool IsSceneActive(const Utils::UUID &uuid) const;
+// 	bool IsSceneActive(const Foundation::UUID &uuid) const;
 
 // 	// CALLBACKS
 
-// 	void SetOnAssetLoaded(std::function<void(Utils::UUID, AssetType)> callback) { m_OnAssetLoaded = callback; }
-// 	void SetOnAssetUnloaded(std::function<void(Utils::UUID, AssetType)> callback) { m_OnAssetUnloaded = callback; }
+// 	void SetOnAssetLoaded(std::function<void(Foundation::UUID, AssetType)> callback) { m_OnAssetLoaded = callback; }
+// 	void SetOnAssetUnloaded(std::function<void(Foundation::UUID, AssetType)> callback) { m_OnAssetUnloaded = callback; }
 // 	void SetOnSceneLoaded(std::function<void(SceneManagement::Scene *)> callback) { m_OnSceneLoaded = callback; }
 // 	void SetOnSceneActivated(std::function<void(SceneManagement::Scene *)> callback) { m_OnSceneActivated = callback; }
 // 	void SetOnSceneDeactivated(std::function<void(SceneManagement::Scene *)> callback) {
@@ -229,11 +229,11 @@
 
 // 	// Registry management
 // 	void RegisterAsset(const std::string &filepath, Ref<void> asset, AssetType type);
-// 	Utils::UUID GetOrCreateUUID(const std::string &filepath);
+// 	Foundation::UUID GetOrCreateUUID(const std::string &filepath);
 
-// 	AssetEntry *FindAssetEntry(const Utils::UUID &uuid);
+// 	AssetEntry *FindAssetEntry(const Foundation::UUID &uuid);
 // 	AssetEntry *FindAssetEntry(const std::string &filepath);
-// 	const AssetEntry *FindAssetEntry(const Utils::UUID &uuid) const;
+// 	const AssetEntry *FindAssetEntry(const Foundation::UUID &uuid) const;
 // 	const AssetEntry *FindAssetEntry(const std::string &filepath) const;
 
 // 	// File utilities
@@ -257,8 +257,8 @@
 // 	bool m_Initialized = false;
 
 // 	mutable std::mutex m_RegistryMutex;
-// 	std::unordered_map<Utils::UUID, AssetEntry> m_AssetRegistry;
-// 	std::unordered_map<std::string, Utils::UUID> m_PathToUUID;
+// 	std::unordered_map<Foundation::UUID, AssetEntry> m_AssetRegistry;
+// 	std::unordered_map<std::string, Foundation::UUID> m_PathToUUID;
 
 // 	// Deduplication: track assets currently being loaded
 // 	mutable std::mutex m_LoadingMutex;
@@ -275,8 +275,8 @@
 // 	Unique<SceneManagement::SceneManager> m_SceneManager;
 
 // 	// Callbacks
-// 	std::function<void(Utils::UUID, AssetType)> m_OnAssetLoaded;
-// 	std::function<void(Utils::UUID, AssetType)> m_OnAssetUnloaded;
+// 	std::function<void(Foundation::UUID, AssetType)> m_OnAssetLoaded;
+// 	std::function<void(Foundation::UUID, AssetType)> m_OnAssetUnloaded;
 // 	std::function<void(SceneManagement::Scene *)> m_OnSceneLoaded;
 // 	std::function<void(SceneManagement::Scene *)> m_OnSceneActivated;
 // 	std::function<void(SceneManagement::Scene *)> m_OnSceneDeactivated;

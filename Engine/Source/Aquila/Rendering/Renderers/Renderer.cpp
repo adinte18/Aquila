@@ -11,11 +11,11 @@ using Aquila::SharedConstants::SHADERS_DIR;
 
 namespace Aquila::Rendering {
 
-void Renderer::OnInit(GFX::GfxContext &ctx) {
-	m_Ctx = &ctx;
+void Renderer::on_init(GFX::GfxContext &ctx) {
+	m_ctx = &ctx;
 
 	// define blit layout
-	m_BlitLayout = ctx.CreateDescriptorSetLayout({
+	m_blit_layout = ctx.create_descriptor_set_layout({
 		.bindings = { {
 			.binding = 0,
 			.type = RHI::DescriptorType::CombinedImageSampler,
@@ -27,7 +27,7 @@ void Renderer::OnInit(GFX::GfxContext &ctx) {
 	// compile blit shader
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "Blit.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "Blit.slang", stages, err)) {
 		AQUILA_LOG_ERROR("Renderer: blit shader compile failed: {}", err);
 		return;
 	}
@@ -35,87 +35,87 @@ void Renderer::OnInit(GFX::GfxContext &ctx) {
 	// describe blit pipeline
 	RHI::GraphicsPipelineDesc desc{};
 	for (auto &stage : stages) {
-		RHI::ShaderStageDesc shaderDesc{ .spirv = stage.spirv, .entryPoint = stage.entryPointName };
+		RHI::ShaderStageDesc shader_desc{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
 		if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			shaderDesc.stage = RHI::ShaderStageFlags::Vertex;
-			desc.vertexShader = shaderDesc;
+			shader_desc.stage = RHI::ShaderStageFlags::Vertex;
+			desc.vertex_shader = shader_desc;
 		} else {
-			shaderDesc.stage = RHI::ShaderStageFlags::Fragment;
-			desc.fragmentShader = shaderDesc;
+			shader_desc.stage = RHI::ShaderStageFlags::Fragment;
+			desc.fragment_shader = shader_desc;
 		}
 	}
-	desc.colorFormats = { RHI::TextureFormat::BGRA8 };
-	desc.depthFormat = RHI::TextureFormat::None;
-	desc.noVertexInput = true;
-	desc.raster.cullMode = RHI::CullMode::None;
-	desc.setLayouts = { &m_BlitLayout->GetRHI() };
-	m_BlitPipeline = ctx.CreateGraphicsPipeline(desc);
-	for (auto &set : m_BlitSets) {
-		set = ctx.AllocateDescriptorSet(*m_BlitLayout);
+	desc.color_formats = { RHI::TextureFormat::BGRA8 };
+	desc.depth_format = RHI::TextureFormat::None;
+	desc.no_vertex_input = true;
+	desc.raster.cull_mode = RHI::CullMode::None;
+	desc.set_layouts = { &m_blit_layout->get_rhi() };
+	m_blit_pipeline = ctx.create_graphics_pipeline(desc);
+	for (auto &set : m_blit_sets) {
+		set = ctx.allocate_descriptor_set(*m_blit_layout);
 	}
 
 	// create swapchain pass
-	m_SwapchainPass = ctx.CreateRenderPass({ .colorAttachments = { {
-												 .loadOp = RHI::AttachmentLoadOp::DontCare,
-												 .storeOp = RHI::AttachmentStoreOp::Store,
+	m_swapchain_pass = ctx.create_render_pass({ .color_attachments = { {
+												 .load_op = RHI::AttachmentLoadOp::DontCare,
+												 .store_op = RHI::AttachmentStoreOp::Store,
 											 } },
-											 .depthAttachment = {},
-											 .useSwapchain = true,
-											 .debugName = "SwapchainBlit" });
+											 .depth_attachment = {},
+											 .use_swapchain = true,
+											 .debug_name = "SwapchainBlit" });
 }
 
-void Renderer::OnShutdown() {
-	for (auto &sys : m_Systems) {
-		sys->OnShutdown();
+void Renderer::on_shutdown() {
+	for (auto &sys : m_systems) {
+		sys->on_shutdown();
 	}
 }
 
-void Renderer::OnResize(uint32 width, uint32 height) {
-	for (auto &sys : m_Systems) {
-		sys->OnResize(width, height);
+void Renderer::on_resize(Uint32 width, Uint32 height) {
+	for (auto &sys : m_systems) {
+		sys->on_resize(width, height);
 	}
 }
 
-void Renderer::SetSwapchainTarget(GFX::GfxSwapchain &swapchain, uint32 imageIndex) {
-	m_Swapchain = &swapchain;
-	m_SwapchainImageIndex = imageIndex;
-	m_FrameSlot = (m_FrameSlot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+void Renderer::set_swapchain_target(GFX::GfxSwapchain &swapchain, Uint32 image_index) {
+	m_swapchain = &swapchain;
+	m_swapchain_image_index = image_index;
+	m_frame_slot = (m_frame_slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	for (auto &sys : m_Systems) {
-		sys->AddPasses(graph, ctx);
+void Renderer::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+	for (auto &sys : m_systems) {
+		sys->add_passes(graph, ctx);
 	}
 }
 
-void Renderer::BlitToSwapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_BlitPipeline || (m_Swapchain == nullptr)) {
+void Renderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+	if (!m_blit_pipeline || (m_swapchain == nullptr)) {
 		return;
 	}
 
-	auto hSrc = ctx.hSceneColor;
-	auto *swapchain = m_Swapchain;
-	auto imageIndex = m_SwapchainImageIndex;
-	auto *set = m_BlitSets[m_FrameSlot].get();
-	auto *pipeline = m_BlitPipeline.get();
-	auto *renderPass = m_SwapchainPass.get();
+	auto h_src = ctx.h_scene_color;
+	auto *swapchain = m_swapchain;
+	auto image_index = m_swapchain_image_index;
+	auto *set = m_blit_sets[m_frame_slot].get();
+	auto *pipeline = m_blit_pipeline.get();
+	auto *render_pass = m_swapchain_pass.get();
 
-	graph.AddPass(
+	graph.add_pass(
 		"SwapchainBlit",
 		[&](Graphics::RG::RGPassBuilder &builder) {
-			builder.ReadTexture(hSrc, Graphics::RG::ResourceState::ShaderRead);
-			builder.MarkAsSideEffect();
+			builder.read_texture(h_src, Graphics::RG::ResourceState::ShaderRead);
+			builder.mark_as_side_effect();
 		},
-		[hSrc, swapchain, imageIndex, set, pipeline, renderPass](GFX::GfxCommandList &cmd,
+		[h_src, swapchain, image_index, set, pipeline, render_pass](GFX::GfxCommandList &cmd,
 																 Graphics::RG::RGRegistry &reg) {
-			auto &srcTex = reg.GetTexture(hSrc);
-			renderPass->Begin(cmd, swapchain, imageIndex);
-			cmd.BindPipeline(*pipeline);
-			set->SetTexture(0, srcTex);
-			set->Flush();
-			cmd.BindDescriptorSet(0, *set);
-			cmd.Draw(3);
-			renderPass->End(cmd);
+			auto &src_tex = reg.get_texture(h_src);
+			render_pass->begin(cmd, swapchain, image_index);
+			cmd.bind_pipeline(*pipeline);
+			set->set_texture(0, src_tex);
+			set->flush();
+			cmd.bind_descriptor_set(0, *set);
+			cmd.draw(3);
+			render_pass->end(cmd);
 		});
 }
 

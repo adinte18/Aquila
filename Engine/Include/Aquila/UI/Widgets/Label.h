@@ -10,26 +10,26 @@ class Label : public View {
 	Label();
 	explicit Label(std::string text, Text::FontAtlas *font = nullptr);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Label"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Label"; }
 
-	void SetText(std::string text);
-	void SetFont(Text::FontAtlas *font) override;
+	void set_text(std::string text);
+	void set_font(Text::FontAtlas *font) override;
 
-	[[nodiscard]] vec2 Measure(float overrideFontSize = 0.f) const;
+	[[nodiscard]] Vec2 measure(float override_font_size = 0.F) const;
 
-	[[nodiscard]] Text::FontAtlas *ResolveFont() const;
+	[[nodiscard]] Text::FontAtlas *resolve_font() const;
 
-	vec2 GetIntrinsicSize() const override;
+	Vec2 get_intrinsic_size() const override;
 
-	[[nodiscard]] const std::string &GetText() const { return m_Text; }
-	[[nodiscard]] Text::FontAtlas *GetFont() const { return m_Font; }
+	[[nodiscard]] const std::string &get_text() const { return m_text; }
+	[[nodiscard]] Text::FontAtlas *get_font() const { return m_font; }
 
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
-	void ApplyXmlTextContent(std::string_view text) override { SetText(std::string(text)); }
+	void on_draw_self(Rendering::DrawList &draw_list) override;
+	void apply_xml_text_content(std::string_view text) override { set_text(std::string(text)); }
 
   private:
-	std::string m_Text;
-	Text::FontAtlas *m_Font = nullptr;
+	std::string m_text;
+	Text::FontAtlas *m_font = nullptr;
 };
 
 } // namespace Aquila::UI::Core

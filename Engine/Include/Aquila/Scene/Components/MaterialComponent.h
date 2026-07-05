@@ -10,26 +10,26 @@ struct MaterialComponent {
 
 	Graphics::MaterialType type = Graphics::MaterialType::Lit;
 
-	Graphics::GpuSurfaceData surfaceProperties;
+	Graphics::GpuSurfaceData surface_properties;
 
-	uint32 materialIndex = UINT32_MAX;
+	Uint32 material_index = UINT32_MAX;
 
 	MaterialComponent() = default;
 	explicit MaterialComponent(Graphics::MaterialType t) : type(t) {}
 	explicit MaterialComponent(Ref<Graphics::Material> mat)
-		: material(std::move(mat)), type(material ? material->GetType() : Graphics::MaterialType::Lit) {}
+		: material(std::move(mat)), type(material ? material->get_type() : Graphics::MaterialType::Lit) {}
 
-	void SyncType() {
+	void sync_type() {
 		if (material) {
-			type = material->GetType();
+			type = material->get_type();
 		}
 	}
 
-	static MaterialComponent FromDefinition(const std::string &definitionName) {
+	static MaterialComponent from_definition(const std::string &definition_name) {
 		MaterialComponent comp;
-		if (const auto *def = Graphics::MaterialRegistry::Get()->Find(definitionName)) {
+		if (const auto *def = Graphics::MaterialRegistry::get()->find(definition_name)) {
 			comp.type = def->type;
-			comp.surfaceProperties = def->defaults;
+			comp.surface_properties = def->defaults;
 		}
 		return comp;
 	}

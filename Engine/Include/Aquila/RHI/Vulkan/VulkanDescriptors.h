@@ -14,31 +14,31 @@ class VulkanDescriptorSetLayout final : public IRHIDescriptorSetLayout {
   public:
 	class Builder {
 	  public:
-		Builder(VulkanDevice &device) : m_Device(device) {}
-		Builder &AddBinding(uint32 binding, VkDescriptorType descriptorType, VkShaderStageFlags stageFlags,
-							uint32 count = 1);
-		Unique<VulkanDescriptorSetLayout> Build() const;
+		Builder(VulkanDevice &device) : m_device(device) {}
+		Builder &add_binding(Uint32 binding, VkDescriptorType descriptor_type, VkShaderStageFlags stage_flags,
+							Uint32 count = 1);
+		Unique<VulkanDescriptorSetLayout> build() const;
 
 	  private:
-		VulkanDevice &m_Device;
-		std::unordered_map<uint32, VkDescriptorSetLayoutBinding> m_Bindings{};
+		VulkanDevice &m_device;
+		std::unordered_map<Uint32, VkDescriptorSetLayoutBinding> m_bindings{};
 	};
 
-	VulkanDescriptorSetLayout(VulkanDevice &device, std::unordered_map<uint32, VkDescriptorSetLayoutBinding> bindings);
+	VulkanDescriptorSetLayout(VulkanDevice &device, std::unordered_map<Uint32, VkDescriptorSetLayoutBinding> bindings);
 	~VulkanDescriptorSetLayout() override;
 	AQUILA_NONCOPYABLE(VulkanDescriptorSetLayout);
 
-	[[nodiscard]] uint32 GetBindingCount() const override { return static_cast<uint32>(m_Bindings.size()); }
+	[[nodiscard]] Uint32 get_binding_count() const override { return static_cast<Uint32>(m_bindings.size()); }
 
-	[[nodiscard]] VkDescriptorSetLayout GetDescriptorSetLayout() const { return m_DescriptorSetLayout; }
-	[[nodiscard]] const std::unordered_map<uint32, VkDescriptorSetLayoutBinding> &GetBindings() const {
-		return m_Bindings;
+	[[nodiscard]] VkDescriptorSetLayout get_descriptor_set_layout() const { return m_descriptor_set_layout; }
+	[[nodiscard]] const std::unordered_map<Uint32, VkDescriptorSetLayoutBinding> &get_bindings() const {
+		return m_bindings;
 	}
 
   private:
-	VulkanDevice &m_Device;
-	VkDescriptorSetLayout m_DescriptorSetLayout = VK_NULL_HANDLE;
-	std::unordered_map<uint32, VkDescriptorSetLayoutBinding> m_Bindings;
+	VulkanDevice &m_device;
+	VkDescriptorSetLayout m_descriptor_set_layout = VK_NULL_HANDLE;
+	std::unordered_map<Uint32, VkDescriptorSetLayoutBinding> m_bindings;
 	friend class VulkanDescriptorWriter;
 };
 
@@ -46,35 +46,35 @@ class VulkanDescriptorPool {
   public:
 	class Builder {
 	  public:
-		Builder(VulkanDevice &device) : m_Device(device) {}
-		Builder &AddPoolSize(VkDescriptorType descriptorType, uint32 count);
-		Builder &SetPoolFlags(VkDescriptorPoolCreateFlags flags);
-		Builder &SetMaxSets(uint32 count);
-		[[nodiscard]] Unique<VulkanDescriptorPool> Build() const;
+		Builder(VulkanDevice &device) : m_device(device) {}
+		Builder &add_pool_size(VkDescriptorType descriptor_type, Uint32 count);
+		Builder &set_pool_flags(VkDescriptorPoolCreateFlags flags);
+		Builder &set_max_sets(Uint32 count);
+		[[nodiscard]] Unique<VulkanDescriptorPool> build() const;
 
 	  private:
-		VulkanDevice &m_Device;
-		std::vector<VkDescriptorPoolSize> m_PoolSizes{};
-		uint32 m_MaxSets = 1000;
-		VkDescriptorPoolCreateFlags m_PoolFlags = 0;
+		VulkanDevice &m_device;
+		std::vector<VkDescriptorPoolSize> m_pool_sizes{};
+		Uint32 m_max_sets = 1000;
+		VkDescriptorPoolCreateFlags m_pool_flags = 0;
 	};
 
-	VulkanDescriptorPool(VulkanDevice &device, uint32 maxSets, VkDescriptorPoolCreateFlags poolFlags,
-						 const std::vector<VkDescriptorPoolSize> &poolSizes);
+	VulkanDescriptorPool(VulkanDevice &device, Uint32 max_sets, VkDescriptorPoolCreateFlags pool_flags,
+						 const std::vector<VkDescriptorPoolSize> &pool_sizes);
 	~VulkanDescriptorPool();
 	AQUILA_NONCOPYABLE(VulkanDescriptorPool);
 
-	bool AllocateDescriptor(VkDescriptorSetLayout layout, VkDescriptorSet &set) const;
-	void FreeDescriptor(VkDescriptorSet set) const;
-	void FreeDescriptors(const std::vector<VkDescriptorSet> &sets) const;
-	void ResetPool() const;
+	bool allocate_descriptor(VkDescriptorSetLayout layout, VkDescriptorSet &set) const;
+	void free_descriptor(VkDescriptorSet set) const;
+	void free_descriptors(const std::vector<VkDescriptorSet> &sets) const;
+	void reset_pool() const;
 
-	[[nodiscard]] VkDescriptorPool GetDescriptorPool() const { return m_DescriptorPool; }
+	[[nodiscard]] VkDescriptorPool get_descriptor_pool() const { return m_descriptor_pool; }
 
   private:
-	VulkanDevice &m_Device;
-	VkDescriptorPool m_DescriptorPool = VK_NULL_HANDLE;
-	mutable std::mutex m_Mutex;
+	VulkanDevice &m_device;
+	VkDescriptorPool m_descriptor_pool = VK_NULL_HANDLE;
+	mutable std::mutex m_mutex;
 	friend class VulkanDescriptorWriter;
 };
 
@@ -82,21 +82,21 @@ class VulkanDescriptorWriter {
   public:
 	VulkanDescriptorWriter(VulkanDescriptorSetLayout &layout, VulkanDescriptorPool &pool);
 
-	VulkanDescriptorWriter &WriteBuffer(uint32 binding, const VkDescriptorBufferInfo *info);
-	VulkanDescriptorWriter &WriteImage(uint32 binding, const VkDescriptorImageInfo *info);
-	VulkanDescriptorWriter &WriteImageArray(uint32 binding, const std::vector<VkDescriptorImageInfo> &infos);
+	VulkanDescriptorWriter &write_buffer(Uint32 binding, const VkDescriptorBufferInfo *info);
+	VulkanDescriptorWriter &write_image(Uint32 binding, const VkDescriptorImageInfo *info);
+	VulkanDescriptorWriter &write_image_array(Uint32 binding, const std::vector<VkDescriptorImageInfo> &infos);
 
-	bool Build(VkDescriptorSet &set);
-	void Overwrite(const VkDescriptorSet &set);
+	bool build(VkDescriptorSet &set);
+	void overwrite(const VkDescriptorSet &set);
 
   private:
-	void FixupAndSubmit(VkDescriptorSet set);
+	void fixup_and_submit(VkDescriptorSet set);
 
-	VulkanDescriptorSetLayout &m_SetLayout;
-	VulkanDescriptorPool &m_Pool;
-	std::vector<VkWriteDescriptorSet> m_Writes;
-	std::vector<VkDescriptorBufferInfo> m_BufferInfos;
-	std::vector<VkDescriptorImageInfo> m_ImageInfos;
+	VulkanDescriptorSetLayout &m_set_layout;
+	VulkanDescriptorPool &m_pool;
+	std::vector<VkWriteDescriptorSet> m_writes;
+	std::vector<VkDescriptorBufferInfo> m_buffer_infos;
+	std::vector<VkDescriptorImageInfo> m_image_infos;
 };
 
 } // namespace Aquila::RHI

@@ -10,43 +10,43 @@ using namespace Aquila::SceneManagement;
 using namespace Aquila::UI::Core;
 
 HierarchyTreeNode::HierarchyTreeNode(std::string label, HierarchyTreeView &owner, int depth, Entity entity,
-									 EntityManager &entityManager)
-	: TreeNode(std::move(label), owner, depth), m_Entity(entity), m_EntityManager(entityManager),
-	  m_HierarchyView(owner) {
-	m_IsDraggable = true;
-	m_IsAcceptingPayload = true;
+									 EntityManager &entity_manager)
+	: TreeNode(std::move(label), owner, depth), m_entity(entity), m_entity_manager(entity_manager),
+	  m_hierarchy_view(owner) {
+	m_is_draggable = true;
+	m_is_accepting_payload = true;
 }
 
-void HierarchyTreeNode::OnDragStart(DragState &state) {
-	state.payload = m_Entity;
+void HierarchyTreeNode::on_drag_start(DragState &state) {
+	state.payload = m_entity;
 }
 
-void HierarchyTreeNode::OnDrop(DragState &state) {
-	auto draggedEntity = std::any_cast<Entity>(state.payload);
-	if (draggedEntity == m_Entity) {
+void HierarchyTreeNode::on_drop(DragState &state) {
+	auto dragged_entity = std::any_cast<Entity>(state.payload);
+	if (dragged_entity == m_entity) {
 		return;
 	}
 
-	HierarchyTreeNode *sourceNode = m_HierarchyView.FindNodeForEntity(draggedEntity);
-	if (sourceNode == nullptr || sourceNode == this) {
+	HierarchyTreeNode *source_node = m_hierarchy_view.find_node_for_entity(dragged_entity);
+	if (source_node == nullptr || source_node == this) {
 		return;
 	}
 
-	m_EntityManager.AddChild(m_Entity, draggedEntity);
+	m_entity_manager.add_child(m_entity, dragged_entity);
 
-	View *oldParentContainer = sourceNode->GetParent();
-	auto *oldParentNode = dynamic_cast<TreeNode *>(oldParentContainer ? oldParentContainer->GetParent() : nullptr);
+	View *old_parent_container = source_node->get_parent();
+	auto *old_parent_node = dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
 
-	auto detached = oldParentContainer->DetachChild(sourceNode);
+	auto detached = old_parent_container->detach_child(source_node);
 
-	if (oldParentNode) {
-		oldParentNode->QueueRedraw();
+	if (old_parent_node) {
+		old_parent_node->queue_redraw();
 	}
 
-	auto *newNode = static_cast<HierarchyTreeNode *>(AddChild(std::move(detached)));
-	if (newNode) {
-		newNode->UpdateDepth(GetDepth() + 1);
-		SetExpanded(true);
+	auto *new_node = static_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
+	if (new_node) {
+		new_node->update_depth(get_depth() + 1);
+		set_expanded(true);
 	}
 }
 

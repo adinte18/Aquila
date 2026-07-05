@@ -15,16 +15,16 @@ class PickerOverlay : public Aquila::UI::Core::View {
   public:
 	PickerOverlay();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "PickerOverlay"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "PickerOverlay"; }
 
-	void SetTarget(const Rect &rect);
-	void Clear();
+	void set_target(const Rect &rect);
+	void clear();
 
-	void OnDrawSelf(Aquila::UI::Rendering::DrawList &drawList) override;
+	void on_draw_self(Aquila::UI::Rendering::DrawList &draw_list) override;
 
   private:
-	bool m_Active = false;
-	Rect m_Target;
+	bool m_active = false;
+	Rect m_target;
 };
 
 } // namespace Editor

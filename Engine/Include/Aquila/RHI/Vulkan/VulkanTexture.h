@@ -18,34 +18,34 @@ class VulkanTexture final : public IRHITexture {
 
 	AQUILA_NONCOPYABLE(VulkanTexture);
 
-	void DestroyImmediate() override;
-	[[nodiscard]] bool IsReady() const override { return m_ImageView != VK_NULL_HANDLE; }
+	void destroy_immediate() override;
+	[[nodiscard]] bool is_ready() const override { return m_image_view != VK_NULL_HANDLE; }
 
 	// IRHITexture
-	[[nodiscard]] uint32 GetWidth() const override { return m_Desc.width; }
-	[[nodiscard]] uint32 GetHeight() const override { return m_Desc.height; }
-	[[nodiscard]] uint32 GetMipLevels() const override { return m_Desc.mipLevels; }
-	[[nodiscard]] uint32 GetArrayLayers() const override { return m_Desc.arrayLayers; }
-	[[nodiscard]] TextureFormat GetFormat() const override { return m_Desc.format; }
-	[[nodiscard]] SampleCount GetSampleCount() const override { return m_Desc.samples; }
-	[[nodiscard]] const TextureDesc &GetDesc() const override { return m_Desc; }
+	[[nodiscard]] Uint32 get_width() const override { return m_desc.width; }
+	[[nodiscard]] Uint32 get_height() const override { return m_desc.height; }
+	[[nodiscard]] Uint32 get_mip_levels() const override { return m_desc.mip_levels; }
+	[[nodiscard]] Uint32 get_array_layers() const override { return m_desc.array_layers; }
+	[[nodiscard]] TextureFormat get_format() const override { return m_desc.format; }
+	[[nodiscard]] SampleCount get_sample_count() const override { return m_desc.samples; }
+	[[nodiscard]] const TextureDesc &get_desc() const override { return m_desc; }
 
 	// Vulkan-specific accessors (used by rendering systems and descriptor writers)
-	[[nodiscard]] VkImage GetImage() const { return m_ImageAllocation.image; }
-	[[nodiscard]] VkImageView GetImageView() const { return m_ImageView; }
-	[[nodiscard]] VkSampler GetSampler() const { return m_Sampler; }
-	[[nodiscard]] const ImageAllocation &GetAllocation() const { return m_ImageAllocation; }
-	[[nodiscard]] VkDescriptorImageInfo GetDescriptorImageInfo() const;
+	[[nodiscard]] VkImage get_image() const { return m_image_allocation.image; }
+	[[nodiscard]] VkImageView get_image_view() const { return m_image_view; }
+	[[nodiscard]] VkSampler get_sampler() const { return m_sampler; }
+	[[nodiscard]] const ImageAllocation &get_allocation() const { return m_image_allocation; }
+	[[nodiscard]] VkDescriptorImageInfo get_descriptor_image_info() const;
 
   private:
-	void CreateImageView();
-	void CreateSampler();
+	void create_image_view();
+	void create_sampler();
 
-	VulkanDevice &m_Device;
-	TextureDesc m_Desc;
-	ImageAllocation m_ImageAllocation{};
-	VkImageView m_ImageView = VK_NULL_HANDLE;
-	VkSampler m_Sampler = VK_NULL_HANDLE;
+	VulkanDevice &m_device;
+	TextureDesc m_desc;
+	ImageAllocation m_image_allocation{};
+	VkImageView m_image_view = VK_NULL_HANDLE;
+	VkSampler m_sampler = VK_NULL_HANDLE;
 };
 
 } // namespace Aquila::RHI

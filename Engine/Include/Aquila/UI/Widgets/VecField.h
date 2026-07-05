@@ -10,70 +10,70 @@ class LabeledDragFloat : public View {
   public:
 	explicit LabeledDragFloat(const char *label);
 
-	DragFloat *GetDrag() { return m_Drag; }
-	Label *GetLabel() { return m_Label; }
+	DragFloat *get_drag() { return m_drag; }
+	Label *get_label() { return m_label; }
 
   private:
-	Label *m_Label = nullptr;
-	DragFloat *m_Drag = nullptr;
+	Label *m_label = nullptr;
+	DragFloat *m_drag = nullptr;
 };
 
 template <int N, typename VecT> class VecFieldBase : public Control {
   public:
-	void SetValue(VecT v) {
+	void set_value(VecT v) {
 		for (int i = 0; i < N; ++i) {
-			m_Components[i]->SetValue(v[i]);
+			m_components[i]->set_value(v[i]);
 		}
 	}
 
-	[[nodiscard]] VecT GetValue() const {
+	[[nodiscard]] VecT get_value() const {
 		VecT v{};
 		for (int i = 0; i < N; ++i) {
-			v[i] = m_Components[i]->GetValue();
+			v[i] = m_components[i]->get_value();
 		}
 		return v;
 	}
 
-	void SetStep(float step) {
+	void set_step(float step) {
 		for (int i = 0; i < N; ++i) {
-			m_Components[i]->SetStep(step);
+			m_components[i]->SetStep(step);
 		}
 	}
 
-	void SetSpeed(float speed) {
+	void set_speed(float speed) {
 		for (int i = 0; i < N; ++i) {
-			m_Components[i]->SetSpeed(speed);
+			m_components[i]->set_speed(speed);
 		}
 	}
 
-	Signal<void(VecT)> onChanged;
+	Signal<void(VecT)> on_changed;
 
   protected:
-	void RegisterComponent(int index, DragFloat *drag) {
-		m_Components[index] = drag;
-		drag->onChanged.Connect([this](float) { onChanged(GetValue()); });
+	void register_component(int index, DragFloat *drag) {
+		m_components[index] = drag;
+		drag->on_changed.connect([this](float) { on_changed(get_value()); });
 	}
 
   private:
-	DragFloat *m_Components[N] = {};
+	DragFloat *m_components[N] = {};
 };
 
-class Vec2Field : public VecFieldBase<2, vec2> {
+class Vec2Field : public VecFieldBase<2, Vec2> {
   public:
 	Vec2Field();
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec2Field"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Vec2Field"; }
 };
 
-class Vec3Field : public VecFieldBase<3, vec3> {
+class Vec3Field : public VecFieldBase<3, Vec3> {
   public:
 	Vec3Field();
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec3Field"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Vec3Field"; }
 };
 
-class Vec4Field : public VecFieldBase<4, vec4> {
+class Vec4Field : public VecFieldBase<4, Vec4> {
   public:
 	Vec4Field();
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Vec4Field"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Vec4Field"; }
 };
 
 } // namespace Aquila::UI::Core

@@ -23,20 +23,24 @@ namespace {
 
 using namespace Aquila::UI;
 
-std::string MakeLabel(View *view) {
-	std::string label(view->GetTypeName());
-	if (!view->GetId().empty()) {
-		label += " #" + view->GetId();
+std::string make_label(View *view) {
+	std::string label(view->get_type_name());
+	if (!view->get_id().empty()) {
+		label += " #" + view->get_id();
 	}
-	for (const auto &cls : view->GetClasses()) {
+	for (const auto &cls : view->get_classes()) {
 		label += " ." + cls;
 	}
 	return label;
 }
 
-const char *Str(Display d) { return d == Display::Flex ? "flex" : "none"; }
-const char *Str(Overflow o) { return o == Overflow::Visible ? "visible" : (o == Overflow::Hidden ? "hidden" : "scroll"); }
-const char *Str(Position p) {
+const char *str(Display d) {
+	return d == Display::Flex ? "flex" : "none";
+}
+const char *str(Overflow o) {
+	return o == Overflow::Visible ? "visible" : (o == Overflow::Hidden ? "hidden" : "scroll");
+}
+const char *str(Position p) {
 	switch (p) {
 	case Position::Relative:
 		return "relative";
@@ -46,7 +50,7 @@ const char *Str(Position p) {
 		return "static";
 	}
 }
-const char *Str(FlexDirection f) {
+const char *str(FlexDirection f) {
 	switch (f) {
 	case FlexDirection::Column:
 		return "column";
@@ -58,7 +62,7 @@ const char *Str(FlexDirection f) {
 		return "row";
 	}
 }
-const char *Str(JustifyContent j) {
+const char *str(JustifyContent j) {
 	switch (j) {
 	case JustifyContent::End:
 		return "end";
@@ -68,7 +72,7 @@ const char *Str(JustifyContent j) {
 		return "start";
 	}
 }
-const char *Str(AlignItems a) {
+const char *str(AlignItems a) {
 	switch (a) {
 	case AlignItems::End:
 		return "end";
@@ -80,20 +84,22 @@ const char *Str(AlignItems a) {
 		return "start";
 	}
 }
-const char *Str(TextAlign t) { return t == TextAlign::Center ? "center" : (t == TextAlign::Right ? "right" : "left"); }
+const char *str(TextAlign t) {
+	return t == TextAlign::Center ? "center" : (t == TextAlign::Right ? "right" : "left");
+}
 
-std::string Num(f32 v) {
+std::string num(F32 v) {
 	char buf[32];
 	std::snprintf(buf, sizeof(buf), "%g", v);
 	return buf;
 }
 
-std::string LenStr(StyleLength l) {
+std::string len_str(StyleLength l) {
 	switch (l.unit) {
 	case LengthUnit::Pixel:
-		return Num(l.value) + "px";
+		return num(l.value) + "px";
 	case LengthUnit::Percent:
-		return Num(l.value) + "%";
+		return num(l.value) + "%";
 	case LengthUnit::Grow:
 		return "grow";
 	default:
@@ -101,12 +107,12 @@ std::string LenStr(StyleLength l) {
 	}
 }
 
-std::string EdgesStr(const StyleEdges &e) {
-	return LenStr(e.top) + " " + LenStr(e.right) + " " + LenStr(e.bottom) + " " + LenStr(e.left);
+std::string edges_str(const StyleEdges &e) {
+	return len_str(e.top) + " " + len_str(e.right) + " " + len_str(e.bottom) + " " + len_str(e.left);
 }
 
-std::string ColorStr(vec4 c) {
-	auto ch = [](float v) { return static_cast<int>(std::clamp(v, 0.f, 1.f) * 255.f + 0.5f); };
+std::string color_str(Vec4 c) {
+	auto ch = [](float v) { return static_cast<int>(std::clamp(v, 0.F, 1.F) * 255.F + 0.5f); };
 	char buf[40];
 	std::snprintf(buf, sizeof(buf), "#%02X%02X%02X%02X", ch(c.r), ch(c.g), ch(c.b), ch(c.a));
 	return buf;
@@ -117,215 +123,215 @@ std::string ColorStr(vec4 c) {
 UIDebugWindow::UIDebugWindow() = default;
 UIDebugWindow::~UIDebugWindow() = default;
 
-void UIDebugWindow::Build(Canvas *target, uint32 width, uint32 height, const std::string &stylePath) {
-	m_Target = target;
-	m_Canvas = CreateUnique<Canvas>(width, height);
-	UI::StyleParser::LoadFile(stylePath, m_Canvas->GetStyleSheet());
+void UIDebugWindow::build(Canvas *target, Uint32 width, Uint32 height, const std::string &style_path) {
+	m_target = target;
+	m_canvas = create_unique<Canvas>(width, height);
+	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
-	auto *root = m_Canvas->GetRoot();
-	root->SetId("ui-debug-root");
-	root->AddClass("ui-debug-root");
+	auto *root = m_canvas->get_root();
+	root->set_id("ui-debug-root");
+	root->add_class("ui-debug-root");
 
-	auto *header = root->AddChild<View>();
-	header->AddClass("ui-debug-header");
-	auto *title = header->AddChild<Label>(std::string("UI Inspector"));
-	title->AddClass("ui-debug-title");
-	auto *refresh = header->AddChild<Button>(std::string("Refresh"));
-	refresh->AddClass("ui-debug-refresh");
-	refresh->onClick.Connect([this] { Refresh(); });
+	auto *header = root->add_child<View>();
+	header->add_class("ui-debug-header");
+	auto *title = header->add_child<Label>(std::string("UI Inspector"));
+	title->add_class("ui-debug-title");
+	auto *refresh = header->add_child<Button>(std::string("Refresh"));
+	refresh->add_class("ui-debug-refresh");
+	refresh->on_click.connect([this] { this->refresh(); });
 
-	auto *pick = header->AddChild<Button>(std::string("Pick"));
-	pick->AddClass("ui-debug-refresh");
-	pick->onClick.Connect([this] {
-		if (onPickRequested) {
-			onPickRequested();
+	auto *pick = header->add_child<Button>(std::string("Pick"));
+	pick->add_class("ui-debug-refresh");
+	pick->on_click.connect([this] {
+		if (on_pick_requested) {
+			on_pick_requested();
 		}
 	});
 
-	m_TreeHost = root->AddChild<View>();
-	m_TreeHost->AddClass("ui-debug-tree-pane");
+	m_tree_host = root->add_child<View>();
+	m_tree_host->add_class("ui-debug-tree-pane");
 
-	auto *detailScroll = root->AddChild<ScrollView>();
-	detailScroll->AddClass("ui-debug-detail-pane");
-	m_DetailsHost = detailScroll->AddContent<View>();
-	m_DetailsHost->AddClass("ui-debug-details");
+	auto *detail_scroll = root->add_child<ScrollView>();
+	detail_scroll->add_class("ui-debug-detail-pane");
+	m_details_host = detail_scroll->add_content<View>();
+	m_details_host->add_class("ui-debug-details");
 
-	m_Canvas->ReloadStyles();
-	Refresh();
+	m_canvas->reload_styles();
+	this->refresh();
 }
 
-void UIDebugWindow::Update(f32 deltaTime) {
-	m_Canvas->Update(deltaTime);
-	m_Canvas->Compute();
+void UIDebugWindow::update(F32 delta_time) {
+	m_canvas->update(delta_time);
+	m_canvas->compute();
 }
 
-void UIDebugWindow::Render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
-	m_Canvas->SubmitToQuadBatcher(batcher, cmd);
+void UIDebugWindow::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
-void UIDebugWindow::OnEvent(Application::Events::Event &event) {
+void UIDebugWindow::on_event(Application::Events::Event &event) {
 	Application::Events::EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
-		if (e.GetWidth() > 0 && e.GetHeight() > 0) {
-			m_Canvas->Resize(e.GetWidth(), e.GetHeight());
+	dispatcher.dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
+		if (e.get_width() > 0 && e.get_height() > 0) {
+			m_canvas->resize(e.get_width(), e.get_height());
 		}
 		return false;
 	});
 
-	m_Canvas->OnEvent(event);
+	m_canvas->on_event(event);
 }
 
-TreeNode *UIDebugWindow::AddViewNode(View *view, TreeNode *parentNode) {
-	TreeNode *node = parentNode ? parentNode->AddChildNode(MakeLabel(view)) : m_Tree->AddNode(MakeLabel(view));
-	m_NodeToView[node] = view;
+TreeNode *UIDebugWindow::add_view_node(View *view, TreeNode *parent_node) {
+	TreeNode *node = parent_node ? parent_node->add_child_node(make_label(view)) : m_tree->add_node(make_label(view));
+	m_node_to_view[node] = view;
 
-	for (const auto &child : view->GetChildren()) {
-		AddViewNode(child.get(), node);
+	for (const auto &child : view->get_children()) {
+		add_view_node(child.get(), node);
 	}
 	return node;
 }
 
-void UIDebugWindow::Refresh() {
-	if (!m_Target || !m_TreeHost) {
+void UIDebugWindow::refresh() {
+	if (!m_target || !m_tree_host) {
 		return;
 	}
 
-	m_NodeToView.clear();
-	while (!m_TreeHost->GetChildren().empty()) {
-		m_TreeHost->RemoveChild(m_TreeHost->GetChildren().front().get());
+	m_node_to_view.clear();
+	while (!m_tree_host->get_children().empty()) {
+		m_tree_host->remove_child(m_tree_host->get_children().front().get());
 	}
 
-	m_Tree = m_TreeHost->AddChild<TreeView>();
-	m_Tree->onSelected.Connect([this](TreeNode *node) {
-		auto it = m_NodeToView.find(node);
-		ShowDetails(it != m_NodeToView.end() ? it->second : nullptr);
+	m_tree = m_tree_host->add_child<TreeView>();
+	m_tree->on_selected.connect([this](TreeNode *node) {
+		auto it = m_node_to_view.find(node);
+		show_details(it != m_node_to_view.end() ? it->second : nullptr);
 	});
 
-	for (const auto &child : m_Target->GetRoot()->GetChildren()) {
-		AddViewNode(child.get(), nullptr);
+	for (const auto &child : m_target->get_root()->get_children()) {
+		add_view_node(child.get(), nullptr);
 	}
 }
 
-void UIDebugWindow::SelectView(View *view) {
-	if (!view || !m_Tree) {
-		ShowDetails(view);
+void UIDebugWindow::select_view(View *view) {
+	if (!view || !m_tree) {
+		show_details(view);
 		return;
 	}
 
 	TreeNode *node = nullptr;
-	for (auto &[n, v] : m_NodeToView) {
+	for (auto &[n, v] : m_node_to_view) {
 		if (v == view) {
 			node = n;
 			break;
 		}
 	}
 	if (!node) {
-		ShowDetails(view);
+		show_details(view);
 		return;
 	}
 
-	for (View *parent = view->GetParent(); parent; parent = parent->GetParent()) {
-		for (auto &[n, v] : m_NodeToView) {
+	for (View *parent = view->get_parent(); parent; parent = parent->get_parent()) {
+		for (auto &[n, v] : m_node_to_view) {
 			if (v == parent) {
-				n->SetExpanded(true);
+				n->set_expanded(true);
 				break;
 			}
 		}
 	}
-	m_Tree->SelectNode(node);
-	ShowDetails(view);
-	m_Canvas->ScrollIntoView(node);
+	m_tree->select_node(node);
+	show_details(view);
+	m_canvas->scroll_into_view(node);
 }
 
-void UIDebugWindow::ShowDetails(View *view) {
-	if (!m_DetailsHost) {
+void UIDebugWindow::show_details(View *view) {
+	if (!m_details_host) {
 		return;
 	}
 
-	while (!m_DetailsHost->GetChildren().empty()) {
-		m_DetailsHost->RemoveChild(m_DetailsHost->GetChildren().front().get());
+	while (!m_details_host->get_children().empty()) {
+		m_details_host->remove_child(m_details_host->get_children().front().get());
 	}
 
 	if (!view) {
-		auto *empty = m_DetailsHost->AddChild<Label>(std::string("Select a node to inspect"));
-		empty->AddClass("ui-debug-key");
+		auto *empty = m_details_host->add_child<Label>(std::string("Select a node to inspect"));
+		empty->add_class("ui-debug-key");
 		return;
 	}
 
 	auto section = [&](const std::string &name) {
-		auto *s = m_DetailsHost->AddChild<Label>(name);
-		s->AddClass("ui-debug-section");
+		auto *s = m_details_host->add_child<Label>(name);
+		s->add_class("ui-debug-section");
 	};
 	auto row = [&](const std::string &key, const std::string &value) {
-		auto *r = m_DetailsHost->AddChild<View>();
-		r->AddClass("ui-debug-row");
-		auto *k = r->AddChild<Label>(key);
-		k->AddClass("ui-debug-key");
-		auto *v = r->AddChild<Label>(value);
-		v->AddClass("ui-debug-val");
+		auto *r = m_details_host->add_child<View>();
+		r->add_class("ui-debug-row");
+		auto *k = r->add_child<Label>(key);
+		k->add_class("ui-debug-key");
+		auto *v = r->add_child<Label>(value);
+		v->add_class("ui-debug-val");
 	};
 
 	section("Identity");
-	row("type", std::string(view->GetTypeName()));
-	row("id", view->GetId().empty() ? "(none)" : view->GetId());
+	row("type", std::string(view->get_type_name()));
+	row("id", view->get_id().empty() ? "(none)" : view->get_id());
 	std::string classes;
-	for (const auto &c : view->GetClasses()) {
+	for (const auto &c : view->get_classes()) {
 		classes += (classes.empty() ? "" : " ") + c;
 	}
 	row("classes", classes.empty() ? "(none)" : classes);
-	row("stableId", std::to_string(view->GetStableId()));
-	row("clayId", std::to_string(view->GetClayId()));
-	row("children", std::to_string(view->GetChildren().size()));
-	if (View *parent = view->GetParent()) {
-		row("parent", std::string(parent->GetTypeName()));
+	row("stableId", std::to_string(view->get_stable_id()));
+	row("clayId", std::to_string(view->get_clay_id()));
+	row("children", std::to_string(view->get_children().size()));
+	if (View *parent = view->get_parent()) {
+		row("parent", std::string(parent->get_type_name()));
 	}
 
-	const Rect rect = view->GetAbsoluteRect();
+	const Rect rect = view->get_absolute_rect();
 	section("Geometry");
-	row("position", Num(rect.position.x) + ", " + Num(rect.position.y));
-	row("size", Num(rect.size.x) + " x " + Num(rect.size.y));
-	row("effectiveZ", std::to_string(view->GetEffectiveZ()));
+	row("position", num(rect.position.x) + ", " + num(rect.position.y));
+	row("size", num(rect.size.x) + " x " + num(rect.size.y));
+	row("effectiveZ", std::to_string(view->get_effective_z()));
 
 	section("State");
-	row("visible", view->IsVisible() ? "true" : "false");
-	row("enabled", view->IsEnabled() ? "true" : "false");
-	row("hovered", view->IsHovered() ? "true" : "false");
-	row("pressed", view->IsPressed() ? "true" : "false");
-	row("focused", view->IsFocused() ? "true" : "false");
+	row("visible", view->is_visible() ? "true" : "false");
+	row("enabled", view->is_enabled() ? "true" : "false");
+	row("hovered", view->is_hovered() ? "true" : "false");
+	row("pressed", view->is_pressed() ? "true" : "false");
+	row("focused", view->is_focused() ? "true" : "false");
 
-	const UI::ComputedStyle &cs = view->GetComputedStyle();
+	const UI::ComputedStyle &cs = view->get_computed_style();
 	section("Layout");
-	row("display", Str(cs.display));
-	row("position", Str(cs.position));
-	row("overflow", Str(cs.overflow));
-	row("flex-direction", Str(cs.flexDirection));
-	row("justify", Str(cs.justify));
-	row("align", Str(cs.align));
-	row("flex-grow", Num(cs.flexGrow));
-	row("width", LenStr(cs.width));
-	row("height", LenStr(cs.height));
-	row("min w/h", LenStr(cs.minWidth) + " / " + LenStr(cs.minHeight));
-	row("max w/h", LenStr(cs.maxWidth) + " / " + LenStr(cs.maxHeight));
-	row("padding", EdgesStr(cs.padding));
-	row("gap", Num(cs.gap));
-	if (cs.aspectRatio > 0.f) {
-		row("aspect-ratio", Num(cs.aspectRatio));
+	row("display", str(cs.display));
+	row("position", str(cs.position));
+	row("overflow", str(cs.overflow));
+	row("flex-direction", str(cs.flex_direction));
+	row("justify", str(cs.justify));
+	row("align", str(cs.align));
+	row("flex-grow", num(cs.flex_grow));
+	row("width", len_str(cs.width));
+	row("height", len_str(cs.height));
+	row("min w/h", len_str(cs.min_width) + " / " + len_str(cs.min_height));
+	row("max w/h", len_str(cs.max_width) + " / " + len_str(cs.max_height));
+	row("padding", edges_str(cs.padding));
+	row("gap", num(cs.gap));
+	if (cs.aspect_ratio > 0.F) {
+		row("aspect-ratio", num(cs.aspect_ratio));
 	}
-	row("inset", LenStr(cs.top) + " " + LenStr(cs.right) + " " + LenStr(cs.bottom) + " " + LenStr(cs.left));
-	row("z-index", std::to_string(cs.zIndex));
+	row("inset", len_str(cs.top) + " " + len_str(cs.right) + " " + len_str(cs.bottom) + " " + len_str(cs.left));
+	row("z-index", std::to_string(cs.z_index));
 
 	section("Appearance");
-	row("background", ColorStr(cs.backgroundColor));
-	row("color", ColorStr(cs.color));
-	row("border", Num(cs.borderWidth) + "px " + ColorStr(cs.borderColor));
-	row("border-radius", LenStr(StyleLength::Pixel(cs.borderRadius.x)) + " (x)");
-	row("opacity", Num(cs.opacity));
-	row("box-shadows", std::to_string(cs.boxShadows.size()));
+	row("background", color_str(cs.background_color));
+	row("color", color_str(cs.color));
+	row("border", num(cs.border_width) + "px " + color_str(cs.border_color));
+	row("border-radius", len_str(StyleLength::pixel(cs.border_radius.x)) + " (x)");
+	row("opacity", num(cs.opacity));
+	row("box-shadows", std::to_string(cs.box_shadows.size()));
 
 	section("Text");
-	row("font-size", Num(cs.fontSize));
-	row("font-family", cs.fontFamily.empty() ? "(inherit)" : cs.fontFamily);
-	row("text-align", Str(cs.textAlign));
+	row("font-size", num(cs.font_size));
+	row("font-family", cs.font_family.empty() ? "(inherit)" : cs.font_family);
+	row("text-align", str(cs.text_align));
 }
 
 } // namespace Editor

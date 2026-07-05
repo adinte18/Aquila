@@ -11,21 +11,21 @@ class StyleEngine {
   public:
 	struct ResolveResult {
 		bool changed = false;        // at least one view's computed style changed
-		bool layoutAffected = false; // a layout-relevant property changed
+		bool layout_affected = false; // a layout-relevant property changed
 	};
 
-	StyleSheet &GetStyleSheet() { return m_StyleSheet; }
+	StyleSheet &get_style_sheet() { return m_style_sheet; }
 
-	void Invalidate(View *view);
-	void Remove(View *view);
-	[[nodiscard]] bool HasPending() const { return !m_DirtyViews.IsEmpty(); }
+	void invalidate(View *view);
+	void remove(View *view);
+	[[nodiscard]] bool has_pending() const { return !m_dirty_views.is_empty(); }
 
-	ResolveResult Resolve(uint32 viewportWidth, uint32 viewportHeight, bool layoutAlreadyDirty);
+	ResolveResult resolve(Uint32 viewport_width, Uint32 viewport_height, bool layout_already_dirty);
 
   private:
-	StyleSheet m_StyleSheet;
-	Foundation::DirtySet<View *> m_DirtyViews;
-	Foundation::ComputedCache<View *, ComputedStyle> m_StyleCache;
+	StyleSheet m_style_sheet;
+	Foundation::DirtySet<View *> m_dirty_views;
+	Foundation::ComputedCache<View *, ComputedStyle> m_style_cache;
 };
 
 } // namespace Aquila::UI::Core

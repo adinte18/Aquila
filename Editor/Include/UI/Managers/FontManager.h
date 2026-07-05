@@ -14,13 +14,13 @@ namespace Editor::UI {
 
 class FontManager {
   public:
-	static FontManager &Get();
+	static FontManager &get();
 
-	void Initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings);
-	void Shutdown();
+	void initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings);
+	void shutdown();
 
-	[[nodiscard]] bool IsInitialized() const { return m_Initialized; }
-	[[nodiscard]] Aquila::UI::Text::FontAtlas *GetFont(const std::string &name) const;
+	[[nodiscard]] bool is_initialized() const { return m_initialized; }
+	[[nodiscard]] Aquila::UI::Text::FontAtlas *get_font(const std::string &name) const;
 
   private:
 	FontManager() = default;
@@ -28,9 +28,9 @@ class FontManager {
 	FontManager(const FontManager &) = delete;
 	FontManager &operator=(const FontManager &) = delete;
 
-	bool m_Initialized = false;
-	std::vector<Unique<Aquila::UI::Text::FontAtlas>> m_Atlases;
-	std::unordered_map<std::string, Aquila::UI::Text::FontAtlas *> m_FontMap;
+	bool m_initialized = false;
+	std::vector<Unique<Aquila::UI::Text::FontAtlas>> m_atlases;
+	std::unordered_map<std::string, Aquila::UI::Text::FontAtlas *> m_font_map;
 };
 
 } // namespace Editor::UI

@@ -9,25 +9,25 @@ struct MetadataComponent {
   public:
 	MetadataComponent() = default;
 
-	MetadataComponent(const Utils::UUID &id, std::string name, bool visible = true, bool selected = false)
+	MetadataComponent(const Foundation::UUID &id, std::string name, bool visible = true, bool selected = false)
 
-		: m_Id(id), m_Name(std::move(name)), m_Visible(visible), m_Selected(selected) {}
+		: m_id(id), m_name(std::move(name)), m_visible(visible), m_selected(selected) {}
 
-	[[nodiscard]] const bool &IsVisible() const { return m_Visible; }
-	[[nodiscard]] const bool &IsSelected() const { return m_Selected; }
-	[[nodiscard]] const Utils::UUID &GetId() const { return m_Id; }
-	[[nodiscard]] const std::string &GetName() const { return m_Name; }
+	[[nodiscard]] const bool &is_visible() const { return m_visible; }
+	[[nodiscard]] const bool &is_selected() const { return m_selected; }
+	[[nodiscard]] const Foundation::UUID &get_id() const { return m_id; }
+	[[nodiscard]] const std::string &get_name() const { return m_name; }
 
-	void SetVisible(bool visible) { m_Visible = visible; }
-	void SetSelected(bool selected) { m_Selected = selected; }
-	void SetName(const std::string &name) { m_Name = name; }
-	void SetId(const Utils::UUID &uuid) { m_Id = uuid; }
+	void set_visible(bool visible) { m_visible = visible; }
+	void set_selected(bool selected) { m_selected = selected; }
+	void set_name(const std::string &name) { m_name = name; }
+	void set_id(const Foundation::UUID &uuid) { m_id = uuid; }
 
   private:
-	Utils::UUID m_Id = Utils::UUID::Null();
-	std::string m_Name;
-	bool m_Visible = true;
-	bool m_Selected = false;
+	Foundation::UUID m_id = Foundation::UUID::null();
+	std::string m_name;
+	bool m_visible = true;
+	bool m_selected = false;
 };
 } // namespace Aquila::SceneManagement::Components
 #endif

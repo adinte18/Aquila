@@ -22,33 +22,33 @@ class IRHIDevice {
 	IRHIDevice(IRHIDevice &&) = delete;
 	IRHIDevice &operator=(IRHIDevice &&) = delete;
 
-	[[nodiscard]] virtual Unique<IRHIBuffer> CreateBuffer(const BufferDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHITexture> CreateTexture(const TextureDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHICommandList> CreateCommandList(CommandListType type,
+	[[nodiscard]] virtual Unique<IRHIBuffer> create_buffer(const BufferDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHITexture> create_texture(const TextureDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHICommandList> create_command_list(CommandListType type,
 																	const std::string &name = "") = 0;
-	[[nodiscard]] virtual Unique<IRHICommandList> CreateFrameCommandList(uint32 slot) = 0;
-	[[nodiscard]] virtual Unique<IRHISwapchain> CreateSwapchain(const SwapchainDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHIRenderPass> CreateRenderPass(const RHI::RenderPassDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHIPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHIPipeline> CreateComputePipeline(const ComputePipelineDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHICommandList> create_frame_command_list(Uint32 slot) = 0;
+	[[nodiscard]] virtual Unique<IRHISwapchain> create_swapchain(const SwapchainDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHIRenderPass> create_render_pass(const RHI::RenderPassDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHIPipeline> create_graphics_pipeline(const GraphicsPipelineDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHIPipeline> create_compute_pipeline(const ComputePipelineDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIDescriptorSetLayout>
-	CreateDescriptorSetLayout(const DescriptorSetLayoutDesc &desc) = 0;
-	[[nodiscard]] virtual Unique<IRHIDescriptorSet> AllocateDescriptorSet(IRHIDescriptorSetLayout &layout) = 0;
-	virtual void CopyBuffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, uint64 size, uint64 srcOffset = 0,
-							uint64 dstOffset = 0) = 0;
-	virtual void Submit(IRHICommandList &cmd) = 0;
-	virtual void SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain = nullptr, uint32 imageIndex = 0) = 0;
-	virtual void SubmitAndWait(IRHICommandList &cmd) = 0;
-	virtual void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
-							  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
-	virtual void WaitIdle() = 0;
+	create_descriptor_set_layout(const DescriptorSetLayoutDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHIDescriptorSet> allocate_descriptor_set(IRHIDescriptorSetLayout &layout) = 0;
+	virtual void copy_buffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, Uint64 size, Uint64 src_offset = 0,
+							Uint64 dst_offset = 0) = 0;
+	virtual void submit(IRHICommandList &cmd) = 0;
+	virtual void submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain = nullptr, Uint32 image_index = 0) = 0;
+	virtual void submit_and_wait(IRHICommandList &cmd) = 0;
+	virtual void present_frame(IRHISwapchain &swapchain, Uint32 image_index,
+							  Vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
+	virtual void wait_idle() = 0;
 
-	template <typename Func> void ExecuteImmediate(CommandListType type, Func &&func) {
-		auto cmd = CreateCommandList(type, "ImmediateCmd");
-		cmd->Begin();
+	template <typename Func> void execute_immediate(CommandListType type, Func &&func) {
+		auto cmd = create_command_list(type, "ImmediateCmd");
+		cmd->begin();
 		func(*cmd);
-		cmd->End();
-		SubmitAndWait(*cmd);
+		cmd->end();
+		submit_and_wait(*cmd);
 	}
 
   protected:

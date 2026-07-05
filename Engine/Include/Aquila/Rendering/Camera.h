@@ -11,87 +11,87 @@ class Camera {
   public:
 	enum class CameraType { Free, Orbit };
 
-	void SetOrthographicProjection(f32 left, f32 right, f32 top, f32 bottom, f32 near, f32 far);
+	void set_orthographic_projection(F32 left, F32 right, F32 top, F32 bottom, F32 near, F32 far);
 
-	void SetPerspectiveProjection(f32 FOV_y, f32 aspect, f32 near, f32 far);
+	void set_perspective_projection(F32 fov_y, F32 aspect, F32 near, F32 far);
 
-	[[nodiscard]] const mat4 &GetProjection() const { return m_ProjectionMatrix; }
-	[[nodiscard]] const mat4 &GetView() const { return m_ViewMatrix; }
-	[[nodiscard]] const mat4 &GetInverseView() const { return m_InverseViewMatrix; }
+	[[nodiscard]] const Mat4 &get_projection() const { return m_projection_matrix; }
+	[[nodiscard]] const Mat4 &get_view() const { return m_view_matrix; }
+	[[nodiscard]] const Mat4 &get_inverse_view() const { return m_inverse_view_matrix; }
 
-	void SetViewDirection(vec3 position, vec3 direction, vec3 up = vec3(0.f, -1.f, -0.f));
-	void SetViewTarget(vec3 position, vec3 target, vec3 up = vec3(0.f, -1.f, -0.f));
+	void set_view_direction(Vec3 position, Vec3 direction, Vec3 up = Vec3(0.F, -1.F, -0.F));
+	void set_view_target(Vec3 position, Vec3 target, Vec3 up = Vec3(0.F, -1.F, -0.F));
 
-	void SetViewYXZ(vec3 position, vec3 rotation);
+	void set_view_yxz(Vec3 position, Vec3 rotation);
 
-	void SpeedUp();
+	void speed_up();
 
-	void ResetSpeed();
+	void reset_speed();
 
-	void MoveForward(f32 delta);
-	void MoveBackward(f32 delta);
-	void MoveRight(f32 delta);
-	void MoveLeft(f32 delta);
-	void Rotate(double yaw, double pitch);
-	void Zoom(f32 offset, f32 aspectRatio);
+	void move_forward(F32 delta);
+	void move_backward(F32 delta);
+	void move_right(F32 delta);
+	void move_left(F32 delta);
+	void rotate(double yaw, double pitch);
+	void zoom(F32 offset, F32 aspect_ratio);
 
-	[[nodiscard]] vec3 &GetPosition() { return m_Position; }
-	[[nodiscard]] vec3 &GetRotation() { return m_Rotation; }
-	[[nodiscard]] vec3 &GetDirection() { return m_Direction; }
-	[[nodiscard]] const f32 &GetAspectRatio() const { return m_AspectRatio; }
-	[[nodiscard]] f32 &GetRotationSpeed() { return m_RotationSpeed; }
-	[[nodiscard]] f32 &GetMovementSpeed() { return m_MovementSpeed; }
-	[[nodiscard]] f32 &GetFOV() { return m_Fov; }
-	[[nodiscard]] f32 &GetNearPlane() { return m_Near; }
-	[[nodiscard]] f32 &GetFarPlane() { return m_Far; }
-	[[nodiscard]] CameraType GetType() const { return m_CameraType; }
-	[[nodiscard]] bool &OrbitAroundEntity() { return m_OrbitAroundEntity; }
-	[[nodiscard]] vec3 GetTarget() const { return m_OrbitTarget; }
-	[[nodiscard]] vec3 GetRightVector() const { return glm::normalize(vec3(m_ViewMatrix[0])); }
-	[[nodiscard]] vec3 GetUpVector() const { return glm::normalize(vec3(m_ViewMatrix[1])); }
-	[[nodiscard]] vec3 GetForwardVector() const { return glm::normalize(vec3(m_ViewMatrix[2])); }
-	void SetPosition(const vec3 pos) { m_Position = pos; }
-	void SetRotationSpeed(const f32 speed) { m_RotationSpeed = speed; }
+	[[nodiscard]] Vec3 &get_position() { return m_position; }
+	[[nodiscard]] Vec3 &get_rotation() { return m_rotation; }
+	[[nodiscard]] Vec3 &get_direction() { return m_direction; }
+	[[nodiscard]] const F32 &get_aspect_ratio() const { return m_aspect_ratio; }
+	[[nodiscard]] F32 &get_rotation_speed() { return m_rotation_speed; }
+	[[nodiscard]] F32 &get_movement_speed() { return m_movement_speed; }
+	[[nodiscard]] F32 &get_fov() { return m_fov; }
+	[[nodiscard]] F32 &get_near_plane() { return m_near; }
+	[[nodiscard]] F32 &get_far_plane() { return m_far; }
+	[[nodiscard]] CameraType get_type() const { return m_camera_type; }
+	[[nodiscard]] bool &orbit_around_entity() { return m_orbit_around_entity; }
+	[[nodiscard]] Vec3 get_target() const { return m_orbit_target; }
+	[[nodiscard]] Vec3 get_right_vector() const { return glm::normalize(Vec3(m_view_matrix[0])); }
+	[[nodiscard]] Vec3 get_up_vector() const { return glm::normalize(Vec3(m_view_matrix[1])); }
+	[[nodiscard]] Vec3 get_forward_vector() const { return glm::normalize(Vec3(m_view_matrix[2])); }
+	void set_position(const Vec3 pos) { m_position = pos; }
+	void set_rotation_speed(const F32 speed) { m_rotation_speed = speed; }
 
-	void SetOrbitTarget(const vec3 &target);
-	void OrbitRotate(f32 deltaYaw, f32 deltaPitch);
-	void OrbitZoom(f32 deltaRadius);
-	void UpdateOrbitPosition();
+	void set_orbit_target(const Vec3 &target);
+	void orbit_rotate(F32 delta_yaw, F32 delta_pitch);
+	void orbit_zoom(F32 delta_radius);
+	void update_orbit_position();
 
-	void SwitchToType(CameraType newType, vec3 targetPos = vec3{ 0.f });
+	void switch_to_type(CameraType new_type, Vec3 target_pos = Vec3{ 0.F });
 
-	void OnResize(f32 width, f32 height);
-	void UpdateFreeModeLookDirection();
+	void on_resize(F32 width, F32 height);
+	void update_free_mode_look_direction();
 
-	void RecalculateView();
+	void recalculate_view();
 
   private:
-	CameraType m_CameraType{ CameraType::Free };
-	mat4 m_ProjectionMatrix{ 1.f };
-	mat4 m_ViewMatrix{ 1.f };
-	mat4 m_InverseViewMatrix{ 1.f };
+	CameraType m_camera_type{ CameraType::Free };
+	Mat4 m_projection_matrix{ 1.F };
+	Mat4 m_view_matrix{ 1.F };
+	Mat4 m_inverse_view_matrix{ 1.F };
 
-	vec3 m_Position{ 0.0f };
-	vec3 m_Rotation{ 0.0f };
+	Vec3 m_position{ 0.0f };
+	Vec3 m_rotation{ 0.0f };
 
-	f32 m_MovementSpeed{ 5.0f };
-	f32 m_RotationSpeed{ 0.001f };
+	F32 m_movement_speed{ 5.0f };
+	F32 m_rotation_speed{ 0.001f };
 
-	vec3 m_Direction{ 0.0f, 0.0f, -1.0f };
+	Vec3 m_direction{ 0.0f, 0.0f, -1.0f };
 
-	f32 m_Fov{ 80.0f };
-	f32 m_Near{ 0.1f };
-	f32 m_Far{ 100.f };
-	f32 m_AspectRatio{ 0.f };
+	F32 m_fov{ 80.0f };
+	F32 m_near{ 0.1f };
+	F32 m_far{ 100.F };
+	F32 m_aspect_ratio{ 0.F };
 
-	bool m_IsSpedUp{ false };
+	bool m_is_sped_up{ false };
 
-	vec3 m_OrbitTarget{ 0.0f, 0.0f, 0.0f };
-	f32 m_OrbitRadius{ 10.0f };
-	f32 m_OrbitYaw{ 0.0f };
-	f32 m_OrbitPitch{ 0.0f };
+	Vec3 m_orbit_target{ 0.0f, 0.0f, 0.0f };
+	F32 m_orbit_radius{ 10.0f };
+	F32 m_orbit_yaw{ 0.0f };
+	F32 m_orbit_pitch{ 0.0f };
 
-	bool m_OrbitAroundEntity{ false };
+	bool m_orbit_around_entity{ false };
 };
 } // namespace Aquila::Rendering
 

@@ -8,22 +8,22 @@
 namespace Aquila::RHI {
 
 struct Vertex {
-	vec3 pos{};
-	vec3 color{};
-	vec3 normals{};
-	vec2 texcoord{};
-	vec4 tangent{};
+	Vec3 pos{};
+	Vec3 color{};
+	Vec3 normals{};
+	Vec2 texcoord{};
+	Vec4 tangent{};
 
 	bool operator==(const Vertex &other) const {
 		return pos == other.pos && color == other.color && normals == other.normals && texcoord == other.texcoord &&
 			tangent == other.tangent;
 	}
 
-	static std::vector<VkVertexInputBindingDescription> GetBindingDescriptions() {
+	static std::vector<VkVertexInputBindingDescription> get_binding_descriptions() {
 		return { { 0, sizeof(Vertex), VK_VERTEX_INPUT_RATE_VERTEX } };
 	}
 
-	static std::vector<VkVertexInputAttributeDescription> GetAttributeDescriptions() {
+	static std::vector<VkVertexInputAttributeDescription> get_attribute_descriptions() {
 		return {
 			{ 0, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, pos) },
 			{ 1, 0, VK_FORMAT_R32G32B32_SFLOAT, offsetof(Vertex, color) },

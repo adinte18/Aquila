@@ -3,17 +3,17 @@
 namespace Aquila::UI::Core {
 
 DragInt::DragInt() {
-	SetStep(1.f);
-	SetPrecision(0);
+	set_step(1.F);
+	set_precision(0);
 }
 
-std::string DragInt::FormatValue() const {
-	return m_Prefix + std::to_string(GetIntValue());
+std::string DragInt::format_value() const {
+	return m_prefix + std::to_string(get_int_value());
 }
 
-void DragInt::OnValueCommitted() {
+void DragInt::on_value_committed() {
 	// Round to nearest integer after every drag tick.
-	m_Value = std::round(m_Value);
+	m_value = std::round(m_value);
 }
 
 } // namespace Aquila::UI::Core

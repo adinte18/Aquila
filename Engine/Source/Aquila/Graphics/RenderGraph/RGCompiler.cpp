@@ -14,18 +14,18 @@ namespace Aquila::Graphics::RG {
 // its packing 2 things: resource id and its version
 // 32 bit integer split into 2 :
 // [8 bits for version and 24 bits for the slot]
-uint32 RGCompiler::SlotOf(uint32 id) {
+Uint32 RGCompiler::slot_of(Uint32 id) {
 	return id & 0x00FFFFFFu;
 }
 
 // shock, the function does exactly what the name says
 // verifies if two texture descriptors are compatible, i.e same shape, format, etc.
-bool RGCompiler::TexDescCompatible(const RGTextureDesc &a, const RGTextureDesc &b) {
-	return a.width == b.width && a.height == b.height && a.mipLevels == b.mipLevels && a.arrayLayers == b.arrayLayers &&
+bool RGCompiler::tex_desc_compatible(const RGTextureDesc &a, const RGTextureDesc &b) {
+	return a.width == b.width && a.height == b.height && a.mip_levels == b.mip_levels && a.array_layers == b.array_layers &&
 		a.format == b.format && a.usage == b.usage && a.samples == b.samples;
 }
 
-bool RGCompiler::BufDescCompatible(const RGBufferDesc &a, const RGBufferDesc &b) {
+bool RGCompiler::buf_desc_compatible(const RGBufferDesc &a, const RGBufferDesc &b) {
 	return a.size == b.size && a.usage == b.usage && a.domain == b.domain;
 }
 
@@ -40,58 +40,58 @@ bool RGCompiler::BufDescCompatible(const RGBufferDesc &a, const RGBufferDesc &b)
 //   For each pass X that reads (slot, ver):
 //     - Find the pass Y that wrote (slot, ver)         -> edge Y to X (RAW)
 
-RGCompiler::AdjList RGCompiler::BuildDependencyGraph(const std::vector<RGPassData> &passes, uint32 texCount,
-													 uint32 bufCount) {
-	const auto nbPasses = static_cast<uint32>(passes.size());
-	AdjList adj(nbPasses);
+RGCompiler::AdjList RGCompiler::build_dependency_graph(const std::vector<RGPassData> &passes, Uint32 tex_count,
+													 Uint32 buf_count) {
+	const auto nb_passes = static_cast<Uint32>(passes.size());
+	AdjList adj(nb_passes);
 
 	// (slot, version) -> writer pass index
-	std::unordered_map<uint64, uint32> texWriter; // who wrote? one pass per entry
-	std::unordered_map<uint64, uint32> bufWriter;
+	std::unordered_map<Uint64, Uint32> tex_writer; // who wrote? one pass per entry
+	std::unordered_map<Uint64, Uint32> buf_writer;
 
 	// (slot, version) -> [reader pass indices]
-	std::unordered_map<uint64, std::vector<uint32>> texReaders; // who read? multiple passes per entry
-	std::unordered_map<uint64, std::vector<uint32>> bufReaders;
+	std::unordered_map<Uint64, std::vector<Uint32>> tex_readers; // who read? multiple passes per entry
+	std::unordered_map<Uint64, std::vector<Uint32>> buf_readers;
 
-	texWriter.reserve(texCount * 2);
-	bufWriter.reserve(bufCount * 2);
+	tex_writer.reserve(tex_count * 2);
+	buf_writer.reserve(buf_count * 2);
 
 	// generate a key that has zero chance of collision
 	// its the same packing as the handle, just bigger so slot and version have plenty of room and never overlap
-	auto texKey = [](uint32 slot, uint32 ver) -> uint64 { return (static_cast<uint64>(slot) << 32) | ver; };
-	auto bufKey = texKey;
+	auto tex_key = [](Uint32 slot, Uint32 ver) -> Uint64 { return (static_cast<Uint64>(slot) << 32) | ver; };
+	auto buf_key = tex_key;
 
 	// First pass: index all writers and readers
-	for (uint32 passIndex = 0; passIndex < nbPasses; ++passIndex) {
-		const RGPassData &pass = passes[passIndex];
+	for (Uint32 pass_index = 0; pass_index < nb_passes; ++pass_index) {
+		const RGPassData &pass = passes[pass_index];
 
 		// example :
 		// WriterPass writes texture1 v0 -> texWriter[(scene, 0)] = WriterPass => ONLY 1
 		// ReaderPass reads texture1 v0 -> texReaders[(scene, 0)] = [WriterPass] => MULTIPLE
 
-		for (const RGTextureAccess &textureWrite : pass.textureWrites) {
-			const uint32 slot = SlotOf(textureWrite.handle.id);
-			const uint32 ver = (textureWrite.handle.id >> 24) & 0xFFu;
-			texWriter[texKey(slot, ver)] = passIndex;
+		for (const RGTextureAccess &texture_write : pass.texture_writes) {
+			const Uint32 slot = slot_of(texture_write.handle.id);
+			const Uint32 ver = (texture_write.handle.id >> 24) & 0xFFu;
+			tex_writer[tex_key(slot, ver)] = pass_index;
 		}
-		for (const RGBufferAccess &bufferWrite : pass.bufferWrites) {
-			const uint32 slot = SlotOf(bufferWrite.handle.id);
-			const uint32 ver = (bufferWrite.handle.id >> 24) & 0xFFu;
-			bufWriter[bufKey(slot, ver)] = passIndex;
+		for (const RGBufferAccess &buffer_write : pass.buffer_writes) {
+			const Uint32 slot = slot_of(buffer_write.handle.id);
+			const Uint32 ver = (buffer_write.handle.id >> 24) & 0xFFu;
+			buf_writer[buf_key(slot, ver)] = pass_index;
 		}
-		for (const RGTextureAccess &textureRead : pass.textureReads) {
-			const uint32 slot = SlotOf(textureRead.handle.id);
-			const uint32 ver = (textureRead.handle.id >> 24) & 0xFFu;
-			texReaders[texKey(slot, ver)].push_back(passIndex);
+		for (const RGTextureAccess &texture_read : pass.texture_reads) {
+			const Uint32 slot = slot_of(texture_read.handle.id);
+			const Uint32 ver = (texture_read.handle.id >> 24) & 0xFFu;
+			tex_readers[tex_key(slot, ver)].push_back(pass_index);
 		}
-		for (const RGBufferAccess &bufferRead : pass.bufferReads) {
-			const uint32 slot = SlotOf(bufferRead.handle.id);
-			const uint32 ver = (bufferRead.handle.id >> 24) & 0xFFu;
-			bufReaders[bufKey(slot, ver)].push_back(passIndex);
+		for (const RGBufferAccess &buffer_read : pass.buffer_reads) {
+			const Uint32 slot = slot_of(buffer_read.handle.id);
+			const Uint32 ver = (buffer_read.handle.id >> 24) & 0xFFu;
+			buf_readers[buf_key(slot, ver)].push_back(pass_index);
 		}
 	}
 
-	auto addEdge = [&](uint32 from, uint32 to) {
+	auto add_edge = [&](Uint32 from, Uint32 to) {
 		if (from == to) {
 			return;
 		}
@@ -103,52 +103,52 @@ RGCompiler::AdjList RGCompiler::BuildDependencyGraph(const std::vector<RGPassDat
 	};
 
 	// Second pass: wire edges
-	for (uint32 passIndex = 0; passIndex < nbPasses; ++passIndex) {
-		const RGPassData &pass = passes[passIndex];
+	for (Uint32 pass_index = 0; pass_index < nb_passes; ++pass_index) {
+		const RGPassData &pass = passes[pass_index];
 
 		// RAW: reader depends on its writer
-		for (const RGTextureAccess &a : pass.textureReads) {
-			const uint32 slot = SlotOf(a.handle.id);
-			const uint32 ver = (a.handle.id >> 24) & 0xFFu;
-			if (auto it = texWriter.find(texKey(slot, ver)); it != texWriter.end()) {
-				addEdge(it->second, passIndex);
+		for (const RGTextureAccess &a : pass.texture_reads) {
+			const Uint32 slot = slot_of(a.handle.id);
+			const Uint32 ver = (a.handle.id >> 24) & 0xFFu;
+			if (auto it = tex_writer.find(tex_key(slot, ver)); it != tex_writer.end()) {
+				add_edge(it->second, pass_index);
 			}
 		}
-		for (const RGBufferAccess &a : pass.bufferReads) {
-			const uint32 slot = SlotOf(a.handle.id);
-			const uint32 ver = (a.handle.id >> 24) & 0xFFu;
-			if (auto it = bufWriter.find(bufKey(slot, ver)); it != bufWriter.end()) {
-				addEdge(it->second, passIndex);
+		for (const RGBufferAccess &a : pass.buffer_reads) {
+			const Uint32 slot = slot_of(a.handle.id);
+			const Uint32 ver = (a.handle.id >> 24) & 0xFFu;
+			if (auto it = buf_writer.find(buf_key(slot, ver)); it != buf_writer.end()) {
+				add_edge(it->second, pass_index);
 			}
 		}
 
 		// WAW chain + WAR: a write to ver V means this pass consumed ver V-1
-		for (const RGTextureAccess &a : pass.textureWrites) {
-			const uint32 slot = SlotOf(a.handle.id);
-			const uint32 ver = (a.handle.id >> 24) & 0xFFu;
+		for (const RGTextureAccess &a : pass.texture_writes) {
+			const Uint32 slot = slot_of(a.handle.id);
+			const Uint32 ver = (a.handle.id >> 24) & 0xFFu;
 			if (ver > 0) {
 				// WAW: previous writer of (slot, ver-1) must complete before this write
-				if (auto it = texWriter.find(texKey(slot, ver - 1)); it != texWriter.end()) {
-					addEdge(it->second, passIndex);
+				if (auto it = tex_writer.find(tex_key(slot, ver - 1)); it != tex_writer.end()) {
+					add_edge(it->second, pass_index);
 				}
 				// WAR: all readers of (slot, ver-1) must complete before this write
-				if (auto it = texReaders.find(texKey(slot, ver - 1)); it != texReaders.end()) {
-					for (uint32 reader : it->second) {
-						addEdge(reader, passIndex);
+				if (auto it = tex_readers.find(tex_key(slot, ver - 1)); it != tex_readers.end()) {
+					for (Uint32 reader : it->second) {
+						add_edge(reader, pass_index);
 					}
 				}
 			}
 		}
-		for (const RGBufferAccess &a : pass.bufferWrites) {
-			const uint32 slot = SlotOf(a.handle.id);
-			const uint32 ver = (a.handle.id >> 24) & 0xFFu;
+		for (const RGBufferAccess &a : pass.buffer_writes) {
+			const Uint32 slot = slot_of(a.handle.id);
+			const Uint32 ver = (a.handle.id >> 24) & 0xFFu;
 			if (ver > 0) {
-				if (auto it = bufWriter.find(bufKey(slot, ver - 1)); it != bufWriter.end()) {
-					addEdge(it->second, passIndex);
+				if (auto it = buf_writer.find(buf_key(slot, ver - 1)); it != buf_writer.end()) {
+					add_edge(it->second, pass_index);
 				}
-				if (auto it = bufReaders.find(bufKey(slot, ver - 1)); it != bufReaders.end()) {
-					for (uint32 reader : it->second) {
-						addEdge(reader, passIndex);
+				if (auto it = buf_readers.find(buf_key(slot, ver - 1)); it != buf_readers.end()) {
+					for (Uint32 reader : it->second) {
+						add_edge(reader, pass_index);
 					}
 				}
 			}
@@ -165,42 +165,42 @@ RGCompiler::AdjList RGCompiler::BuildDependencyGraph(const std::vector<RGPassDat
 //
 // Returns false if a cycle is found.  outCyclePath contains the cycle nodes.
 // https://www.geeksforgeeks.org/dsa/topological-sorting-indegree-based-solution/
-bool RGCompiler::TopologicalSort(const AdjList &adj, uint32 passCount, std::vector<uint32> &outOrder,
-								 std::vector<uint32> &outCyclePath) {
-	outOrder.clear();
-	outOrder.reserve(passCount);
+bool RGCompiler::topological_sort(const AdjList &adj, Uint32 pass_count, std::vector<Uint32> &out_order,
+								 std::vector<Uint32> &out_cycle_path) {
+	out_order.clear();
+	out_order.reserve(pass_count);
 
-	std::vector<int32> inDegree(passCount, 0);
-	for (uint32 i = 0; i < passCount; ++i) {
-		for (uint32 dep : adj[i]) {
-			++inDegree[dep];
+	std::vector<Int32> in_degree(pass_count, 0);
+	for (Uint32 i = 0; i < pass_count; ++i) {
+		for (Uint32 dep : adj[i]) {
+			++in_degree[dep];
 		}
 	}
 
 	// Use a min-heap keyed on pass index for stability
-	std::priority_queue<uint32, std::vector<uint32>, std::greater<>> ready;
-	for (uint32 i = 0; i < passCount; ++i) {
-		if (inDegree[i] == 0) {
+	std::priority_queue<Uint32, std::vector<Uint32>, std::greater<>> ready;
+	for (Uint32 i = 0; i < pass_count; ++i) {
+		if (in_degree[i] == 0) {
 			ready.push(i);
 		}
 	}
 
 	while (!ready.empty()) {
-		uint32 cur = ready.top();
+		Uint32 cur = ready.top();
 		ready.pop();
-		outOrder.push_back(cur);
-		for (uint32 succ : adj[cur]) {
-			if (--inDegree[succ] == 0) {
+		out_order.push_back(cur);
+		for (Uint32 succ : adj[cur]) {
+			if (--in_degree[succ] == 0) {
 				ready.push(succ);
 			}
 		}
 	}
 
-	if (outOrder.size() < passCount) {
+	if (out_order.size() < pass_count) {
 		// gather nodes with remaining in-degree > 0 as the cycle evidence
-		for (uint32 i = 0; i < passCount; ++i) {
-			if (inDegree[i] > 0) {
-				outCyclePath.push_back(i);
+		for (Uint32 i = 0; i < pass_count; ++i) {
+			if (in_degree[i] > 0) {
+				out_cycle_path.push_back(i);
 			}
 		}
 		return false;
@@ -223,15 +223,15 @@ bool RGCompiler::TopologicalSort(const AdjList &adj, uint32 passCount, std::vect
 //
 // Passes that only produce transient resources consumed by dead passes are removed.
 
-std::vector<bool> RGCompiler::CullPasses(const std::vector<RGPassData> &passes, const AdjList &adj,
-										 const std::vector<uint32> &sortedOrder, const RGRegistry &registry) {
-	const uint32 n = static_cast<uint32>(passes.size());
+std::vector<bool> RGCompiler::cull_passes(const std::vector<RGPassData> &passes, const AdjList &adj,
+										 const std::vector<Uint32> &sorted_order, const RGRegistry &registry) {
+	const Uint32 n = static_cast<Uint32>(passes.size());
 	std::vector<bool> alive(n, false);
 
 	// Build reverse adjacency list
 	AdjList radj(n);
-	for (uint32 i = 0; i < n; ++i) {
-		for (uint32 succ : adj[i]) {
+	for (Uint32 i = 0; i < n; ++i) {
+		for (Uint32 succ : adj[i]) {
 			radj[succ].push_back(i);
 		}
 	}
@@ -239,46 +239,46 @@ std::vector<bool> RGCompiler::CullPasses(const std::vector<RGPassData> &passes, 
 	// Passes with an external side effect (e.g. swapchain blit) are always sinks.
 	// Passes that write to an imported resource are also always sinks.
 	// Passes with an unsatisfied read dependency are never sinks and can never be made alive.
-	for (uint32 pi = 0; pi < n; ++pi) {
+	for (Uint32 pi = 0; pi < n; ++pi) {
 		const RGPassData &p = passes[pi];
-		if (p.hasUnsatisfiedDep) {
+		if (p.has_unsatisfied_dep) {
 			continue;
 		}
-		bool isSink = p.hasSideEffect;
-		if (!isSink) {
-			for (const RGTextureAccess &a : p.textureWrites) {
-				if (registry.IsImportedTexture(a.handle)) {
-					isSink = true;
+		bool is_sink = p.has_side_effect;
+		if (!is_sink) {
+			for (const RGTextureAccess &a : p.texture_writes) {
+				if (registry.is_imported_texture(a.handle)) {
+					is_sink = true;
 					break;
 				}
 			}
 		}
-		if (!isSink) {
-			for (const RGBufferAccess &a : p.bufferWrites) {
-				if (registry.IsImportedBuffer(a.handle)) {
-					isSink = true;
+		if (!is_sink) {
+			for (const RGBufferAccess &a : p.buffer_writes) {
+				if (registry.is_imported_buffer(a.handle)) {
+					is_sink = true;
 					break;
 				}
 			}
 		}
-		if (isSink) {
+		if (is_sink) {
 			alive[pi] = true;
 		}
 	}
 
 	// BFS backwards from sinks
-	std::queue<uint32> work;
-	for (uint32 i = 0; i < n; ++i) {
+	std::queue<Uint32> work;
+	for (Uint32 i = 0; i < n; ++i) {
 		if (alive[i]) {
 			work.push(i);
 		}
 	}
 
 	while (!work.empty()) {
-		uint32 cur = work.front();
+		Uint32 cur = work.front();
 		work.pop();
-		for (uint32 pred : radj[cur]) {
-			if (!alive[pred] && !passes[pred].hasUnsatisfiedDep) {
+		for (Uint32 pred : radj[cur]) {
+			if (!alive[pred] && !passes[pred].has_unsatisfied_dep) {
 				alive[pred] = true;
 				work.push(pred);
 			}
@@ -289,14 +289,14 @@ std::vector<bool> RGCompiler::CullPasses(const std::vector<RGPassData> &passes, 
 }
 
 //  Lifetime analysis
-std::vector<RGCompiler::LifetimeInterval> RGCompiler::ComputeTexLifetimes(const std::vector<RGPassData> &passes,
-																		  const std::vector<uint32> &sortedOrder,
+std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_tex_lifetimes(const std::vector<RGPassData> &passes,
+																		  const std::vector<Uint32> &sorted_order,
 																		  const std::vector<bool> &alive,
-																		  uint32 texCount, const RGRegistry &registry) {
-	std::vector<LifetimeInterval> lifetimes(texCount);
+																		  Uint32 tex_count, const RGRegistry &registry) {
+	std::vector<LifetimeInterval> lifetimes(tex_count);
 	// Use GetTextureVersion to build a current handle for validation-safe lookups
-	for (uint32 slot = 0; slot < texCount; ++slot) {
-		const uint32 ver = registry.GetTextureVersion(RGTextureHandle{ slot });
+	for (Uint32 slot = 0; slot < tex_count; ++slot) {
+		const Uint32 ver = registry.get_texture_version(RGTextureHandle{ slot });
 
 		// very confusing i know
 		// but look, here is some explanation for  you
@@ -307,73 +307,73 @@ std::vector<RGCompiler::LifetimeInterval> RGCompiler::ComputeTexLifetimes(const 
 		// OR operation => 00000010 000000000000000000000101
 		//
 		// this gives us the packed handle ID, that has both pieces of info packed inside version and slot :D
-		const uint32 curId = (ver << 24u) | (slot);
+		const Uint32 cur_id = (ver << 24u) | (slot);
 
-		lifetimes[slot].imported = registry.IsImportedTexture(RGTextureHandle{ curId });
+		lifetimes[slot].imported = registry.is_imported_texture(RGTextureHandle{ cur_id });
 	}
 
-	for (int32 pos = 0; pos < static_cast<int32>(sortedOrder.size()); ++pos) {
-		const uint32 passIndex = sortedOrder[pos];
-		if (!alive[passIndex]) {
+	for (Int32 pos = 0; pos < static_cast<Int32>(sorted_order.size()); ++pos) {
+		const Uint32 pass_index = sorted_order[pos];
+		if (!alive[pass_index]) {
 			continue;
 		}
-		const RGPassData &pass = passes[passIndex];
+		const RGPassData &pass = passes[pass_index];
 
 		// tell the texture its used at position X
 		auto touch = [&](RGTextureHandle handle) {
-			uint32 slot = SlotOf(handle.id);
-			lifetimes[slot].firstUse = std::min(lifetimes[slot].firstUse, pos);
-			lifetimes[slot].lastUse = std::max(lifetimes[slot].lastUse, pos);
+			Uint32 slot = slot_of(handle.id);
+			lifetimes[slot].first_use = std::min(lifetimes[slot].first_use, pos);
+			lifetimes[slot].last_use = std::max(lifetimes[slot].last_use, pos);
 		};
 
-		for (const auto &textureRead : pass.textureReads) {
-			touch(textureRead.handle);
+		for (const auto &texture_read : pass.texture_reads) {
+			touch(texture_read.handle);
 		}
-		for (const auto &textureWrite : pass.textureWrites) {
-			touch(textureWrite.handle);
+		for (const auto &texture_write : pass.texture_writes) {
+			touch(texture_write.handle);
 		}
-		for (const auto &colorAttachment : pass.colorAttachments) {
-			if (colorAttachment.handle.IsValid()) {
-				touch(colorAttachment.handle);
+		for (const auto &color_attachment : pass.color_attachments) {
+			if (color_attachment.handle.is_valid()) {
+				touch(color_attachment.handle);
 			}
 		}
-		if (pass.hasDepthAttachment) {
-			touch(pass.depthAttachment.handle);
+		if (pass.has_depth_attachment) {
+			touch(pass.depth_attachment.handle);
 		}
 	}
 	return lifetimes;
 }
 
-std::vector<RGCompiler::LifetimeInterval> RGCompiler::ComputeBufLifetimes(const std::vector<RGPassData> &passes,
-																		  const std::vector<uint32> &sortedOrder,
+std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_buf_lifetimes(const std::vector<RGPassData> &passes,
+																		  const std::vector<Uint32> &sorted_order,
 																		  const std::vector<bool> &alive,
-																		  uint32 bufCount, const RGRegistry &registry) {
+																		  Uint32 buf_count, const RGRegistry &registry) {
 	// ! The usage is the same as for the textures so if you are lost, read the comments on the function above
 
-	std::vector<LifetimeInterval> lifetimes(bufCount);
-	for (uint32 slot = 0; slot < bufCount; ++slot) {
-		const uint32 ver = registry.GetBufferVersion(RGBufferHandle{ slot });
-		const uint32 curId = (ver << 24u) | (slot);
-		lifetimes[slot].imported = registry.IsImportedBuffer(RGBufferHandle{ curId });
+	std::vector<LifetimeInterval> lifetimes(buf_count);
+	for (Uint32 slot = 0; slot < buf_count; ++slot) {
+		const Uint32 ver = registry.get_buffer_version(RGBufferHandle{ slot });
+		const Uint32 cur_id = (ver << 24u) | (slot);
+		lifetimes[slot].imported = registry.is_imported_buffer(RGBufferHandle{ cur_id });
 	}
 
-	for (int32 pos = 0; pos < static_cast<int32>(sortedOrder.size()); ++pos) {
-		const uint32 passIndex = sortedOrder[pos];
-		if (!alive[passIndex]) {
+	for (Int32 pos = 0; pos < static_cast<Int32>(sorted_order.size()); ++pos) {
+		const Uint32 pass_index = sorted_order[pos];
+		if (!alive[pass_index]) {
 			continue;
 		}
-		const RGPassData &pass = passes[passIndex];
+		const RGPassData &pass = passes[pass_index];
 
 		auto touch = [&](RGBufferHandle h) {
-			uint32 slot = SlotOf(h.id);
-			lifetimes[slot].firstUse = std::min(lifetimes[slot].firstUse, pos);
-			lifetimes[slot].lastUse = std::max(lifetimes[slot].lastUse, pos);
+			Uint32 slot = slot_of(h.id);
+			lifetimes[slot].first_use = std::min(lifetimes[slot].first_use, pos);
+			lifetimes[slot].last_use = std::max(lifetimes[slot].last_use, pos);
 		};
-		for (const auto &bufferRead : pass.bufferReads) {
-			touch(bufferRead.handle);
+		for (const auto &buffer_read : pass.buffer_reads) {
+			touch(buffer_read.handle);
 		}
-		for (const auto &bufferWrite : pass.bufferWrites) {
-			touch(bufferWrite.handle);
+		for (const auto &buffer_write : pass.buffer_writes) {
+			touch(buffer_write.handle);
 		}
 	}
 	return lifetimes;
@@ -388,43 +388,43 @@ std::vector<RGCompiler::LifetimeInterval> RGCompiler::ComputeBufLifetimes(const 
 // resource from the pool whose lastUsedAt < slot.firstUse and whose descriptor
 // is compatible.  This achieves optimal aliasing for intervals sorted by start.
 
-void RGCompiler::AllocateTransients(const std::vector<RGPassData> &passes, RGRegistry &registry,
-									const std::vector<LifetimeInterval> &texLifetimes,
-									const std::vector<LifetimeInterval> &bufLifetimes, GFX::GfxContext &ctx,
+void RGCompiler::allocate_transients(const std::vector<RGPassData> &passes, RGRegistry &registry,
+									const std::vector<LifetimeInterval> &tex_lifetimes,
+									const std::vector<LifetimeInterval> &buf_lifetimes, GFX::GfxContext &ctx,
 									RGCompiledGraph &out) {
-	const uint32 texCount = registry.TextureCount();
+	const Uint32 tex_count = registry.texture_count();
 
 	// build a sorted list of what needs allocating
-	std::vector<std::pair<int32, uint32>> texOrder;
-	texOrder.reserve(texCount);
-	for (uint32 slot = 0; slot < texCount; ++slot) {
-		const LifetimeInterval &lt = texLifetimes[slot];
+	std::vector<std::pair<Int32, Uint32>> tex_order;
+	tex_order.reserve(tex_count);
+	for (Uint32 slot = 0; slot < tex_count; ++slot) {
+		const LifetimeInterval &lt = tex_lifetimes[slot];
 		// skip if its externally owned or never used
-		if (lt.imported || lt.firstUse == INT32_MAX) {
+		if (lt.imported || lt.first_use == INT32_MAX) {
 			continue; // never used or external
 		}
-		texOrder.emplace_back(lt.firstUse, slot);
+		tex_order.emplace_back(lt.first_use, slot);
 	}
 	// sort by first use (super hack to make greedy recycling work optimally)
-	std::ranges::stable_sort(texOrder);
+	std::ranges::stable_sort(tex_order);
 
-	std::vector<TexPoolEntry> texPool;
-	texPool.reserve(texOrder.size());
+	std::vector<TexPoolEntry> tex_pool;
+	tex_pool.reserve(tex_order.size());
 
 	// try to recylce whatever is recyclable, otherwise just allocate fresh
-	for (auto [firstUse, slot] : texOrder) {
-		const uint32 tver = registry.GetTextureVersion(RGTextureHandle{ slot });
-		const uint32 tId = (tver << 24u) | (slot);
-		const RGTextureDesc &desc = registry.GetTextureDesc(RGTextureHandle{ tId });
-		const int32 last = texLifetimes[slot].lastUse;
+	for (auto [firstUse, slot] : tex_order) {
+		const Uint32 tver = registry.get_texture_version(RGTextureHandle{ slot });
+		const Uint32 t_id = (tver << 24u) | (slot);
+		const RGTextureDesc &desc = registry.get_texture_desc(RGTextureHandle{ t_id });
+		const Int32 last = tex_lifetimes[slot].last_use;
 
 		// Try to find a free compatible physical texture
 		TexPoolEntry *match = nullptr;
 		// foreach entry in the current texture pool
-		for (TexPoolEntry &entry : texPool) {
+		for (TexPoolEntry &entry : tex_pool) {
 			// is the texture free and is it compatible?
-			if (entry.lastUsedAt < firstUse && TexDescCompatible(entry.desc, desc)) {
-				if ((match == nullptr) || entry.lastUsedAt > match->lastUsedAt) {
+			if (entry.last_used_at < firstUse && tex_desc_compatible(entry.desc, desc)) {
+				if ((match == nullptr) || entry.last_used_at > match->last_used_at) {
 					match = &entry; // Prefer most-recently-freed for better cache locality
 				}
 			}
@@ -432,90 +432,90 @@ void RGCompiler::AllocateTransients(const std::vector<RGPassData> &passes, RGReg
 
 		// if we have a match => recycle it
 		if (match != nullptr) {
-			match->lastUsedAt = last;
-			registry.ResolveTexture(RGTextureHandle{ tId }, match->tex.get());
+			match->last_used_at = last;
+			registry.resolve_texture(RGTextureHandle{ t_id }, match->tex.get());
 		} else {
 			// if no match => allocate a new physical texture.
 			// Convert RGTextureDesc -> RHI::TextureDesc.
-			RHI::TextureDesc rhiDesc{};
-			rhiDesc.width = desc.width;
-			rhiDesc.height = desc.height;
-			rhiDesc.mipLevels = desc.mipLevels;
-			rhiDesc.arrayLayers = desc.arrayLayers;
-			rhiDesc.format = desc.format;
-			rhiDesc.usage = desc.usage;
-			rhiDesc.samples = desc.samples;
-			rhiDesc.debugName = desc.debugName.empty() ? "RG_Transient" : std::string(desc.debugName);
+			RHI::TextureDesc rhi_desc{};
+			rhi_desc.width = desc.width;
+			rhi_desc.height = desc.height;
+			rhi_desc.mip_levels = desc.mip_levels;
+			rhi_desc.array_layers = desc.array_layers;
+			rhi_desc.format = desc.format;
+			rhi_desc.usage = desc.usage;
+			rhi_desc.samples = desc.samples;
+			rhi_desc.debug_name = desc.debug_name.empty() ? "RG_Transient" : std::string(desc.debug_name);
 
 			// viewType: derive from arrayLayers and format
-			if (rhiDesc.arrayLayers == 6) {
-				rhiDesc.viewType = RHI::TextureViewType::Cube;
-			} else if (rhiDesc.arrayLayers > 1) {
-				rhiDesc.viewType = RHI::TextureViewType::Tex2DArray;
+			if (rhi_desc.array_layers == 6) {
+				rhi_desc.view_type = RHI::TextureViewType::Cube;
+			} else if (rhi_desc.array_layers > 1) {
+				rhi_desc.view_type = RHI::TextureViewType::Tex2DArray;
 			} else {
-				rhiDesc.viewType = RHI::TextureViewType::Tex2D;
+				rhi_desc.view_type = RHI::TextureViewType::Tex2D;
 			}
 
-			Ref<GFX::GfxTexture> newTex = ctx.CreateTexture(rhiDesc);
-			AQUILA_ASSERT(newTex, "Failed to allocate transient texture");
+			Ref<GFX::GfxTexture> new_tex = ctx.create_texture(rhi_desc);
+			AQUILA_ASSERT(new_tex, "Failed to allocate transient texture");
 
-			out.transientTextures.push_back(newTex);
-			registry.ResolveTexture(RGTextureHandle{ tId }, newTex.get());
+			out.transient_textures.push_back(new_tex);
+			registry.resolve_texture(RGTextureHandle{ t_id }, new_tex.get());
 
-			texPool.push_back(TexPoolEntry{ .tex = newTex, .lastUsedAt = last, .desc = desc });
+			tex_pool.push_back(TexPoolEntry{ .tex = new_tex, .last_used_at = last, .desc = desc });
 		}
 	}
 
 	// do the same for buffers
-	const uint32 bufCount = registry.BufferCount();
+	const Uint32 buf_count = registry.buffer_count();
 
-	std::vector<std::pair<int32, uint32>> bufOrder;
-	bufOrder.reserve(bufCount);
+	std::vector<std::pair<Int32, Uint32>> buf_order;
+	buf_order.reserve(buf_count);
 
-	for (uint32 slot = 0; slot < bufCount; ++slot) {
-		const LifetimeInterval &lt = bufLifetimes[slot];
-		if (lt.imported || lt.firstUse == INT32_MAX) {
+	for (Uint32 slot = 0; slot < buf_count; ++slot) {
+		const LifetimeInterval &lt = buf_lifetimes[slot];
+		if (lt.imported || lt.first_use == INT32_MAX) {
 			continue;
 		}
-		bufOrder.emplace_back(lt.firstUse, slot);
+		buf_order.emplace_back(lt.first_use, slot);
 	}
-	std::ranges::stable_sort(bufOrder);
+	std::ranges::stable_sort(buf_order);
 
-	std::vector<BufPoolEntry> bufPool;
-	bufPool.reserve(bufOrder.size());
+	std::vector<BufPoolEntry> buf_pool;
+	buf_pool.reserve(buf_order.size());
 
-	for (auto [firstUse, slot] : bufOrder) {
-		const uint32 bver = registry.GetBufferVersion(RGBufferHandle{ slot });
-		const uint32 bId = (bver << 24u) | (slot);
-		const RGBufferDesc &desc = registry.GetBufferDesc(RGBufferHandle{ bId });
-		const int32 last = bufLifetimes[slot].lastUse;
+	for (auto [firstUse, slot] : buf_order) {
+		const Uint32 bver = registry.get_buffer_version(RGBufferHandle{ slot });
+		const Uint32 b_id = (bver << 24u) | (slot);
+		const RGBufferDesc &desc = registry.get_buffer_desc(RGBufferHandle{ b_id });
+		const Int32 last = buf_lifetimes[slot].last_use;
 
 		BufPoolEntry *match = nullptr;
-		for (BufPoolEntry &entry : bufPool) {
-			if (entry.lastUsedAt < firstUse && BufDescCompatible(entry.desc, desc)) {
-				if ((match == nullptr) || entry.lastUsedAt > match->lastUsedAt) {
+		for (BufPoolEntry &entry : buf_pool) {
+			if (entry.last_used_at < firstUse && buf_desc_compatible(entry.desc, desc)) {
+				if ((match == nullptr) || entry.last_used_at > match->last_used_at) {
 					match = &entry;
 				}
 			}
 		}
 
 		if (match != nullptr) {
-			match->lastUsedAt = last;
-			registry.ResolveBuffer(RGBufferHandle{ bId }, match->buf.get());
+			match->last_used_at = last;
+			registry.resolve_buffer(RGBufferHandle{ b_id }, match->buf.get());
 		} else {
-			RHI::BufferDesc rhiDesc{};
-			rhiDesc.size = desc.size;
-			rhiDesc.usage = desc.usage;
-			rhiDesc.domain = desc.domain;
-			rhiDesc.debugName = desc.debugName.empty() ? "RG_Transient" : std::string(desc.debugName);
+			RHI::BufferDesc rhi_desc{};
+			rhi_desc.size = desc.size;
+			rhi_desc.usage = desc.usage;
+			rhi_desc.domain = desc.domain;
+			rhi_desc.debug_name = desc.debug_name.empty() ? "RG_Transient" : std::string(desc.debug_name);
 
-			Ref<GFX::GfxBuffer> newBuf = ctx.CreateBuffer(rhiDesc);
-			AQUILA_ASSERT(newBuf, "Failed to allocate transient buffer");
+			Ref<GFX::GfxBuffer> new_buf = ctx.create_buffer(rhi_desc);
+			AQUILA_ASSERT(new_buf, "Failed to allocate transient buffer");
 
-			out.transientBuffers.push_back(newBuf);
-			registry.ResolveBuffer(RGBufferHandle{ bId }, newBuf.get());
+			out.transient_buffers.push_back(new_buf);
+			registry.resolve_buffer(RGBufferHandle{ b_id }, new_buf.get());
 
-			bufPool.push_back(BufPoolEntry{ .buf = newBuf, .lastUsedAt = last, .desc = desc });
+			buf_pool.push_back(BufPoolEntry{ .buf = new_buf, .last_used_at = last, .desc = desc });
 		}
 	}
 }
@@ -525,84 +525,84 @@ void RGCompiler::AllocateTransients(const std::vector<RGPassData> &passes, RGReg
 // arrays indexed by slot.  Whenever required state != current state, push a
 // barrier record into the flat table and update current state.
 
-void RGCompiler::InferBarriers(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
-							   const std::vector<bool> &alive, uint32 texCount, uint32 bufCount,
+void RGCompiler::infer_barriers(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
+							   const std::vector<bool> &alive, Uint32 tex_count, Uint32 buf_count,
 							   const RGRegistry &registry, RGCompiledGraph &out) {
 	// Imported resources start from their declared initial state, not Undefined,
 	// so persistent textures don't get their contents discarded on first use.
-	std::vector<RHI::ResourceState> curTexState(texCount, RHI::ResourceState::Undefined);
-	for (uint32 slot = 0; slot < texCount; ++slot) {
-		if (registry.IsImportedTexture(RGTextureHandle{ slot })) {
-			curTexState[slot] = registry.GetTextureInitialState(RGTextureHandle{ slot });
+	std::vector<RHI::ResourceState> cur_tex_state(tex_count, RHI::ResourceState::Undefined);
+	for (Uint32 slot = 0; slot < tex_count; ++slot) {
+		if (registry.is_imported_texture(RGTextureHandle{ slot })) {
+			cur_tex_state[slot] = registry.get_texture_initial_state(RGTextureHandle{ slot });
 		}
 	}
 
-	std::vector<RHI::ResourceState> curBufState(bufCount, RHI::ResourceState::Undefined);
-	for (uint32 slot = 0; slot < bufCount; ++slot) {
-		if (registry.IsImportedBuffer(RGBufferHandle{ slot })) {
-			curBufState[slot] = registry.GetBufferInitialState(RGBufferHandle{ slot });
+	std::vector<RHI::ResourceState> cur_buf_state(buf_count, RHI::ResourceState::Undefined);
+	for (Uint32 slot = 0; slot < buf_count; ++slot) {
+		if (registry.is_imported_buffer(RGBufferHandle{ slot })) {
+			cur_buf_state[slot] = registry.get_buffer_initial_state(RGBufferHandle{ slot });
 		}
 	}
 
-	const uint32 aliveCount = static_cast<uint32>(std::count(alive.begin(), alive.end(), true));
+	const Uint32 alive_count = static_cast<Uint32>(std::count(alive.begin(), alive.end(), true));
 
 	// texBarriers is a flat list of ALL barriers jammed together
-	out.texBarriers.reserve(aliveCount * 2);
-	out.bufBarriers.reserve(aliveCount);
+	out.tex_barriers.reserve(alive_count * 2);
+	out.buf_barriers.reserve(alive_count);
 
 	// to keep track and to know which barriers belong to which pass
 	// for example : for pass N, we have M barriers
 	//  texBarriers[ passTexBarStart[N] ... passTexBarStart[N+1] ]
-	out.passTexBarStart.reserve(aliveCount + 1); // +1 for the sentinel
-	out.passBufBarStart.reserve(aliveCount + 1); // same as before
+	out.pass_tex_bar_start.reserve(alive_count + 1); // +1 for the sentinel
+	out.pass_buf_bar_start.reserve(alive_count + 1); // same as before
 
-	for (const uint32 passIndex : sortedOrder) {
-		if (!alive[passIndex]) {
+	for (const Uint32 pass_index : sorted_order) {
+		if (!alive[pass_index]) {
 			continue;
 		}
-		const RGPassData &pass = passes[passIndex];
+		const RGPassData &pass = passes[pass_index];
 
 		// so if my texBarriers at this point is of size N, then the index table passTexBarStart begins at index N in the texBarriers vector
 		// when the pass runs and pushes its barriers into texBarriers,
 		// they naturally land at index N, N+1, etc.
 		// until the next pass comes along and starts recording its own start position
-		out.passTexBarStart.push_back(static_cast<uint32>(out.texBarriers.size()));
-		out.passBufBarStart.push_back(static_cast<uint32>(out.bufBarriers.size()));
+		out.pass_tex_bar_start.push_back(static_cast<Uint32>(out.tex_barriers.size()));
+		out.pass_buf_bar_start.push_back(static_cast<Uint32>(out.buf_barriers.size()));
 
 		// Helper: emit a texture barrier if state changed
-		auto maybeTextureBarrier = [&](RGTextureHandle handle, RHI::ResourceState required) {
-			const uint32 slot = SlotOf(handle.id);
+		auto maybe_texture_barrier = [&](RGTextureHandle handle, RHI::ResourceState required) {
+			const Uint32 slot = slot_of(handle.id);
 
 			// if textures current state is not what the next pass needs
-			if (curTexState[slot] != required) {
+			if (cur_tex_state[slot] != required) {
 				// record a barrier from current state to required state
-				out.texBarriers.push_back({ handle, curTexState[slot], required });
+				out.tex_barriers.push_back({ handle, cur_tex_state[slot], required });
 
 				// update current state
-				curTexState[slot] = required;
+				cur_tex_state[slot] = required;
 			}
 		};
 
 		// the same as before just for buffers
-		auto maybeBufferBarrier = [&](RGBufferHandle handle, RHI::ResourceState required) {
-			const uint32 slot = SlotOf(handle.id);
-			if (curBufState[slot] != required) {
-				out.bufBarriers.push_back({ handle, curBufState[slot], required });
-				curBufState[slot] = required;
+		auto maybe_buffer_barrier = [&](RGBufferHandle handle, RHI::ResourceState required) {
+			const Uint32 slot = slot_of(handle.id);
+			if (cur_buf_state[slot] != required) {
+				out.buf_barriers.push_back({ handle, cur_buf_state[slot], required });
+				cur_buf_state[slot] = required;
 			}
 		};
 
-		for (const RGTextureAccess &textureRead : pass.textureReads) {
-			maybeTextureBarrier(textureRead.handle, textureRead.state);
+		for (const RGTextureAccess &texture_read : pass.texture_reads) {
+			maybe_texture_barrier(texture_read.handle, texture_read.state);
 		}
-		for (const RGTextureAccess &textureWrite : pass.textureWrites) {
-			maybeTextureBarrier(textureWrite.handle, textureWrite.state);
+		for (const RGTextureAccess &texture_write : pass.texture_writes) {
+			maybe_texture_barrier(texture_write.handle, texture_write.state);
 		}
-		for (const RGBufferAccess &bufferRead : pass.bufferReads) {
-			maybeBufferBarrier(bufferRead.handle, bufferRead.state);
+		for (const RGBufferAccess &buffer_read : pass.buffer_reads) {
+			maybe_buffer_barrier(buffer_read.handle, buffer_read.state);
 		}
-		for (const RGBufferAccess &bufferWrite : pass.bufferWrites) {
-			maybeBufferBarrier(bufferWrite.handle, bufferWrite.state);
+		for (const RGBufferAccess &buffer_write : pass.buffer_writes) {
+			maybe_buffer_barrier(buffer_write.handle, buffer_write.state);
 		}
 	}
 
@@ -614,87 +614,87 @@ void RGCompiler::InferBarriers(const std::vector<RGPassData> &passes, const std:
 	// with dummy
 	//  passTexBarStart = [0, 2, 4, 5]
 
-	out.passTexBarStart.push_back(static_cast<uint32>(out.texBarriers.size()));
-	out.passBufBarStart.push_back(static_cast<uint32>(out.bufBarriers.size()));
+	out.pass_tex_bar_start.push_back(static_cast<Uint32>(out.tex_barriers.size()));
+	out.pass_buf_bar_start.push_back(static_cast<Uint32>(out.buf_barriers.size()));
 }
 
-void RGCompiler::CreateRenderPasses(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
+void RGCompiler::create_render_passes(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
 									const std::vector<bool> &alive, const RGRegistry &registry, GFX::GfxContext &ctx,
 									RGCompiledGraph &out) {
 	// passRenderPasses is indexed by position in passOrder (alive passes only)
-	out.passRenderPasses.resize(out.passOrder.size());
+	out.pass_render_passes.resize(out.pass_order.size());
 
-	uint32 schedPos = 0;
-	for (const uint32 passIndex : sortedOrder) {
-		if (!alive[passIndex]) {
+	Uint32 sched_pos = 0;
+	for (const Uint32 pass_index : sorted_order) {
+		if (!alive[pass_index]) {
 			continue;
 		}
-		const RGPassData &pass = passes[passIndex];
+		const RGPassData &pass = passes[pass_index];
 
-		const bool hasColor = !pass.colorAttachments.empty();
-		const bool hasDepth = pass.hasDepthAttachment;
+		const bool has_color = !pass.color_attachments.empty();
+		const bool has_depth = pass.has_depth_attachment;
 
-		if (!hasColor && !hasDepth) {
-			++schedPos;
+		if (!has_color && !has_depth) {
+			++sched_pos;
 			continue;
 		} // Compute / copy pass
 
-		RHI::RenderPassDesc rpDesc{};
-		rpDesc.debugName = pass.name;
-		rpDesc.externalBarriers = true; // Graph owns all barriers
+		RHI::RenderPassDesc rp_desc{};
+		rp_desc.debug_name = pass.name;
+		rp_desc.external_barriers = true; // Graph owns all barriers
 
 		// Color attachments
-		rpDesc.colorAttachments.reserve(pass.colorAttachments.size());
-		for (const RGColorAttachment &rga : pass.colorAttachments) {
-			if (!rga.handle.IsValid()) {
+		rp_desc.color_attachments.reserve(pass.color_attachments.size());
+		for (const RGColorAttachment &rga : pass.color_attachments) {
+			if (!rga.handle.is_valid()) {
 				continue;
 			}
 
-			GFX::GfxTexture &tex = registry.GetTexture(rga.handle);
+			GFX::GfxTexture &tex = registry.get_texture(rga.handle);
 
-			RHI::RenderPassColorAttachmentDesc colorAttachment{};
-			colorAttachment.texture = &tex.GetRHI();
-			colorAttachment.clearColor = { rga.clear.color.r, rga.clear.color.g, rga.clear.color.b, rga.clear.color.a };
-			colorAttachment.loadOp = static_cast<RHI::AttachmentLoadOp>(rga.loadOp);
-			colorAttachment.storeOp = static_cast<RHI::AttachmentStoreOp>(rga.storeOp);
+			RHI::RenderPassColorAttachmentDesc color_attachment{};
+			color_attachment.texture = &tex.get_rhi();
+			color_attachment.clear_color = { rga.clear.color.r, rga.clear.color.g, rga.clear.color.b, rga.clear.color.a };
+			color_attachment.load_op = static_cast<RHI::AttachmentLoadOp>(rga.load_op);
+			color_attachment.store_op = static_cast<RHI::AttachmentStoreOp>(rga.store_op);
 
-			rpDesc.colorAttachments.push_back(colorAttachment);
+			rp_desc.color_attachments.push_back(color_attachment);
 		}
 
 		// Depth attachment
-		if (hasDepth) {
-			const RGDepthAttachment &rda = pass.depthAttachment;
-			GFX::GfxTexture &tex = registry.GetTexture(rda.handle);
+		if (has_depth) {
+			const RGDepthAttachment &rda = pass.depth_attachment;
+			GFX::GfxTexture &tex = registry.get_texture(rda.handle);
 
-			RHI::RenderPassDepthAttachmentDesc depthAttachment{};
-			depthAttachment.texture = &tex.GetRHI();
-			depthAttachment.depthLoadOp = static_cast<RHI::AttachmentLoadOp>(rda.depthLoadOp);
-			depthAttachment.depthStoreOp = static_cast<RHI::AttachmentStoreOp>(rda.depthStoreOp);
-			depthAttachment.stencilLoadOp = static_cast<RHI::AttachmentLoadOp>(rda.stencilLoadOp);
-			depthAttachment.stencilStoreOp = static_cast<RHI::AttachmentStoreOp>(rda.stencilStoreOp);
-			depthAttachment.readOnly = rda.readOnly;
-			depthAttachment.clearDepth = rda.clear.depth;
-			depthAttachment.clearStencil = rda.clear.stencil;
+			RHI::RenderPassDepthAttachmentDesc depth_attachment{};
+			depth_attachment.texture = &tex.get_rhi();
+			depth_attachment.depth_load_op = static_cast<RHI::AttachmentLoadOp>(rda.depth_load_op);
+			depth_attachment.depth_store_op = static_cast<RHI::AttachmentStoreOp>(rda.depth_store_op);
+			depth_attachment.stencil_load_op = static_cast<RHI::AttachmentLoadOp>(rda.stencil_load_op);
+			depth_attachment.stencil_store_op = static_cast<RHI::AttachmentStoreOp>(rda.stencil_store_op);
+			depth_attachment.read_only = rda.read_only;
+			depth_attachment.clear_depth = rda.clear.depth;
+			depth_attachment.clear_stencil = rda.clear.stencil;
 
-			rpDesc.depthAttachment = depthAttachment;
+			rp_desc.depth_attachment = depth_attachment;
 		}
 
 		// Derive dimensions from the first valid attachment
-		if (!rpDesc.colorAttachments.empty() && (rpDesc.colorAttachments[0].texture != nullptr)) {
-			rpDesc.width = rpDesc.colorAttachments[0].texture->GetWidth();
-			rpDesc.height = rpDesc.colorAttachments[0].texture->GetHeight();
-		} else if (hasDepth && rpDesc.depthAttachment) {
-			rpDesc.width = rpDesc.depthAttachment->texture->GetWidth();
-			rpDesc.height = rpDesc.depthAttachment->texture->GetHeight();
+		if (!rp_desc.color_attachments.empty() && (rp_desc.color_attachments[0].texture != nullptr)) {
+			rp_desc.width = rp_desc.color_attachments[0].texture->get_width();
+			rp_desc.height = rp_desc.color_attachments[0].texture->get_height();
+		} else if (has_depth && rp_desc.depth_attachment) {
+			rp_desc.width = rp_desc.depth_attachment->texture->get_width();
+			rp_desc.height = rp_desc.depth_attachment->texture->get_height();
 		}
 
-		out.passRenderPasses[schedPos] = ctx.CreateRenderPass(rpDesc);
-		++schedPos;
+		out.pass_render_passes[sched_pos] = ctx.create_render_pass(rp_desc);
+		++sched_pos;
 	}
 }
 
 // Public entry point
-RGCompiledGraph RGCompiler::Compile(const std::vector<RGPassData> &passes, RGRegistry &registry, GFX::GfxContext &ctx) {
+RGCompiledGraph RGCompiler::compile(const std::vector<RGPassData> &passes, RGRegistry &registry, GFX::GfxContext &ctx) {
 	RGCompiledGraph out;
 
 	if (passes.empty()) {
@@ -702,42 +702,42 @@ RGCompiledGraph RGCompiler::Compile(const std::vector<RGPassData> &passes, RGReg
 		return out;
 	}
 
-	const auto passCount = static_cast<uint32>(passes.size());
-	const uint32 texCount = registry.TextureCount();
-	const uint32 bufCount = registry.BufferCount();
+	const auto pass_count = static_cast<Uint32>(passes.size());
+	const Uint32 tex_count = registry.texture_count();
+	const Uint32 buf_count = registry.buffer_count();
 
-	AdjList adj = BuildDependencyGraph(passes, texCount, bufCount);
+	AdjList adj = build_dependency_graph(passes, tex_count, buf_count);
 
-	std::vector<uint32> sortedOrder;
-	std::vector<uint32> cyclePath;
-	const bool acyclic = TopologicalSort(adj, passCount, sortedOrder, cyclePath);
+	std::vector<Uint32> sorted_order;
+	std::vector<Uint32> cycle_path;
+	const bool acyclic = topological_sort(adj, pass_count, sorted_order, cycle_path);
 
 	if (!acyclic) {
 		AQUILA_LOG_CRITICAL("Rendergraph cycle detected involving passes : ");
-		for (uint32 passIndex : cyclePath) {
-			AQUILA_LOG_CRITICAL("   {}", passes[passIndex].name);
+		for (Uint32 pass_index : cycle_path) {
+			AQUILA_LOG_CRITICAL("   {}", passes[pass_index].name);
 		}
 		return out;
 	}
 
-	std::vector<bool> alive = CullPasses(passes, adj, sortedOrder, registry);
+	std::vector<bool> alive = cull_passes(passes, adj, sorted_order, registry);
 
 	// Build final live-only pass order
-	out.passOrder.reserve(passCount);
-	for (uint32 passIndex : sortedOrder) {
-		if (alive[passIndex]) {
-			out.passOrder.push_back(passIndex);
+	out.pass_order.reserve(pass_count);
+	for (Uint32 pass_index : sorted_order) {
+		if (alive[pass_index]) {
+			out.pass_order.push_back(pass_index);
 		}
 	}
 
-	std::vector<LifetimeInterval> texLifetimes = ComputeTexLifetimes(passes, sortedOrder, alive, texCount, registry);
-	std::vector<LifetimeInterval> bufLifetimes = ComputeBufLifetimes(passes, sortedOrder, alive, bufCount, registry);
+	std::vector<LifetimeInterval> tex_lifetimes = compute_tex_lifetimes(passes, sorted_order, alive, tex_count, registry);
+	std::vector<LifetimeInterval> buf_lifetimes = compute_buf_lifetimes(passes, sorted_order, alive, buf_count, registry);
 
-	AllocateTransients(passes, registry, texLifetimes, bufLifetimes, ctx, out);
+	allocate_transients(passes, registry, tex_lifetimes, buf_lifetimes, ctx, out);
 
-	InferBarriers(passes, sortedOrder, alive, texCount, bufCount, registry, out);
+	infer_barriers(passes, sorted_order, alive, tex_count, buf_count, registry, out);
 
-	CreateRenderPasses(passes, sortedOrder, alive, registry, ctx, out);
+	create_render_passes(passes, sorted_order, alive, registry, ctx, out);
 
 	out.valid = true;
 	return out;

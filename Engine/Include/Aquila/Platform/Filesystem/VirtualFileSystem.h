@@ -8,43 +8,43 @@
 namespace Aquila::Platform::Filesystem {
 
 struct MountPoint {
-	std::string virtualPath;
-	std::string realPath;
-	Ref<IFileSystem> fileSystem;
+	std::string virtual_path;
+	std::string real_path;
+	Ref<IFileSystem> file_system;
 	int priority = 0;
-	bool readOnly = false;
+	bool read_only = false;
 };
 
 class VirtualFileSystem : public Foundation::Singleton<VirtualFileSystem> {
 	friend class Singleton;
 
   private:
-	std::vector<MountPoint> m_MountPoints;
-	mutable Mutex m_MountPointsMutex;
+	std::vector<MountPoint> m_mount_points;
+	mutable Mutex m_mount_points_mutex;
 
-	std::string NormalizePath(const std::string &path);
-	MountPoint *FindMountPoint(const std::string &virtualPath, std::string &relativePath);
+	std::string normalize_path(const std::string &path);
+	MountPoint *find_mount_point(const std::string &virtual_path, std::string &relative_path);
 
   public:
-	bool Mount(const std::string &virtualPath, Ref<IFileSystem> fileSystem, int priority = 0, bool readOnly = false);
-	bool Unmount(const std::string &virtualPath);
-	void UnmountAll();
-	bool RenameFile(const std::string &oldVirtualPath, const std::string &newVirtualPath);
-	Unique<VirtualFile> OpenFile(const std::string &virtualPath, AccessMode accessMode, OpenMode openMode);
-	bool Exists(const std::string &virtualPath);
-	std::vector<std::string> ListDirectory(const std::string &virtualPath);
-	bool IsDirectory(const std::string &virtualPath);
-	int64 GetFileSize(const std::string &virtualPath);
-	uint64 GetLastWriteTime(const std::string &virtualPath);
+	bool mount(const std::string &virtual_path, Ref<IFileSystem> file_system, int priority = 0, bool read_only = false);
+	bool unmount(const std::string &virtual_path);
+	void unmount_all();
+	bool rename_file(const std::string &old_virtual_path, const std::string &new_virtual_path);
+	Unique<VirtualFile> open_file(const std::string &virtual_path, AccessMode access_mode, OpenMode open_mode);
+	bool exists(const std::string &virtual_path);
+	std::vector<std::string> list_directory(const std::string &virtual_path);
+	bool is_directory(const std::string &virtual_path);
+	Int64 get_file_size(const std::string &virtual_path);
+	Uint64 get_last_write_time(const std::string &virtual_path);
 
-	bool CopyFileA(const std::string &srcVirtualPath, const std::string &dstVirtualPath);
-	bool CreateDir(const std::string &virtualPath);
-	bool DeleteFile_aq(const std::string &virtualPath);
-	bool DeleteDirectory(const std::string &virtualPath);
-	bool WriteTextFile(const std::string &virtualPath, const std::string &content);
-	std::string ReadTextFile(const std::string &virtualPath);
-	std::vector<std::string> GetMountPoints() const;
-	bool IsMounted(const std::string &virtualPath) const;
+	bool copy_file_a(const std::string &src_virtual_path, const std::string &dst_virtual_path);
+	bool create_dir(const std::string &virtual_path);
+	bool delete_file_aq(const std::string &virtual_path);
+	bool delete_directory(const std::string &virtual_path);
+	bool write_text_file(const std::string &virtual_path, const std::string &content);
+	std::string read_text_file(const std::string &virtual_path);
+	std::vector<std::string> get_mount_points() const;
+	bool is_mounted(const std::string &virtual_path) const;
 };
 
 } // namespace Aquila::Platform::Filesystem

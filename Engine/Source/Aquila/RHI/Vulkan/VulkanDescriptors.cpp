@@ -3,191 +3,191 @@
 
 namespace Aquila::RHI {
 
-VulkanDescriptorSetLayout::Builder &VulkanDescriptorSetLayout::Builder::AddBinding(uint32 binding,
-																				   VkDescriptorType descriptorType,
-																				   VkShaderStageFlags stageFlags,
-																				   uint32 count) {
-	AQUILA_ASSERT(!m_Bindings.contains(binding), "Binding already in use");
-	VkDescriptorSetLayoutBinding layoutBinding{};
-	layoutBinding.binding = binding;
-	layoutBinding.descriptorType = descriptorType;
-	layoutBinding.descriptorCount = count;
-	layoutBinding.stageFlags = stageFlags;
-	m_Bindings[binding] = layoutBinding;
+VulkanDescriptorSetLayout::Builder &VulkanDescriptorSetLayout::Builder::add_binding(Uint32 binding,
+																				   VkDescriptorType descriptor_type,
+																				   VkShaderStageFlags stage_flags,
+																				   Uint32 count) {
+	AQUILA_ASSERT(!m_bindings.contains(binding), "Binding already in use");
+	VkDescriptorSetLayoutBinding layout_binding{};
+	layout_binding.binding = binding;
+	layout_binding.descriptorType = descriptor_type;
+	layout_binding.descriptorCount = count;
+	layout_binding.stageFlags = stage_flags;
+	m_bindings[binding] = layout_binding;
 	return *this;
 }
 
-Unique<VulkanDescriptorSetLayout> VulkanDescriptorSetLayout::Builder::Build() const {
-	return CreateUnique<VulkanDescriptorSetLayout>(m_Device, m_Bindings);
+Unique<VulkanDescriptorSetLayout> VulkanDescriptorSetLayout::Builder::build() const {
+	return create_unique<VulkanDescriptorSetLayout>(m_device, m_bindings);
 }
 
 VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice &device,
-													 std::unordered_map<uint32, VkDescriptorSetLayoutBinding> bindings)
-	: m_Device(device), m_Bindings(std::move(bindings)) {
-	std::vector<VkDescriptorSetLayoutBinding> flatBindings;
-	flatBindings.reserve(m_Bindings.size());
-	for (auto &val : m_Bindings | std::views::values) {
-		flatBindings.push_back(val);
+													 std::unordered_map<Uint32, VkDescriptorSetLayoutBinding> bindings)
+	: m_device(device), m_bindings(std::move(bindings)) {
+	std::vector<VkDescriptorSetLayoutBinding> flat_bindings;
+	flat_bindings.reserve(m_bindings.size());
+	for (auto &val : m_bindings | std::views::values) {
+		flat_bindings.push_back(val);
 	}
 
 	VkDescriptorSetLayoutCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	info.bindingCount = static_cast<uint32>(flatBindings.size());
-	info.pBindings = flatBindings.data();
-	AQUILA_VULKAN_CHECK(vkCreateDescriptorSetLayout(m_Device.GetDevice(), &info, nullptr, &m_DescriptorSetLayout));
+	info.bindingCount = static_cast<Uint32>(flat_bindings.size());
+	info.pBindings = flat_bindings.data();
+	AQUILA_VULKAN_CHECK(vkCreateDescriptorSetLayout(m_device.get_device(), &info, nullptr, &m_descriptor_set_layout));
 }
 
 VulkanDescriptorSetLayout::~VulkanDescriptorSetLayout() {
-	vkDestroyDescriptorSetLayout(m_Device.GetDevice(), m_DescriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(m_device.get_device(), m_descriptor_set_layout, nullptr);
 }
 
-VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::AddPoolSize(VkDescriptorType type, uint32 count) {
-	m_PoolSizes.push_back({ type, count });
+VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::add_pool_size(VkDescriptorType type, Uint32 count) {
+	m_pool_sizes.push_back({ type, count });
 	return *this;
 }
 
-VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::SetPoolFlags(VkDescriptorPoolCreateFlags flags) {
-	m_PoolFlags = flags;
+VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::set_pool_flags(VkDescriptorPoolCreateFlags flags) {
+	m_pool_flags = flags;
 	return *this;
 }
 
-VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::SetMaxSets(uint32 count) {
-	m_MaxSets = count;
+VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::set_max_sets(Uint32 count) {
+	m_max_sets = count;
 	return *this;
 }
 
-Unique<VulkanDescriptorPool> VulkanDescriptorPool::Builder::Build() const {
-	return CreateUnique<VulkanDescriptorPool>(m_Device, m_MaxSets, m_PoolFlags, m_PoolSizes);
+Unique<VulkanDescriptorPool> VulkanDescriptorPool::Builder::build() const {
+	return create_unique<VulkanDescriptorPool>(m_device, m_max_sets, m_pool_flags, m_pool_sizes);
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice &device, uint32 maxSets, VkDescriptorPoolCreateFlags poolFlags,
-										   const std::vector<VkDescriptorPoolSize> &poolSizes)
-	: m_Device(device) {
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice &device, Uint32 max_sets, VkDescriptorPoolCreateFlags pool_flags,
+										   const std::vector<VkDescriptorPoolSize> &pool_sizes)
+	: m_device(device) {
 	VkDescriptorPoolCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	info.poolSizeCount = static_cast<uint32>(poolSizes.size());
-	info.pPoolSizes = poolSizes.data();
-	info.maxSets = maxSets;
-	info.flags = poolFlags;
-	AQUILA_VULKAN_CHECK(vkCreateDescriptorPool(m_Device.GetDevice(), &info, nullptr, &m_DescriptorPool));
+	info.poolSizeCount = static_cast<Uint32>(pool_sizes.size());
+	info.pPoolSizes = pool_sizes.data();
+	info.maxSets = max_sets;
+	info.flags = pool_flags;
+	AQUILA_VULKAN_CHECK(vkCreateDescriptorPool(m_device.get_device(), &info, nullptr, &m_descriptor_pool));
 }
 
 VulkanDescriptorPool::~VulkanDescriptorPool() {
-	vkDestroyDescriptorPool(m_Device.GetDevice(), m_DescriptorPool, nullptr);
+	vkDestroyDescriptorPool(m_device.get_device(), m_descriptor_pool, nullptr);
 }
 
-bool VulkanDescriptorPool::AllocateDescriptor(VkDescriptorSetLayout layout, VkDescriptorSet &set) const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
+bool VulkanDescriptorPool::allocate_descriptor(VkDescriptorSetLayout layout, VkDescriptorSet &set) const {
+	std::lock_guard<std::mutex> lock(m_mutex);
 	VkDescriptorSetAllocateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	info.descriptorPool = m_DescriptorPool;
+	info.descriptorPool = m_descriptor_pool;
 	info.pSetLayouts = &layout;
 	info.descriptorSetCount = 1;
-	return vkAllocateDescriptorSets(m_Device.GetDevice(), &info, &set) == VK_SUCCESS;
+	return vkAllocateDescriptorSets(m_device.get_device(), &info, &set) == VK_SUCCESS;
 }
 
-void VulkanDescriptorPool::FreeDescriptor(VkDescriptorSet set) const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	vkFreeDescriptorSets(m_Device.GetDevice(), m_DescriptorPool, 1, &set);
+void VulkanDescriptorPool::free_descriptor(VkDescriptorSet set) const {
+	std::lock_guard<std::mutex> lock(m_mutex);
+	vkFreeDescriptorSets(m_device.get_device(), m_descriptor_pool, 1, &set);
 }
 
-void VulkanDescriptorPool::FreeDescriptors(const std::vector<VkDescriptorSet> &sets) const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	vkFreeDescriptorSets(m_Device.GetDevice(), m_DescriptorPool, static_cast<uint32>(sets.size()), sets.data());
+void VulkanDescriptorPool::free_descriptors(const std::vector<VkDescriptorSet> &sets) const {
+	std::lock_guard<std::mutex> lock(m_mutex);
+	vkFreeDescriptorSets(m_device.get_device(), m_descriptor_pool, static_cast<Uint32>(sets.size()), sets.data());
 }
 
-void VulkanDescriptorPool::ResetPool() const {
-	std::lock_guard<std::mutex> lock(m_Mutex);
-	vkResetDescriptorPool(m_Device.GetDevice(), m_DescriptorPool, 0);
+void VulkanDescriptorPool::reset_pool() const {
+	std::lock_guard<std::mutex> lock(m_mutex);
+	vkResetDescriptorPool(m_device.get_device(), m_descriptor_pool, 0);
 }
 
 VulkanDescriptorWriter::VulkanDescriptorWriter(VulkanDescriptorSetLayout &layout, VulkanDescriptorPool &pool)
-	: m_SetLayout(layout), m_Pool(pool) {}
+	: m_set_layout(layout), m_pool(pool) {}
 
-VulkanDescriptorWriter &VulkanDescriptorWriter::WriteBuffer(uint32 binding, const VkDescriptorBufferInfo *info) {
-	AQUILA_ASSERT(m_SetLayout.m_Bindings.count(binding) == 1, "Layout does not contain binding");
+VulkanDescriptorWriter &VulkanDescriptorWriter::write_buffer(Uint32 binding, const VkDescriptorBufferInfo *info) {
+	AQUILA_ASSERT(m_set_layout.m_bindings.count(binding) == 1, "Layout does not contain binding");
 	AQUILA_ASSERT(info && info->buffer != VK_NULL_HANDLE, "Invalid buffer info");
-	AQUILA_ASSERT(m_SetLayout.m_Bindings[binding].descriptorCount == 1, "Use WriteBufferArray for arrays");
+	AQUILA_ASSERT(m_set_layout.m_bindings[binding].descriptorCount == 1, "Use WriteBufferArray for arrays");
 
-	m_BufferInfos.push_back(*info);
+	m_buffer_infos.push_back(*info);
 
 	VkWriteDescriptorSet write{};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.descriptorType = m_SetLayout.m_Bindings[binding].descriptorType;
+	write.descriptorType = m_set_layout.m_bindings[binding].descriptorType;
 	write.dstBinding = binding;
 	write.dstArrayElement = 0;
 	write.descriptorCount = 1;
 	write.pBufferInfo = nullptr;
-	m_Writes.push_back(write);
+	m_writes.push_back(write);
 	return *this;
 }
 
-VulkanDescriptorWriter &VulkanDescriptorWriter::WriteImage(uint32 binding, const VkDescriptorImageInfo *info) {
-	AQUILA_ASSERT(m_SetLayout.m_Bindings.count(binding) == 1, "Layout does not contain binding");
-	AQUILA_ASSERT(m_SetLayout.m_Bindings[binding].descriptorCount == 1, "Use WriteImageArray for arrays");
+VulkanDescriptorWriter &VulkanDescriptorWriter::write_image(Uint32 binding, const VkDescriptorImageInfo *info) {
+	AQUILA_ASSERT(m_set_layout.m_bindings.count(binding) == 1, "Layout does not contain binding");
+	AQUILA_ASSERT(m_set_layout.m_bindings[binding].descriptorCount == 1, "Use WriteImageArray for arrays");
 
-	m_ImageInfos.push_back(*info);
+	m_image_infos.push_back(*info);
 
 	VkWriteDescriptorSet write{};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.descriptorType = m_SetLayout.m_Bindings[binding].descriptorType;
+	write.descriptorType = m_set_layout.m_bindings[binding].descriptorType;
 	write.dstBinding = binding;
 	write.dstArrayElement = 0;
 	write.descriptorCount = 1;
 	write.pImageInfo = nullptr;
-	m_Writes.push_back(write);
+	m_writes.push_back(write);
 	return *this;
 }
 
-VulkanDescriptorWriter &VulkanDescriptorWriter::WriteImageArray(uint32 binding,
+VulkanDescriptorWriter &VulkanDescriptorWriter::write_image_array(Uint32 binding,
 																const std::vector<VkDescriptorImageInfo> &infos) {
-	AQUILA_ASSERT(m_SetLayout.m_Bindings.count(binding) == 1, "Layout does not contain binding");
+	AQUILA_ASSERT(m_set_layout.m_bindings.count(binding) == 1, "Layout does not contain binding");
 
-	m_ImageInfos.insert(m_ImageInfos.end(), infos.begin(), infos.end());
+	m_image_infos.insert(m_image_infos.end(), infos.begin(), infos.end());
 
 	VkWriteDescriptorSet write{};
 	write.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-	write.descriptorType = m_SetLayout.m_Bindings[binding].descriptorType;
+	write.descriptorType = m_set_layout.m_bindings[binding].descriptorType;
 	write.dstBinding = binding;
 	write.dstArrayElement = 0;
-	write.descriptorCount = static_cast<uint32>(infos.size());
+	write.descriptorCount = static_cast<Uint32>(infos.size());
 	write.pImageInfo = nullptr;
-	m_Writes.push_back(write);
+	m_writes.push_back(write);
 	return *this;
 }
 
-void VulkanDescriptorWriter::FixupAndSubmit(VkDescriptorSet set) {
-	size_t bufIdx = 0;
-	size_t imgIdx = 0;
-	for (auto &write : m_Writes) {
+void VulkanDescriptorWriter::fixup_and_submit(VkDescriptorSet set) {
+	size_t buf_idx = 0;
+	size_t img_idx = 0;
+	for (auto &write : m_writes) {
 		write.dstSet = set;
-		auto &binding = m_SetLayout.m_Bindings[write.dstBinding];
+		auto &binding = m_set_layout.m_bindings[write.dstBinding];
 		if (binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER ||
 			binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER ||
 			binding.descriptorType == VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC ||
 			binding.descriptorType == VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC) {
-			write.pBufferInfo = &m_BufferInfos[bufIdx];
-			bufIdx += write.descriptorCount;
+			write.pBufferInfo = &m_buffer_infos[buf_idx];
+			buf_idx += write.descriptorCount;
 		} else {
-			write.pImageInfo = &m_ImageInfos[imgIdx];
-			imgIdx += write.descriptorCount;
+			write.pImageInfo = &m_image_infos[img_idx];
+			img_idx += write.descriptorCount;
 		}
 	}
-	vkUpdateDescriptorSets(m_Pool.m_Device.GetDevice(), static_cast<uint32>(m_Writes.size()), m_Writes.data(), 0,
+	vkUpdateDescriptorSets(m_pool.m_device.get_device(), static_cast<Uint32>(m_writes.size()), m_writes.data(), 0,
 						   nullptr);
 }
 
-bool VulkanDescriptorWriter::Build(VkDescriptorSet &set) {
-	if (!m_Pool.AllocateDescriptor(m_SetLayout.GetDescriptorSetLayout(), set)) {
+bool VulkanDescriptorWriter::build(VkDescriptorSet &set) {
+	if (!m_pool.allocate_descriptor(m_set_layout.get_descriptor_set_layout(), set)) {
 		AQUILA_LOG_ERROR("Failed to allocate descriptor set");
 		return false;
 	}
-	FixupAndSubmit(set);
+	fixup_and_submit(set);
 	return true;
 }
 
-void VulkanDescriptorWriter::Overwrite(const VkDescriptorSet &set) {
-	FixupAndSubmit(set);
+void VulkanDescriptorWriter::overwrite(const VkDescriptorSet &set) {
+	fixup_and_submit(set);
 }
 
 } // namespace Aquila::RHI

@@ -12,21 +12,21 @@ class GfxTexture {
 	~GfxTexture() = default;
 	AQUILA_NONCOPYABLE(GfxTexture);
 
-	void DestroyImmediate();
-	[[nodiscard]] bool IsReady() const;
+	void destroy_immediate();
+	[[nodiscard]] bool is_ready() const;
 
-	[[nodiscard]] uint32 GetWidth() const;
-	[[nodiscard]] uint32 GetHeight() const;
-	[[nodiscard]] uint32 GetMipLevels() const;
-	[[nodiscard]] uint32 GetArrayLayers() const;
-	[[nodiscard]] RHI::TextureFormat GetFormat() const;
-	[[nodiscard]] const RHI::TextureDesc &GetDesc() const;
-	[[nodiscard]] RHI::IRHITexture &GetRHI() { return *m_Texture; }
+	[[nodiscard]] Uint32 get_width() const;
+	[[nodiscard]] Uint32 get_height() const;
+	[[nodiscard]] Uint32 get_mip_levels() const;
+	[[nodiscard]] Uint32 get_array_layers() const;
+	[[nodiscard]] RHI::TextureFormat get_format() const;
+	[[nodiscard]] const RHI::TextureDesc &get_desc() const;
+	[[nodiscard]] RHI::IRHITexture &get_rhi() { return *m_texture; }
 
   private:
 	friend class GfxContext;
 	explicit GfxTexture(Unique<RHI::IRHITexture> texture);
-	Unique<RHI::IRHITexture> m_Texture;
+	Unique<RHI::IRHITexture> m_texture;
 };
 
 } // namespace Aquila::GFX

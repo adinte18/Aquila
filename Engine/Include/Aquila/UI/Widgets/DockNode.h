@@ -18,55 +18,55 @@ class DockTabButton;
 
 class DockNode : public View {
   public:
-	explicit DockNode(DockDragContext *dragCtx = nullptr);
+	explicit DockNode(DockDragContext *drag_ctx = nullptr);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "DockNode"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "DockNode"; }
 
-	std::pair<DockNode *, DockNode *> Split(SplitDirection dir, bool anchorFirst = true);
-	DockNode *AppendLeaf(SplitDirection dir);
+	std::pair<DockNode *, DockNode *> split(SplitDirection dir, bool anchor_first = true);
+	DockNode *append_leaf(SplitDirection dir);
 
-	DockPanel *AddPanel(std::string title, GFX::GfxTexture *tabIcon = nullptr);
+	DockPanel *add_panel(std::string title, GFX::GfxTexture *tab_icon = nullptr);
 
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
-	[[nodiscard]] Option<SplitDirection> GetDeclaredSplit() const { return m_DeclaredSplit; }
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	[[nodiscard]] Option<SplitDirection> get_declared_split() const { return m_declared_split; }
 
-	void SetActivePanel(int index);
-	void SetActivePanelByPtr(DockPanel *panel);
-	[[nodiscard]] int GetActivePanel() const { return m_ActivePanel; }
-	[[nodiscard]] bool IsEmpty() const { return m_IsLeaf && m_Tabs.empty(); }
-	[[nodiscard]] int GetTabCount() const { return static_cast<int>(m_Tabs.size()); }
-	[[nodiscard]] DockPanel *GetActivePanelPtr() const;
-	[[nodiscard]] View *GetTabBar() const { return m_TabBar; }
+	void set_active_panel(int index);
+	void set_active_panel_by_ptr(DockPanel *panel);
+	[[nodiscard]] int get_active_panel() const { return m_active_panel; }
+	[[nodiscard]] bool is_empty() const { return m_is_leaf && m_tabs.empty(); }
+	[[nodiscard]] int get_tab_count() const { return static_cast<int>(m_tabs.size()); }
+	[[nodiscard]] DockPanel *get_active_panel_ptr() const;
+	[[nodiscard]] View *get_tab_bar() const { return m_tab_bar; }
 	// Drag-drop
-	DockNode *HitTestNode(vec2 absPos);
-	Unique<View> DetachPanel(DockPanel *panel);
-	void AcceptPanel(Unique<View> panelView, std::string title, DropZone zone = DropZone::Center);
+	DockNode *hit_test_node(Vec2 abs_pos);
+	Unique<View> detach_panel(DockPanel *panel);
+	void accept_panel(Unique<View> panel_view, std::string title, DropZone zone = DropZone::Center);
 
 	// Close a tab (no destination — panel is destroyed). Triggers CollapseNode if empty.
-	void ClosePanel(DockPanel *panel);
+	void close_panel(DockPanel *panel);
 
-	void ReorderPanel(DockPanel *panel, vec2 cursorPos);
+	void reorder_panel(DockPanel *panel, Vec2 cursor_pos);
 
 	// Drop zone visual feedback
-	void ShowDropZones(bool show);
-	void HighlightDropZone(DropZone zone);
-	[[nodiscard]] DropZone HitTestDropZone(vec2 absPos) const;
+	void show_drop_zones(bool show);
+	void highlight_drop_zone(DropZone zone);
+	[[nodiscard]] DropZone hit_test_drop_zone(Vec2 abs_pos) const;
 
   private:
-	View *MakeZoneIndicator(FloatingAttachPoint elemPt, FloatingAttachPoint parentPt, vec2 offset, const char *cls);
-	void ApplyActivePanel();
-	void AppendTab(DockPanel *panel, std::string title);
+	View *make_zone_indicator(FloatingAttachPoint elem_pt, FloatingAttachPoint parent_pt, Vec2 offset, const char *cls);
+	void apply_active_panel();
+	void append_tab(DockPanel *panel, std::string title);
 
-	DockDragContext *m_DragCtx = nullptr;
-	bool m_IsLeaf = true;
-	View *m_TabBar = nullptr;
-	View *m_PanelArea = nullptr;
+	DockDragContext *m_drag_ctx = nullptr;
+	bool m_is_leaf = true;
+	View *m_tab_bar = nullptr;
+	View *m_panel_area = nullptr;
 
-	View *m_ZoneCenter = nullptr;
-	View *m_ZoneLeft = nullptr;
-	View *m_ZoneRight = nullptr;
-	View *m_ZoneTop = nullptr;
-	View *m_ZoneBottom = nullptr;
+	View *m_zone_center = nullptr;
+	View *m_zone_left = nullptr;
+	View *m_zone_right = nullptr;
+	View *m_zone_top = nullptr;
+	View *m_zone_bottom = nullptr;
 
 	struct Tab {
 		View *wrapper = nullptr;
@@ -74,9 +74,9 @@ class DockNode : public View {
 		DockPanel *panel = nullptr;
 		std::string title;
 	};
-	std::vector<Tab> m_Tabs;
-	int m_ActivePanel = -1;
-	Option<SplitDirection> m_DeclaredSplit;
+	std::vector<Tab> m_tabs;
+	int m_active_panel = -1;
+	Option<SplitDirection> m_declared_split;
 };
 
 } // namespace Aquila::UI::Core

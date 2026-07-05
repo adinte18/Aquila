@@ -8,38 +8,39 @@ namespace Aquila::UI::Core {
 class Image : public View {
   public:
 	Image();
-	Image(GFX::GfxTexture *texture, vec4 tint = vec4(1.f));
+	Image(GFX::GfxTexture *texture, Vec4 tint = Vec4(1.F));
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Image"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Image"; }
 
-	void SetTexture(GFX::GfxTexture *texture);
-	void SetTint(vec4 tint);
-	void SetUVRegion(vec2 uvMin, vec2 uvMax);
+	void set_texture(GFX::GfxTexture *texture);
+	void set_tint(Vec4 tint);
+	void set_uv_region(Vec2 uv_min, Vec2 uv_max);
 
-	[[nodiscard]] GFX::GfxTexture *GetTexture() const { return m_Texture; }
-	[[nodiscard]] vec4 GetTint() const { return m_Tint; }
-	[[nodiscard]] vec2 GetUVMin() const { return m_UVMin; }
-	[[nodiscard]] vec2 GetUVMax() const { return m_UVMax; }
+	[[nodiscard]] GFX::GfxTexture *get_texture() const { return m_texture; }
+	[[nodiscard]] Vec4 get_tint() const { return m_tint; }
+	[[nodiscard]] Vec2 get_uv_min() const { return m_uv_min; }
+	[[nodiscard]] Vec2 get_uv_max() const { return m_uv_max; }
 
 	// Returns the texture dimensions so Clay auto-sizes the widget when no CSS size is set.
-	[[nodiscard]] vec2 GetIntrinsicSize() const override {
-		if (m_Texture == nullptr) {
-			return { -1.f, -1.f };
+	[[nodiscard]] Vec2 get_intrinsic_size() const override {
+		if (m_texture == nullptr) {
+			return { -1.F, -1.F };
 		}
-		const vec2 texSize = { static_cast<float>(m_Texture->GetWidth()), static_cast<float>(m_Texture->GetHeight()) };
-		const vec2 uvSpan = m_UVMax - m_UVMin;
-		return texSize * uvSpan;
+		const Vec2 tex_size = { static_cast<float>(m_texture->get_width()),
+								static_cast<float>(m_texture->get_height()) };
+		const Vec2 uv_span = m_uv_max - m_uv_min;
+		return tex_size * uv_span;
 	}
 
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
 
   private:
-	GFX::GfxTexture *m_Texture = nullptr;
-	vec4 m_Tint = vec4(1.f);
-	vec2 m_UVMin = { 0.f, 0.f };
-	vec2 m_UVMax = { 1.f, 1.f };
-	std::string m_IconBank; // remembers the "bank" attribute so a later "icon" resolves against it
+	GFX::GfxTexture *m_texture = nullptr;
+	Vec4 m_tint = Vec4(1.F);
+	Vec2 m_uv_min = { 0.F, 0.F };
+	Vec2 m_uv_max = { 1.F, 1.F };
+	std::string m_icon_bank; // remembers the "bank" attribute so a later "icon" resolves against it
 };
 
 } // namespace Aquila::UI::Core

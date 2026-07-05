@@ -4,92 +4,92 @@
 
 namespace Aquila::RHI {
 
-VulkanCommandListPool::VulkanCommandListPool(VulkanDevice &device, uint32 framesInFlight)
-	: m_Device(device), m_FramesInFlight(framesInFlight) {
-	auto qf = device.FindPhysicalQF();
+VulkanCommandListPool::VulkanCommandListPool(VulkanDevice &device, Uint32 frames_in_flight)
+	: m_device(device), m_frames_in_flight(frames_in_flight) {
+	auto qf = device.find_physical_qf();
 
 	VkCommandPoolCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
 	info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-	info.queueFamilyIndex = qf.m_GraphicsFamily.value();
-	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.GetDevice(), &info, nullptr, &m_GraphicsPool));
+	info.queueFamilyIndex = qf.m_graphics_family.value();
+	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.get_device(), &info, nullptr, &m_graphics_pool));
 
-	info.queueFamilyIndex = qf.m_ComputeFamily.value();
-	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.GetDevice(), &info, nullptr, &m_ComputePool));
+	info.queueFamilyIndex = qf.m_compute_family.value();
+	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.get_device(), &info, nullptr, &m_compute_pool));
 
-	info.queueFamilyIndex = qf.m_TransferFamily.value();
-	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.GetDevice(), &info, nullptr, &m_TransferPool));
+	info.queueFamilyIndex = qf.m_transfer_family.value();
+	AQUILA_VULKAN_CHECK(vkCreateCommandPool(device.get_device(), &info, nullptr, &m_transfer_pool));
 }
 
 VulkanCommandListPool::~VulkanCommandListPool() {
 	// Clear command lists before destroying pools — VulkanCommandList destructor
 	// doesn't free the buffer, so we explicitly free here via Reset()
-	Reset();
+	reset();
 
-	VkDevice dev = m_Device.GetDevice();
-	if (m_GraphicsPool != VK_NULL_HANDLE) {
-		vkDestroyCommandPool(dev, m_GraphicsPool, nullptr);
+	VkDevice dev = m_device.get_device();
+	if (m_graphics_pool != VK_NULL_HANDLE) {
+		vkDestroyCommandPool(dev, m_graphics_pool, nullptr);
 	}
-	if (m_ComputePool != VK_NULL_HANDLE) {
-		vkDestroyCommandPool(dev, m_ComputePool, nullptr);
+	if (m_compute_pool != VK_NULL_HANDLE) {
+		vkDestroyCommandPool(dev, m_compute_pool, nullptr);
 	}
-	if (m_TransferPool != VK_NULL_HANDLE) {
-		vkDestroyCommandPool(dev, m_TransferPool, nullptr);
+	if (m_transfer_pool != VK_NULL_HANDLE) {
+		vkDestroyCommandPool(dev, m_transfer_pool, nullptr);
 	}
 }
 
-VkCommandPool VulkanCommandListPool::GetVkPool(CommandListType type) const {
+VkCommandPool VulkanCommandListPool::get_vk_pool(CommandListType type) const {
 	switch (type) {
 	case CommandListType::Compute:
-		return m_ComputePool;
+		return m_compute_pool;
 	case CommandListType::Transfer:
-		return m_TransferPool;
+		return m_transfer_pool;
 	default:
-		return m_GraphicsPool;
+		return m_graphics_pool;
 	}
 }
 
-IRHICommandList *VulkanCommandListPool::Allocate(CommandListType type, const std::string &name) {
+IRHICommandList *VulkanCommandListPool::allocate(CommandListType type, const std::string &name) {
 	// VulkanCommandList allocates its own VkCommandBuffer in its constructor
-	auto cmd = CreateUnique<VulkanCommandList>(m_Device, GetVkPool(type), type, name);
+	auto cmd = create_unique<VulkanCommandList>(m_device, get_vk_pool(type), type, name);
 	auto *ptr = cmd.get();
-	m_Allocated.push_back(std::move(cmd));
+	m_allocated.push_back(std::move(cmd));
 	return ptr;
 }
 
-void VulkanCommandListPool::Free(IRHICommandList *cmd) {
-	auto it = std::find_if(m_Allocated.begin(), m_Allocated.end(),
+void VulkanCommandListPool::free(IRHICommandList *cmd) {
+	auto it = std::find_if(m_allocated.begin(), m_allocated.end(),
 						   [cmd](const Unique<VulkanCommandList> &c) { return c.get() == cmd; });
-	if (it == m_Allocated.end()) {
+	if (it == m_allocated.end()) {
 		return;
 	}
 
-	auto &vkCmd = static_cast<VulkanCommandList &>(**it);
-	VkCommandBuffer handle = vkCmd.GetHandle();
-	VkCommandPool pool = vkCmd.GetPool(); // correct pool stored on the command list itself
+	auto &vk_cmd = static_cast<VulkanCommandList &>(**it);
+	VkCommandBuffer handle = vk_cmd.get_handle();
+	VkCommandPool pool = vk_cmd.get_pool(); // correct pool stored on the command list itself
 
-	vkFreeCommandBuffers(m_Device.GetDevice(), pool, 1, &handle);
-	m_Allocated.erase(it);
+	vkFreeCommandBuffers(m_device.get_device(), pool, 1, &handle);
+	m_allocated.erase(it);
 }
 
-void VulkanCommandListPool::Reset() {
+void VulkanCommandListPool::reset() {
 	// Free all individual command buffers before resetting pools
-	for (auto &cmd : m_Allocated) {
-		VkCommandBuffer handle = cmd->GetHandle();
-		VkCommandPool pool = cmd->GetPool();
-		vkFreeCommandBuffers(m_Device.GetDevice(), pool, 1, &handle);
+	for (auto &cmd : m_allocated) {
+		VkCommandBuffer handle = cmd->get_handle();
+		VkCommandPool pool = cmd->get_pool();
+		vkFreeCommandBuffers(m_device.get_device(), pool, 1, &handle);
 	}
-	m_Allocated.clear();
+	m_allocated.clear();
 
-	if (m_GraphicsPool != VK_NULL_HANDLE) {
-		vkResetCommandPool(m_Device.GetDevice(), m_GraphicsPool, 0);
+	if (m_graphics_pool != VK_NULL_HANDLE) {
+		vkResetCommandPool(m_device.get_device(), m_graphics_pool, 0);
 	}
-	if (m_ComputePool != VK_NULL_HANDLE) {
-		vkResetCommandPool(m_Device.GetDevice(), m_ComputePool, 0);
+	if (m_compute_pool != VK_NULL_HANDLE) {
+		vkResetCommandPool(m_device.get_device(), m_compute_pool, 0);
 	}
-	if (m_TransferPool != VK_NULL_HANDLE) {
-		vkResetCommandPool(m_Device.GetDevice(), m_TransferPool, 0);
+	if (m_transfer_pool != VK_NULL_HANDLE) {
+		vkResetCommandPool(m_device.get_device(), m_transfer_pool, 0);
 	}
 }
 

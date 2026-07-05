@@ -3,43 +3,43 @@
 
 namespace Aquila::RHI {
 
-DeletionQueue::DeletionQueue(VulkanDevice &device) : m_Device(device) {}
+DeletionQueue::DeletionQueue(VulkanDevice &device) : m_device(device) {}
 
 DeletionQueue::~DeletionQueue() {
-	FlushAll();
+	flush_all();
 }
 
-void DeletionQueue::SetCurrentSlot(uint32 slot) {
+void DeletionQueue::set_current_slot(Uint32 slot) {
 	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "DeletionQueue slot out of range");
-	m_CurrentSlot = slot;
+	m_current_slot = slot;
 }
 
-void DeletionQueue::QueueDeletion(const Deletion::ResourceVariant &resource) {
-	m_Buckets[m_CurrentSlot].push_back(resource);
+void DeletionQueue::queue_deletion(const Deletion::ResourceVariant &resource) {
+	m_buckets[m_current_slot].push_back(resource);
 }
 
-void DeletionQueue::DestroyNow(const Deletion::ResourceVariant &resource) {
-	Dispatch(resource);
+void DeletionQueue::destroy_now(const Deletion::ResourceVariant &resource) {
+	dispatch(resource);
 }
 
-void DeletionQueue::Flush(uint32 slot) {
+void DeletionQueue::flush(Uint32 slot) {
 	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "DeletionQueue slot out of range");
-	for (auto &resource : m_Buckets[slot]) {
-		Dispatch(resource);
+	for (auto &resource : m_buckets[slot]) {
+		dispatch(resource);
 	}
-	m_Buckets[slot].clear();
+	m_buckets[slot].clear();
 }
 
-void DeletionQueue::FlushAll() {
-	AQUILA_ASSERT(m_Device.GetDevice() != VK_NULL_HANDLE, "DeletionQueue::FlushAll — device is null");
-	m_Device.Wait();
-	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
-		Flush(i);
+void DeletionQueue::flush_all() {
+	AQUILA_ASSERT(m_device.get_device() != VK_NULL_HANDLE, "DeletionQueue::FlushAll — device is null");
+	m_device.wait();
+	for (Uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		flush(i);
 	}
 }
 
-void DeletionQueue::Dispatch(const Deletion::ResourceVariant &resource) {
-	VkDevice device = m_Device.GetDevice();
+void DeletionQueue::dispatch(const Deletion::ResourceVariant &resource) {
+	VkDevice device = m_device.get_device();
 
 	std::visit(
 		[&](auto &&res) {
@@ -68,9 +68,9 @@ void DeletionQueue::Dispatch(const Deletion::ResourceVariant &resource) {
 			} else if constexpr (std::is_same_v<T, VkSemaphore>) {
 				vkDestroySemaphore(device, res, nullptr);
 			} else if constexpr (std::is_same_v<T, Deletion::VmaImageDeletion>) {
-				vmaDestroyImage(m_Device.GetAllocator(), res.image, res.allocation);
+				vmaDestroyImage(m_device.get_allocator(), res.image, res.allocation);
 			} else if constexpr (std::is_same_v<T, Deletion::VmaBufferDeletion>) {
-				vmaDestroyBuffer(m_Device.GetAllocator(), res.buffer, res.allocation);
+				vmaDestroyBuffer(m_device.get_allocator(), res.buffer, res.allocation);
 			} else {
 				AQUILA_ASSERT(false, "DeletionQueue::Dispatch — unhandled resource type");
 			}

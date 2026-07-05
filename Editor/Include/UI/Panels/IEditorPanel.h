@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Aquila/Foundation/Signal.h"
+
 namespace Aquila::UI::Core {
 class DockPanel;
 class View;
@@ -10,7 +12,7 @@ namespace Editor {
 class IEditorPanel {
   public:
 	virtual ~IEditorPanel() = default;
-	virtual void Build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlayRoot) = 0;
+	virtual void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) = 0;
 };
 
 } // namespace Editor

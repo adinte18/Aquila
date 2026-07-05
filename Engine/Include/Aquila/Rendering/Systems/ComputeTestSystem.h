@@ -8,29 +8,29 @@ namespace Aquila::Rendering {
 
 class ClusterComputeSystem : public RenderingSystemBase {
 	struct GridData {
-		ivec3 grid;
+		Ivec3 grid;
 	};
 
 	struct AABB {
-		vec3 min;
-		vec3 max;
+		Vec3 min;
+		Vec3 max;
 	};
 
   public:
 	ClusterComputeSystem() = default;
 	~ClusterComputeSystem() override = default;
 
-	void OnInit(GFX::GfxContext &ctx) override;
-	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void on_init(GFX::GfxContext &ctx) override;
+	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
   private:
-	Ref<GFX::GfxPipeline> m_Pipeline;
-	Ref<GFX::GfxDescriptorSetLayout> m_StorageLayout;
-	Ref<GFX::GfxBuffer> m_OutputBuffer;
-	Ref<GFX::GfxBuffer> m_GridBuffer;
-	Ref<GFX::GfxDescriptorSet> m_StorageSet;
-	bool m_Verified = false;
-	GridData m_GridData{};
+	Ref<GFX::GfxPipeline> m_pipeline;
+	Ref<GFX::GfxDescriptorSetLayout> m_storage_layout;
+	Ref<GFX::GfxBuffer> m_output_buffer;
+	Ref<GFX::GfxBuffer> m_grid_buffer;
+	Ref<GFX::GfxDescriptorSet> m_storage_set;
+	bool m_verified = false;
+	GridData m_grid_data{};
 };
 
 } // namespace Aquila::Rendering

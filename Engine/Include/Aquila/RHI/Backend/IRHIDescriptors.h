@@ -15,7 +15,7 @@ class IRHIDescriptorSetLayout {
 	IRHIDescriptorSetLayout(const IRHIDescriptorSetLayout &) = delete;
 	IRHIDescriptorSetLayout &operator=(const IRHIDescriptorSetLayout &) = delete;
 
-	[[nodiscard]] virtual uint32 GetBindingCount() const = 0;
+	[[nodiscard]] virtual Uint32 get_binding_count() const = 0;
 
   protected:
 	IRHIDescriptorSetLayout() = default;
@@ -31,9 +31,9 @@ class IRHIDescriptorSet {
 	IRHIDescriptorSet(const IRHIDescriptorSet &) = delete;
 	IRHIDescriptorSet &operator=(const IRHIDescriptorSet &) = delete;
 
-	virtual void SetBuffer(uint32 binding, IRHIBuffer &buffer, uint64 offset = 0, uint64 range = 0) = 0;
-	virtual void SetTexture(uint32 binding, IRHITexture &texture) = 0;
-	virtual void Flush() = 0;
+	virtual void set_buffer(Uint32 binding, IRHIBuffer &buffer, Uint64 offset = 0, Uint64 range = 0) = 0;
+	virtual void set_texture(Uint32 binding, IRHITexture &texture) = 0;
+	virtual void flush() = 0;
 
   protected:
 	IRHIDescriptorSet() = default;

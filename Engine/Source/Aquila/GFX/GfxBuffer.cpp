@@ -2,32 +2,32 @@
 
 namespace Aquila::GFX {
 
-GfxBuffer::GfxBuffer(Unique<RHI::IRHIBuffer> buffer) : m_Buffer(std::move(buffer)) {}
+GfxBuffer::GfxBuffer(Unique<RHI::IRHIBuffer> buffer) : m_buffer(std::move(buffer)) {}
 
-void GfxBuffer::Write(const void *data, uint64 size, uint64 offset) {
-	m_Buffer->Write(data, size, offset);
+void GfxBuffer::write(const void *data, Uint64 size, Uint64 offset) {
+	m_buffer->write(data, size, offset);
 }
 
-void *GfxBuffer::Map() {
-	return m_Buffer->Map();
+void *GfxBuffer::map() {
+	return m_buffer->map();
 }
-void GfxBuffer::Unmap() {
-	m_Buffer->Unmap();
+void GfxBuffer::unmap() {
+	m_buffer->unmap();
 }
-void GfxBuffer::DestroyImmediate() {
-	m_Buffer->DestroyImmediate();
+void GfxBuffer::destroy_immediate() {
+	m_buffer->destroy_immediate();
 }
-void GfxBuffer::Flush(uint64 size, uint64 offset) {
-	m_Buffer->Flush(size, offset);
+void GfxBuffer::flush(Uint64 size, Uint64 offset) {
+	m_buffer->flush(size, offset);
 }
-uint64 GfxBuffer::GetSize() const {
-	return m_Buffer->GetSize();
+Uint64 GfxBuffer::get_size() const {
+	return m_buffer->get_size();
 }
-uint32 GfxBuffer::GetInstanceCount() const {
-	return m_Buffer->GetInstanceCount();
+Uint32 GfxBuffer::get_instance_count() const {
+	return m_buffer->get_instance_count();
 }
-bool GfxBuffer::IsMapped() const {
-	return m_Buffer->IsMapped();
+bool GfxBuffer::is_mapped() const {
+	return m_buffer->is_mapped();
 }
 
 } // namespace Aquila::GFX

@@ -17,27 +17,27 @@ class SceneFrameData;
 struct FrameContext {
 	SceneManagement::Scene *scene = nullptr;
 
-	mat4 view = mat4(1.f);
-	mat4 projection = mat4(1.f);
-	mat4 viewProjection = mat4(1.f);
-	vec3 cameraPosition = {};
+	Mat4 view = Mat4(1.F);
+	Mat4 projection = Mat4(1.F);
+	Mat4 view_projection = Mat4(1.F);
+	Vec3 camera_position = {};
 
-	Graphics::RG::RGTextureHandle hSceneColor;
-	Graphics::RG::RGTextureHandle hDepth;
+	Graphics::RG::RGTextureHandle h_scene_color;
+	Graphics::RG::RGTextureHandle h_depth;
 
-	Graphics::RG::RGBufferHandle hClusterAABBs;
-	Graphics::RG::RGBufferHandle hLightList;
-	Graphics::RG::RGBufferHandle hClusterLightInfo;
+	Graphics::RG::RGBufferHandle h_cluster_aab_bs;
+	Graphics::RG::RGBufferHandle h_light_list;
+	Graphics::RG::RGBufferHandle h_cluster_light_info;
 
 	GFX::GfxSwapchain *swapchain = nullptr;
-	uint32 swapchainImageIndex = 0;
+	Uint32 swapchain_image_index = 0;
 
-	uint32 width = 0;
-	uint32 height = 0;
-	f32 deltaTime = 0.f;
+	Uint32 width = 0;
+	Uint32 height = 0;
+	F32 delta_time = 0.F;
 
-	SceneFrameData *frameData = nullptr;
-	uint32 frameSlot = 0;
+	SceneFrameData *frame_data = nullptr;
+	Uint32 frame_slot = 0;
 };
 
 } // namespace Aquila::Rendering

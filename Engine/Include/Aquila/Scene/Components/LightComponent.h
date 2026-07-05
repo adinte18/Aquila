@@ -7,67 +7,67 @@
 namespace Aquila::SceneManagement::Components {
 
 struct ShadowQualitySettings {
-	f32 lightSize = 8.0f;
-	f32 shadowBias = 0.0035f;
-	f32 normalBias = 1.0f;
-	int pcfSamples = 9;
-	f32 cascadeSplitLambda = 0.95f;
-	int blockerSearchSamples = 16;
+	F32 light_size = 8.0f;
+	F32 shadow_bias = 0.0035f;
+	F32 normal_bias = 1.0f;
+	int pcf_samples = 9;
+	F32 cascade_split_lambda = 0.95f;
+	int blocker_search_samples = 16;
 };
 
 struct LightComponent {
 	enum class Type { Point, Directional, Spot, Area };
 
-	Type m_Type = Type::Directional;
+	Type m_type = Type::Directional;
 
-	vec3 m_Color = vec3(1.0f);
-	f32 m_Intensity = 1.0f;
-	f32 m_Range = 100.0f;
+	Vec3 m_color = Vec3(1.0f);
+	F32 m_intensity = 1.0f;
+	F32 m_range = 100.0f;
 
-	f32 m_InnerConeAngle = 0.0f;
-	f32 m_OuterConeAngle = 45.0f;
+	F32 m_inner_cone_angle = 0.0f;
+	F32 m_outer_cone_angle = 45.0f;
 
-	vec3 m_Direction = vec3(0.0f, -1.0f, 0.0f);
+	Vec3 m_direction = Vec3(0.0f, -1.0f, 0.0f);
 
-	vec2 m_AreaSize = vec2(1.0f, 1.0f);
+	Vec2 m_area_size = Vec2(1.0f, 1.0f);
 
-	ShadowQualitySettings m_ShadowSettings;
+	ShadowQualitySettings m_shadow_settings;
 
-	bool m_IsActive = true;
+	bool m_is_active = true;
 
   public:
-	bool IsActive() const { return m_IsActive; }
-	void SetActive(bool active) { m_IsActive = active; }
+	bool is_active() const { return m_is_active; }
+	void set_active(bool active) { m_is_active = active; }
 
-	Type GetType() const noexcept { return m_Type; }
-	void SetType(Type type) noexcept { m_Type = type; }
+	Type get_type() const noexcept { return m_type; }
+	void set_type(Type type) noexcept { m_type = type; }
 
-	const vec3 &GetColor() const noexcept { return m_Color; }
-	void SetColor(const vec3 &color) noexcept { m_Color = color; }
+	const Vec3 &get_color() const noexcept { return m_color; }
+	void set_color(const Vec3 &color) noexcept { m_color = color; }
 
-	f32 GetIntensity() const noexcept { return m_Intensity; }
-	void SetIntensity(f32 intensity) noexcept { m_Intensity = intensity; }
+	F32 get_intensity() const noexcept { return m_intensity; }
+	void set_intensity(F32 intensity) noexcept { m_intensity = intensity; }
 
-	f32 GetRange() const noexcept { return m_Range; }
-	void SetRange(f32 range) noexcept { m_Range = range; }
+	F32 get_range() const noexcept { return m_range; }
+	void set_range(F32 range) noexcept { m_range = range; }
 
-	f32 GetInnerConeAngle() const noexcept { return m_InnerConeAngle; }
-	void SetInnerConeAngle(f32 angle) noexcept { m_InnerConeAngle = angle; }
+	F32 get_inner_cone_angle() const noexcept { return m_inner_cone_angle; }
+	void set_inner_cone_angle(F32 angle) noexcept { m_inner_cone_angle = angle; }
 
-	f32 GetOuterConeAngle() const noexcept { return m_OuterConeAngle; }
-	void SetOuterConeAngle(f32 angle) noexcept { m_OuterConeAngle = angle; }
+	F32 get_outer_cone_angle() const noexcept { return m_outer_cone_angle; }
+	void set_outer_cone_angle(F32 angle) noexcept { m_outer_cone_angle = angle; }
 
-	const vec3 &GetDirection() const noexcept { return m_Direction; }
-	void SetDirection(const vec3 &direction) noexcept { m_Direction = direction; }
+	const Vec3 &get_direction() const noexcept { return m_direction; }
+	void set_direction(const Vec3 &direction) noexcept { m_direction = direction; }
 
-	ShadowQualitySettings &GetShadowSettings() noexcept { return m_ShadowSettings; }
-	const ShadowQualitySettings &GetShadowSettings() const noexcept { return m_ShadowSettings; }
-	void SetShadowSettings(const ShadowQualitySettings &settings) noexcept { m_ShadowSettings = settings; }
+	ShadowQualitySettings &get_shadow_settings() noexcept { return m_shadow_settings; }
+	const ShadowQualitySettings &get_shadow_settings() const noexcept { return m_shadow_settings; }
+	void set_shadow_settings(const ShadowQualitySettings &settings) noexcept { m_shadow_settings = settings; }
 
 	LightComponent() = default;
 
-	LightComponent(Type lightType, const vec3 &lightColor, f32 lightIntensity)
-		: m_Type(lightType), m_Color(lightColor), m_Intensity(lightIntensity) {}
+	LightComponent(Type light_type, const Vec3 &light_color, F32 light_intensity)
+		: m_type(light_type), m_color(light_color), m_intensity(light_intensity) {}
 };
 } // namespace Aquila::SceneManagement::Components
 #endif

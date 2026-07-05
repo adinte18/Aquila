@@ -5,71 +5,71 @@
 namespace Aquila::UI::Core {
 
 Button::Button() {
-	SetInputLeaf(true);
+	set_input_leaf(true);
 }
 
 Button::Button(std::string text, Text::FontAtlas *font) {
-	SetInputLeaf(true);
-	m_Content = dynamic_cast<IconLabel *>(AddChild(CreateUnique<IconLabel>(std::move(text), font)));
+	set_input_leaf(true);
+	m_content = dynamic_cast<IconLabel *>(add_child(create_unique<IconLabel>(std::move(text), font)));
 }
 
-void Button::EnsureContent() {
-	if (m_Content == nullptr) {
-		m_Content = static_cast<IconLabel *>(AddChild(CreateUnique<IconLabel>()));
+void Button::ensure_content() {
+	if (m_content == nullptr) {
+		m_content = static_cast<IconLabel *>(add_child(create_unique<IconLabel>()));
 	}
 }
 
-void Button::SetText(std::string text) {
-	EnsureContent();
-	m_Content->SetText(std::move(text));
+void Button::set_text(std::string text) {
+	ensure_content();
+	m_content->set_text(std::move(text));
 }
 
-void Button::SetFont(Text::FontAtlas *font) {
-	if (m_Content == nullptr) {
+void Button::set_font(Text::FontAtlas *font) {
+	if (m_content == nullptr) {
 		return;
 	}
-	m_Content->SetFont(font);
+	m_content->set_font(font);
 }
 
-void Button::SetIcon(GFX::GfxTexture *texture) {
-	EnsureContent();
-	m_Content->SetIconTexture(texture);
+void Button::set_icon(GFX::GfxTexture *texture) {
+	ensure_content();
+	m_content->set_icon_texture(texture);
 }
 
-void Button::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	View::OnMouseRelease(btn, pos);
-	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		onClick();
+void Button::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	View::on_mouse_release(btn, pos);
+	if (btn == Platform::MouseButton::Left && m_is_hovered) {
+		on_click();
 	}
 }
 
-void Button::OnStyleResolved() {
-	View::OnStyleResolved();
-	if (m_Content == nullptr) {
+void Button::on_style_resolved() {
+	View::on_style_resolved();
+	if (m_content == nullptr) {
 		return;
 	}
-	if (Text::FontAtlas *font = GetResolvedFont()) {
-		m_Content->SetFont(font);
+	if (Text::FontAtlas *font = get_resolved_font()) {
+		m_content->set_font(font);
 	}
 }
 
-void Button::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void Button::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
-		EnsureContent();
-		m_Content->ApplyXmlAttribute(name, value, loaderCtx);
+		ensure_content();
+		m_content->apply_xml_attribute(name, value, loader_ctx);
 		return;
 	}
 	if (name == "on-click") {
-		if (auto *loader = static_cast<LayoutLoader *>(loaderCtx)) {
-			if (Delegate<void()> command = loader->ResolveCommand(std::string(value))) {
-				onClick.Connect(std::move(command));
+		if (auto *loader = static_cast<LayoutLoader *>(loader_ctx)) {
+			if (Delegate<void()> command = loader->resolve_command(std::string(value))) {
+				on_click.connect(std::move(command));
 			} else {
 				AQUILA_LOG_WARNING("Button: on-click references unknown command '{}'", value);
 			}
 		}
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
 } // namespace Aquila::UI::Core

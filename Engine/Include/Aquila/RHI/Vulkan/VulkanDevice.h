@@ -31,338 +31,338 @@ class VulkanDevice final : public IRHIDevice {
 	constexpr static bool enableValidationLayers = false;
 #endif
 
-	explicit VulkanDevice(GLFWwindow &nativeWindow);
+	explicit VulkanDevice(GLFWwindow &native_window);
 	~VulkanDevice() override;
 
 	AQUILA_NONCOPYABLE(VulkanDevice);
 	AQUILA_NONMOVEABLE(VulkanDevice);
 
-	[[nodiscard]] Unique<IRHIBuffer> CreateBuffer(const BufferDesc &desc) override;
-	[[nodiscard]] Unique<IRHITexture> CreateTexture(const TextureDesc &desc) override;
-	[[nodiscard]] Unique<IRHICommandList> CreateCommandList(CommandListType type,
+	[[nodiscard]] Unique<IRHIBuffer> create_buffer(const BufferDesc &desc) override;
+	[[nodiscard]] Unique<IRHITexture> create_texture(const TextureDesc &desc) override;
+	[[nodiscard]] Unique<IRHICommandList> create_command_list(CommandListType type,
 															const std::string &name = "") override;
-	[[nodiscard]] Unique<IRHICommandList> CreateFrameCommandList(uint32 slot) override;
-	[[nodiscard]] Unique<IRHISwapchain> CreateSwapchain(const SwapchainDesc &desc) override;
-	[[nodiscard]] Unique<IRHIPipeline> CreateGraphicsPipeline(const GraphicsPipelineDesc &desc) override;
-	[[nodiscard]] Unique<IRHIPipeline> CreateComputePipeline(const ComputePipelineDesc &desc) override;
-	[[nodiscard]] Unique<IRHIRenderPass> CreateRenderPass(const RHI::RenderPassDesc &desc) override;
+	[[nodiscard]] Unique<IRHICommandList> create_frame_command_list(Uint32 slot) override;
+	[[nodiscard]] Unique<IRHISwapchain> create_swapchain(const SwapchainDesc &desc) override;
+	[[nodiscard]] Unique<IRHIPipeline> create_graphics_pipeline(const GraphicsPipelineDesc &desc) override;
+	[[nodiscard]] Unique<IRHIPipeline> create_compute_pipeline(const ComputePipelineDesc &desc) override;
+	[[nodiscard]] Unique<IRHIRenderPass> create_render_pass(const RHI::RenderPassDesc &desc) override;
 
 	[[nodiscard]] Unique<IRHIDescriptorSetLayout>
-	CreateDescriptorSetLayout(const DescriptorSetLayoutDesc &desc) override;
-	[[nodiscard]] Unique<IRHIDescriptorSet> AllocateDescriptorSet(IRHIDescriptorSetLayout &layout) override;
-	void CopyBuffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, uint64 size, uint64 srcOffset = 0,
-					uint64 dstOffset = 0) override;
-	void Submit(IRHICommandList &cmd) override;
-	void SubmitAndWait(IRHICommandList &cmd) override;
-	void SubmitFrame(IRHICommandList &cmd, IRHISwapchain *swapchain, uint32 imageIndex) override;
-	void PresentFrame(IRHISwapchain &swapchain, uint32 imageIndex,
-					  vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
-	void WaitIdle() override { vkDeviceWaitIdle(m_Device); }
+	create_descriptor_set_layout(const DescriptorSetLayoutDesc &desc) override;
+	[[nodiscard]] Unique<IRHIDescriptorSet> allocate_descriptor_set(IRHIDescriptorSetLayout &layout) override;
+	void copy_buffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, Uint64 size, Uint64 src_offset = 0,
+					Uint64 dst_offset = 0) override;
+	void submit(IRHICommandList &cmd) override;
+	void submit_and_wait(IRHICommandList &cmd) override;
+	void submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain, Uint32 image_index) override;
+	void present_frame(IRHISwapchain &swapchain, Uint32 image_index,
+					  Vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f }) override;
+	void wait_idle() override { vkDeviceWaitIdle(m_device); }
 
-	void SubmitToGraphicsQueue(const VkSubmitInfo *submitInfo, VkFence fence);
-	void SubmitToComputeQueue(const VkSubmitInfo *submitInfo, VkFence fence);
-	void SubmitToTransferQueue(const VkSubmitInfo *submitInfo, VkFence fence);
-	void WaitGraphicsQueueIdle();
-	void WaitTransferQueueIdle();
+	void submit_to_graphics_queue(const VkSubmitInfo *submit_info, VkFence fence);
+	void submit_to_compute_queue(const VkSubmitInfo *submit_info, VkFence fence);
+	void submit_to_transfer_queue(const VkSubmitInfo *submit_info, VkFence fence);
+	void wait_graphics_queue_idle();
+	void wait_transfer_queue_idle();
 
-	void ResetFrameCommandPool(uint32 slot);
-	void Wait() const { vkDeviceWaitIdle(m_Device); }
+	void reset_frame_command_pool(Uint32 slot);
+	void wait() const { vkDeviceWaitIdle(m_device); }
 
-	VkCommandPool GetOrCreateThreadLocalGraphicsPool();
+	VkCommandPool get_or_create_thread_local_graphics_pool();
 
-	template <typename Func> void ExecuteGraphicsCommands(Func &&func) {
-		VkCommandPool pool = GetOrCreateThreadLocalGraphicsPool();
-		ExecuteSingleTimeCommands(pool, m_GraphicsQueue, m_GraphicsQueueMutex, std::forward<Func>(func));
+	template <typename Func> void execute_graphics_commands(Func &&func) {
+		VkCommandPool pool = get_or_create_thread_local_graphics_pool();
+		ExecuteSingleTimeCommands(pool, m_graphics_queue, m_graphics_queue_mutex, std::forward<Func>(func));
 	}
 
-	template <typename Func> void ExecuteTransferCommands(Func &&func) {
-		ExecuteSingleTimeCommands(m_TransferCommandPool, m_TransferQueue, m_TransferQueueMutex,
+	template <typename Func> void execute_transfer_commands(Func &&func) {
+		execute_single_time_commands(m_transfer_command_pool, m_transfer_queue, m_transfer_queue_mutex,
 								  std::forward<Func>(func));
 	}
 
-	VkFence CreateFence(bool signaled = false);
-	void WaitForFence(VkFence fence);
-	void DestroyFence(VkFence fence);
+	VkFence create_fence(bool signaled = false);
+	void wait_for_fence(VkFence fence);
+	void destroy_fence(VkFence fence);
 
-	VkFormat FindSupportedFormat(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
+	VkFormat find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
 								 VkFormatFeatureFlags features);
 
-	void SetObjectDebugName(VkObjectType objectType, uint64 handle, const char *name) const;
+	void set_object_debug_name(VkObjectType object_type, Uint64 handle, const char *name) const;
 
-	[[nodiscard]] PFN_vkCmdBeginDebugUtilsLabelEXT GetDebugBeginLabel() const { return m_vkCmdBeginDebugUtilsLabelEXT; }
-	[[nodiscard]] PFN_vkCmdEndDebugUtilsLabelEXT GetDebugEndLabel() const { return m_vkCmdEndDebugUtilsLabelEXT; }
+	[[nodiscard]] PFN_vkCmdBeginDebugUtilsLabelEXT get_debug_begin_label() const { return m_vk_cmd_begin_debug_utils_label_ext; }
+	[[nodiscard]] PFN_vkCmdEndDebugUtilsLabelEXT get_debug_end_label() const { return m_vk_cmd_end_debug_utils_label_ext; }
 
-	void CreateGraphicsCommandPool();
-	void CreateComputeCommandPool();
-	void CreateTransferCommandPool();
-	void CreateFrameCommandPools();
+	void create_graphics_command_pool();
+	void create_compute_command_pool();
+	void create_transfer_command_pool();
+	void create_frame_command_pools();
 
 	template <MemoryDomain Domain>
-	BufferAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const char *debugName = nullptr) {
+	BufferAllocation CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, const char *debug_name = nullptr) {
 		AQUILA_ASSERT(size > 0, "Buffer size must be > 0");
-		AQUILA_ASSERT(m_Allocator != VK_NULL_HANDLE, "VMA allocator is null");
+		AQUILA_ASSERT(m_allocator != VK_NULL_HANDLE, "VMA allocator is null");
 
-		VkBufferCreateInfo bufferInfo{};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
-		bufferInfo.usage = usage;
-		bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		VkBufferCreateInfo buffer_info{};
+		buffer_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+		buffer_info.size = size;
+		buffer_info.usage = usage;
+		buffer_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-		VmaAllocationCreateInfo allocInfo{};
-		if constexpr (Domain == MemoryDomain::GPU_ONLY) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-			allocInfo.flags = 0;
-		} else if constexpr (Domain == MemoryDomain::CPU_TO_GPU) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		} else if constexpr (Domain == MemoryDomain::GPU_TO_CPU) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		} else if constexpr (Domain == MemoryDomain::CPU_ONLY) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		VmaAllocationCreateInfo alloc_info{};
+		if constexpr (Domain == MemoryDomain::GpuOnly) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+			alloc_info.flags = 0;
+		} else if constexpr (Domain == MemoryDomain::CpuToGpu) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		} else if constexpr (Domain == MemoryDomain::GpuToCpu) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		} else if constexpr (Domain == MemoryDomain::CpuOnly) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		}
 
-		BufferAllocation bufferAllocation{};
-		VmaAllocationInfo vmaInfo{};
-		AQUILA_VULKAN_CHECK(vmaCreateBuffer(m_Allocator, &bufferInfo, &allocInfo, &bufferAllocation.buffer,
-											&bufferAllocation.allocation, &vmaInfo));
-		bufferAllocation.info = vmaInfo;
-		bufferAllocation.mappedPtr = vmaInfo.pMappedData;
+		BufferAllocation buffer_allocation{};
+		VmaAllocationInfo vma_info{};
+		AQUILA_VULKAN_CHECK(vmaCreateBuffer(m_allocator, &buffer_info, &alloc_info, &buffer_allocation.buffer,
+											&buffer_allocation.allocation, &vma_info));
+		buffer_allocation.info = vma_info;
+		buffer_allocation.mapped_ptr = vma_info.pMappedData;
 
 #ifdef AQUILA_DEBUG
-		if (debugName && enableValidationLayers) {
-			SetObjectDebugName(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(bufferAllocation.buffer), debugName);
+		if (debug_name && enableValidationLayers) {
+			set_object_debug_name(VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer_allocation.buffer), debug_name);
 		}
 #endif
-		return bufferAllocation;
+		return buffer_allocation;
 	}
 
 	template <MemoryDomain Domain>
-	ImageAllocation CreateImage(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
-								uint32_t mipLevels = 1, uint32_t arrayLayers = 1,
+	ImageAllocation create_image(uint32_t width, uint32_t height, VkFormat format, VkImageUsageFlags usage,
+								uint32_t mip_levels = 1, uint32_t array_layers = 1,
 								VkSampleCountFlagBits samples = VK_SAMPLE_COUNT_1_BIT,
-								const char *debugName = nullptr) {
-		AQUILA_ASSERT(m_Allocator != VK_NULL_HANDLE, "VMA allocator is null");
+								const char *debug_name = nullptr) {
+		AQUILA_ASSERT(m_allocator != VK_NULL_HANDLE, "VMA allocator is null");
 		AQUILA_ASSERT(width > 0 && height > 0, "extent must be > 0");
 
-		constexpr bool isCPUAccessible = (Domain != MemoryDomain::GPU_ONLY);
-		constexpr VkImageTiling tiling = isCPUAccessible ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
+		constexpr bool is_cpu_accessible = (Domain != MemoryDomain::GpuOnly);
+		constexpr VkImageTiling tiling = is_cpu_accessible ? VK_IMAGE_TILING_LINEAR : VK_IMAGE_TILING_OPTIMAL;
 
-		if constexpr (isCPUAccessible) {
-			AQUILA_ASSERT(mipLevels == 1, "Linear tiling does not support mipmaps.");
+		if constexpr (is_cpu_accessible) {
+			AQUILA_ASSERT(mip_levels == 1, "Linear tiling does not support mipmaps.");
 			AQUILA_ASSERT(samples == VK_SAMPLE_COUNT_1_BIT, "Linear tiling does not support MSAA.");
-			AQUILA_ASSERT(arrayLayers == 1, "Linear tiling array layer support is not guaranteed.");
+			AQUILA_ASSERT(array_layers == 1, "Linear tiling array layer support is not guaranteed.");
 		}
 
-		VkImageCreateInfo imageInfo{};
-		imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		imageInfo.imageType = VK_IMAGE_TYPE_2D;
-		imageInfo.format = format;
-		imageInfo.extent = { .width = width, .height = height, .depth = 1 };
-		imageInfo.mipLevels = mipLevels;
-		imageInfo.arrayLayers = arrayLayers;
-		imageInfo.samples = samples;
-		imageInfo.tiling = tiling;
-		imageInfo.usage = usage;
-		imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-		imageInfo.initialLayout = isCPUAccessible ? VK_IMAGE_LAYOUT_PREINITIALIZED : VK_IMAGE_LAYOUT_UNDEFINED;
+		VkImageCreateInfo image_info{};
+		image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+		image_info.imageType = VK_IMAGE_TYPE_2D;
+		image_info.format = format;
+		image_info.extent = { .width = width, .height = height, .depth = 1 };
+		image_info.mipLevels = mip_levels;
+		image_info.arrayLayers = array_layers;
+		image_info.samples = samples;
+		image_info.tiling = tiling;
+		image_info.usage = usage;
+		image_info.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+		image_info.initialLayout = is_cpu_accessible ? VK_IMAGE_LAYOUT_PREINITIALIZED : VK_IMAGE_LAYOUT_UNDEFINED;
 
-		VmaAllocationCreateInfo allocInfo{};
-		if constexpr (Domain == MemoryDomain::GPU_ONLY) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
-			allocInfo.flags = 0;
-			allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-		} else if constexpr (Domain == MemoryDomain::CPU_TO_GPU) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-		} else if constexpr (Domain == MemoryDomain::GPU_TO_CPU) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-			allocInfo.preferredFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
-		} else if constexpr (Domain == MemoryDomain::CPU_ONLY) {
-			allocInfo.usage = VMA_MEMORY_USAGE_AUTO;
-			allocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		VmaAllocationCreateInfo alloc_info{};
+		if constexpr (Domain == MemoryDomain::GpuOnly) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE;
+			alloc_info.flags = 0;
+			alloc_info.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
+		} else if constexpr (Domain == MemoryDomain::CpuToGpu) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO_PREFER_HOST;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		} else if constexpr (Domain == MemoryDomain::GpuToCpu) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+			alloc_info.preferredFlags = VK_MEMORY_PROPERTY_HOST_CACHED_BIT;
+		} else if constexpr (Domain == MemoryDomain::CpuOnly) {
+			alloc_info.usage = VMA_MEMORY_USAGE_AUTO;
+			alloc_info.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
 		}
 
-		ImageAllocation imageAllocation{};
-		VmaAllocationInfo vmaInfo{};
-		AQUILA_VULKAN_CHECK(vmaCreateImage(m_Allocator, &imageInfo, &allocInfo, &imageAllocation.image,
-										   &imageAllocation.allocation, &vmaInfo));
-		imageAllocation.info = vmaInfo;
-		imageAllocation.mappedPtr = vmaInfo.pMappedData;
-		imageAllocation.format = format;
-		imageAllocation.extent = { .width = width, .height = height, .depth = 1 };
-		imageAllocation.mipLevels = mipLevels;
-		imageAllocation.arrayLayers = arrayLayers;
+		ImageAllocation image_allocation{};
+		VmaAllocationInfo vma_info{};
+		AQUILA_VULKAN_CHECK(vmaCreateImage(m_allocator, &image_info, &alloc_info, &image_allocation.image,
+										   &image_allocation.allocation, &vma_info));
+		image_allocation.info = vma_info;
+		image_allocation.mapped_ptr = vma_info.pMappedData;
+		image_allocation.format = format;
+		image_allocation.extent = { .width = width, .height = height, .depth = 1 };
+		image_allocation.mip_levels = mip_levels;
+		image_allocation.array_layers = array_layers;
 
-		if constexpr (isCPUAccessible) {
+		if constexpr (is_cpu_accessible) {
 			VkImageSubresource sub{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 0 };
 			VkSubresourceLayout layout{};
-			vkGetImageSubresourceLayout(m_Device, imageAllocation.image, &sub, &layout);
-			imageAllocation.info.size = layout.size;
+			vkGetImageSubresourceLayout(m_device, image_allocation.image, &sub, &layout);
+			image_allocation.info.size = layout.size;
 		}
 
 #ifdef AQUILA_DEBUG
-		if (debugName && enableValidationLayers) {
-			SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(imageAllocation.image), debugName);
+		if (debug_name && enableValidationLayers) {
+			set_object_debug_name(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(image_allocation.image), debug_name);
 		}
 #endif
-		return imageAllocation;
+		return image_allocation;
 	}
 
-	VkSampler GetOrCreateSampler(const SamplerDesc &desc);
-	void DestroySamplerCache();
+	VkSampler get_or_create_sampler(const SamplerDesc &desc);
+	void destroy_sampler_cache();
 
-	[[nodiscard]] RHI::DeletionQueue &GetDeletionQueue() const;
-	[[nodiscard]] VkCommandPool GetGraphicsCommandPool() const { return m_GraphicsCommandPool; }
-	[[nodiscard]] VkCommandPool GetComputeCommandPool() const { return m_ComputeCommandPool; }
-	[[nodiscard]] VkCommandPool GetTransferCommandPool() const { return m_TransferCommandPool; }
-	[[nodiscard]] VkQueue GetGraphicsQueue() const { return m_GraphicsQueue; }
-	[[nodiscard]] VkQueue GetPresentQueue() const { return m_PresentQueue; }
-	[[nodiscard]] VkQueue GetComputeQueue() const { return m_ComputeQueue; }
-	[[nodiscard]] VkQueue GetTransferQueue() const { return m_TransferQueue; }
-	[[nodiscard]] VkInstance GetInstance() const { return m_VulkanInstance; }
-	[[nodiscard]] VkDevice &GetDevice() { return m_Device; }
-	[[nodiscard]] VkPhysicalDevice GetPhysicalDevice() const { return m_PhysicalDevice; }
-	[[nodiscard]] VkSurfaceKHR GetSurface() const { return m_Surface; }
-	[[nodiscard]] VmaAllocator GetAllocator() const { return m_Allocator; }
-	[[nodiscard]] VkQueueFamilyIndices FindPhysicalQF() const { return FindQueueFamilies(m_PhysicalDevice); }
-	[[nodiscard]] VkSwapChainSupportDetails GetSwapChainSupport() const {
-		return QuerySwapChainSupport(m_PhysicalDevice, m_Surface);
+	[[nodiscard]] RHI::DeletionQueue &get_deletion_queue() const;
+	[[nodiscard]] VkCommandPool get_graphics_command_pool() const { return m_graphics_command_pool; }
+	[[nodiscard]] VkCommandPool get_compute_command_pool() const { return m_compute_command_pool; }
+	[[nodiscard]] VkCommandPool get_transfer_command_pool() const { return m_transfer_command_pool; }
+	[[nodiscard]] VkQueue get_graphics_queue() const { return m_graphics_queue; }
+	[[nodiscard]] VkQueue get_present_queue() const { return m_present_queue; }
+	[[nodiscard]] VkQueue get_compute_queue() const { return m_compute_queue; }
+	[[nodiscard]] VkQueue get_transfer_queue() const { return m_transfer_queue; }
+	[[nodiscard]] VkInstance get_instance() const { return m_vulkan_instance; }
+	[[nodiscard]] VkDevice &get_device() { return m_device; }
+	[[nodiscard]] VkPhysicalDevice get_physical_device() const { return m_physical_device; }
+	[[nodiscard]] VkSurfaceKHR get_surface() const { return m_surface; }
+	[[nodiscard]] VmaAllocator get_allocator() const { return m_allocator; }
+	[[nodiscard]] VkQueueFamilyIndices find_physical_qf() const { return find_queue_families(m_physical_device); }
+	[[nodiscard]] VkSwapChainSupportDetails get_swap_chain_support() const {
+		return query_swap_chain_support(m_physical_device, m_surface);
 	}
-	[[nodiscard]] VkSwapChainSupportDetails GetSwapChainSupport(VkSurfaceKHR surface) const {
-		return QuerySwapChainSupport(m_PhysicalDevice, surface);
+	[[nodiscard]] VkSwapChainSupportDetails get_swap_chain_support(VkSurfaceKHR surface) const {
+		return query_swap_chain_support(m_physical_device, surface);
 	}
 
-	[[nodiscard]] VkSurfaceKHR CreateSurfaceForWindow(GLFWwindow *window) const;
-	void DestroySurfaceHandle(VkSurfaceKHR surface) const;
+	[[nodiscard]] VkSurfaceKHR create_surface_for_window(GLFWwindow *window) const;
+	void destroy_surface_handle(VkSurfaceKHR surface) const;
 
   private:
-	void CreateInstance();
-	void SetupDebugMessenger();
-	void InitializeVMA();
-	void PickPhysicalDevice();
-	void CreateLogicalDevice();
-	void CreateSurface();
+	void create_instance();
+	void setup_debug_messenger();
+	void initialize_vma();
+	void pick_physical_device();
+	void create_logical_device();
+	void create_surface();
 
-	bool IsSuitable(VkPhysicalDevice vkPhysicalDevice);
-	bool CheckDeviceExtensionSupport(VkPhysicalDevice vkPhysicalDevice) const;
-	bool CheckValidationLayerSupport() const;
-	std::vector<const char *> GetRequiredExtensions() const;
-	VkQueueFamilyIndices FindQueueFamilies(VkPhysicalDevice vkPhysicalDevice) const;
-	VkSwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice vkPhysicalDevice, VkSurfaceKHR surface) const;
-	void LogDeviceInfo() const;
+	bool is_suitable(VkPhysicalDevice vk_physical_device);
+	bool check_device_extension_support(VkPhysicalDevice vk_physical_device) const;
+	bool check_validation_layer_support() const;
+	std::vector<const char *> get_required_extensions() const;
+	VkQueueFamilyIndices find_queue_families(VkPhysicalDevice vk_physical_device) const;
+	VkSwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice vk_physical_device, VkSurfaceKHR surface) const;
+	void log_device_info() const;
 
 	template <typename Func>
-	void ExecuteSingleTimeCommands(VkCommandPool pool, VkQueue queue, std::mutex &queueMutex, Func &&func) {
+	void execute_single_time_commands(VkCommandPool pool, VkQueue queue, std::mutex &queue_mutex, Func &&func) {
 		VkCommandBuffer cmd = nullptr;
-		VkCommandBufferAllocateInfo allocInfo{};
-		allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-		allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-		allocInfo.commandPool = pool;
-		allocInfo.commandBufferCount = 1;
-		vkAllocateCommandBuffers(m_Device, &allocInfo, &cmd);
+		VkCommandBufferAllocateInfo alloc_info{};
+		alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		alloc_info.commandPool = pool;
+		alloc_info.commandBufferCount = 1;
+		vkAllocateCommandBuffers(m_device, &alloc_info, &cmd);
 
-		VkCommandBufferBeginInfo beginInfo{};
-		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		vkBeginCommandBuffer(cmd, &beginInfo);
+		VkCommandBufferBeginInfo begin_info{};
+		begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		vkBeginCommandBuffer(cmd, &begin_info);
 
 		std::forward<Func>(func)(cmd);
 
 		vkEndCommandBuffer(cmd);
 
-		VkSubmitInfo submitInfo{};
-		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		submitInfo.commandBufferCount = 1;
-		submitInfo.pCommandBuffers = &cmd;
+		VkSubmitInfo submit_info{};
+		submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submit_info.commandBufferCount = 1;
+		submit_info.pCommandBuffers = &cmd;
 
-		VkFence fence = CreateFence(false);
+		VkFence fence = create_fence(false);
 		{
-			std::lock_guard<std::mutex> lock(queueMutex);
-			vkQueueSubmit(queue, 1, &submitInfo, fence);
+			std::lock_guard<std::mutex> lock(queue_mutex);
+			vkQueueSubmit(queue, 1, &submit_info, fence);
 		}
-		WaitForFence(fence);
-		DestroyFence(fence);
+		wait_for_fence(fence);
+		destroy_fence(fence);
 
-		vkFreeCommandBuffers(m_Device, pool, 1, &cmd);
+		vkFreeCommandBuffers(m_device, pool, 1, &cmd);
 	}
 
-	static VkResult CreateDebugMessengerEXT(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,
-											const VkAllocationCallbacks *pAllocator,
-											VkDebugUtilsMessengerEXT *pDebugMessenger);
-	static void DestroyDebugMessengerEXT(VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger,
-										 const VkAllocationCallbacks *pAllocator);
-	static void PopulateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT &createInfo);
-	static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-														VkDebugUtilsMessageTypeFlagsEXT messageType,
-														const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
-														void *pUserData);
-	static const char *GetObjectTypeName(VkObjectType objectType);
+	static VkResult create_debug_messenger_ext(VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT *p_create_info,
+											const VkAllocationCallbacks *p_allocator,
+											VkDebugUtilsMessengerEXT *p_debug_messenger);
+	static void destroy_debug_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger,
+										 const VkAllocationCallbacks *p_allocator);
+	static void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT &create_info);
+	static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+														VkDebugUtilsMessageTypeFlagsEXT message_type,
+														const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
+														void *p_user_data);
+	static const char *get_object_type_name(VkObjectType object_type);
 
 	// Vulkan handles
-	VkInstance m_VulkanInstance{};
-	VkDebugUtilsMessengerEXT m_DebugMessenger{};
-	VkPhysicalDevice m_PhysicalDevice = VK_NULL_HANDLE;
-	VkDevice m_Device{};
-	VkSurfaceKHR m_Surface{};
-	VmaAllocator m_Allocator{};
-	VkPhysicalDeviceProperties m_Properties{};
-	PFN_vkSetDebugUtilsObjectNameEXT m_vkSetDebugUtilsObjectNameEXT = nullptr;
-	PFN_vkCmdBeginDebugUtilsLabelEXT m_vkCmdBeginDebugUtilsLabelEXT = nullptr;
-	PFN_vkCmdEndDebugUtilsLabelEXT m_vkCmdEndDebugUtilsLabelEXT = nullptr;
+	VkInstance m_vulkan_instance{};
+	VkDebugUtilsMessengerEXT m_debug_messenger{};
+	VkPhysicalDevice m_physical_device = VK_NULL_HANDLE;
+	VkDevice m_device{};
+	VkSurfaceKHR m_surface{};
+	VmaAllocator m_allocator{};
+	VkPhysicalDeviceProperties m_properties{};
+	PFN_vkSetDebugUtilsObjectNameEXT m_vk_set_debug_utils_object_name_ext = nullptr;
+	PFN_vkCmdBeginDebugUtilsLabelEXT m_vk_cmd_begin_debug_utils_label_ext = nullptr;
+	PFN_vkCmdEndDebugUtilsLabelEXT m_vk_cmd_end_debug_utils_label_ext = nullptr;
 
 	// Queues
-	VkQueue m_GraphicsQueue{};
-	VkQueue m_PresentQueue{};
-	VkQueue m_ComputeQueue{};
-	VkQueue m_TransferQueue{};
+	VkQueue m_graphics_queue{};
+	VkQueue m_present_queue{};
+	VkQueue m_compute_queue{};
+	VkQueue m_transfer_queue{};
 
-	std::mutex m_GraphicsQueueMutex;
-	std::mutex m_PresentQueueMutex;
-	std::mutex m_ComputeQueueMutex;
-	std::mutex m_TransferQueueMutex;
+	std::mutex m_graphics_queue_mutex;
+	std::mutex m_present_queue_mutex;
+	std::mutex m_compute_queue_mutex;
+	std::mutex m_transfer_queue_mutex;
 
 	// Command pools
-	VkCommandPool m_GraphicsCommandPool{};
-	VkCommandPool m_ComputeCommandPool{};
-	VkCommandPool m_TransferCommandPool{};
-	std::mutex m_TransferCommandPoolMutex;
-	std::mutex m_GraphicsCommandPoolMutex;
+	VkCommandPool m_graphics_command_pool{};
+	VkCommandPool m_compute_command_pool{};
+	VkCommandPool m_transfer_command_pool{};
+	std::mutex m_transfer_command_pool_mutex;
+	std::mutex m_graphics_command_pool_mutex;
 
 	struct FrameCommandSlot {
 		VkCommandPool pool = VK_NULL_HANDLE;
 		VkCommandBuffer cmd = VK_NULL_HANDLE;
 	};
-	std::array<FrameCommandSlot, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_FrameSlots{};
+	std::array<FrameCommandSlot, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_frame_slots{};
 
-	Unique<RHI::DeletionQueue> m_DeletionQueue;
+	Unique<RHI::DeletionQueue> m_deletion_queue;
 
-	std::unordered_map<SamplerDesc, VkSampler, SamplerDescHash> m_SamplerCache;
+	std::unordered_map<SamplerDesc, VkSampler, SamplerDescHash> m_sampler_cache;
 
-	Unique<VulkanDescriptorPool> m_GlobalPool;
-	void CreateGlobalDescriptorPool();
-	void DestroyGlobalDescriptorPool();
+	Unique<VulkanDescriptorPool> m_global_pool;
+	void create_global_descriptor_pool();
+	void destroy_global_descriptor_pool();
 
 	struct ThreadLocalPool {
 		VkCommandPool pool = VK_NULL_HANDLE;
 	};
-	std::unordered_map<std::thread::id, ThreadLocalPool> m_ThreadPools;
-	std::mutex m_ThreadPoolMapMutex;
+	std::unordered_map<std::thread::id, ThreadLocalPool> m_thread_pools;
+	std::mutex m_thread_pool_map_mutex;
 
-	GLFWwindow &m_WindowHandle;
+	GLFWwindow &m_window_handle;
 
 	struct OffscreenPendingCmdBuf {
 		VkCommandBuffer cmd;
 		VkCommandPool pool;
 	};
-	std::array<VkFence, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_OffscreenFences{};
-	std::array<std::vector<OffscreenPendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_OffscreenPendingCmdBufs;
-	uint32 m_OffscreenFrameIndex = 0;
+	std::array<VkFence, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_offscreen_fences{};
+	std::array<std::vector<OffscreenPendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_offscreen_pending_cmd_bufs;
+	Uint32 m_offscreen_frame_index = 0;
 
-	const std::vector<const char *> validationLayers = { "VK_LAYER_KHRONOS_validation" };
-	const std::vector<const char *> deviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,
+	const std::vector<const char *> VALIDATION_LAYERS = { "VK_LAYER_KHRONOS_validation" };
+	const std::vector<const char *> DEVICE_EXTENSIONS = { VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 														 VK_KHR_DYNAMIC_RENDERING_EXTENSION_NAME,
 														 VK_KHR_MAINTENANCE1_EXTENSION_NAME };
 };

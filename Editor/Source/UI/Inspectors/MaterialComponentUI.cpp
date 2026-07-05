@@ -18,7 +18,7 @@ using namespace Aquila::SceneManagement::Components;
 
 namespace {
 
-std::string MaterialTypeToString(Graphics::MaterialType t) {
+std::string material_type_to_string(Graphics::MaterialType t) {
 	switch (t) {
 	case Graphics::MaterialType::PBR:
 		return "PBR";
@@ -33,7 +33,7 @@ std::string MaterialTypeToString(Graphics::MaterialType t) {
 	}
 }
 
-Graphics::MaterialType StringToMaterialType(const std::string &s) {
+Graphics::MaterialType string_to_material_type(const std::string &s) {
 	if (s == "PBR") {
 		return Graphics::MaterialType::PBR;
 	}
@@ -48,52 +48,54 @@ Graphics::MaterialType StringToMaterialType(const std::string &s) {
 
 } // namespace
 
-MaterialComponentUI::MaterialComponentUI(GFX::GfxContext &context) : m_Context(context) {}
+MaterialComponentUI::MaterialComponentUI(GFX::GfxContext &context) : m_context(context) {}
 
-bool MaterialComponentUI::Matches(Entity entity) const {
-	return entity.HasComponent<MaterialComponent>();
+bool MaterialComponentUI::matches(Entity entity) const {
+	return entity.has_component<MaterialComponent>();
 }
 
-void MaterialComponentUI::Build(UI::Core::Collapsible *section, UI::Core::PropertyGrid *grid) {
-	m_Type = grid->AddRow<UI::Core::Dropdown>("Type");
-	m_Type->AddOption("PBR");
-	m_Type->AddOption("Lit");
-	m_Type->AddOption("Unlit");
-	m_Type->AddOption("Custom");
-	m_Type->SetValue("Lit");
+void MaterialComponentUI::build(UI::Core::Collapsible *section, UI::Core::PropertyGrid *grid) {
+	m_type = grid->add_row<UI::Core::Dropdown>("Type");
+	m_type->add_option("PBR");
+	m_type->add_option("Lit");
+	m_type->add_option("Unlit");
+	m_type->add_option("Custom");
+	m_type->set_value("Lit");
 
-	m_Albedo = grid->AddRow<UI::Core::ColorPicker>("Albedo", m_Context, vec4(1.f));
+	m_albedo = grid->add_row<UI::Core::ColorPicker>("Albedo", m_context, Vec4(1.F));
 
 	using UI::Core::DragFloat;
-	m_Metallic = grid->AddRow<DragFloat>("Metallic", DragFloat::Config{ .min = 0.f, .max = 1.f, .speed = 0.01f, .precision = 3 });
-	m_Roughness = grid->AddRow<DragFloat>("Roughness", DragFloat::Config{ .min = 0.f, .max = 1.f, .speed = 0.01f, .precision = 3 });
+	m_metallic = grid->add_row<DragFloat>("Metallic",
+										  DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01f, .precision = 3 });
+	m_roughness = grid->add_row<DragFloat>("Roughness",
+										   DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01f, .precision = 3 });
 
-	m_TextureArea = section->AddContent<UI::Core::PropertyGrid>();
+	m_texture_area = section->add_content<UI::Core::PropertyGrid>();
 }
 
-void MaterialComponentUI::Show(Entity entity) {
-	auto &mat = entity.GetComponent<MaterialComponent>();
+void MaterialComponentUI::show(Entity entity) {
+	auto &mat = entity.get_component<MaterialComponent>();
 
 	ComponentBinder<MaterialComponent> bind(entity);
 
-	m_Type->SetValue(MaterialTypeToString(mat.type));
-	m_Type->onChanged.Set([entity](const std::string &v) mutable {
-		entity.GetComponent<MaterialComponent>().type = StringToMaterialType(v);
+	m_type->set_value(material_type_to_string(mat.type));
+	m_type->on_changed.set([entity](const std::string &v) mutable {
+		entity.get_component<MaterialComponent>().type = string_to_material_type(v);
 	});
 
-	bind.Bind(m_Albedo, [](auto &m) -> vec4 & { return m.surfaceProperties.albedo; });
-	bind.Bind(m_Metallic, [](auto &m) -> float & { return m.surfaceProperties.metallic; });
-	bind.Bind(m_Roughness, [](auto &m) -> float & { return m.surfaceProperties.roughness; });
+	bind.bind(m_albedo, [](auto &m) -> Vec4 & { return m.surface_properties.albedo; });
+	bind.bind(m_metallic, [](auto &m) -> float & { return m.surface_properties.metallic; });
+	bind.bind(m_roughness, [](auto &m) -> float & { return m.surface_properties.roughness; });
 
-	while (!m_TextureArea->GetChildren().empty()) {
-		m_TextureArea->RemoveChild(m_TextureArea->GetChildren().front().get());
+	while (!m_texture_area->get_children().empty()) {
+		m_texture_area->remove_child(m_texture_area->get_children().front().get());
 	}
 	if (mat.material) {
-		for (const auto &param : mat.material->GetParameters()) {
+		for (const auto &param : mat.material->get_parameters()) {
 			if (param.type != Graphics::ParameterType::Texture2D) {
 				continue;
 			}
-			m_TextureArea->AddRow<UI::Core::AssetSlot>(param.name, "Texture2D");
+			m_texture_area->add_row<UI::Core::AssetSlot>(param.name, "Texture2D");
 		}
 	}
 }

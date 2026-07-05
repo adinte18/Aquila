@@ -6,46 +6,46 @@
 namespace Aquila::Math::Geometry {
 
 struct Ray {
-	vec3 origin;
-	vec3 direction;
+	Vec3 origin;
+	Vec3 direction;
 
-	Ray(const vec3 &o, const vec3 &d) : origin(o), direction(normalize(d)) {}
+	Ray(const Vec3 &o, const Vec3 &d) : origin(o), direction(normalize(d)) {}
 
-	vec3 GetPoint(const f32 t) const { return origin + direction * t; }
+	Vec3 get_point(const F32 t) const { return origin + direction * t; }
 
-	bool IntersectAABB(const vec3 &aabbMin, const vec3 &aabbMax, f32 &distance) const {
-		const vec3 invDir = 1.0f / direction;
-		const vec3 t1 = (aabbMin - origin) * invDir;
-		const vec3 t2 = (aabbMax - origin) * invDir;
+	bool intersect_aabb(const Vec3 &aabb_min, const Vec3 &aabb_max, F32 &distance) const {
+		const Vec3 inv_dir = 1.0f / direction;
+		const Vec3 t1 = (aabb_min - origin) * inv_dir;
+		const Vec3 t2 = (aabb_max - origin) * inv_dir;
 
-		const vec3 tMin = min(t1, t2);
-		const vec3 tMax = max(t1, t2);
+		const Vec3 t_min = min(t1, t2);
+		const Vec3 t_max = max(t1, t2);
 
-		const f32 tNear = glm::max(glm::max(tMin.x, tMin.y), tMin.z);
-		const f32 tFar = glm::min(glm::min(tMax.x, tMax.y), tMax.z);
+		const F32 t_near = glm::max(glm::max(t_min.x, t_min.y), t_min.z);
+		const F32 t_far = glm::min(glm::min(t_max.x, t_max.y), t_max.z);
 
-		if (tNear > tFar || tFar < 0.0f) {
+		if (t_near > t_far || t_far < 0.0f) {
 			return false;
 		}
 
-		distance = tNear > 0.0f ? tNear : tFar;
+		distance = t_near > 0.0f ? t_near : t_far;
 		return true;
 	}
 
-	bool IntersectSphere(const vec3 &center, const f32 radius, f32 &distance) const {
-		const vec3 oc = origin - center;
-		const f32 a = dot(direction, direction);
-		const f32 b = 2.0f * dot(oc, direction);
-		const f32 c = dot(oc, oc) - radius * radius;
+	bool intersect_sphere(const Vec3 &center, const F32 radius, F32 &distance) const {
+		const Vec3 oc = origin - center;
+		const F32 a = dot(direction, direction);
+		const F32 b = 2.0f * dot(oc, direction);
+		const F32 c = dot(oc, oc) - radius * radius;
 
-		const f32 discriminant = b * b - 4 * a * c;
+		const F32 discriminant = b * b - 4 * a * c;
 
 		if (discriminant < 0) {
 			return false;
 		}
 
-		const f32 t1 = (-b - sqrt(discriminant)) / (2.0f * a);
-		const f32 t2 = (-b + sqrt(discriminant)) / (2.0f * a);
+		const F32 t1 = (-b - sqrt(discriminant)) / (2.0f * a);
+		const F32 t2 = (-b + sqrt(discriminant)) / (2.0f * a);
 
 		if (t1 > 0) {
 			distance = t1;
@@ -59,9 +59,9 @@ struct Ray {
 		return false;
 	}
 
-	bool IntersectTriangle(const vec3 &v0, const vec3 &v1, const vec3 &v2, f32 &distance) const {
-		vec3 edge1, edge2, h, s, q;
-		f32 a, f, u, v;
+	bool intersect_triangle(const Vec3 &v0, const Vec3 &v1, const Vec3 &v2, F32 &distance) const {
+		Vec3 edge1, edge2, h, s, q;
+		F32 a, f, u, v;
 
 		edge1 = v1 - v0;
 		edge2 = v2 - v0;
@@ -87,7 +87,7 @@ struct Ray {
 			return false;
 		}
 
-		if (f32 t = f * dot(edge2, q); t > Aquila::Math::EPSILON) {
+		if (F32 t = f * dot(edge2, q); t > Aquila::Math::EPSILON) {
 			distance = t;
 			return true;
 		}
@@ -95,30 +95,30 @@ struct Ray {
 		return false;
 	}
 
-	bool IntersectLine(const vec3 &lineStart, const vec3 &lineEnd, f32 threshold, f32 &distance) const {
-		const vec3 lineDir = lineEnd - lineStart;
-		const vec3 rayToLine = lineStart - origin;
+	bool intersect_line(const Vec3 &line_start, const Vec3 &line_end, F32 threshold, F32 &distance) const {
+		const Vec3 line_dir = line_end - line_start;
+		const Vec3 ray_to_line = line_start - origin;
 
-		const vec3 cross1 = cross(direction, lineDir);
-		const vec3 cross2 = cross(rayToLine, lineDir);
+		const Vec3 cross1 = cross(direction, line_dir);
+		const Vec3 cross2 = cross(ray_to_line, line_dir);
 
-		const f32 denominator = dot(cross1, cross1);
+		const F32 denominator = dot(cross1, cross1);
 
 		if (denominator < 1e-6f) {
 			return false;
 		}
 
-		const f32 t = dot(cross2, cross1) / denominator;
-		const f32 u = dot(cross(rayToLine, direction), cross1) / denominator;
+		const F32 t = dot(cross2, cross1) / denominator;
+		const F32 u = dot(cross(ray_to_line, direction), cross1) / denominator;
 
 		if (t < 0.0f || u < 0.0f || u > 1.0f) {
 			return false;
 		}
 
-		const vec3 closestPointOnRay = origin + t * direction;
-		const vec3 closestPointOnLine = lineStart + u * lineDir;
+		const Vec3 closest_point_on_ray = origin + t * direction;
+		const Vec3 closest_point_on_line = line_start + u * line_dir;
 
-		if (const f32 dist = length(closestPointOnRay - closestPointOnLine); dist <= threshold) {
+		if (const F32 dist = length(closest_point_on_ray - closest_point_on_line); dist <= threshold) {
 			distance = t;
 			return true;
 		}
@@ -126,14 +126,14 @@ struct Ray {
 		return false;
 	}
 
-	bool IntersectPlane(const vec3 &planeNormal, f32 planeDistance, f32 &distance) const {
-		const f32 denom = dot(planeNormal, direction);
+	bool intersect_plane(const Vec3 &plane_normal, F32 plane_distance, F32 &distance) const {
+		const F32 denom = dot(plane_normal, direction);
 
 		if (abs(denom) < 1e-6f) {
 			return false;
 		}
 
-		if (const f32 t = (planeDistance - dot(planeNormal, origin)) / denom; t >= 0) {
+		if (const F32 t = (plane_distance - dot(plane_normal, origin)) / denom; t >= 0) {
 			distance = t;
 			return true;
 		}
@@ -141,39 +141,39 @@ struct Ray {
 		return false;
 	}
 
-	bool IntersectCylinder(const vec3 &cylinderStart, const vec3 &cylinderEnd, f32 radius, f32 &distance) const {
-		const vec3 cylinderAxis = normalize(cylinderEnd - cylinderStart);
-		const vec3 toRayOrigin = origin - cylinderStart;
+	bool intersect_cylinder(const Vec3 &cylinder_start, const Vec3 &cylinder_end, F32 radius, F32 &distance) const {
+		const Vec3 cylinder_axis = normalize(cylinder_end - cylinder_start);
+		const Vec3 to_ray_origin = origin - cylinder_start;
 
-		const vec3 rayDirPerp = direction - dot(direction, cylinderAxis) * cylinderAxis;
-		const vec3 toRayOriginPerp = toRayOrigin - dot(toRayOrigin, cylinderAxis) * cylinderAxis;
+		const Vec3 ray_dir_perp = direction - dot(direction, cylinder_axis) * cylinder_axis;
+		const Vec3 to_ray_origin_perp = to_ray_origin - dot(to_ray_origin, cylinder_axis) * cylinder_axis;
 
-		const f32 a = dot(rayDirPerp, rayDirPerp);
-		const f32 b = 2.0f * dot(toRayOriginPerp, rayDirPerp);
-		const f32 c = dot(toRayOriginPerp, toRayOriginPerp) - radius * radius;
+		const F32 a = dot(ray_dir_perp, ray_dir_perp);
+		const F32 b = 2.0f * dot(to_ray_origin_perp, ray_dir_perp);
+		const F32 c = dot(to_ray_origin_perp, to_ray_origin_perp) - radius * radius;
 
-		const f32 discriminant = b * b - 4 * a * c;
+		const F32 discriminant = b * b - 4 * a * c;
 
 		if (discriminant < 0) {
 			return false;
 		}
 
-		const f32 t1 = (-b - sqrt(discriminant)) / (2.0f * a);
-		const f32 t2 = (-b + sqrt(discriminant)) / (2.0f * a);
+		const F32 t1 = (-b - sqrt(discriminant)) / (2.0f * a);
+		const F32 t2 = (-b + sqrt(discriminant)) / (2.0f * a);
 
-		auto isWithinCylinder = [&](const f32 t) -> bool {
-			const vec3 point = GetPoint(t);
-			const vec3 toPoint = point - cylinderStart;
-			const f32 projection = dot(toPoint, cylinderAxis);
-			const f32 cylinderLength = length(cylinderEnd - cylinderStart);
-			return projection >= 0.0f && projection <= cylinderLength;
+		auto is_within_cylinder = [&](const F32 t) -> bool {
+			const Vec3 point = get_point(t);
+			const Vec3 to_point = point - cylinder_start;
+			const F32 projection = dot(to_point, cylinder_axis);
+			const F32 cylinder_length = length(cylinder_end - cylinder_start);
+			return projection >= 0.0f && projection <= cylinder_length;
 		};
 
-		if (t1 > 0 && isWithinCylinder(t1)) {
+		if (t1 > 0 && is_within_cylinder(t1)) {
 			distance = t1;
 			return true;
 		}
-		if (t2 > 0 && isWithinCylinder(t2)) {
+		if (t2 > 0 && is_within_cylinder(t2)) {
 			distance = t2;
 			return true;
 		}
@@ -181,48 +181,48 @@ struct Ray {
 		return false;
 	}
 
-	vec3 ClosestPointTo(const vec3 &point) const {
-		const vec3 toPoint = point - origin;
-		f32 t = dot(toPoint, direction);
-		return GetPoint(glm::max(0.0f, t));
+	Vec3 closest_point_to(const Vec3 &point) const {
+		const Vec3 to_point = point - origin;
+		F32 t = dot(to_point, direction);
+		return get_point(glm::max(0.0f, t));
 	}
 
-	f32 DistanceToPoint(const vec3 &point) const { return length(point - ClosestPointTo(point)); }
+	F32 distance_to_point(const Vec3 &point) const { return length(point - closest_point_to(point)); }
 };
 
-inline Ray ScreenToWorldRay(const vec2 &screenPos, const vec2 &viewportSize, const mat4 &viewMatrix,
-							const mat4 &projMatrix) {
-	vec2 ndc;
-	ndc.x = (2.0f * screenPos.x) / viewportSize.x - 1.0f;
-	ndc.y = 1.0f - (2.0f * screenPos.y) / viewportSize.y;
+inline Ray screen_to_world_ray(const Vec2 &screen_pos, const Vec2 &viewport_size, const Mat4 &view_matrix,
+							const Mat4 &proj_matrix) {
+	Vec2 ndc;
+	ndc.x = (2.0f * screen_pos.x) / viewport_size.x - 1.0f;
+	ndc.y = 1.0f - (2.0f * screen_pos.y) / viewport_size.y;
 
-	mat4 invViewProj = inverse(projMatrix * viewMatrix);
+	Mat4 inv_view_proj = inverse(proj_matrix * view_matrix);
 
-	auto nearPoint = vec4(ndc.x, ndc.y, 0.0f, 1.0f);
-	auto farPoint = vec4(ndc.x, ndc.y, 1.0f, 1.0f);
+	auto near_point = Vec4(ndc.x, ndc.y, 0.0f, 1.0f);
+	auto far_point = Vec4(ndc.x, ndc.y, 1.0f, 1.0f);
 
-	vec4 worldNear = invViewProj * nearPoint;
-	vec4 worldFar = invViewProj * farPoint;
+	Vec4 world_near = inv_view_proj * near_point;
+	Vec4 world_far = inv_view_proj * far_point;
 
-	worldNear /= worldNear.w;
-	worldFar /= worldFar.w;
+	world_near /= world_near.w;
+	world_far /= world_far.w;
 
-	auto rayOrigin = vec3(worldNear);
-	auto rayDirection = normalize(vec3(worldFar) - vec3(worldNear));
+	auto ray_origin = Vec3(world_near);
+	auto ray_direction = normalize(Vec3(world_far) - Vec3(world_near));
 
-	return Ray(rayOrigin, rayDirection);
+	return Ray(ray_origin, ray_direction);
 }
 
-inline Ray CameraRay(const vec2 &screenPos, const vec2 &viewportSize, const vec3 &cameraPos, const vec3 &cameraForward,
-					 const vec3 &cameraUp, const vec3 &cameraRight, const f32 fov, const f32 aspectRatio) {
-	const f32 x = (2.0f * screenPos.x) / viewportSize.x - 1.0f;
-	const f32 y = 1.0f - (2.0f * screenPos.y) / viewportSize.y;
+inline Ray camera_ray(const Vec2 &screen_pos, const Vec2 &viewport_size, const Vec3 &camera_pos, const Vec3 &camera_forward,
+					 const Vec3 &camera_up, const Vec3 &camera_right, const F32 fov, const F32 aspect_ratio) {
+	const F32 x = (2.0f * screen_pos.x) / viewport_size.x - 1.0f;
+	const F32 y = 1.0f - (2.0f * screen_pos.y) / viewport_size.y;
 
-	const f32 tanHalfFov = tan(glm::radians(fov) / 2.0f);
-	const vec3 rayDir =
-		normalize(cameraForward + (x * aspectRatio * tanHalfFov) * cameraRight + (y * tanHalfFov) * cameraUp);
+	const F32 tan_half_fov = tan(glm::radians(fov) / 2.0f);
+	const Vec3 ray_dir =
+		normalize(camera_forward + (x * aspect_ratio * tan_half_fov) * camera_right + (y * tan_half_fov) * camera_up);
 
-	return Ray(cameraPos, rayDir);
+	return Ray(camera_pos, ray_dir);
 }
 
 } // namespace Aquila::Math::Geometry

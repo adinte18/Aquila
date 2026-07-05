@@ -25,20 +25,20 @@ struct MeshComponent {
 	 * @brief Version counter that increments when mesh changes
 	 * Used by renderer to detect mesh swaps without pointer comparison
 	 */
-	uint32 version = 0;
+	Uint32 version = 0;
 
 	/**
 	 * @brief Set a new mesh and automatically increment version
 	 * @param newMesh The mesh to assign
 	 */
-	void SetMesh(const Ref<Graphics::Resources::Mesh> &newMesh) {
-		if (data != newMesh) {
-			data = newMesh;
+	void set_mesh(const Ref<Graphics::Resources::Mesh> &new_mesh) {
+		if (data != new_mesh) {
+			data = new_mesh;
 			version++;
 
 			// Reset materials when mesh changes
 			materials.clear();
-			materialAssetPaths.clear();
+			material_asset_paths.clear();
 		}
 	}
 
@@ -49,7 +49,7 @@ struct MeshComponent {
 	 * Key: submesh index (0 for single material)
 	 * Value: path to .aqmat file (e.g., "assets://materials/wood.aqmat")
 	 */
-	std::unordered_map<uint32, std::string> materialAssetPaths;
+	std::unordered_map<Uint32, std::string> material_asset_paths;
 
 	/**
 	 * @brief Runtime material instances
@@ -59,16 +59,16 @@ struct MeshComponent {
 	 * These are INSTANCES - changes only affect this mesh.
 	 * The underlying asset is shared and loaded through AssetManager.
 	 */
-	std::unordered_map<uint32, Ref<Graphics::Material>> materials;
+	std::unordered_map<Uint32, Ref<Graphics::Material>> materials;
 
 	/**
 	 * @brief Set material for entire mesh or specific submesh
 	 * @param material Material instance to use
 	 * @param submeshIndex Submesh index (default 0 for whole mesh)
 	 */
-	void SetMaterial(const Ref<Graphics::Material> &material, uint32 submeshIndex = 0) {
+	void set_material(const Ref<Graphics::Material> &material, Uint32 submesh_index = 0) {
 		if (material) {
-			materials[submeshIndex] = material;
+			materials[submesh_index] = material;
 		}
 	}
 
@@ -78,11 +78,11 @@ struct MeshComponent {
 	 * @param assetPath Path to .aqmat file
 	 * @param submeshIndex Submesh index (default 0 for whole mesh)
 	 */
-	void SetMaterialAsset(const std::string &assetPath, uint32 submeshIndex = 0) {
-		if (!assetPath.empty()) {
-			materialAssetPaths[submeshIndex] = assetPath;
+	void set_material_asset(const std::string &asset_path, Uint32 submesh_index = 0) {
+		if (!asset_path.empty()) {
+			material_asset_paths[submesh_index] = asset_path;
 			// Clear runtime instance - will be reloaded from asset
-			materials.erase(submeshIndex);
+			materials.erase(submesh_index);
 		}
 	}
 
@@ -91,8 +91,8 @@ struct MeshComponent {
 	 * @param submeshIndex Submesh index
 	 * @return Material instance or nullptr if not set
 	 */
-	Ref<Graphics::Material> GetMaterial(uint32 submeshIndex = 0) const {
-		auto it = materials.find(submeshIndex);
+	Ref<Graphics::Material> get_material(Uint32 submesh_index = 0) const {
+		auto it = materials.find(submesh_index);
 		return it != materials.end() ? it->second : nullptr;
 	}
 
@@ -101,35 +101,35 @@ struct MeshComponent {
 	 * @param submeshIndex Submesh index
 	 * @return Asset path or empty string if not set
 	 */
-	std::string GetMaterialAssetPath(uint32 submeshIndex = 0) const {
-		auto it = materialAssetPaths.find(submeshIndex);
-		return it != materialAssetPaths.end() ? it->second : "";
+	std::string get_material_asset_path(Uint32 submesh_index = 0) const {
+		auto it = material_asset_paths.find(submesh_index);
+		return it != material_asset_paths.end() ? it->second : "";
 	}
 
 	/**
 	 * @brief Check if submesh has a material asset reference
 	 */
-	bool HasMaterialAsset(uint32 submeshIndex = 0) const {
-		return materialAssetPaths.find(submeshIndex) != materialAssetPaths.end();
+	bool has_material_asset(Uint32 submesh_index = 0) const {
+		return material_asset_paths.find(submesh_index) != material_asset_paths.end();
 	}
 
 	/**
 	 * @brief Check if submesh has a loaded material instance
 	 */
-	bool HasMaterial(uint32 submeshIndex = 0) const { return materials.find(submeshIndex) != materials.end(); }
+	bool has_material(Uint32 submesh_index = 0) const { return materials.find(submesh_index) != materials.end(); }
 
 	/**
 	 * @brief Clear all materials
 	 */
-	void ClearMaterials() {
+	void clear_materials() {
 		materials.clear();
-		materialAssetPaths.clear();
+		material_asset_paths.clear();
 	}
 
 	/**
 	 * @brief Get number of material slots
 	 */
-	uint32 GetMaterialSlotCount() const {
+	Uint32 get_material_slot_count() const {
 		if (!data) {
 			return 0;
 		}
@@ -142,31 +142,31 @@ struct MeshComponent {
 	/**
 	 * @brief Whether this mesh should cast shadows
 	 */
-	bool castShadows = true;
+	bool cast_shadows = true;
 
 	/**
 	 * @brief Whether this mesh should receive shadows
 	 */
-	bool receiveShadows = true;
+	bool receive_shadows = true;
 
 	// HELPER METHODS
 
 	/**
 	 * @brief Check if this mesh is valid for rendering
 	 */
-	bool IsValid() const { return data != nullptr; }
+	bool is_valid() const { return data != nullptr; }
 
 	/**
 	 * @brief Get the primary material (submesh 0)
 	 * Convenience method for single-material meshes
 	 */
-	Ref<Graphics::Material> GetPrimaryMaterial() const { return GetMaterial(0); }
+	Ref<Graphics::Material> get_primary_material() const { return get_material(0); }
 
 	/**
 	 * @brief Set the primary material (submesh 0)
 	 * Convenience method for single-material meshes
 	 */
-	void SetPrimaryMaterial(const Ref<Graphics::Material> &material) { SetMaterial(material, 0); }
+	void set_primary_material(const Ref<Graphics::Material> &material) { set_material(material, 0); }
 
 	/**
 	 * @brief Get material for rendering with fallback chain
@@ -174,17 +174,17 @@ struct MeshComponent {
 	 * @param fallbackMaterial Fallback if no material is set
 	 * @return Material to use for rendering
 	 */
-	Ref<Graphics::Material> GetRenderMaterial(uint32_t submeshIndex = 0,
-											  Ref<Graphics::Material> fallbackMaterial = nullptr) const {
-		if (HasMaterial(submeshIndex)) {
-			return GetMaterial(submeshIndex);
+	Ref<Graphics::Material> get_render_material(uint32_t submesh_index = 0,
+											  Ref<Graphics::Material> fallback_material = nullptr) const {
+		if (has_material(submesh_index)) {
+			return get_material(submesh_index);
 		}
 
-		if (submeshIndex != 0 && HasMaterial(0)) {
-			return GetMaterial(0);
+		if (submesh_index != 0 && has_material(0)) {
+			return get_material(0);
 		}
 
-		return fallbackMaterial;
+		return fallback_material;
 	}
 };
 

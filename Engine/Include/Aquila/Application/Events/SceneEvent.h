@@ -93,15 +93,15 @@
 
 // class SceneDestroyedEvent final : public Event {
 //   public:
-// 	explicit SceneDestroyedEvent(const Utils::UUID &handle) : m_SceneHandle(handle) {}
+// 	explicit SceneDestroyedEvent(const Foundation::UUID &handle) : m_SceneHandle(handle) {}
 
-// 	[[nodiscard]] const Utils::UUID &GetHandle() const { return m_SceneHandle; }
+// 	[[nodiscard]] const Foundation::UUID &GetHandle() const { return m_SceneHandle; }
 
 // 	EVENT_CLASS_TYPE(SceneDestroyedEvent)
 // 	EVENT_CLASS_CATEGORY(EventCategory::Scene)
 
 //   private:
-// 	const Utils::UUID m_SceneHandle;
+// 	const Foundation::UUID m_SceneHandle;
 // };
 
 // class SceneSavedEvent final : public Event {

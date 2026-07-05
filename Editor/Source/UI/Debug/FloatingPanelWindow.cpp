@@ -19,59 +19,59 @@ namespace Events = Aquila::Application::Events;
 FloatingPanelWindow::FloatingPanelWindow() = default;
 FloatingPanelWindow::~FloatingPanelWindow() = default;
 
-void FloatingPanelWindow::Build(Unique<View> panelSubtree, const std::string &title, uint32 width, uint32 height,
-								const std::string &stylePath) {
-	m_Title = title;
-	m_Canvas = CreateUnique<Canvas>(width, height);
-	UI::StyleParser::LoadFile(stylePath, m_Canvas->GetStyleSheet());
+void FloatingPanelWindow::build(Unique<View> panel_subtree, const std::string &title, Uint32 width, Uint32 height,
+								const std::string &style_path) {
+	m_title = title;
+	m_canvas = create_unique<Canvas>(width, height);
+	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
-	auto *root = m_Canvas->GetRoot();
-	root->AddClass("floating-panel-root");
+	auto *root = m_canvas->get_root();
+	root->add_class("floating-panel-root");
 
-	m_Body = root->AddChild<View>();
-	m_Body->AddClass("floating-panel-body");
-	m_DockSpace = m_Body->AddChild<UI::Core::DockSpace>();
-	m_DockSpace->GetRootNode()->AcceptPanel(std::move(panelSubtree), title);
+	m_body = root->add_child<View>();
+	m_body->add_class("floating-panel-body");
+	m_dock_space = m_body->add_child<UI::Core::DockSpace>();
+	m_dock_space->get_root_node()->accept_panel(std::move(panel_subtree), title);
 
-	m_Canvas->ReloadStyles();
+	m_canvas->reload_styles();
 }
 
-void FloatingPanelWindow::Update(f32 deltaTime) {
-	m_Canvas->Update(deltaTime);
-	m_Canvas->Compute();
+void FloatingPanelWindow::update(F32 delta_time) {
+	m_canvas->update(delta_time);
+	m_canvas->compute();
 }
 
-void FloatingPanelWindow::Render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
-	m_Canvas->SubmitToQuadBatcher(batcher, cmd);
+void FloatingPanelWindow::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
-void FloatingPanelWindow::OnEvent(Events::Event &event) {
+void FloatingPanelWindow::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<Events::WindowResizeEvent>([&](Events::WindowResizeEvent &e) {
-		if (e.GetWidth() > 0 && e.GetHeight() > 0) {
-			m_Canvas->Resize(e.GetWidth(), e.GetHeight());
+	dispatcher.dispatch<Events::WindowResizeEvent>([&](Events::WindowResizeEvent &e) {
+		if (e.get_width() > 0 && e.get_height() > 0) {
+			m_canvas->resize(e.get_width(), e.get_height());
 		}
 		return false;
 	});
 
-	m_Canvas->OnEvent(event);
+	m_canvas->on_event(event);
 }
 
-bool FloatingPanelWindow::HasContent() const {
-	return m_DockSpace && m_DockSpace->HasAnyPanels();
+bool FloatingPanelWindow::has_content() const {
+	return m_dock_space && m_dock_space->has_any_panels();
 }
 
-Unique<View> FloatingPanelWindow::DetachContent() {
-	if (!m_DockSpace) {
+Unique<View> FloatingPanelWindow::detach_content() {
+	if (!m_dock_space) {
 		return nullptr;
 	}
 
-	DockNode *leaf = m_DockSpace->FirstLeafWithTabs();
+	DockNode *leaf = m_dock_space->first_leaf_with_tabs();
 	if (!leaf) {
 		return nullptr;
 	}
 
-	return leaf->DetachPanel(leaf->GetActivePanelPtr());
+	return leaf->detach_panel(leaf->get_active_panel_ptr());
 }
 
 } // namespace Editor

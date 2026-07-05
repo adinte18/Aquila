@@ -7,18 +7,18 @@ namespace Aquila::Platform::Filesystem {
 class NativeFile final : public VirtualFile {
   private:
 	FILE *m_file;
-	int64 m_size;
+	Int64 m_size;
 
   public:
 	explicit NativeFile(FILE *file);
 	~NativeFile() override;
-	usize Read(void *buffer, usize size) override;
-	usize Write(const void *buffer, usize size) override;
-	bool Seek(int64 offset, int origin) override;
-	void Close() override;
-	[[nodiscard]] int64 Tell() const override;
-	[[nodiscard]] int64 Size() const override;
-	[[nodiscard]] bool IsValid() const override;
+	Usize read(void *buffer, Usize size) override;
+	Usize write(const void *buffer, Usize size) override;
+	bool seek(Int64 offset, int origin) override;
+	void close() override;
+	[[nodiscard]] Int64 tell() const override;
+	[[nodiscard]] Int64 size() const override;
+	[[nodiscard]] bool is_valid() const override;
 };
 } // namespace Aquila::Platform::Filesystem
 

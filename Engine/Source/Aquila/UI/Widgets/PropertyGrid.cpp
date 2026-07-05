@@ -2,34 +2,34 @@
 
 namespace Aquila::UI::Core {
 
-PropertyGrid::PropertyGrid(float labelWidth) : m_LabelWidth(labelWidth) {
-	AddClass("property-grid");
+PropertyGrid::PropertyGrid(float label_width) : m_label_width(label_width) {
+	add_class("property-grid");
 }
 
-View *PropertyGrid::AddRow(std::string label, Unique<View> widget) {
-	auto row = CreateUnique<View>();
-	row->AddClass("property-row");
+View *PropertyGrid::add_row(std::string label, Unique<View> widget) {
+	auto row = create_unique<View>();
+	row->add_class("property-row");
 
-	auto lbl = CreateUnique<Label>(std::move(label));
+	auto lbl = create_unique<Label>(std::move(label));
 	{
 		StyleProperties lp;
-		lp.width = StyleLength::Pixel(m_LabelWidth);
-		lbl->SetStyle(lp);
-		lbl->AddClass("property-label");
+		lp.width = StyleLength::pixel(m_label_width);
+		lbl->set_style(lp);
+		lbl->add_class("property-label");
 	}
-	row->AddChild(std::move(lbl));
+	row->add_child(std::move(lbl));
 
-	widget->AddClass("property-value");
-	View *widgetRaw = row->AddChild(std::move(widget));
+	widget->add_class("property-value");
+	View *widget_raw = row->add_child(std::move(widget));
 
-	AddChild(std::move(row));
-	return widgetRaw;
+	add_child(std::move(row));
+	return widget_raw;
 }
 
-void PropertyGrid::AddSeparator() {
-	auto sep = CreateUnique<View>();
-	sep->AddClass("property-separator");
-	AddChild(std::move(sep));
+void PropertyGrid::add_separator() {
+	auto sep = create_unique<View>();
+	sep->add_class("property-separator");
+	add_child(std::move(sep));
 }
 
 } // namespace Aquila::UI::Core

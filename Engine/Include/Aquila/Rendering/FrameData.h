@@ -5,44 +5,44 @@
 namespace Aquila::Rendering {
 
 struct alignas(16) GpuCameraData {
-	mat4 view;
-	mat4 projection;
-	mat4 viewProjection;
-	mat4 inverseView;
-	mat4 inverseProjection;
-	mat4 inverseViewProjection;
-	mat4 prevViewProjection;
+	Mat4 view;
+	Mat4 projection;
+	Mat4 view_projection;
+	Mat4 inverse_view;
+	Mat4 inverse_projection;
+	Mat4 inverse_view_projection;
+	Mat4 prev_view_projection;
 
-	vec4 position;
-	vec4 forward;
-	vec4 up;
-	vec4 right;
+	Vec4 position;
+	Vec4 forward;
+	Vec4 up;
+	Vec4 right;
 
-	float nearPlane;
-	float farPlane;
+	float near_plane;
+	float far_plane;
 	float fov;
-	float aspectRatio;
+	float aspect_ratio;
 
-	vec2 resolution;
-	vec2 jitter;
+	Vec2 resolution;
+	Vec2 jitter;
 
-	uint32 isOrthographic;
-	uint32 cameraIndex;
-	uint32 _pad[2];
+	Uint32 is_orthographic;
+	Uint32 camera_index;
+	Uint32 pad[2];
 };
 
 struct GpuFrameData {
-	GpuCameraData mainCamera;
+	GpuCameraData main_camera;
 	GpuCameraData cameras[SharedConstants::MAX_CAMERAS];
 
-	uint32 cameraCount;
+	Uint32 camera_count;
 	float time;
-	float deltaTime;
-	uint32 frameIndex;
+	float delta_time;
+	Uint32 frame_index;
 
-	vec2 screenResolution;
-	uint32 lightCount;
-	uint32 _pad;
+	Vec2 screen_resolution;
+	Uint32 light_count;
+	Uint32 pad;
 };
 
 } // namespace Aquila::Rendering

@@ -14,35 +14,35 @@ class DrawCompositor;
 
 class InputRouter {
   public:
-	InputRouter(Canvas &canvas, DrawCompositor &compositor) : m_Canvas(canvas), m_Compositor(compositor) {}
+	InputRouter(Canvas &canvas, DrawCompositor &compositor) : m_canvas(canvas), m_compositor(compositor) {}
 
-	void OnEvent(Application::Events::Event &event);
-	void SetFocus(View *view); // handles OnFocusLost/OnFocusGained bookkeeping
-	void OnViewRemoved(View *view);
+	void on_event(Application::Events::Event &event);
+	void set_focus(View *view); // handles OnFocusLost/OnFocusGained bookkeeping
+	void on_view_removed(View *view);
 
-	[[nodiscard]] vec2 MousePos() const { return m_MousePos; }
-	[[nodiscard]] bool MouseDown() const { return m_MouseDown; }
+	[[nodiscard]] Vec2 mouse_pos() const { return m_mouse_pos; }
+	[[nodiscard]] bool mouse_down() const { return m_mouse_down; }
 
-	vec2 TakeScrollDelta() {
-		const vec2 delta = m_ScrollDelta;
-		m_ScrollDelta = {};
+	Vec2 take_scroll_delta() {
+		const Vec2 delta = m_scroll_delta;
+		m_scroll_delta = {};
 		return delta;
 	}
 
   private:
-	Canvas &m_Canvas;
-	DrawCompositor &m_Compositor;
+	Canvas &m_canvas;
+	DrawCompositor &m_compositor;
 
-	View *m_HoveredView = nullptr;
-	View *m_FocusedView = nullptr;
-	View *m_DragSourceCandidate = nullptr;
-	View *m_DragTarget = nullptr;
-	DragState m_DragState{};
+	View *m_hovered_view = nullptr;
+	View *m_focused_view = nullptr;
+	View *m_drag_source_candidate = nullptr;
+	View *m_drag_target = nullptr;
+	DragState m_drag_state{};
 
-	vec2 m_MousePos = {};
-	vec2 m_DragStartPos = {};
-	bool m_MouseDown = false;
-	vec2 m_ScrollDelta = {};
+	Vec2 m_mouse_pos = {};
+	Vec2 m_drag_start_pos = {};
+	bool m_mouse_down = false;
+	Vec2 m_scroll_delta = {};
 };
 
 } // namespace Aquila::UI::Core

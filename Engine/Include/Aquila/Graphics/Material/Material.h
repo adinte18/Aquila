@@ -19,7 +19,7 @@ class ShaderProgram;
 
 namespace Aquila::Graphics {
 
-enum class MaterialType : uint8 {
+enum class MaterialType : Uint8 {
 	PBR,
 	Lit,
 	Unlit,
@@ -32,76 +32,76 @@ class Material {
   public:
 	std::string name;
 
-	static Ref<Material> CreateFromShader(GFX::GfxContext &ctx, Shader::ShaderProgram &shader,
-										  Ref<GFX::GfxPipeline> pipeline);
+	static Ref<Material> create_from_shader(GFX::GfxContext &ctx, Shader::ShaderProgram &shader,
+											Ref<GFX::GfxPipeline> pipeline);
 
-	static Ref<Material> Create(GFX::GfxContext &ctx, Ref<GFX::GfxPipeline> pipeline,
+	static Ref<Material> create(GFX::GfxContext &ctx, Ref<GFX::GfxPipeline> pipeline,
 								Ref<GFX::GfxDescriptorSetLayout> layout = nullptr);
 
-	void RegisterParameter(std::string paramName, ParameterType type, uint32 uboOffset,
-						   uint32 textureBinding = UINT32_MAX);
+	void register_parameter(std::string param_name, ParameterType type, Uint32 ubo_offset,
+							Uint32 texture_binding = UINT32_MAX);
 
-	Material &Set(const std::string &paramName, f32 v);
-	Material &Set(const std::string &paramName, int v);
-	Material &Set(const std::string &paramName, bool v);
-	Material &Set(const std::string &paramName, const vec2 &v);
-	Material &Set(const std::string &paramName, const vec3 &v);
-	Material &Set(const std::string &paramName, const vec4 &v);
-	Material &Set(const std::string &paramName, Ref<GFX::GfxTexture> tex);
+	Material &set(const std::string &param_name, F32 v);
+	Material &set(const std::string &param_name, int v);
+	Material &set(const std::string &param_name, bool v);
+	Material &set(const std::string &param_name, const Vec2 &v);
+	Material &set(const std::string &param_name, const Vec3 &v);
+	Material &set(const std::string &param_name, const Vec4 &v);
+	Material &set(const std::string &param_name, Ref<GFX::GfxTexture> tex);
 
-	Material &SetAlbedo(const vec4 &color) { return Set("albedo", color); }
-	Material &SetAlbedo(const vec3 &color) { return Set("albedo", vec4{ color, 1.f }); }
-	Material &SetMetallic(f32 v) { return Set("metallic", v); }
-	Material &SetRoughness(f32 v) { return Set("roughness", v); }
-	Material &SetEmissive(f32 v) { return Set("emissive", v); }
+	Material &set_albedo(const Vec4 &color) { return set("albedo", color); }
+	Material &set_albedo(const Vec3 &color) { return set("albedo", Vec4{ color, 1.F }); }
+	Material &set_metallic(F32 v) { return set("metallic", v); }
+	Material &set_roughness(F32 v) { return set("roughness", v); }
+	Material &set_emissive(F32 v) { return set("emissive", v); }
 
-	Material &SetTexture(uint32 binding, GFX::GfxTexture &tex);
+	Material &set_texture(Uint32 binding, GFX::GfxTexture &tex);
 
-	void Flush(uint32 frameSlot);
+	void flush(Uint32 frame_slot);
 
-	void Bind(GFX::GfxCommandList &cmd, uint32 setIndex, uint32 frameSlot);
+	void bind(GFX::GfxCommandList &cmd, Uint32 set_index, Uint32 frame_slot);
 
-	[[nodiscard]] GFX::GfxPipeline &GetPipeline() { return *m_Pipeline; }
-	[[nodiscard]] bool HasDescriptorSet() const { return m_Sets[0] != nullptr; }
-	[[nodiscard]] const std::vector<MaterialParameter> &GetParameters() const { return m_Parameters; }
-	[[nodiscard]] const MaterialParameter *GetParameter(const std::string &paramName) const;
+	[[nodiscard]] GFX::GfxPipeline &get_pipeline() { return *m_pipeline; }
+	[[nodiscard]] bool has_descriptor_set() const { return m_sets[0] != nullptr; }
+	[[nodiscard]] const std::vector<MaterialParameter> &get_parameters() const { return m_parameters; }
+	[[nodiscard]] const MaterialParameter *get_parameter(const std::string &param_name) const;
 
-	[[nodiscard]] MaterialType GetType() const { return m_Type; }
-	void SetType(MaterialType type) { m_Type = type; }
-	[[nodiscard]] const std::string &GetShaderPath() const { return m_ShaderPath; }
+	[[nodiscard]] MaterialType get_type() const { return m_type; }
+	void set_type(MaterialType type) { m_type = type; }
+	[[nodiscard]] const std::string &get_shader_path() const { return m_shader_path; }
 
   private:
 	Material() = default;
 
-	void ReplacePipeline(Ref<GFX::GfxPipeline> newPipeline, Ref<GFX::GfxDescriptorSetLayout> newLayout = nullptr);
+	void replace_pipeline(Ref<GFX::GfxPipeline> new_pipeline, Ref<GFX::GfxDescriptorSetLayout> new_layout = nullptr);
 
 	friend class MaterialFactory;
 
-	GFX::GfxContext *m_Context = nullptr;
-	Ref<GFX::GfxPipeline> m_Pipeline;
-	MaterialType m_Type = MaterialType::PBR;
-	std::string m_ShaderPath;
-	Ref<GFX::GfxDescriptorSetLayout> m_Layout;
+	GFX::GfxContext *m_context = nullptr;
+	Ref<GFX::GfxPipeline> m_pipeline;
+	MaterialType m_type = MaterialType::PBR;
+	std::string m_shader_path;
+	Ref<GFX::GfxDescriptorSetLayout> m_layout;
 
-	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_Sets;
-	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_UniformBuffers;
+	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_sets;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_uniform_buffers;
 
-	uint32 m_DirtySlotMask = 0;
+	Uint32 m_dirty_slot_mask = 0;
 
-	std::vector<MaterialParameter> m_Parameters;
-	std::vector<uint8> m_UBOData;
+	std::vector<MaterialParameter> m_parameters;
+	std::vector<Uint8> m_ubo_data;
 
 	struct PendingTexture {
-		uint32 binding;
+		Uint32 binding;
 		GFX::GfxTexture *tex;
 	};
-	std::vector<PendingTexture> m_PendingTextures;
+	std::vector<PendingTexture> m_pending_textures;
 
-	MaterialParameter *FindParameter(const std::string &paramName);
+	MaterialParameter *find_parameter(const std::string &param_name);
 
-	template <typename T> void WriteUBO(uint32 offset, const T &v);
+	template <typename T> void write_ubo(Uint32 offset, const T &v);
 
-	void EnsureUniformBuffers();
+	void ensure_uniform_buffers();
 };
 
 } // namespace Aquila::Graphics

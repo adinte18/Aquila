@@ -6,7 +6,7 @@
 
 namespace Aquila::Graphics::Shader {
 
-static RHI::ShaderStageFlags VkStageToRHI(VkShaderStageFlagBits stage) {
+static RHI::ShaderStageFlags vk_stage_to_rhi(VkShaderStageFlagBits stage) {
 	switch (stage) {
 	case VK_SHADER_STAGE_VERTEX_BIT:
 		return RHI::ShaderStageFlags::Vertex;
@@ -21,7 +21,7 @@ static RHI::ShaderStageFlags VkStageToRHI(VkShaderStageFlagBits stage) {
 	}
 }
 
-static Graphics::ParameterType SlangScalarToParamType(slang::TypeReflection *type) {
+static Graphics::ParameterType slang_scalar_to_param_type(slang::TypeReflection *type) {
 	using Kind = slang::TypeReflection::Kind;
 	using Scalar = slang::TypeReflection::ScalarType;
 
@@ -56,80 +56,80 @@ static Graphics::ParameterType SlangScalarToParamType(slang::TypeReflection *typ
 	return Graphics::ParameterType::Float;
 }
 
-bool ShaderProgram::AddStageFromSlang(const std::string &slangPath, std::string &errorLog) {
-	m_SlangPath = slangPath;
+bool ShaderProgram::add_stage_from_slang(const std::string &slang_path, std::string &error_log) {
+	m_slang_path = slang_path;
 
 	std::vector<RHI::VulkanCompiledStage> compiled;
-	if (!RHI::VulkanShaderCompiler::CompileFile(slangPath, compiled, errorLog)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(slang_path, compiled, error_log)) {
 		return false;
 	}
 
 	for (auto &stage : compiled) {
 		ShaderStage s;
-		s.stage = VkStageToRHI(stage.stage);
+		s.stage = vk_stage_to_rhi(stage.stage);
 		s.spirv = std::move(stage.spirv);
-		s.entryPointName = std::move(stage.entryPointName);
-		s.linkedComponent = std::move(stage.linkedComponent);
+		s.entry_point_name = std::move(stage.entry_point_name);
+		s.linked_component = std::move(stage.linked_component);
 		s.session = std::move(stage.session);
-		m_Stages.push_back(std::move(s));
+		m_stages.push_back(std::move(s));
 	}
 	return true;
 }
 
-bool ShaderProgram::Reload(std::string &errorLog, Ref<GFX::GfxDescriptorSetLayout> &outNewLayout) {
-	if (m_SlangPath.empty()) {
-		errorLog = "ShaderProgram: no source path set";
+bool ShaderProgram::reload(std::string &error_log, Ref<GFX::GfxDescriptorSetLayout> &out_new_layout) {
+	if (m_slang_path.empty()) {
+		error_log = "ShaderProgram: no source path set";
 		return false;
 	}
 
 	std::vector<RHI::VulkanCompiledStage> compiled;
-	if (!RHI::VulkanShaderCompiler::CompileFile(m_SlangPath, compiled, errorLog)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(m_slang_path, compiled, error_log)) {
 		return false;
 	}
 
-	m_Stages.clear();
+	m_stages.clear();
 	for (auto &stage : compiled) {
 		ShaderStage s;
-		s.stage = VkStageToRHI(stage.stage);
+		s.stage = vk_stage_to_rhi(stage.stage);
 		s.spirv = std::move(stage.spirv);
-		s.entryPointName = std::move(stage.entryPointName);
-		s.linkedComponent = std::move(stage.linkedComponent);
+		s.entry_point_name = std::move(stage.entry_point_name);
+		s.linked_component = std::move(stage.linked_component);
 		s.session = std::move(stage.session);
-		m_Stages.push_back(std::move(s));
+		m_stages.push_back(std::move(s));
 	}
 
-	return ReflectInto(outNewLayout);
+	return reflect_into(out_new_layout);
 }
 
-void ShaderProgram::CommitNewLayout(Ref<GFX::GfxDescriptorSetLayout> newLayout) {
-	m_DescriptorSetLayout = std::move(newLayout);
+void ShaderProgram::commit_new_layout(Ref<GFX::GfxDescriptorSetLayout> new_layout) {
+	m_descriptor_set_layout = std::move(new_layout);
 }
 
-bool ShaderProgram::Reflect() {
-	return ReflectInto(m_DescriptorSetLayout);
+bool ShaderProgram::reflect() {
+	return reflect_into(m_descriptor_set_layout);
 }
 
-void ShaderProgram::Cleanup() {
-	m_Stages.clear();
-	m_ReflectedBindings.clear();
-	m_DescriptorSetLayout.reset();
+void ShaderProgram::cleanup() {
+	m_stages.clear();
+	m_reflected_bindings.clear();
+	m_descriptor_set_layout.reset();
 }
 
-RHI::ShaderStageDesc ShaderProgram::GetStageDesc(RHI::ShaderStageFlags stage) const {
-	for (const auto &s : m_Stages) {
+RHI::ShaderStageDesc ShaderProgram::get_stage_desc(RHI::ShaderStageFlags stage) const {
+	for (const auto &s : m_stages) {
 		if (s.stage == stage) {
-			return { .stage = s.stage, .spirv = s.spirv, .entryPoint = s.entryPointName };
+			return { .stage = s.stage, .spirv = s.spirv, .entry_point = s.entry_point_name };
 		}
 	}
 	return {};
 }
 
-bool ShaderProgram::SlangTypeToDescriptor(slang::TypeLayoutReflection *typeLayout, RHI::DescriptorType &outType,
-										  ReflectedBindingType &outReflectedType) {
-	if (!typeLayout) {
+bool ShaderProgram::slang_type_to_descriptor(slang::TypeLayoutReflection *type_layout, RHI::DescriptorType &out_type,
+										  ReflectedBindingType &out_reflected_type) {
+	if (!type_layout) {
 		return false;
 	}
-	slang::TypeReflection *type = typeLayout->getType();
+	slang::TypeReflection *type = type_layout->getType();
 	if (!type) {
 		return false;
 	}
@@ -138,8 +138,8 @@ bool ShaderProgram::SlangTypeToDescriptor(slang::TypeLayoutReflection *typeLayou
 	switch (type->getKind()) {
 	case Kind::ConstantBuffer:
 	case Kind::ParameterBlock:
-		outType = RHI::DescriptorType::UniformBuffer;
-		outReflectedType = ReflectedBindingType::UniformBuffer;
+		out_type = RHI::DescriptorType::UniformBuffer;
+		out_reflected_type = ReflectedBindingType::UniformBuffer;
 		return true;
 
 	case Kind::Resource: {
@@ -147,13 +147,13 @@ bool ShaderProgram::SlangTypeToDescriptor(slang::TypeLayoutReflection *typeLayou
 
 		if (base == SLANG_TEXTURE_1D || base == SLANG_TEXTURE_2D || base == SLANG_TEXTURE_3D ||
 			base == SLANG_TEXTURE_CUBE) {
-			outType = RHI::DescriptorType::CombinedImageSampler;
-			outReflectedType = ReflectedBindingType::CombinedImageSampler;
+			out_type = RHI::DescriptorType::CombinedImageSampler;
+			out_reflected_type = ReflectedBindingType::CombinedImageSampler;
 			return true;
 		}
 		if (base == SLANG_STRUCTURED_BUFFER || base == SLANG_BYTE_ADDRESS_BUFFER) {
-			outType = RHI::DescriptorType::StorageBuffer;
-			outReflectedType = ReflectedBindingType::StorageBuffer;
+			out_type = RHI::DescriptorType::StorageBuffer;
+			out_reflected_type = ReflectedBindingType::StorageBuffer;
 			return true;
 		}
 		return false;
@@ -168,44 +168,44 @@ bool ShaderProgram::SlangTypeToDescriptor(slang::TypeLayoutReflection *typeLayou
 	}
 }
 
-void ShaderProgram::ProcessBinding(slang::VariableLayoutReflection *var, RHI::ShaderStageFlags stageFlags,
-								   std::map<uint32, std::map<uint32, BindingInfo>> &sets) {
+void ShaderProgram::process_binding(slang::VariableLayoutReflection *var, RHI::ShaderStageFlags stage_flags,
+								   std::map<Uint32, std::map<Uint32, BindingInfo>> &sets) {
 	if (!var) {
 		return;
 	}
 
-	uint32 bindingIndex = (uint32)var->getBindingIndex();
-	uint32 set = (uint32)var->getBindingSpace();
+	Uint32 binding_index = (Uint32)var->getBindingIndex();
+	Uint32 set = (Uint32)var->getBindingSpace();
 
-	slang::TypeLayoutReflection *typeLayout = var->getTypeLayout();
-	if (!typeLayout) {
+	slang::TypeLayoutReflection *type_layout = var->getTypeLayout();
+	if (!type_layout) {
 		return;
 	}
 
-	RHI::DescriptorType descType{};
-	ReflectedBindingType reflType{};
-	if (!SlangTypeToDescriptor(typeLayout, descType, reflType)) {
+	RHI::DescriptorType desc_type{};
+	ReflectedBindingType refl_type{};
+	if (!slang_type_to_descriptor(type_layout, desc_type, refl_type)) {
 		return;
 	}
 
-	auto &bi = sets[set][bindingIndex];
-	bi.descriptorType = descType;
-	bi.stageFlags = bi.stageFlags | stageFlags;
-	bi.descriptorCount = 1;
+	auto &bi = sets[set][binding_index];
+	bi.descriptor_type = desc_type;
+	bi.stage_flags = bi.stage_flags | stage_flags;
+	bi.descriptor_count = 1;
 	bi.occupied = true;
 
 	ReflectedBinding rb{};
 	rb.name = var->getName() ? var->getName() : "";
 	rb.set = set;
-	rb.bindingIndex = bindingIndex;
-	rb.descriptorCount = 1;
-	rb.type = reflType;
-	rb.stageFlags = stageFlags;
+	rb.binding_index = binding_index;
+	rb.descriptor_count = 1;
+	rb.type = refl_type;
+	rb.stage_flags = stage_flags;
 
-	if (reflType == ReflectedBindingType::UniformBuffer) {
-		slang::TypeLayoutReflection *inner = typeLayout->getElementTypeLayout();
+	if (refl_type == ReflectedBindingType::UniformBuffer) {
+		slang::TypeLayoutReflection *inner = type_layout->getElementTypeLayout();
 		if (inner) {
-			for (uint32 f = 0; f < (uint32)inner->getFieldCount(); ++f) {
+			for (Uint32 f = 0; f < (Uint32)inner->getFieldCount(); ++f) {
 				slang::VariableLayoutReflection *field = inner->getFieldByIndex(f);
 				if (!field || !field->getName()) {
 					continue;
@@ -216,64 +216,64 @@ void ShaderProgram::ProcessBinding(slang::VariableLayoutReflection *var, RHI::Sh
 				}
 				ReflectedBinding::UBOField uf{};
 				uf.name = field->getName();
-				uf.paramType = SlangScalarToParamType(ft);
-				rb.uboFields.push_back(std::move(uf));
+				uf.param_type = slang_scalar_to_param_type(ft);
+				rb.ubo_fields.push_back(std::move(uf));
 			}
 		}
 	}
 
-	m_ReflectedBindings.push_back(std::move(rb));
+	m_reflected_bindings.push_back(std::move(rb));
 }
 
-bool ShaderProgram::ReflectInto(Ref<GFX::GfxDescriptorSetLayout> &outLayout) {
-	if (m_Stages.empty()) {
+bool ShaderProgram::reflect_into(Ref<GFX::GfxDescriptorSetLayout> &out_layout) {
+	if (m_stages.empty()) {
 		return false;
 	}
 
-	m_ReflectedBindings.clear();
-	std::map<uint32, std::map<uint32, BindingInfo>> sets;
+	m_reflected_bindings.clear();
+	std::map<Uint32, std::map<Uint32, BindingInfo>> sets;
 
-	const auto &primary = m_Stages[0];
-	if (!primary.linkedComponent) {
-		outLayout = nullptr;
+	const auto &primary = m_stages[0];
+	if (!primary.linked_component) {
+		out_layout = nullptr;
 		return true;
 	}
 
-	slang::ProgramLayout *pl = primary.linkedComponent->getLayout();
+	slang::ProgramLayout *pl = primary.linked_component->getLayout();
 	if (!pl) {
-		outLayout = nullptr;
+		out_layout = nullptr;
 		return true;
 	}
 
-	for (uint32 i = 0; i < (uint32)pl->getParameterCount(); ++i) {
-		ProcessBinding(pl->getParameterByIndex(i), primary.stage, sets);
+	for (Uint32 i = 0; i < (Uint32)pl->getParameterCount(); ++i) {
+		process_binding(pl->getParameterByIndex(i), primary.stage, sets);
 	}
 
-	for (size_t si = 1; si < m_Stages.size(); ++si) {
-		const auto &stage = m_Stages[si];
-		if (!stage.linkedComponent) {
+	for (size_t si = 1; si < m_stages.size(); ++si) {
+		const auto &stage = m_stages[si];
+		if (!stage.linked_component) {
 			continue;
 		}
-		slang::ProgramLayout *spl = stage.linkedComponent->getLayout();
+		slang::ProgramLayout *spl = stage.linked_component->getLayout();
 		if (!spl) {
 			continue;
 		}
-		for (uint32 i = 0; i < (uint32)spl->getParameterCount(); ++i) {
+		for (Uint32 i = 0; i < (Uint32)spl->getParameterCount(); ++i) {
 			auto *var = spl->getParameterByIndex(i);
 			if (!var) {
 				continue;
 			}
-			uint32 b = (uint32)var->getBindingIndex();
-			uint32 s = (uint32)var->getBindingSpace();
+			Uint32 b = (Uint32)var->getBindingIndex();
+			Uint32 s = (Uint32)var->getBindingSpace();
 			if (sets.count(s) && sets[s].count(b)) {
-				sets[s][b].stageFlags = sets[s][b].stageFlags | stage.stage;
+				sets[s][b].stage_flags = sets[s][b].stage_flags | stage.stage;
 			}
 		}
 	}
 
 	auto it = sets.find(1);
 	if (it == sets.end()) {
-		outLayout = nullptr;
+		out_layout = nullptr;
 		return true;
 	}
 
@@ -284,13 +284,13 @@ bool ShaderProgram::ReflectInto(Ref<GFX::GfxDescriptorSetLayout> &outLayout) {
 		}
 		desc.bindings.push_back({
 			.binding = idx,
-			.type = info.descriptorType,
-			.stages = info.stageFlags,
-			.count = info.descriptorCount,
+			.type = info.descriptor_type,
+			.stages = info.stage_flags,
+			.count = info.descriptor_count,
 		});
 	}
 
-	outLayout = m_Context.CreateDescriptorSetLayout(desc);
+	out_layout = m_context.create_descriptor_set_layout(desc);
 	return true;
 }
 

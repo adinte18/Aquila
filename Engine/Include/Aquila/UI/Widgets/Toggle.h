@@ -9,16 +9,16 @@ class Toggle : public BaseField<bool> {
 	Toggle();
 	explicit Toggle(bool on);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Toggle"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Toggle"; }
 
-	void SetOn(bool on) { SetValue(on); }
-	[[nodiscard]] bool IsOn() const { return GetValue(); }
+	void set_on(bool on) { set_value(on); }
+	[[nodiscard]] bool is_on() const { return get_value(); }
 
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   protected:
-	void OnValueUpdated() override;
+	void on_value_updated() override;
 };
 
 } // namespace Aquila::UI::Core

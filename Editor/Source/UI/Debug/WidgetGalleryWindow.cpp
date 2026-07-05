@@ -41,136 +41,136 @@ using namespace Aquila::UI::Core;
 WidgetGalleryWindow::WidgetGalleryWindow() = default;
 WidgetGalleryWindow::~WidgetGalleryWindow() = default;
 
-View *WidgetGalleryWindow::AddGroup(View *host, const std::string &heading) {
-	auto *group = host->AddChild<View>();
-	group->AddClass("gallery-item");
-	auto *label = group->AddChild<Label>(heading);
-	label->AddClass("gallery-heading");
+View *WidgetGalleryWindow::add_group(View *host, const std::string &heading) {
+	auto *group = host->add_child<View>();
+	group->add_class("gallery-item");
+	auto *label = group->add_child<Label>(heading);
+	label->add_class("gallery-heading");
 	return group;
 }
 
-void WidgetGalleryWindow::Build(GFX::GfxContext &ctx, TextureCache *textureCache, uint32 width, uint32 height,
-								const std::string &stylePath) {
-	m_Canvas = CreateUnique<Canvas>(width, height);
-	UI::StyleParser::LoadFile(stylePath, m_Canvas->GetStyleSheet());
+void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cache, Uint32 width, Uint32 height,
+								const std::string &style_path) {
+	m_canvas = create_unique<Canvas>(width, height);
+	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
-	auto *root = m_Canvas->GetRoot();
-	root->SetId("gallery-root");
-	root->AddClass("gallery-root");
+	auto *root = m_canvas->get_root();
+	root->set_id("gallery-root");
+	root->add_class("gallery-root");
 
-	auto *header = root->AddChild<View>();
-	header->AddClass("gallery-header");
-	auto *title = header->AddChild<Label>(std::string("Widget Gallery"));
-	title->AddClass("gallery-title");
+	auto *header = root->add_child<View>();
+	header->add_class("gallery-header");
+	auto *title = header->add_child<Label>(std::string("Widget Gallery"));
+	title->add_class("gallery-title");
 
-	auto *scroll = root->AddChild<ScrollView>();
-	scroll->AddClass("gallery-scroll");
-	auto *content = scroll->AddContent<View>();
-	content->AddClass("gallery-content");
+	auto *scroll = root->add_child<ScrollView>();
+	scroll->add_class("gallery-scroll");
+	auto *content = scroll->add_content<View>();
+	content->add_class("gallery-content");
 
-	m_Tooltip = root->AddChild<Tooltip>();
+	m_tooltip = root->add_child<Tooltip>();
 
-	AddGroup(content, "Button")->AddChild<Button>(std::string("Click me"));
+	add_group(content, "Button")->add_child<Button>(std::string("Click me"));
 
-	AddGroup(content, "Label")->AddChild<Label>(std::string("The quick brown fox"));
+	add_group(content, "Label")->add_child<Label>(std::string("The quick brown fox"));
 
-	AddGroup(content, "Checkbox")->AddChild<Checkbox>(true);
+	add_group(content, "Checkbox")->add_child<Checkbox>(true);
 
-	AddGroup(content, "Toggle")->AddChild<Toggle>(true);
+	add_group(content, "Toggle")->add_child<Toggle>(true);
 
-	auto *slider = AddGroup(content, "Slider")->AddChild<Slider>();
-	slider->SetRange(0.f, 100.f);
-	slider->SetValue(40.f);
+	auto *slider = add_group(content, "Slider")->add_child<Slider>();
+	slider->set_range(0.F, 100.F);
+	slider->set_value(40.F);
 
-	auto *progress = AddGroup(content, "ProgressBar")->AddChild<ProgressBar>();
-	progress->SetValue(0.65f);
+	auto *progress = add_group(content, "ProgressBar")->add_child<ProgressBar>();
+	progress->set_value(0.65f);
 
-	AddGroup(content, "TextInput")->AddChild<TextInput>(std::string("Type here…"));
+	add_group(content, "TextInput")->add_child<TextInput>(std::string("Type here…"));
 
-	AddGroup(content, "NumberInput")->AddChild<NumberInput>();
+	add_group(content, "NumberInput")->add_child<NumberInput>();
 
-	AddGroup(content, "DragFloat")->AddChild<DragFloat>();
+	add_group(content, "DragFloat")->add_child<DragFloat>();
 
-	AddGroup(content, "DragInt")->AddChild<DragInt>();
+	add_group(content, "DragInt")->add_child<DragInt>();
 
-	auto *dropdown = AddGroup(content, "Dropdown")->AddChild<Dropdown>();
-	dropdown->AddOption("first", "First");
-	dropdown->AddOption("second", "Second");
-	dropdown->AddOption("third", "Third");
+	auto *dropdown = add_group(content, "Dropdown")->add_child<Dropdown>();
+	dropdown->add_option("first", "First");
+	dropdown->add_option("second", "Second");
+	dropdown->add_option("third", "Third");
 
-	AddGroup(content, "ColorPicker")->AddChild<ColorPicker>(ctx, vec4(0.8f, 0.4f, 0.2f, 1.f));
+	add_group(content, "ColorPicker")->add_child<ColorPicker>(ctx, Vec4(0.8f, 0.4f, 0.2f, 1.F));
 
-	AddGroup(content, "Vec3Field")->AddChild<Vec3Field>();
+	add_group(content, "Vec3Field")->add_child<Vec3Field>();
 
-	AddGroup(content, "Separator")->AddChild<Separator>();
+	add_group(content, "Separator")->add_child<Separator>();
 
-	auto *collapsible = AddGroup(content, "Collapsible")->AddChild<Collapsible>(std::string("Expandable section"));
-	collapsible->AddContent<Label>(std::string("Hidden content revealed on expand"));
+	auto *collapsible = add_group(content, "Collapsible")->add_child<Collapsible>(std::string("Expandable section"));
+	collapsible->add_content<Label>(std::string("Hidden content revealed on expand"));
 
-	auto *tabs = AddGroup(content, "TabView")->AddChild<TabView>();
-	tabs->AddClass("gallery-tabview");
-	tabs->AddTab("Tab One")->AddChild<Label>(std::string("Contents of tab one"));
-	tabs->AddTab("Tab Two")->AddChild<Label>(std::string("Contents of tab two"));
-	tabs->SetActiveTab(0);
+	auto *tabs = add_group(content, "TabView")->add_child<TabView>();
+	tabs->add_class("gallery-tabview");
+	tabs->add_tab("Tab One")->add_child<Label>(std::string("Contents of tab one"));
+	tabs->add_tab("Tab Two")->add_child<Label>(std::string("Contents of tab two"));
+	tabs->set_active_tab(0);
 
-	auto *listBox = AddGroup(content, "ListBox")->AddChild<ListBox>();
-	listBox->AddClass("gallery-listbox");
-	listBox->AddItem("a", "Alpha");
-	listBox->AddItem("b", "Bravo");
-	listBox->AddItem("c", "Charlie");
+	auto *list_box = add_group(content, "ListBox")->add_child<ListBox>();
+	list_box->add_class("gallery-listbox");
+	list_box->add_item("a", "Alpha");
+	list_box->add_item("b", "Bravo");
+	list_box->add_item("c", "Charlie");
 
-	auto *tree = AddGroup(content, "TreeView")->AddChild<TreeView>();
-	auto *treeRoot = tree->AddNode("Root");
-	treeRoot->AddChildNode("Child A");
-	treeRoot->AddChildNode("Child B");
+	auto *tree = add_group(content, "TreeView")->add_child<TreeView>();
+	auto *tree_root = tree->add_node("Root");
+	tree_root->add_child_node("Child A");
+	tree_root->add_child_node("Child B");
 
-	auto *grid = AddGroup(content, "PropertyGrid")->AddChild<PropertyGrid>();
-	grid->AddRow<DragFloat>("Scale");
-	grid->AddRow<Checkbox>("Visible");
+	auto *grid = add_group(content, "PropertyGrid")->add_child<PropertyGrid>();
+	grid->add_row<DragFloat>("Scale");
+	grid->add_row<Checkbox>("Visible");
 
-	if (textureCache) {
+	if (texture_cache) {
 		auto *image =
-			AddGroup(content, "Image")->AddChild<Image>(textureCache->Load("Engine/UI/Icons/info.png"), vec4(1.f));
-		image->AddClass("gallery-image");
+			add_group(content, "Image")->add_child<Image>(texture_cache->load("Engine/UI/Icons/info.png"), Vec4(1.F));
+		image->add_class("gallery-image");
 	}
 
-	AddGroup(content, "AssetSlot")->AddChild<AssetSlot>(std::string("texture"));
+	add_group(content, "AssetSlot")->add_child<AssetSlot>(std::string("texture"));
 
-	auto *card = AddGroup(content, "AssetCard")->AddChild<AssetCard>();
-	card->SetAsset(AssetPayload{ "textures/wood.png", "texture", "wood.png" });
-	if (textureCache) {
-		card->SetThumbnail(textureCache->Load("Engine/UI/Icons/info.png"));
+	auto *card = add_group(content, "AssetCard")->add_child<AssetCard>();
+	card->set_asset(AssetPayload{ "textures/wood.png", "texture", "wood.png" });
+	if (texture_cache) {
+		card->set_thumbnail(texture_cache->load("Engine/UI/Icons/info.png"));
 	}
 
-	auto *tooltipBtn = AddGroup(content, "Tooltip")->AddChild<Button>(std::string("Show tooltip"));
-	Tooltip *tip = m_Tooltip;
-	tooltipBtn->onClick.Connect([tip, tooltipBtn] {
-		const Rect rect = tooltipBtn->GetAbsoluteRect();
-		tip->ShowAt({ rect.position.x, rect.position.y + rect.size.y + 4.f }, "Hello from a Tooltip!");
+	auto *tooltip_btn = add_group(content, "Tooltip")->add_child<Button>(std::string("Show tooltip"));
+	Tooltip *tip = m_tooltip;
+	tooltip_btn->on_click.connect([tip, tooltip_btn] {
+		const Rect rect = tooltip_btn->get_absolute_rect();
+		tip->show_at({ rect.position.x, rect.position.y + rect.size.y + 4.F }, "Hello from a Tooltip!");
 	});
 
-	m_Canvas->ReloadStyles();
+	m_canvas->reload_styles();
 }
 
-void WidgetGalleryWindow::Update(f32 deltaTime) {
-	m_Canvas->Update(deltaTime);
-	m_Canvas->Compute();
+void WidgetGalleryWindow::update(F32 delta_time) {
+	m_canvas->update(delta_time);
+	m_canvas->compute();
 }
 
-void WidgetGalleryWindow::Render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
-	m_Canvas->SubmitToQuadBatcher(batcher, cmd);
+void WidgetGalleryWindow::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
-void WidgetGalleryWindow::OnEvent(Application::Events::Event &event) {
+void WidgetGalleryWindow::on_event(Application::Events::Event &event) {
 	Application::Events::EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
-		if (e.GetWidth() > 0 && e.GetHeight() > 0) {
-			m_Canvas->Resize(e.GetWidth(), e.GetHeight());
+	dispatcher.dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
+		if (e.get_width() > 0 && e.get_height() > 0) {
+			m_canvas->resize(e.get_width(), e.get_height());
 		}
 		return false;
 	});
 
-	m_Canvas->OnEvent(event);
+	m_canvas->on_event(event);
 }
 
 } // namespace Editor

@@ -16,116 +16,116 @@ namespace Aquila::Graphics::RG {
 
 struct RGTexBarrier {
 	RGTextureHandle handle;
-	RHI::ResourceState oldState;
-	RHI::ResourceState newState;
+	RHI::ResourceState old_state;
+	RHI::ResourceState new_state;
 };
 
 struct RGBufBarrier {
 	RGBufferHandle handle;
-	RHI::ResourceState oldState;
-	RHI::ResourceState newState;
+	RHI::ResourceState old_state;
+	RHI::ResourceState new_state;
 };
 
 struct RGCompiledGraph {
 	// Topologically sorted, culled pass indices (into RenderGraph::GetPasses()).
-	std::vector<uint32> passOrder;
+	std::vector<Uint32> pass_order;
 
 	// Flat barrier table for textures.
 	// Pass i owns: texBarriers[ passTexBarStart[i] .. passTexBarStart[i+1] )
-	std::vector<RGTexBarrier> texBarriers;
-	std::vector<uint32> passTexBarStart; // size = passOrder.size() + 1
+	std::vector<RGTexBarrier> tex_barriers;
+	std::vector<Uint32> pass_tex_bar_start; // size = passOrder.size() + 1
 
 	// Flat barrier table for buffers.
-	std::vector<RGBufBarrier> bufBarriers;
-	std::vector<uint32> passBufBarStart; // size = passOrder.size() + 1
+	std::vector<RGBufBarrier> buf_barriers;
+	std::vector<Uint32> pass_buf_bar_start; // size = passOrder.size() + 1
 
 	// Per-pass renderpass handle.  Null for compute / copy passes.
 	// Ref-counted so the GfxContext's internal caching works correctly.
-	std::vector<Ref<GFX::GfxRenderPass>> passRenderPasses;
+	std::vector<Ref<GFX::GfxRenderPass>> pass_render_passes;
 
 	// Transient resource owners — alive until Reset() so raw pointers in the
 	// registry remain valid throughout Execute().
-	std::vector<Ref<GFX::GfxTexture>> transientTextures;
-	std::vector<Ref<GFX::GfxBuffer>> transientBuffers;
+	std::vector<Ref<GFX::GfxTexture>> transient_textures;
+	std::vector<Ref<GFX::GfxBuffer>> transient_buffers;
 
 	bool valid = false;
 
-	void Reset() {
-		passOrder.clear();
-		texBarriers.clear();
-		passTexBarStart.clear();
-		bufBarriers.clear();
-		passBufBarStart.clear();
-		passRenderPasses.clear();
-		transientTextures.clear();
-		transientBuffers.clear();
+	void reset() {
+		pass_order.clear();
+		tex_barriers.clear();
+		pass_tex_bar_start.clear();
+		buf_barriers.clear();
+		pass_buf_bar_start.clear();
+		pass_render_passes.clear();
+		transient_textures.clear();
+		transient_buffers.clear();
 		valid = false;
 	}
 };
 
 class RGCompiler {
   public:
-	static RGCompiledGraph Compile(const std::vector<RGPassData> &passes, RGRegistry &registry, GFX::GfxContext &ctx);
+	static RGCompiledGraph compile(const std::vector<RGPassData> &passes, RGRegistry &registry, GFX::GfxContext &ctx);
 
   private:
 	// Directed adjacency list for the dependency graph.
 	// adjacency[i] = set of pass indices that depend on pass i.
-	using AdjList = std::vector<std::vector<uint32>>;
+	using AdjList = std::vector<std::vector<Uint32>>;
 
 	struct LifetimeInterval {
-		int32 firstUse = INT32_MAX;
-		int32 lastUse = -1;
+		Int32 first_use = INT32_MAX;
+		Int32 last_use = -1;
 		bool imported = false;
 	};
 
 	// Pool entry for texture aliasing.
 	struct TexPoolEntry {
 		Ref<GFX::GfxTexture> tex;
-		int32 lastUsedAt = -1;
+		Int32 last_used_at = -1;
 		RGTextureDesc desc;
 	};
 
 	struct BufPoolEntry {
 		Ref<GFX::GfxBuffer> buf;
-		int32 lastUsedAt = -1;
+		Int32 last_used_at = -1;
 		RGBufferDesc desc;
 	};
 
-	static AdjList BuildDependencyGraph(const std::vector<RGPassData> &passes, uint32 texCount, uint32 bufCount);
+	static AdjList build_dependency_graph(const std::vector<RGPassData> &passes, Uint32 tex_count, Uint32 buf_count);
 
 	// Returns false and fills outCyclePath if a cycle is detected.
-	static bool TopologicalSort(const AdjList &adj, uint32 passCount, std::vector<uint32> &outOrder,
-								std::vector<uint32> &outCyclePath);
+	static bool topological_sort(const AdjList &adj, Uint32 pass_count, std::vector<Uint32> &out_order,
+								std::vector<Uint32> &out_cycle_path);
 
-	static std::vector<bool> CullPasses(const std::vector<RGPassData> &passes, const AdjList &adj,
-										const std::vector<uint32> &sortedOrder, const RGRegistry &registry);
+	static std::vector<bool> cull_passes(const std::vector<RGPassData> &passes, const AdjList &adj,
+										const std::vector<Uint32> &sorted_order, const RGRegistry &registry);
 
-	static std::vector<LifetimeInterval> ComputeTexLifetimes(const std::vector<RGPassData> &passes,
-															 const std::vector<uint32> &sortedOrder,
-															 const std::vector<bool> &alive, uint32 texCount,
+	static std::vector<LifetimeInterval> compute_tex_lifetimes(const std::vector<RGPassData> &passes,
+															 const std::vector<Uint32> &sorted_order,
+															 const std::vector<bool> &alive, Uint32 tex_count,
 															 const RGRegistry &registry);
 
-	static std::vector<LifetimeInterval> ComputeBufLifetimes(const std::vector<RGPassData> &passes,
-															 const std::vector<uint32> &sortedOrder,
-															 const std::vector<bool> &alive, uint32 bufCount,
+	static std::vector<LifetimeInterval> compute_buf_lifetimes(const std::vector<RGPassData> &passes,
+															 const std::vector<Uint32> &sorted_order,
+															 const std::vector<bool> &alive, Uint32 buf_count,
 															 const RGRegistry &registry);
 
-	static void AllocateTransients(const std::vector<RGPassData> &passes, RGRegistry &registry,
-								   const std::vector<LifetimeInterval> &texLifetimes,
-								   const std::vector<LifetimeInterval> &bufLifetimes, GFX::GfxContext &ctx,
+	static void allocate_transients(const std::vector<RGPassData> &passes, RGRegistry &registry,
+								   const std::vector<LifetimeInterval> &tex_lifetimes,
+								   const std::vector<LifetimeInterval> &buf_lifetimes, GFX::GfxContext &ctx,
 								   RGCompiledGraph &out);
 
-	static void InferBarriers(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
-							  const std::vector<bool> &alive, uint32 texCount, uint32 bufCount,
+	static void infer_barriers(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
+							  const std::vector<bool> &alive, Uint32 tex_count, Uint32 buf_count,
 							  const RGRegistry &registry, RGCompiledGraph &out);
 
-	static void CreateRenderPasses(const std::vector<RGPassData> &passes, const std::vector<uint32> &sortedOrder,
+	static void create_render_passes(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
 								   const std::vector<bool> &alive, const RGRegistry &registry, GFX::GfxContext &ctx,
 								   RGCompiledGraph &out);
 
-	static uint32 SlotOf(uint32 id);
-	static bool TexDescCompatible(const RGTextureDesc &a, const RGTextureDesc &b);
-	static bool BufDescCompatible(const RGBufferDesc &a, const RGBufferDesc &b);
+	static Uint32 slot_of(Uint32 id);
+	static bool tex_desc_compatible(const RGTextureDesc &a, const RGTextureDesc &b);
+	static bool buf_desc_compatible(const RGBufferDesc &a, const RGBufferDesc &b);
 };
 
 } // namespace Aquila::Graphics::RG

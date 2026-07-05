@@ -7,17 +7,17 @@
 namespace Aquila::RHI {
 
 struct GPUMeshPrimitive {
-	uint32 firstIndex = 0;
-	uint32 firstVertex = 0;
-	uint32 indexCount = 0;
-	uint32 vertexCount = 0;
+	Uint32 first_index = 0;
+	Uint32 first_vertex = 0;
+	Uint32 index_count = 0;
+	Uint32 vertex_count = 0;
 };
 
 struct GPUMeshDesc {
 	const std::vector<Vertex> *vertices = nullptr;
-	const std::vector<uint32> *indices = nullptr;
+	const std::vector<Uint32> *indices = nullptr;
 	const std::vector<GPUMeshPrimitive> *primitives = nullptr;
-	std::string debugName;
+	std::string debug_name;
 };
 
 class IRHIGPUMesh {
@@ -26,13 +26,13 @@ class IRHIGPUMesh {
 	AQUILA_NONCOPYABLE(IRHIGPUMesh);
 	AQUILA_NONMOVEABLE(IRHIGPUMesh);
 
-	virtual void Bind(IRHICommandList &cmd) const = 0;
-	virtual void Draw(IRHICommandList &cmd) const = 0;
+	virtual void bind(IRHICommandList &cmd) const = 0;
+	virtual void draw(IRHICommandList &cmd) const = 0;
 
-	[[nodiscard]] virtual bool IsValid() const = 0;
-	[[nodiscard]] virtual uint32 GetVertexCount() const = 0;
-	[[nodiscard]] virtual uint32 GetIndexCount() const = 0;
-	[[nodiscard]] virtual bool HasIndexBuffer() const = 0;
+	[[nodiscard]] virtual bool is_valid() const = 0;
+	[[nodiscard]] virtual Uint32 get_vertex_count() const = 0;
+	[[nodiscard]] virtual Uint32 get_index_count() const = 0;
+	[[nodiscard]] virtual bool has_index_buffer() const = 0;
 
   protected:
 	IRHIGPUMesh() = default;

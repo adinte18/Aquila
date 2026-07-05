@@ -19,26 +19,26 @@ class VulkanGPUMesh final : public IRHIGPUMesh {
 	AQUILA_NONMOVEABLE(VulkanGPUMesh);
 
 	// IRHIGPUMesh
-	void Bind(IRHICommandList &cmd) const override;
-	void Draw(IRHICommandList &cmd) const override;
+	void bind(IRHICommandList &cmd) const override;
+	void draw(IRHICommandList &cmd) const override;
 
-	[[nodiscard]] bool IsValid() const override { return m_VertexAllocation.IsValid(); }
-	[[nodiscard]] uint32 GetVertexCount() const override { return m_VertexCount; }
-	[[nodiscard]] uint32 GetIndexCount() const override { return m_IndexCount; }
-	[[nodiscard]] bool HasIndexBuffer() const override { return m_HasIndexBuffer; }
+	[[nodiscard]] bool is_valid() const override { return m_vertex_allocation.is_valid(); }
+	[[nodiscard]] Uint32 get_vertex_count() const override { return m_vertex_count; }
+	[[nodiscard]] Uint32 get_index_count() const override { return m_index_count; }
+	[[nodiscard]] bool has_index_buffer() const override { return m_has_index_buffer; }
 
   private:
-	void UploadVertexBuffer(const std::vector<Vertex> &vertices);
-	void UploadIndexBuffer(const std::vector<uint32> &indices);
+	void upload_vertex_buffer(const std::vector<Vertex> &vertices);
+	void upload_index_buffer(const std::vector<Uint32> &indices);
 
-	VulkanDevice &m_Device;
-	std::string m_DebugName;
-	BufferAllocation m_VertexAllocation{};
-	BufferAllocation m_IndexAllocation{};
-	std::vector<GPUMeshPrimitive> m_Primitives;
-	uint32 m_VertexCount = 0;
-	uint32 m_IndexCount = 0;
-	bool m_HasIndexBuffer = false;
+	VulkanDevice &m_device;
+	std::string m_debug_name;
+	BufferAllocation m_vertex_allocation{};
+	BufferAllocation m_index_allocation{};
+	std::vector<GPUMeshPrimitive> m_primitives;
+	Uint32 m_vertex_count = 0;
+	Uint32 m_index_count = 0;
+	bool m_has_index_buffer = false;
 };
 
 } // namespace Aquila::RHI

@@ -6,9 +6,9 @@
 
 namespace Aquila::UI {
 
-static size_t FindMatchingClose(const std::string &src, size_t openPos) {
+static size_t find_matching_close(const std::string &src, size_t open_pos) {
 	int depth = 1;
-	size_t i = openPos + 1;
+	size_t i = open_pos + 1;
 	while (i < src.size() && depth > 0) {
 		if (src[i] == '{') {
 			++depth;
@@ -20,40 +20,40 @@ static size_t FindMatchingClose(const std::string &src, size_t openPos) {
 	return depth == 0 ? i - 1 : std::string::npos;
 }
 
-static std::unordered_map<std::string, std::string> ExtractVariables(std::string_view src) {
+static std::unordered_map<std::string, std::string> extract_variables(std::string_view src) {
 	std::unordered_map<std::string, std::string> vars;
 	size_t i = 0;
 	while (i < src.size()) {
-		size_t dashPos = src.find("--", i);
-		if (dashPos == std::string_view::npos) {
+		size_t dash_pos = src.find("--", i);
+		if (dash_pos == std::string_view::npos) {
 			break;
 		}
 
-		size_t colonPos = src.find(':', dashPos);
-		size_t semiPos = src.find(';', dashPos);
-		size_t closePos = src.find('}', dashPos);
+		size_t colon_pos = src.find(':', dash_pos);
+		size_t semi_pos = src.find(';', dash_pos);
+		size_t close_pos = src.find('}', dash_pos);
 
-		if (colonPos == std::string_view::npos || semiPos == std::string_view::npos) {
+		if (colon_pos == std::string_view::npos || semi_pos == std::string_view::npos) {
 			break;
 		}
 
-		if (colonPos > semiPos || colonPos > closePos) {
-			i = dashPos + 2;
+		if (colon_pos > semi_pos || colon_pos > close_pos) {
+			i = dash_pos + 2;
 			continue;
 		}
 
-		std::string name = ParserHelper::Trim(src.substr(dashPos, colonPos - dashPos));
-		std::string value = ParserHelper::Trim(src.substr(colonPos + 1, semiPos - colonPos - 1));
+		std::string name = ParserHelper::trim(src.substr(dash_pos, colon_pos - dash_pos));
+		std::string value = ParserHelper::trim(src.substr(colon_pos + 1, semi_pos - colon_pos - 1));
 
 		if (name.size() > 2 && name[0] == '-' && name[1] == '-') {
 			vars[std::move(name)] = std::move(value);
 		}
-		i = semiPos + 1;
+		i = semi_pos + 1;
 	}
 	return vars;
 }
 
-static std::string SubstituteVariables(std::string src, const std::unordered_map<std::string, std::string> &vars) {
+static std::string substitute_variables(std::string src, const std::unordered_map<std::string, std::string> &vars) {
 	for (const auto &[name, value] : vars) {
 		std::string needle = "var(" + name + ")";
 		size_t pos = 0;
@@ -65,19 +65,19 @@ static std::string SubstituteVariables(std::string src, const std::unordered_map
 	return src;
 }
 
-static Option<MediaCondition> ParseMediaCondition(std::string_view raw) {
+static Option<MediaCondition> parse_media_condition(std::string_view raw) {
 	using Axis = MediaCondition::Axis;
 	using Op = MediaCondition::Op;
 
-	const std::string c = ParserHelper::Trim(raw);
+	const std::string c = ParserHelper::trim(raw);
 	if (c.empty()) {
 		return std::nullopt;
 	}
 
-	const size_t colonPos = c.find(':');
-	if (colonPos != std::string::npos) {
-		const std::string prop = ParserHelper::Trim(c.substr(0, colonPos));
-		const float val = ParserHelper::ParseFloat(ParserHelper::Trim(c.substr(colonPos + 1)));
+	const size_t colon_pos = c.find(':');
+	if (colon_pos != std::string::npos) {
+		const std::string prop = ParserHelper::trim(c.substr(0, colon_pos));
+		const float val = ParserHelper::parse_float(ParserHelper::trim(c.substr(colon_pos + 1)));
 		if (prop == "min-width") {
 			return MediaCondition{ Axis::Width, Op::GreaterEq, val };
 		}
@@ -100,68 +100,68 @@ static Option<MediaCondition> ParseMediaCondition(std::string_view raw) {
 	}
 
 	Axis axis;
-	size_t axisEnd = 0;
+	size_t axis_end = 0;
 	if (c.size() >= 6 && c.substr(0, 6) == "height") {
 		axis = Axis::Height;
-		axisEnd = 6;
+		axis_end = 6;
 	} else if (c.size() >= 5 && c.substr(0, 5) == "width") {
 		axis = Axis::Width;
-		axisEnd = 5;
+		axis_end = 5;
 	} else {
 		return std::nullopt;
 	}
 
-	const std::string rest = ParserHelper::Trim(c.substr(axisEnd));
+	const std::string rest = ParserHelper::trim(c.substr(axis_end));
 	if (rest.empty()) {
 		return std::nullopt;
 	}
 
 	Op op;
-	size_t opEnd = 0;
+	size_t op_end = 0;
 	if (rest.size() >= 2 && rest.substr(0, 2) == "<=") {
 		op = Op::LessEq;
-		opEnd = 2;
+		op_end = 2;
 	} else if (rest.size() >= 2 && rest.substr(0, 2) == ">=") {
 		op = Op::GreaterEq;
-		opEnd = 2;
+		op_end = 2;
 	} else if (rest[0] == '<') {
 		op = Op::Less;
-		opEnd = 1;
+		op_end = 1;
 	} else if (rest[0] == '>') {
 		op = Op::Greater;
-		opEnd = 1;
+		op_end = 1;
 	} else {
 		return std::nullopt;
 	}
 
-	const float val = ParserHelper::ParseFloat(ParserHelper::Trim(rest.substr(opEnd)));
+	const float val = ParserHelper::parse_float(ParserHelper::trim(rest.substr(op_end)));
 	return MediaCondition{ axis, op, val };
 }
 
-static void ParseAtBlock(std::string_view condText, std::string_view body, StyleSheet &sheet, bool isContainer) {
+static void parse_at_block(std::string_view cond_text, std::string_view body, StyleSheet &sheet, bool is_container) {
 	std::vector<MediaCondition> conditions;
-	const std::string condStr = ParserHelper::Trim(condText);
+	const std::string cond_str = ParserHelper::trim(cond_text);
 	size_t j = 0;
-	while (j < condStr.size()) {
-		while (j < condStr.size() && std::isspace((unsigned char)condStr[j])) {
+	while (j < cond_str.size()) {
+		while (j < cond_str.size() && std::isspace((unsigned char)cond_str[j])) {
 			++j;
 		}
-		if (j >= condStr.size()) {
+		if (j >= cond_str.size()) {
 			break;
 		}
 
-		if (condStr[j] == '(') {
-			const size_t closeP = condStr.find(')', j);
-			if (closeP == std::string::npos) {
+		if (cond_str[j] == '(') {
+			const size_t close_p = cond_str.find(')', j);
+			if (close_p == std::string::npos) {
 				break;
 			}
-			auto cond = ParseMediaCondition(std::string_view(condStr).substr(j + 1, closeP - j - 1));
+			auto cond = parse_media_condition(std::string_view(cond_str).substr(j + 1, close_p - j - 1));
 			if (cond) {
 				conditions.push_back(*cond);
 			}
-			j = closeP + 1;
+			j = close_p + 1;
 		} else {
-			while (j < condStr.size() && condStr[j] != '(') {
+			while (j < cond_str.size() && cond_str[j] != '(') {
 				++j;
 			}
 		}
@@ -170,7 +170,7 @@ static void ParseAtBlock(std::string_view condText, std::string_view body, Style
 		return;
 	}
 
-	StyleSheet tempSheet;
+	StyleSheet temp_sheet;
 	size_t k = 0;
 	while (k < body.size()) {
 		while (k < body.size() && std::isspace((unsigned char)body[k])) {
@@ -180,42 +180,42 @@ static void ParseAtBlock(std::string_view condText, std::string_view body, Style
 			break;
 		}
 
-		const size_t innerOpen = body.find('{', k);
-		if (innerOpen == std::string_view::npos) {
+		const size_t inner_open = body.find('{', k);
+		if (inner_open == std::string_view::npos) {
 			break;
 		}
 
-		const std::string innerSel = ParserHelper::Trim(body.substr(k, innerOpen - k));
+		const std::string inner_sel = ParserHelper::trim(body.substr(k, inner_open - k));
 
-		const size_t innerClose = body.find('}', innerOpen + 1);
-		if (innerClose == std::string_view::npos) {
+		const size_t inner_close = body.find('}', inner_open + 1);
+		if (inner_close == std::string_view::npos) {
 			break;
 		}
 
-		if (!innerSel.empty() && innerSel[0] != '@') {
-			const std::string_view innerBody = body.substr(innerOpen + 1, innerClose - innerOpen - 1);
-			ParserHelper::ParseBlock(innerSel, innerBody, tempSheet);
+		if (!inner_sel.empty() && inner_sel[0] != '@') {
+			const std::string_view inner_body = body.substr(inner_open + 1, inner_close - inner_open - 1);
+			ParserHelper::parse_block(inner_sel, inner_body, temp_sheet);
 		}
-		k = innerClose + 1;
+		k = inner_close + 1;
 	}
 
 	MediaBlock block;
 	block.conditions = std::move(conditions);
-	block.rules = tempSheet.GetRules();
+	block.rules = temp_sheet.get_rules();
 
-	if (isContainer) {
-		sheet.AddContainerBlock(std::move(block));
+	if (is_container) {
+		sheet.add_container_block(std::move(block));
 	} else {
-		sheet.AddMediaBlock(std::move(block));
+		sheet.add_media_block(std::move(block));
 	}
 }
 
-void StyleParser::ApplyProperty(StyleProperties &props, std::string_view property, std::string_view value) {
-	ParserHelper::ApplyDeclaration(props, property, value);
+void StyleParser::apply_property(StyleProperties &props, std::string_view property, std::string_view value) {
+	ParserHelper::apply_declaration(props, property, value);
 }
 
-bool StyleParser::LoadFile(const std::string &path, StyleSheet &sheet) {
-	const std::string src = Platform::Filesystem::VirtualFileSystem::Get()->ReadTextFile(path);
+bool StyleParser::load_file(const std::string &path, StyleSheet &sheet) {
+	const std::string src = Platform::Filesystem::VirtualFileSystem::get()->read_text_file(path);
 	if (src.empty()) {
 		AQUILA_LOG_ERROR("StyleParser: cannot open '{}'", path);
 		return false;
@@ -224,15 +224,15 @@ bool StyleParser::LoadFile(const std::string &path, StyleSheet &sheet) {
 }
 
 bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
-	std::string src = ParserHelper::StripComments(css);
+	std::string src = ParserHelper::strip_comments(css);
 
-	auto vars = ExtractVariables(src);
+	auto vars = extract_variables(src);
 	for (const auto &[name, value] : vars) {
-		sheet.AddVariable(name, value);
+		sheet.add_variable(name, value);
 	}
 
 	if (!vars.empty()) {
-		src = SubstituteVariables(std::move(src), vars);
+		src = substitute_variables(std::move(src), vars);
 	}
 
 	size_t i = 0;
@@ -244,32 +244,32 @@ bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
 			break;
 		}
 
-		const size_t braceOpen = src.find('{', i);
-		if (braceOpen == std::string::npos) {
+		const size_t brace_open = src.find('{', i);
+		if (brace_open == std::string::npos) {
 			break;
 		}
 
-		const std::string selector = ParserHelper::Trim(std::string_view(src).substr(i, braceOpen - i));
+		const std::string selector = ParserHelper::trim(std::string_view(src).substr(i, brace_open - i));
 
-		const size_t braceClose = FindMatchingClose(src, braceOpen);
-		if (braceClose == std::string::npos) {
+		const size_t brace_close = find_matching_close(src, brace_open);
+		if (brace_close == std::string::npos) {
 			AQUILA_LOG_ERROR("StyleParser: unclosed block for selector '{}'", selector);
 			return false;
 		}
 
-		const std::string_view body = std::string_view(src).substr(braceOpen + 1, braceClose - braceOpen - 1);
+		const std::string_view body = std::string_view(src).substr(brace_open + 1, brace_close - brace_open - 1);
 
 		if (!selector.empty()) {
 			if (selector.size() > 6 && selector.substr(0, 6) == "@media") {
-				ParseAtBlock(std::string_view(selector).substr(6), body, sheet, false);
+				parse_at_block(std::string_view(selector).substr(6), body, sheet, false);
 			} else if (selector.size() > 10 && selector.substr(0, 10) == "@container") {
-				ParseAtBlock(std::string_view(selector).substr(10), body, sheet, true);
+				parse_at_block(std::string_view(selector).substr(10), body, sheet, true);
 			} else if (selector[0] != '@') {
-				ParserHelper::ParseBlock(selector, body, sheet);
+				ParserHelper::parse_block(selector, body, sheet);
 			}
 		}
 
-		i = braceClose + 1;
+		i = brace_close + 1;
 	}
 
 	return true;

@@ -14,20 +14,20 @@ namespace Editor {
 
 class UIDebugPanel {
   public:
-	void Build(Aquila::UI::Core::View *overlayRoot, Aquila::UI::Core::Canvas *target);
-	void Toggle();
-	void Refresh();
+	void build(Aquila::UI::Core::View *overlay_root, Aquila::UI::Core::Canvas *target);
+	void toggle();
+	void refresh();
 
   private:
-	Aquila::UI::Core::TreeNode *AddViewNode(Aquila::UI::Core::View *view, Aquila::UI::Core::TreeNode *parentNode);
+	Aquila::UI::Core::TreeNode *add_view_node(Aquila::UI::Core::View *view, Aquila::UI::Core::TreeNode *parent_node);
 
-	Aquila::UI::Core::Canvas *m_Target = nullptr;
-	Aquila::UI::Core::View *m_Window = nullptr;
-	Aquila::UI::Core::View *m_TreeHost = nullptr;
-	Aquila::UI::Core::TreeView *m_Tree = nullptr;
-	bool m_Visible = false;
+	Aquila::UI::Core::Canvas *m_target = nullptr;
+	Aquila::UI::Core::View *m_window = nullptr;
+	Aquila::UI::Core::View *m_tree_host = nullptr;
+	Aquila::UI::Core::TreeView *m_tree = nullptr;
+	bool m_visible = false;
 
-	std::unordered_map<Aquila::UI::Core::TreeNode *, Aquila::UI::Core::View *> m_NodeToView;
+	std::unordered_map<Aquila::UI::Core::TreeNode *, Aquila::UI::Core::View *> m_node_to_view;
 };
 
 } // namespace Editor

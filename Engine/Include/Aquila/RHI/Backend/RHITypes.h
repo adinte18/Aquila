@@ -14,12 +14,12 @@ class IRHISwapchain;
 // USE GPU_ONLY FOR GPU LOCAL BUFFERS - vertex, index, storage
 // USE CPU_TO_GPU FOR SEQUENTIAL WRITES - uniform buffers or staging buffers
 // USE GPU_TO_CPU FOR RANDOM ACCESS - readbacks
-enum class MemoryDomain : uint8 { GPU_ONLY, CPU_ONLY, GPU_TO_CPU, CPU_TO_GPU };
+enum class MemoryDomain : Uint8 { GpuOnly, CpuOnly, GpuToCpu, CpuToGpu };
 
-enum class TextureFormat : uint8 {
+enum class TextureFormat : Uint8 {
 	None = 0,
 	RGBA8,
-	RGBA8_SRGB,
+	RgbA8Srgb,
 	RGBA16F,
 	RGBA32F,
 	RGBA32U,
@@ -34,7 +34,7 @@ enum class TextureFormat : uint8 {
 	R32F,
 	R32UI,
 	BGRA8,
-	BGRA8_SRGB,
+	BgrA8Srgb,
 	Depth16,
 	Depth32,
 	Depth24Stencil8,
@@ -42,7 +42,7 @@ enum class TextureFormat : uint8 {
 };
 
 // Bitmask so usages can be combined
-enum class TextureUsage : uint8 {
+enum class TextureUsage : Uint8 {
 	None = 0,
 	ColorAttachment = BIT(0),
 	DepthAttachment = BIT(1),
@@ -54,15 +54,15 @@ enum class TextureUsage : uint8 {
 };
 
 AQUILA_FORCE_INLINE TextureUsage operator|(TextureUsage a, TextureUsage b) {
-	return static_cast<TextureUsage>(static_cast<uint32>(a) | static_cast<uint32>(b));
+	return static_cast<TextureUsage>(static_cast<Uint32>(a) | static_cast<Uint32>(b));
 }
 AQUILA_FORCE_INLINE TextureUsage operator&(TextureUsage a, TextureUsage b) {
-	return static_cast<TextureUsage>(static_cast<uint32>(a) & static_cast<uint32>(b));
+	return static_cast<TextureUsage>(static_cast<Uint32>(a) & static_cast<Uint32>(b));
 }
 
-enum class SampleCount : uint8 { x1, x2, x4, x8, x16, x32, x64 };
+enum class SampleCount : Uint8 { X1, X2, X4, X8, X16, X32, X64 };
 
-enum class ShaderStageFlags : uint8 {
+enum class ShaderStageFlags : Uint8 {
 	None = 0,
 	Vertex = 1 << 0,
 	Fragment = 1 << 1,
@@ -72,29 +72,29 @@ enum class ShaderStageFlags : uint8 {
 };
 
 AQUILA_FORCE_INLINE ShaderStageFlags operator|(ShaderStageFlags a, ShaderStageFlags b) {
-	return static_cast<ShaderStageFlags>(static_cast<uint32>(a) | static_cast<uint32>(b));
+	return static_cast<ShaderStageFlags>(static_cast<Uint32>(a) | static_cast<Uint32>(b));
 }
 AQUILA_FORCE_INLINE ShaderStageFlags operator&(ShaderStageFlags a, ShaderStageFlags b) {
-	return static_cast<ShaderStageFlags>(static_cast<uint32>(a) & static_cast<uint32>(b));
+	return static_cast<ShaderStageFlags>(static_cast<Uint32>(a) & static_cast<Uint32>(b));
 }
 
-enum class FilterMode : uint8 { Nearest, Linear };
-enum class MipmapMode : uint8 { Nearest, Linear };
+enum class FilterMode : Uint8 { Nearest, Linear };
+enum class MipmapMode : Uint8 { Nearest, Linear };
 
-enum class AddressMode : uint8 {
+enum class AddressMode : Uint8 {
 	Repeat,
 	MirroredRepeat,
 	ClampToEdge,
 	ClampToBorder,
 };
 
-enum class BorderColor : uint8 {
+enum class BorderColor : Uint8 {
 	TransparentBlack,
 	OpaqueBlack,
 	OpaqueWhite,
 };
 
-enum class CompareOp : uint8 {
+enum class CompareOp : Uint8 {
 	Never,
 	Less,
 	Equal,
@@ -105,9 +105,9 @@ enum class CompareOp : uint8 {
 	Always,
 };
 
-enum class CommandListType : uint8 { Graphics, Compute, Transfer };
+enum class CommandListType : Uint8 { Graphics, Compute, Transfer };
 
-enum class BufferUsage : uint32 {
+enum class BufferUsage : Uint32 {
 	None = 0,
 	VertexBuffer = BIT(0),
 	IndexBuffer = BIT(1),
@@ -119,15 +119,15 @@ enum class BufferUsage : uint32 {
 };
 
 AQUILA_FORCE_INLINE BufferUsage operator|(BufferUsage a, BufferUsage b) {
-	return static_cast<BufferUsage>(static_cast<uint32>(a) | static_cast<uint32>(b));
+	return static_cast<BufferUsage>(static_cast<Uint32>(a) | static_cast<Uint32>(b));
 }
 AQUILA_FORCE_INLINE BufferUsage operator&(BufferUsage a, BufferUsage b) {
-	return static_cast<BufferUsage>(static_cast<uint32>(a) & static_cast<uint32>(b));
+	return static_cast<BufferUsage>(static_cast<Uint32>(a) & static_cast<Uint32>(b));
 }
 
-enum class IndexFormat : uint8 { UInt16, UInt32 };
+enum class IndexFormat : Uint8 { UInt16, UInt32 };
 
-enum class TextureViewType : uint8 {
+enum class TextureViewType : Uint8 {
 	Tex1D,
 	Tex2D,
 	Tex3D,
@@ -137,7 +137,7 @@ enum class TextureViewType : uint8 {
 	CubeArray,
 };
 
-enum class ComponentSwizzle : uint8 { Identity, Zero, One, R, G, B, A };
+enum class ComponentSwizzle : Uint8 { Identity, Zero, One, R, G, B, A };
 
 struct ComponentMapping {
 	ComponentSwizzle r = ComponentSwizzle::Identity;
@@ -149,76 +149,76 @@ struct ComponentMapping {
 };
 
 struct SamplerDesc {
-	FilterMode magFilter = FilterMode::Linear;
-	FilterMode minFilter = FilterMode::Linear;
-	MipmapMode mipmapMode = MipmapMode::Nearest;
-	AddressMode addressU = AddressMode::ClampToEdge;
-	AddressMode addressV = AddressMode::ClampToEdge;
-	AddressMode addressW = AddressMode::ClampToEdge;
-	BorderColor borderColor = BorderColor::TransparentBlack;
-	float minLod = 0.0f;
-	float maxLod = 0.0f;
-	float mipLodBias = 0.0f;
+	FilterMode mag_filter = FilterMode::Linear;
+	FilterMode min_filter = FilterMode::Linear;
+	MipmapMode mipmap_mode = MipmapMode::Nearest;
+	AddressMode address_u = AddressMode::ClampToEdge;
+	AddressMode address_v = AddressMode::ClampToEdge;
+	AddressMode address_w = AddressMode::ClampToEdge;
+	BorderColor border_color = BorderColor::TransparentBlack;
+	float min_lod = 0.0f;
+	float max_lod = 0.0f;
+	float mip_lod_bias = 0.0f;
 	bool anisotropy = false;
-	bool compareEnable = false;
-	CompareOp compareOp = CompareOp::Always;
+	bool compare_enable = false;
+	CompareOp compare_op = CompareOp::Always;
 
 	bool operator==(const SamplerDesc &) const = default;
 
-	static SamplerDesc Texture2D(float maxLod = 1000.0f) {
+	static SamplerDesc texture2_d(float max_lod = 1000.0f) {
 		SamplerDesc d{};
-		d.addressU = AddressMode::Repeat;
-		d.addressV = AddressMode::Repeat;
-		d.addressW = AddressMode::Repeat;
-		d.mipmapMode = MipmapMode::Linear;
-		d.maxLod = maxLod;
+		d.address_u = AddressMode::Repeat;
+		d.address_v = AddressMode::Repeat;
+		d.address_w = AddressMode::Repeat;
+		d.mipmap_mode = MipmapMode::Linear;
+		d.max_lod = max_lod;
 		d.anisotropy = true;
 		return d;
 	}
 
-	static SamplerDesc RenderTarget() {
+	static SamplerDesc render_target() {
 		SamplerDesc d{};
-		d.mipmapMode = MipmapMode::Linear;
+		d.mipmap_mode = MipmapMode::Linear;
 		return d;
 	}
 
-	static SamplerDesc ShadowMap() {
+	static SamplerDesc shadow_map() {
 		SamplerDesc d{};
-		d.addressU = AddressMode::ClampToBorder;
-		d.addressV = AddressMode::ClampToBorder;
-		d.addressW = AddressMode::ClampToBorder;
-		d.borderColor = BorderColor::OpaqueWhite;
-		d.compareEnable = true;
-		d.compareOp = CompareOp::LessEqual;
+		d.address_u = AddressMode::ClampToBorder;
+		d.address_v = AddressMode::ClampToBorder;
+		d.address_w = AddressMode::ClampToBorder;
+		d.border_color = BorderColor::OpaqueWhite;
+		d.compare_enable = true;
+		d.compare_op = CompareOp::LessEqual;
 		return d;
 	}
 
-	static SamplerDesc PointSample() {
+	static SamplerDesc point_sample() {
 		SamplerDesc d{};
-		d.magFilter = FilterMode::Nearest;
-		d.minFilter = FilterMode::Nearest;
-		d.mipmapMode = MipmapMode::Nearest;
-		d.addressU = AddressMode::ClampToEdge;
-		d.addressV = AddressMode::ClampToEdge;
-		d.addressW = AddressMode::ClampToEdge;
+		d.mag_filter = FilterMode::Nearest;
+		d.min_filter = FilterMode::Nearest;
+		d.mipmap_mode = MipmapMode::Nearest;
+		d.address_u = AddressMode::ClampToEdge;
+		d.address_v = AddressMode::ClampToEdge;
+		d.address_w = AddressMode::ClampToEdge;
 		d.anisotropy = false;
 		return d;
 	}
 
-	static SamplerDesc FontAtlas() {
+	static SamplerDesc font_atlas() {
 		SamplerDesc d{};
-		d.magFilter = FilterMode::Linear;
-		d.minFilter = FilterMode::Linear;
+		d.mag_filter = FilterMode::Linear;
+		d.min_filter = FilterMode::Linear;
 
-		d.mipmapMode = MipmapMode::Nearest;
+		d.mipmap_mode = MipmapMode::Nearest;
 
-		d.addressU = AddressMode::ClampToEdge;
-		d.addressV = AddressMode::ClampToEdge;
-		d.addressW = AddressMode::ClampToEdge;
+		d.address_u = AddressMode::ClampToEdge;
+		d.address_v = AddressMode::ClampToEdge;
+		d.address_w = AddressMode::ClampToEdge;
 
 		d.anisotropy = false;
-		d.minLod = 0.0f;
-		d.maxLod = 0.0f;
+		d.min_lod = 0.0f;
+		d.max_lod = 0.0f;
 
 		return d;
 	}
@@ -228,55 +228,55 @@ struct SamplerDescHash {
 	size_t operator()(const SamplerDesc &d) const {
 		size_t h = 0;
 		auto combine = [&](auto v) {
-			h ^= std::hash<uint32>{}(static_cast<uint32>(v)) + 0x9e3779b9 + (h << 6) + (h >> 2);
+			h ^= std::hash<Uint32>{}(static_cast<Uint32>(v)) + 0x9e3779b9 + (h << 6) + (h >> 2);
 		};
-		combine(d.magFilter);
-		combine(d.minFilter);
-		combine(d.mipmapMode);
-		combine(d.addressU);
-		combine(d.addressV);
-		combine(d.addressW);
-		combine(d.borderColor);
-		combine(d.compareEnable);
-		combine(d.compareOp);
+		combine(d.mag_filter);
+		combine(d.min_filter);
+		combine(d.mipmap_mode);
+		combine(d.address_u);
+		combine(d.address_v);
+		combine(d.address_w);
+		combine(d.border_color);
+		combine(d.compare_enable);
+		combine(d.compare_op);
 		return h;
 	}
 };
 
 struct BufferDesc {
-	uint64 size = 0;
+	Uint64 size = 0;
 	BufferUsage usage = BufferUsage::None;
-	MemoryDomain domain = MemoryDomain::GPU_ONLY;
-	uint32 instanceCount = 1;
-	uint64 minAlignment = 0;
-	std::string debugName;
+	MemoryDomain domain = MemoryDomain::GpuOnly;
+	Uint32 instance_count = 1;
+	Uint64 min_alignment = 0;
+	std::string debug_name;
 };
 
 struct TextureDesc {
-	uint32 width = 1;
-	uint32 height = 1;
-	uint32 depth = 1;
-	uint32 mipLevels = 1;
-	uint32 arrayLayers = 1;
+	Uint32 width = 1;
+	Uint32 height = 1;
+	Uint32 depth = 1;
+	Uint32 mip_levels = 1;
+	Uint32 array_layers = 1;
 	TextureFormat format = TextureFormat::RGBA8;
 	TextureUsage usage = TextureUsage::Sampled;
-	SampleCount samples = SampleCount::x1;
-	TextureViewType viewType = TextureViewType::Tex2D;
+	SampleCount samples = SampleCount::X1;
+	TextureViewType view_type = TextureViewType::Tex2D;
 	ComponentMapping swizzle = {};
-	SamplerDesc sampler = SamplerDesc::Texture2D();
-	std::string debugName = "Texture";
+	SamplerDesc sampler = SamplerDesc::texture2_d();
+	std::string debug_name = "Texture";
 };
 
 struct SwapchainDesc {
-	uint32 width = 0;
-	uint32 height = 0;
+	Uint32 width = 0;
+	Uint32 height = 0;
 	TextureFormat format = TextureFormat::BGRA8;
-	uint32 imageCount = 2;
+	Uint32 image_count = 2;
 	bool vsync = true;
-	void *nativeWindowHandle = nullptr;
+	void *native_window_handle = nullptr;
 };
 
-enum class PrimitiveTopology : uint8 {
+enum class PrimitiveTopology : Uint8 {
 	TriangleList,
 	TriangleStrip,
 	TriangleFan,
@@ -285,11 +285,11 @@ enum class PrimitiveTopology : uint8 {
 	PointList,
 };
 
-enum class CullMode : uint8 { None, Front, Back };
-enum class FillMode : uint8 { Solid, Wireframe };
-enum class FrontFace : uint8 { Clockwise, CounterClockwise };
+enum class CullMode : Uint8 { None, Front, Back };
+enum class FillMode : Uint8 { Solid, Wireframe };
+enum class FrontFace : Uint8 { Clockwise, CounterClockwise };
 
-enum class BlendFactor : uint8 {
+enum class BlendFactor : Uint8 {
 	Zero,
 	One,
 	SrcColor,
@@ -302,9 +302,9 @@ enum class BlendFactor : uint8 {
 	OneMinusDstAlpha,
 };
 
-enum class BlendOp : uint8 { Add, Subtract, ReverseSubtract, Min, Max };
+enum class BlendOp : Uint8 { Add, Subtract, ReverseSubtract, Min, Max };
 
-enum class DescriptorType : uint8 {
+enum class DescriptorType : Uint8 {
 	UniformBuffer,
 	StorageBuffer,
 	CombinedImageSampler,
@@ -313,133 +313,133 @@ enum class DescriptorType : uint8 {
 };
 
 struct VertexAttributeDesc {
-	uint32 location;
-	uint32 binding;
+	Uint32 location;
+	Uint32 binding;
 	TextureFormat format;
-	uint32 offset;
+	Uint32 offset;
 };
 
 struct VertexBindingDesc {
-	uint32 stride;
+	Uint32 stride;
 	std::vector<VertexAttributeDesc> attributes;
 };
 
 struct ShaderStageDesc {
 	ShaderStageFlags stage = ShaderStageFlags::Vertex;
-	std::vector<uint32> spirv;
-	std::string entryPoint = "main";
+	std::vector<Uint32> spirv;
+	std::string entry_point = "main";
 };
 
 struct PushConstantRange {
 	ShaderStageFlags stages = ShaderStageFlags::Vertex;
-	uint32 offset = 0;
-	uint32 size = 0;
+	Uint32 offset = 0;
+	Uint32 size = 0;
 };
 
 struct BlendAttachmentDesc {
 	bool enable = false;
-	BlendFactor srcColor = BlendFactor::SrcAlpha;
-	BlendFactor dstColor = BlendFactor::OneMinusSrcAlpha;
-	BlendOp colorOp = BlendOp::Add;
-	BlendFactor srcAlpha = BlendFactor::One;
-	BlendFactor dstAlpha = BlendFactor::Zero;
-	BlendOp alphaOp = BlendOp::Add;
+	BlendFactor src_color = BlendFactor::SrcAlpha;
+	BlendFactor dst_color = BlendFactor::OneMinusSrcAlpha;
+	BlendOp color_op = BlendOp::Add;
+	BlendFactor src_alpha = BlendFactor::One;
+	BlendFactor dst_alpha = BlendFactor::Zero;
+	BlendOp alpha_op = BlendOp::Add;
 };
 
 struct RasterStateDesc {
-	CullMode cullMode = CullMode::Back;
-	FillMode fillMode = FillMode::Solid;
-	FrontFace frontFace = FrontFace::CounterClockwise;
-	bool depthClamp = false;
-	float lineWidth = 1.0f;
+	CullMode cull_mode = CullMode::Back;
+	FillMode fill_mode = FillMode::Solid;
+	FrontFace front_face = FrontFace::CounterClockwise;
+	bool depth_clamp = false;
+	float line_width = 1.0f;
 };
 
 struct DepthStencilStateDesc {
-	bool depthTest = true;
-	bool depthWrite = true;
-	CompareOp depthCompare = CompareOp::Less;
-	bool stencilTest = false;
+	bool depth_test = true;
+	bool depth_write = true;
+	CompareOp depth_compare = CompareOp::Less;
+	bool stencil_test = false;
 };
 
 struct GraphicsPipelineDesc {
-	ShaderStageDesc vertexShader;
-	ShaderStageDesc fragmentShader;
+	ShaderStageDesc vertex_shader;
+	ShaderStageDesc fragment_shader;
 	PrimitiveTopology topology = PrimitiveTopology::TriangleList;
 	RasterStateDesc raster;
-	DepthStencilStateDesc depthStencil;
-	std::vector<BlendAttachmentDesc> blendAttachments = { {} };
-	std::vector<TextureFormat> colorFormats;
-	TextureFormat depthFormat = TextureFormat::Depth32;
-	SampleCount sampleCount = SampleCount::x1;
-	bool minSampleShading = false;
-	std::vector<IRHIDescriptorSetLayout *> setLayouts;
-	std::vector<PushConstantRange> pushConstants;
-	std::optional<VertexBindingDesc> customVertexLayout;
-	bool noVertexInput = false; // true for shader-only draws (SV_VertexID, no VB)
-	std::string debugName;
+	DepthStencilStateDesc depth_stencil;
+	std::vector<BlendAttachmentDesc> blend_attachments = { {} };
+	std::vector<TextureFormat> color_formats;
+	TextureFormat depth_format = TextureFormat::Depth32;
+	SampleCount sample_count = SampleCount::X1;
+	bool min_sample_shading = false;
+	std::vector<IRHIDescriptorSetLayout *> set_layouts;
+	std::vector<PushConstantRange> push_constants;
+	std::optional<VertexBindingDesc> custom_vertex_layout;
+	bool no_vertex_input = false; // true for shader-only draws (SV_VertexID, no VB)
+	std::string debug_name;
 };
 
 struct ComputePipelineDesc {
-	ShaderStageDesc computeShader;
-	std::vector<IRHIDescriptorSetLayout *> setLayouts;
-	std::vector<PushConstantRange> pushConstants;
-	std::string debugName;
+	ShaderStageDesc compute_shader;
+	std::vector<IRHIDescriptorSetLayout *> set_layouts;
+	std::vector<PushConstantRange> push_constants;
+	std::string debug_name;
 };
 
 struct DescriptorBinding {
-	uint32 binding = 0;
+	Uint32 binding = 0;
 	DescriptorType type = DescriptorType::UniformBuffer;
 	ShaderStageFlags stages = ShaderStageFlags::Vertex;
-	uint32 count = 1;
+	Uint32 count = 1;
 };
 
 struct DescriptorSetLayoutDesc {
 	std::vector<DescriptorBinding> bindings;
 };
 
-enum class AttachmentLoadOp : uint8 { Load, Clear, DontCare };
-enum class AttachmentStoreOp : uint8 { Store, DontCare };
+enum class AttachmentLoadOp : Uint8 { Load, Clear, DontCare };
+enum class AttachmentStoreOp : Uint8 { Store, DontCare };
 
 struct RenderPassColorAttachmentDesc {
 	IRHITexture *texture = nullptr; // null = use swapchain image
-	IRHITexture *resolveTexture = nullptr; // MSAA resolve target
-	vec4 clearColor = { 0.0f, 0.0f, 0.0f, 1.0f };
-	AttachmentLoadOp loadOp = AttachmentLoadOp::Clear;
-	AttachmentStoreOp storeOp = AttachmentStoreOp::Store;
-	uint32 mipLevel = 0; // target mip level (for rendering into a mip)
-	uint32 arrayLayer = 0; // target array layer / cubemap face
+	IRHITexture *resolve_texture = nullptr; // MSAA resolve target
+	Vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	AttachmentLoadOp load_op = AttachmentLoadOp::Clear;
+	AttachmentStoreOp store_op = AttachmentStoreOp::Store;
+	Uint32 mip_level = 0; // target mip level (for rendering into a mip)
+	Uint32 array_layer = 0; // target array layer / cubemap face
 };
 
 struct RenderPassDepthAttachmentDesc {
 	IRHITexture *texture = nullptr; // null = use swapchain depth
-	float clearDepth = 1.0f;
-	uint8 clearStencil = 0;
-	AttachmentLoadOp depthLoadOp = AttachmentLoadOp::Clear;
-	AttachmentStoreOp depthStoreOp = AttachmentStoreOp::DontCare;
-	AttachmentLoadOp stencilLoadOp = AttachmentLoadOp::DontCare;
-	AttachmentStoreOp stencilStoreOp = AttachmentStoreOp::DontCare;
-	bool readOnly = false; // depth test but no write (read-only depth attachment)
+	float clear_depth = 1.0f;
+	Uint8 clear_stencil = 0;
+	AttachmentLoadOp depth_load_op = AttachmentLoadOp::Clear;
+	AttachmentStoreOp depth_store_op = AttachmentStoreOp::DontCare;
+	AttachmentLoadOp stencil_load_op = AttachmentLoadOp::DontCare;
+	AttachmentStoreOp stencil_store_op = AttachmentStoreOp::DontCare;
+	bool read_only = false; // depth test but no write (read-only depth attachment)
 };
 
 struct RenderPassDesc {
-	std::vector<RenderPassColorAttachmentDesc> colorAttachments;
-	std::optional<RenderPassDepthAttachmentDesc> depthAttachment;
-	bool useSwapchain = false;
+	std::vector<RenderPassColorAttachmentDesc> color_attachments;
+	std::optional<RenderPassDepthAttachmentDesc> depth_attachment;
+	bool use_swapchain = false;
 	// When true, colorAttachments[0].texture is the MSAA render target and the
 	// swapchain image (passed to Begin()) is used as the resolve destination.
-	bool useSwapchainAsResolve = false;
-	uint32 width = 0;
-	uint32 height = 0;
+	bool use_swapchain_as_resolve = false;
+	Uint32 width = 0;
+	Uint32 height = 0;
 
-	std::string debugName = "RenderPass";
+	std::string debug_name = "RenderPass";
 
 	// When true, VulkanRenderPass::Begin/End will NOT emit its built-in pre/post
 	// barriers.  Set by the RenderGraph compiler, which handles all transitions
 	// through its own barrier system.
-	bool externalBarriers = false;
+	bool external_barriers = false;
 };
 
-enum class ResourceState : uint16 {
+enum class ResourceState : Uint16 {
 	Undefined = 0,
 	ColorAttachmentRead = 1 << 0,
 	ColorAttachmentWrite = 1 << 1,

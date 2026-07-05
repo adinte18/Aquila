@@ -17,28 +17,28 @@ namespace Aquila::UI::Text {
 
 // CPU-side per-glyph placement data (used by DrawList for cursor math).
 struct GlyphInfo {
-	uint32 glyphID; // index into FontAtlas::m_SlugGlyphs
-	vec2 size; // glyph size in pixels at bake scale
-	vec2 bearing; // offset from cursor baseline to top-left of quad (screen Y-down)
-	f32 advance;
+	Uint32 glyph_id; // index into FontAtlas::m_SlugGlyphs
+	Vec2 size; // glyph size in pixels at bake scale
+	Vec2 bearing; // offset from cursor baseline to top-left of quad (screen Y-down)
+	F32 advance;
 };
 
 // Per-glyph Slug vertex data — constant across all 4 vertices of the glyph quad.
 struct SlugGlyphData {
 	// Band texture location for this glyph's header row.
-	uint32 glyphLocX;
-	uint32 glyphLocY;
+	Uint32 glyph_loc_x;
+	Uint32 glyph_loc_y;
 
 	// Maximum band indices (0-based; 16 bands → bandMax = 15).
-	uint32 bandMaxX;
-	uint32 bandMaxY;
+	Uint32 band_max_x;
+	Uint32 band_max_y;
 
 	// Band transform: bandIndex = renderCoord * scale + offset.
-	vec4 bandTransform; // (scaleX, scaleY, offsetX, offsetY)
+	Vec4 band_transform; // (scaleX, scaleY, offsetX, offsetY)
 
 	// Em-space extents in Y-UP glyph-local coordinates (origin at bottom-left of bbox).
-	vec2 emMin; // always (0, 0) for current glyphs
-	vec2 emMax; // (glyphW, glyphH) at bake scale
+	Vec2 em_min; // always (0, 0) for current glyphs
+	Vec2 em_max; // (glyphW, glyphH) at bake scale
 };
 
 class FontAtlas {
@@ -47,64 +47,64 @@ class FontAtlas {
 	AQUILA_NONCOPYABLE(FontAtlas);
 	AQUILA_NONMOVEABLE(FontAtlas);
 
-	static Unique<FontAtlas> Create(GFX::GfxContext &ctx, const uint8 *ttfData, uint64 dataSize, f32 pixelHeight);
+	static Unique<FontAtlas> create(GFX::GfxContext &ctx, const Uint8 *ttf_data, Uint64 data_size, F32 pixel_height);
 
-	static Unique<FontAtlas> CreateFromFile(GFX::GfxContext &ctx, const std::string &path, f32 pixelHeight);
+	static Unique<FontAtlas> create_from_file(GFX::GfxContext &ctx, const std::string &path, F32 pixel_height);
 
-	const GlyphInfo *GetGlyph(uint32 codepoint) const;
-	const SlugGlyphData *GetSlugData(uint32 glyphID) const;
+	const GlyphInfo *get_glyph(Uint32 codepoint) const;
+	const SlugGlyphData *get_slug_data(Uint32 glyph_id) const;
 
 	// Loads any codepoints in `text` that are not yet resident, then re-uploads the
 	// GPU textures if anything was added. Must be called on the main thread outside a
 	// render pass (it submits an immediate copy). No-op when every glyph is present.
-	void EnsureGlyphs(std::string_view text);
+	void ensure_glyphs(std::string_view text);
 
-	GFX::GfxTexture *GetCurveTexture() const { return m_CurveTexture.get(); }
-	GFX::GfxTexture *GetBandTexture() const { return m_BandTexture.get(); }
+	GFX::GfxTexture *get_curve_texture() const { return m_curve_texture.get(); }
+	GFX::GfxTexture *get_band_texture() const { return m_band_texture.get(); }
 
-	f32 GetLineHeight() const { return m_LineHeight; }
-	f32 GetAscent() const { return m_Ascent; }
-	f32 GetDescent() const { return m_Descent; }
-	f32 GetBakeSize() const { return m_BakeSize; }
+	F32 get_line_height() const { return m_line_height; }
+	F32 get_ascent() const { return m_ascent; }
+	F32 get_descent() const { return m_descent; }
+	F32 get_bake_size() const { return m_bake_size; }
 
   private:
 	FontAtlas() = default;
 
-	static void BuildGlyphCurves(const stbtt_fontinfo &fontInfo, int glyphIndex, f32 scale, GlyphBuild &out);
-	static GlyphInfo BuildGlyphInfo(const stbtt_fontinfo &fontInfo, int glyphIndex, uint32 glyphID, f32 scale);
+	static void build_glyph_curves(const stbtt_fontinfo &font_info, int glyph_index, F32 scale, GlyphBuild &out);
+	static GlyphInfo build_glyph_info(const stbtt_fontinfo &font_info, int glyph_index, Uint32 glyph_id, F32 scale);
 
 	// Appends one glyph's curves + bands into the CPU shadow arrays. Returns true when a
 	// glyph was actually added (false if already resident, absent from the font, or the
 	// reserved capacity is exhausted). Does not touch the GPU — see ReuploadTextures().
-	bool AppendGlyph(uint32 codepoint);
-	void ReuploadTextures();
+	bool append_glyph(Uint32 codepoint);
+	void reupload_textures();
 
-	GFX::GfxContext *m_Ctx = nullptr;
+	GFX::GfxContext *m_ctx = nullptr;
 
-	std::vector<uint8> m_FontData; // owns the TTF bytes; m_FontInfo points into this
-	stbtt_fontinfo m_FontInfo{};
-	f32 m_Scale = 0.f;
+	std::vector<Uint8> m_font_data; // owns the TTF bytes; m_FontInfo points into this
+	stbtt_fontinfo m_font_info{};
+	F32 m_scale = 0.F;
 
-	Ref<GFX::GfxTexture> m_CurveTexture; // RGBA32F: 2 texels per curve (p0+p1, p2)
-	Ref<GFX::GfxTexture> m_BandTexture; // RGBA32U: band headers + curve index lists
+	Ref<GFX::GfxTexture> m_curve_texture; // RGBA32F: 2 texels per curve (p0+p1, p2)
+	Ref<GFX::GfxTexture> m_band_texture; // RGBA32U: band headers + curve index lists
 
 	// CPU shadow copies of the GPU texture contents, sized to the reserved capacity.
 	// New glyphs are appended at the cursors, then the full arrays are re-uploaded.
-	std::vector<std::array<f32, 4>> m_CurveTexels;
-	std::vector<std::array<uint32, 4>> m_BandTexels;
-	uint32 m_CurveCursor = 0;
-	uint32 m_BandCursor = 0;
-	uint32 m_CurveCapacityTexels = 0;
-	uint32 m_BandCapacityTexels = 0;
+	std::vector<std::array<F32, 4>> m_curve_texels;
+	std::vector<std::array<Uint32, 4>> m_band_texels;
+	Uint32 m_curve_cursor = 0;
+	Uint32 m_band_cursor = 0;
+	Uint32 m_curve_capacity_texels = 0;
+	Uint32 m_band_capacity_texels = 0;
 
-	std::unordered_map<uint32, GlyphInfo> m_Glyphs;
-	std::vector<SlugGlyphData> m_SlugGlyphs;
-	std::unordered_set<uint32> m_MissingCodepoints; // absent from the font; don't retry
+	std::unordered_map<Uint32, GlyphInfo> m_glyphs;
+	std::vector<SlugGlyphData> m_slug_glyphs;
+	std::unordered_set<Uint32> m_missing_codepoints; // absent from the font; don't retry
 
-	f32 m_LineHeight = 0.f;
-	f32 m_Ascent = 0.f;
-	f32 m_Descent = 0.f;
-	f32 m_BakeSize = 0.f;
+	F32 m_line_height = 0.F;
+	F32 m_ascent = 0.F;
+	F32 m_descent = 0.F;
+	F32 m_bake_size = 0.F;
 };
 
 } // namespace Aquila::UI::Text

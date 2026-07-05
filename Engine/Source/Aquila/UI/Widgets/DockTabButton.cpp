@@ -2,52 +2,52 @@
 
 namespace Aquila::UI::Core {
 
-void DockTabButton::SetDragInfo(DockDragContext *ctx, DockPanel *panel, DockNode *node) {
-	m_DragCtx = ctx;
-	m_Panel = panel;
-	m_Node = node;
+void DockTabButton::set_drag_info(DockDragContext *ctx, DockPanel *panel, DockNode *node) {
+	m_drag_ctx = ctx;
+	m_panel = panel;
+	m_node = node;
 }
 
-void DockTabButton::OnMousePress(Platform::MouseButton btn, vec2 pos) {
-	Button::OnMousePress(btn, pos);
+void DockTabButton::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
+	Button::on_mouse_press(btn, pos);
 	if (btn == Platform::MouseButton::Left) {
-		m_PressPos = pos;
-		m_Dragging = false;
+		m_press_pos = pos;
+		m_dragging = false;
 	}
 }
 
-void DockTabButton::OnMouseMove(vec2 pos) {
-	if (!m_IsPressed || !m_DragCtx) {
+void DockTabButton::on_mouse_move(Vec2 pos) {
+	if (!m_is_pressed || !m_drag_ctx) {
 		return;
 	}
 
-	if (!m_Dragging) {
-		if (glm::length(pos - m_PressPos) < kDragThreshold) {
+	if (!m_dragging) {
+		if (glm::length(pos - m_press_pos) < K_DRAG_THRESHOLD) {
 			return;
 		}
-		m_Dragging = true;
-		m_DragCtx->active = true;
-		m_DragCtx->panel = m_Panel;
-		m_DragCtx->sourceNode = m_Node;
+		m_dragging = true;
+		m_drag_ctx->active = true;
+		m_drag_ctx->panel = m_panel;
+		m_drag_ctx->source_node = m_node;
 	}
 
-	if (m_DragCtx->onMove) {
-		m_DragCtx->onMove(pos);
+	if (m_drag_ctx->on_move) {
+		m_drag_ctx->on_move(pos);
 	}
 }
 
-void DockTabButton::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	if (btn == Platform::MouseButton::Left && m_Dragging) {
-		View::OnMouseRelease(btn, pos);
-		m_Dragging = false;
+void DockTabButton::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	if (btn == Platform::MouseButton::Left && m_dragging) {
+		View::on_mouse_release(btn, pos);
+		m_dragging = false;
 		// Copy pointer to local: onRelease may destroy `this` via DetachPanel.
 		// Do not access any member after this call.
-		auto *ctx = m_DragCtx;
-		if (ctx && ctx->onRelease) {
-			ctx->onRelease(pos);
+		auto *ctx = m_drag_ctx;
+		if (ctx && ctx->on_release) {
+			ctx->on_release(pos);
 		}
 	} else {
-		Button::OnMouseRelease(btn, pos);
+		Button::on_mouse_release(btn, pos);
 	}
 }
 

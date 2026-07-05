@@ -6,14 +6,14 @@
 
 namespace Aquila::GFX {
 
-GfxContext::GfxContext(Unique<RHI::IRHIDevice> device) : m_Device(std::move(device)) {
-	for (uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
-		m_FrameCommandLists[i] = Unique<GfxCommandList>(new GfxCommandList(m_Device->CreateFrameCommandList(i)));
+GfxContext::GfxContext(Unique<RHI::IRHIDevice> device) : m_device(std::move(device)) {
+	for (Uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
+		m_frame_command_lists[i] = Unique<GfxCommandList>(new GfxCommandList(m_device->create_frame_command_list(i)));
 	}
 }
 GfxContext::~GfxContext() = default;
 
-Unique<GfxContext> GfxContext::Create(GLFWwindow &window) {
+Unique<GfxContext> GfxContext::create(GLFWwindow &window) {
 	// NOTE : THEORETICALLY THIS IS WHERE WE WOULD SPLIT BY RHIBACKENDTYPE
 	// TODO: when time comes -> define a RHIBackend.h file and set the Enums
 	// for now we'll select API by hand, but in the future it would be nice to have an engine config
@@ -32,91 +32,91 @@ Unique<GfxContext> GfxContext::Create(GLFWwindow &window) {
 	// Unique<GfxContext> GfxContext::Create(GLFWwindow &window, RHI::RHIBackendType backend) {
 	//      return Unique<GfxContext>(new GfxContext(RHI::CreateDevice(backend, window)));
 	// }
-	return Unique<GfxContext>(new GfxContext(RHI::CreateVulkanBackend(window)));
+	return Unique<GfxContext>(new GfxContext(RHI::create_vulkan_backend(window)));
 }
 
-Ref<GfxBuffer> GfxContext::CreateBuffer(const RHI::BufferDesc &desc) {
-	return Ref<GfxBuffer>(new GfxBuffer(m_Device->CreateBuffer(desc)));
+Ref<GfxBuffer> GfxContext::create_buffer(const RHI::BufferDesc &desc) {
+	return Ref<GfxBuffer>(new GfxBuffer(m_device->create_buffer(desc)));
 }
-Ref<GfxTexture> GfxContext::CreateTexture(const RHI::TextureDesc &desc) {
-	return Ref<GfxTexture>(new GfxTexture(m_Device->CreateTexture(desc)));
+Ref<GfxTexture> GfxContext::create_texture(const RHI::TextureDesc &desc) {
+	return Ref<GfxTexture>(new GfxTexture(m_device->create_texture(desc)));
 }
-Ref<GfxSwapchain> GfxContext::CreateSwapchain(const RHI::SwapchainDesc &desc) {
-	return Ref<GfxSwapchain>(new GfxSwapchain(m_Device->CreateSwapchain(desc)));
+Ref<GfxSwapchain> GfxContext::create_swapchain(const RHI::SwapchainDesc &desc) {
+	return Ref<GfxSwapchain>(new GfxSwapchain(m_device->create_swapchain(desc)));
 }
-Ref<GfxPipeline> GfxContext::CreateGraphicsPipeline(const RHI::GraphicsPipelineDesc &desc) {
-	return Ref<GfxPipeline>(new GfxPipeline(m_Device->CreateGraphicsPipeline(desc)));
+Ref<GfxPipeline> GfxContext::create_graphics_pipeline(const RHI::GraphicsPipelineDesc &desc) {
+	return Ref<GfxPipeline>(new GfxPipeline(m_device->create_graphics_pipeline(desc)));
 }
-Ref<GfxPipeline> GfxContext::CreateComputePipeline(const RHI::ComputePipelineDesc &desc) {
-	return Ref<GfxPipeline>(new GfxPipeline(m_Device->CreateComputePipeline(desc)));
+Ref<GfxPipeline> GfxContext::create_compute_pipeline(const RHI::ComputePipelineDesc &desc) {
+	return Ref<GfxPipeline>(new GfxPipeline(m_device->create_compute_pipeline(desc)));
 }
-Ref<GfxDescriptorSetLayout> GfxContext::CreateDescriptorSetLayout(const RHI::DescriptorSetLayoutDesc &desc) {
-	return Ref<GfxDescriptorSetLayout>(new GfxDescriptorSetLayout(m_Device->CreateDescriptorSetLayout(desc)));
+Ref<GfxDescriptorSetLayout> GfxContext::create_descriptor_set_layout(const RHI::DescriptorSetLayoutDesc &desc) {
+	return Ref<GfxDescriptorSetLayout>(new GfxDescriptorSetLayout(m_device->create_descriptor_set_layout(desc)));
 }
-Ref<GfxDescriptorSet> GfxContext::AllocateDescriptorSet(GfxDescriptorSetLayout &layout) {
-	return Ref<GfxDescriptorSet>(new GfxDescriptorSet(m_Device->AllocateDescriptorSet(layout.GetRHI())));
+Ref<GfxDescriptorSet> GfxContext::allocate_descriptor_set(GfxDescriptorSetLayout &layout) {
+	return Ref<GfxDescriptorSet>(new GfxDescriptorSet(m_device->allocate_descriptor_set(layout.get_rhi())));
 }
-Ref<GfxRenderPass> GfxContext::CreateRenderPass(const RHI::RenderPassDesc &desc) {
-	return Ref<GfxRenderPass>(new GfxRenderPass(m_Device->CreateRenderPass(desc)));
+Ref<GfxRenderPass> GfxContext::create_render_pass(const RHI::RenderPassDesc &desc) {
+	return Ref<GfxRenderPass>(new GfxRenderPass(m_device->create_render_pass(desc)));
 }
-Ref<GfxCommandList> GfxContext::CreateCommandList(RHI::CommandListType type, const std::string &name) {
-	return Ref<GfxCommandList>(new GfxCommandList(m_Device->CreateCommandList(type, name)));
-}
-
-GfxCommandList &GfxContext::AcquireFrameCommandList(uint32 frameSlot) {
-	AQUILA_ASSERT(frameSlot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
-	return *m_FrameCommandLists[frameSlot];
+Ref<GfxCommandList> GfxContext::create_command_list(RHI::CommandListType type, const std::string &name) {
+	return Ref<GfxCommandList>(new GfxCommandList(m_device->create_command_list(type, name)));
 }
 
-void GfxContext::SubmitFrame(GfxCommandList &cmd, GfxSwapchain *swapchain, uint32 imageIndex) {
-	m_Device->SubmitFrame(cmd.GetRHI(), (swapchain != nullptr) ? &swapchain->GetRHI() : nullptr, imageIndex);
+GfxCommandList &GfxContext::acquire_frame_command_list(Uint32 frame_slot) {
+	AQUILA_ASSERT(frame_slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
+	return *m_frame_command_lists[frame_slot];
 }
 
-void GfxContext::SubmitAndWait(GfxCommandList &cmd) {
-	if (!cmd.IsRecording()) {
+void GfxContext::submit_frame(GfxCommandList &cmd, GfxSwapchain *swapchain, Uint32 image_index) {
+	m_device->submit_frame(cmd.get_rhi(), (swapchain != nullptr) ? &swapchain->get_rhi() : nullptr, image_index);
+}
+
+void GfxContext::submit_and_wait(GfxCommandList &cmd) {
+	if (!cmd.is_recording()) {
 		return;
 	}
-	m_Device->SubmitAndWait(cmd.GetRHI());
+	m_device->submit_and_wait(cmd.get_rhi());
 }
 
-void GfxContext::UploadTextureData(GfxTexture &dst, const void *data, uint64 byteSize) {
-	RHI::BufferDesc stagingDesc{};
-	stagingDesc.size = byteSize;
-	stagingDesc.usage = RHI::BufferUsage::TransferSrc;
-	stagingDesc.domain = RHI::MemoryDomain::CPU_ONLY;
-	stagingDesc.debugName = "TextureUploadStaging";
+void GfxContext::upload_texture_data(GfxTexture &dst, const void *data, Uint64 byte_size) {
+	RHI::BufferDesc staging_desc{};
+	staging_desc.size = byte_size;
+	staging_desc.usage = RHI::BufferUsage::TransferSrc;
+	staging_desc.domain = RHI::MemoryDomain::CpuOnly;
+	staging_desc.debug_name = "TextureUploadStaging";
 
-	Ref<GfxBuffer> staging = CreateBuffer(stagingDesc);
-	staging->GetRHI().Write(data, byteSize, 0);
+	Ref<GfxBuffer> staging = create_buffer(staging_desc);
+	staging->get_rhi().write(data, byte_size, 0);
 
-	const uint32 w = dst.GetWidth();
-	const uint32 h = dst.GetHeight();
+	const Uint32 w = dst.get_width();
+	const Uint32 h = dst.get_height();
 
-	ExecuteImmediate(RHI::CommandListType::Graphics, [&](GfxCommandList &cmd) {
-		cmd.TransitionTexture(dst, RHI::ResourceState::Undefined, RHI::ResourceState::TransferDst);
-		cmd.CopyBufferToTexture(*staging, dst, w, h);
-		cmd.TransitionTexture(dst, RHI::ResourceState::TransferDst, RHI::ResourceState::ShaderRead);
+	execute_immediate(RHI::CommandListType::Graphics, [&](GfxCommandList &cmd) {
+		cmd.transition_texture(dst, RHI::ResourceState::Undefined, RHI::ResourceState::TransferDst);
+		cmd.copy_buffer_to_texture(*staging, dst, w, h);
+		cmd.transition_texture(dst, RHI::ResourceState::TransferDst, RHI::ResourceState::ShaderRead);
 	});
 
-	DestroyImmediateBuffer(*staging);
+	destroy_immediate_buffer(*staging);
 }
 
-void GfxContext::CopyBuffer(GfxBuffer &src, GfxBuffer &dst, uint64 size, uint64 srcOffset, uint64 dstOffset) {
-	ExecuteImmediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
-		m_Device->CopyBuffer(cmd.GetRHI(), src.GetRHI(), dst.GetRHI(), size, srcOffset, dstOffset);
+void GfxContext::copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset, Uint64 dst_offset) {
+	execute_immediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
+		m_device->copy_buffer(cmd.get_rhi(), src.get_rhi(), dst.get_rhi(), size, src_offset, dst_offset);
 	});
 }
 
-void GfxContext::WaitIdle() {
-	m_Device->WaitIdle();
+void GfxContext::wait_idle() {
+	m_device->wait_idle();
 }
 
-void GfxContext::DestroyImmediateBuffer(GfxBuffer &buffer) {
-	buffer.DestroyImmediate();
+void GfxContext::destroy_immediate_buffer(GfxBuffer &buffer) {
+	buffer.destroy_immediate();
 }
 
-void GfxContext::DestroyImmediateTexture(GfxTexture &texture) {
-	texture.DestroyImmediate();
+void GfxContext::destroy_immediate_texture(GfxTexture &texture) {
+	texture.destroy_immediate();
 }
 
 } // namespace Aquila::GFX

@@ -3,194 +3,194 @@
 namespace Aquila::UI::Core {
 
 TreeView::TreeView() {
-	AddClass("tree-view");
+	add_class("tree-view");
 
-	auto content = CreateUnique<View>();
-	content->AddClass("tree-view-content");
-	m_Content = View::AddChild(std::move(content));
+	auto content = create_unique<View>();
+	content->add_class("tree-view-content");
+	m_content = View::add_child(std::move(content));
 }
 
-TreeNode *TreeView::AddNode(std::string label) {
-	auto node = CreateUnique<TreeNode>(std::move(label), *this, 0);
-	return static_cast<TreeNode *>(AddChild(std::move(node)));
+TreeNode *TreeView::add_node(std::string label) {
+	auto node = create_unique<TreeNode>(std::move(label), *this, 0);
+	return static_cast<TreeNode *>(add_child(std::move(node)));
 }
 
-View *TreeView::AddChild(Unique<View> child) {
-	return m_Content->View::AddChild(std::move(child));
+View *TreeView::add_child(Unique<View> child) {
+	return m_content->View::add_child(std::move(child));
 }
 
-void TreeView::OnDragEnter(DragState &) {
-	AddClass("drag-target");
+void TreeView::on_drag_enter(DragState &) {
+	add_class("drag-target");
 }
 
-void TreeView::OnDragLeave(DragState &) {
-	RemoveClass("drag-target");
+void TreeView::on_drag_leave(DragState &) {
+	remove_class("drag-target");
 }
 
-static bool IsDescendantOf(View *candidate, View *ancestor) {
+static bool is_descendant_of(View *candidate, View *ancestor) {
 	while (candidate != nullptr) {
 		if (candidate == ancestor) {
 			return true;
 		}
-		candidate = candidate->GetParent();
+		candidate = candidate->get_parent();
 	}
 	return false;
 }
 
-void TreeView::RemoveNode(TreeNode *node) {
+void TreeView::remove_node(TreeNode *node) {
 	if (node == nullptr) {
 		return;
 	}
 
-	if (node->GetParent() == nullptr) {
+	if (node->get_parent() == nullptr) {
 		return;
 	}
 
-	if (m_Selected != nullptr && IsDescendantOf(m_Selected, node)) {
-		m_Selected = nullptr;
+	if (m_selected != nullptr && is_descendant_of(m_selected, node)) {
+		m_selected = nullptr;
 	}
 
-	node->GetParent()->RemoveChild(node);
+	node->get_parent()->remove_child(node);
 }
 
-void TreeView::SetOnBackgroundRightClicked(Delegate<void(vec2)> callback) {
-	m_Content->onContextMenu.Set(std::move(callback));
+void TreeView::set_on_background_right_clicked(Delegate<void(Vec2)> callback) {
+	m_content->on_context_menu.set(std::move(callback));
 }
 
-void TreeView::SelectNode(TreeNode *node) {
-	if (m_Selected != nullptr) {
-		m_Selected->SetSelected(false);
+void TreeView::select_node(TreeNode *node) {
+	if (m_selected != nullptr) {
+		m_selected->set_selected(false);
 	}
-	m_Selected = node;
-	if (m_Selected != nullptr) {
-		m_Selected->SetSelected(true);
+	m_selected = node;
+	if (m_selected != nullptr) {
+		m_selected->set_selected(true);
 	}
 }
 
-void TreeView::NotifySelected(TreeNode *node) {
-	SelectNode(node);
-	onSelected(node);
+void TreeView::notify_selected(TreeNode *node) {
+	select_node(node);
+	on_selected(node);
 }
 
-void TreeView::NotifyRightClicked(TreeNode *node, vec2 pos) {
-	onNodeRightClicked(node, pos);
+void TreeView::notify_right_clicked(TreeNode *node, Vec2 pos) {
+	on_node_right_clicked(node, pos);
 }
 
-static constexpr float kIndentPerDepth = 16.f;
+static constexpr float K_INDENT_PER_DEPTH = 16.F;
 
 TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
-	: m_Owner(owner), m_Label(std::move(label)), m_Depth(depth) {
-	AddClass("tree-node");
+	: m_owner(owner), m_label(std::move(label)), m_depth(depth) {
+	add_class("tree-node");
 
-	auto header = CreateUnique<Button>();
+	auto header = create_unique<Button>();
 	{
 		StyleProperties hp;
-		const float indent = kIndentPerDepth * static_cast<float>(m_Depth);
+		const float indent = K_INDENT_PER_DEPTH * static_cast<float>(m_depth);
 		hp.padding = StyleEdges{
-			StyleLength::Pixel(2.f),
-			StyleLength::Pixel(4.f),
-			StyleLength::Pixel(2.f),
-			StyleLength::Pixel(4.f + indent),
+			StyleLength::pixel(2.F),
+			StyleLength::pixel(4.F),
+			StyleLength::pixel(2.F),
+			StyleLength::pixel(4.F + indent),
 		};
-		header->SetStyle(hp);
-		header->AddClass("tree-node-header");
+		header->set_style(hp);
+		header->add_class("tree-node-header");
 	}
-	header->onClick.Connect([this] { OnHeaderClicked(); });
-	header->onContextMenu.Connect([this](vec2 pos) { OnHeaderRightClicked(pos); });
-	m_Header = static_cast<Button *>(View::AddChild(std::move(header)));
+	header->on_click.connect([this] { on_header_clicked(); });
+	header->on_context_menu.connect([this](Vec2 pos) { on_header_right_clicked(pos); });
+	m_header = static_cast<Button *>(View::add_child(std::move(header)));
 
-	auto children = CreateUnique<View>();
-	children->AddClass("tree-node-children");
-	m_Children = View::AddChild(std::move(children));
-	UpdateHeaderText();
+	auto children = create_unique<View>();
+	children->add_class("tree-node-children");
+	m_children = View::add_child(std::move(children));
+	update_header_text();
 }
 
-View *TreeNode::AddChild(Unique<View> node) {
-	auto *added = m_Children->View::AddChild(std::move(node));
-	UpdateHeaderText();
-	QueueRedraw();
+View *TreeNode::add_child(Unique<View> node) {
+	auto *added = m_children->View::add_child(std::move(node));
+	update_header_text();
+	queue_redraw();
 	return added;
 }
 
-void TreeNode::OnDragEnter(DragState &) {
-	m_Header->AddClass("drag-target");
+void TreeNode::on_drag_enter(DragState &) {
+	m_header->add_class("drag-target");
 }
 
-void TreeNode::OnDragLeave(DragState &) {
-	m_Header->RemoveClass("drag-target");
+void TreeNode::on_drag_leave(DragState &) {
+	m_header->remove_class("drag-target");
 }
 
-TreeNode *TreeNode::AddChildNode(std::string label) {
-	auto node = CreateUnique<TreeNode>(std::move(label), m_Owner, m_Depth + 1);
-	return static_cast<TreeNode *>(AddChild(std::move(node)));
+TreeNode *TreeNode::add_child_node(std::string label) {
+	auto node = create_unique<TreeNode>(std::move(label), m_owner, m_depth + 1);
+	return static_cast<TreeNode *>(add_child(std::move(node)));
 }
 
-void TreeNode::UpdateDepth(int newDepth) {
-	m_Depth = newDepth;
+void TreeNode::update_depth(int new_depth) {
+	m_depth = new_depth;
 
-	const float indent = kIndentPerDepth * static_cast<float>(m_Depth);
+	const float indent = K_INDENT_PER_DEPTH * static_cast<float>(m_depth);
 	StyleProperties hp;
 	hp.padding = StyleEdges{
-		StyleLength::Pixel(2.f),
-		StyleLength::Pixel(4.f),
-		StyleLength::Pixel(2.f),
-		StyleLength::Pixel(4.f + indent),
+		StyleLength::pixel(2.F),
+		StyleLength::pixel(4.F),
+		StyleLength::pixel(2.F),
+		StyleLength::pixel(4.F + indent),
 	};
-	m_Header->MergeStyle(hp);
+	m_header->merge_style(hp);
 
-	for (const auto &child : m_Children->GetChildren()) {
-		if (auto *childNode = dynamic_cast<TreeNode *>(child.get())) {
-			childNode->UpdateDepth(m_Depth + 1);
+	for (const auto &child : m_children->get_children()) {
+		if (auto *child_node = dynamic_cast<TreeNode *>(child.get())) {
+			child_node->update_depth(m_depth + 1);
 		}
 	}
 }
 
-void TreeNode::SetLabel(std::string label) {
-	m_Label = std::move(label);
-	UpdateHeaderText();
+void TreeNode::set_label(std::string label) {
+	m_label = std::move(label);
+	update_header_text();
 }
 
-void TreeNode::SetExpanded(bool expanded) {
-	if (expanded == m_Expanded) {
+void TreeNode::set_expanded(bool expanded) {
+	if (expanded == m_expanded) {
 		return;
 	}
-	m_Expanded = expanded;
-	ApplyState();
-	UpdateHeaderText();
-	QueueRedraw();
+	m_expanded = expanded;
+	apply_state();
+	update_header_text();
+	queue_redraw();
 }
 
-void TreeNode::SetSelected(bool selected) {
+void TreeNode::set_selected(bool selected) {
 	if (selected) {
-		m_Header->AddClass("tree-node-selected");
+		m_header->add_class("tree-node-selected");
 	} else {
-		m_Header->RemoveClass("tree-node-selected");
+		m_header->remove_class("tree-node-selected");
 	}
 }
 
-void TreeNode::ApplyState() {
+void TreeNode::apply_state() {
 	StyleProperties p;
-	p.display = m_Expanded ? Display::Flex : Display::None;
-	m_Children->MergeStyle(p);
+	p.display = m_expanded ? Display::Flex : Display::None;
+	m_children->merge_style(p);
 }
 
-void TreeNode::OnHeaderClicked() {
-	SetExpanded(!m_Expanded);
-	m_Owner.NotifySelected(this);
+void TreeNode::on_header_clicked() {
+	set_expanded(!m_expanded);
+	m_owner.notify_selected(this);
 }
 
-void TreeNode::OnHeaderRightClicked(vec2 pos) {
-	m_Owner.NotifyRightClicked(this, pos);
+void TreeNode::on_header_right_clicked(Vec2 pos) {
+	m_owner.notify_right_clicked(this, pos);
 }
 
-void TreeNode::UpdateHeaderText() {
-	if (!m_Header || !m_Children) {
+void TreeNode::update_header_text() {
+	if (!m_header || !m_children) {
 		return;
 	}
-	if (m_Children->GetChildren().empty()) {
-		m_Header->SetText(m_Label);
+	if (m_children->get_children().empty()) {
+		m_header->set_text(m_label);
 	} else {
-		m_Header->SetText(std::string(m_Expanded ? "> " : "v ") + m_Label);
+		m_header->set_text(std::string(m_expanded ? "> " : "v ") + m_label);
 	}
 }
 

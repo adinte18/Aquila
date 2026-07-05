@@ -14,85 +14,87 @@
 namespace Aquila::Graphics {
 
 struct QuadVertex {
-	vec3 position;
-	uint32 glyphID = 0;
-	vec4 color;
-	vec2 uv;
-	vec2 size;
-	vec4 radius;
-	float borderWidth;
-	float _pad1[3]{};
-	vec4 borderColor;
+	Vec3 position;
+	Uint32 glyph_id = 0;
+	Vec4 color;
+	Vec2 uv;
+	Vec2 size;
+	Vec4 radius;
+	float border_width;
+	float border_style{};
+	float pad1[2]{};
+	Vec4 border_color;
 };
 
 struct QuadPushConstants {
-	mat4 viewProjection;
+	Mat4 view_projection;
 };
 
 struct RectSpec {
-	vec2 position = { 0.F, 0.F };
-	vec2 size = { 1.F, 1.F };
-	vec4 color = { 1.F, 1.F, 1.F, 1.F };
+	Vec2 position = { 0.F, 0.F };
+	Vec2 size = { 1.F, 1.F };
+	Vec4 color = { 1.F, 1.F, 1.F, 1.F };
 	float rotation = 0.F;
 	float depth = 0.F;
-	vec4 radius = { 0.F, 0.F, 0.F, 0.F };
-	float borderWidth = 0.F;
-	vec4 borderColor = { 0.F, 0.F, 0.F, 0.F };
+	Vec4 radius = { 0.F, 0.F, 0.F, 0.F };
+	float border_width = 0.F;
+	Vec4 border_color = { 0.F, 0.F, 0.F, 0.F };
+	float border_style = 0.F;
 };
 
 struct SpriteSpec {
-	vec2 position = { 0.F, 0.F };
-	vec2 size = { 1.F, 1.F };
-	vec4 tint = { 1.F, 1.F, 1.F, 1.F };
+	Vec2 position = { 0.F, 0.F };
+	Vec2 size = { 1.F, 1.F };
+	Vec4 tint = { 1.F, 1.F, 1.F, 1.F };
 	float rotation = 0.F;
 	float depth = 0.F;
 	GFX::GfxTexture *texture = nullptr;
-	vec2 uvMin = { 0.F, 0.F };
-	vec2 uvMax = { 1.F, 1.F };
+	Vec2 uv_min = { 0.F, 0.F };
+	Vec2 uv_max = { 1.F, 1.F };
 };
 
 // Vertex format used exclusively by the text (Slug) pipeline.
 // banding and glyphData are declared nointerpolation in the shader;
 // all 4 vertices of a glyph quad carry the same values for those fields.
 struct TextVertex {
-	vec3 position; // screen-space XYZ (Z = depth)
-	float _pad0{};
-	vec4 color;
-	vec2 texcoord; // em-space coordinate (interpolated)
-	float texLoc{}; // bit_cast<float>(glyphLocX | (glyphLocY << 16))
-	float bandMax{}; // bit_cast<float>((bandMaxX & 0xFF) | (bandMaxY << 8))
-	vec4 banding; // (scaleX, scaleY, offsetX, offsetY) nointerpolation
+	Vec3 position; // screen-space XYZ (Z = depth)
+	float pad0{};
+	Vec4 color;
+	Vec2 texcoord; // em-space coordinate (interpolated)
+	float tex_loc{}; // bit_cast<float>(glyphLocX | (glyphLocY << 16))
+	float band_max{}; // bit_cast<float>((bandMaxX & 0xFF) | (bandMaxY << 8))
+	Vec4 banding; // (scaleX, scaleY, offsetX, offsetY) nointerpolation
 };
 static_assert(sizeof(TextVertex) == 64);
 
 struct ShadowSpec {
-	vec2 position = { 0.F, 0.F }; // top-left of the expanded shadow quad
-	vec2 size = { 1.F, 1.F }; // shadow quad size = widgetSize + 2*(blur+spread)
-	vec4 color = { 0.F, 0.F, 0.F, 0.75F };
-	vec2 offset = { 0.F, 0.F }; // CSS shadow-offset (x, y)
-	vec2 originalHalfSize = { 0.F, 0.F }; // widgetHalfSize + spread (SDF box)
-	vec4 radius = { 0.F, 0.F, 0.F, 0.F };
+	Vec2 position = { 0.F, 0.F }; // top-left of the expanded shadow quad
+	Vec2 size = { 1.F, 1.F }; // shadow quad size = widgetSize + 2*(blur+spread)
+	Vec4 color = { 0.F, 0.F, 0.F, 0.75F };
+	Vec2 offset = { 0.F, 0.F }; // CSS shadow-offset (x, y)
+	Vec2 original_half_size = { 0.F, 0.F }; // widgetHalfSize + spread (SDF box)
+	Vec4 radius = { 0.F, 0.F, 0.F, 0.F };
 	float blur = 0.F;
 	float depth = 0.F;
 };
 
 struct GlyphSpec {
-	vec2 position = { 0.F, 0.F }; // top-left screen position
-	vec2 size = { 1.F, 1.F }; // screen size
-	vec4 color = { 1.F, 1.F, 1.F, 1.F };
+	Vec2 position = { 0.F, 0.F }; // top-left screen position
+	Vec2 size = { 1.F, 1.F }; // screen size
+	Vec4 color = { 1.F, 1.F, 1.F, 1.F };
 	float depth = 0.F;
 	// Slug per-glyph data (constant across all 4 vertices).
-	uint32 glyphLocX = 0;
-	uint32 glyphLocY = 0;
-	uint32 bandMaxX = 15;
-	uint32 bandMaxY = 15;
-	vec4 banding = { 0.F, 0.F, 0.F, 0.F };
+	Uint32 glyph_loc_x = 0;
+	Uint32 glyph_loc_y = 0;
+	Uint32 band_max_x = 15;
+	Uint32 band_max_y = 15;
+	Vec4 banding = { 0.F, 0.F, 0.F, 0.F };
 	// Em-space extents for computing per-corner texcoords.
-	vec2 emMin = { 0.F, 0.F };
-	vec2 emMax = { 1.F, 1.F };
-	GFX::GfxTexture *curveTexture = nullptr;
-	GFX::GfxTexture *bandTexture = nullptr;
-	bool flipY = false;
+	Vec2 em_min = { 0.F, 0.F };
+	Vec2 em_max = { 1.F, 1.F };
+	GFX::GfxTexture *curve_texture = nullptr;
+	GFX::GfxTexture *band_texture = nullptr;
+	bool flip_y = false;
 };
 
 class QuadBatcher {
@@ -102,54 +104,54 @@ class QuadBatcher {
 	AQUILA_NONCOPYABLE(QuadBatcher);
 	AQUILA_NONMOVEABLE(QuadBatcher);
 
-	void Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
-			   const mat4 &viewProjection, RHI::TextureFormat depthFormat = RHI::TextureFormat::None);
-	void Flush();
-	void End();
+	void begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format, RHI::SampleCount sample_count,
+			   const Mat4 &view_projection, RHI::TextureFormat depth_format = RHI::TextureFormat::None);
+	void flush();
+	void end();
 
-	void BeginCapture();
-	void ExecuteReplay(GFX::GfxCommandList &cmd);
-	void SetScissor(GFX::GfxCommandList &cmd, int32 x, int32 y, uint32 w, uint32 h);
+	void begin_capture();
+	void execute_replay(GFX::GfxCommandList &cmd);
+	void set_scissor(GFX::GfxCommandList &cmd, Int32 x, Int32 y, Uint32 w, Uint32 h);
 
-	void DrawRect(const RectSpec &spec);
-	void DrawShadow(const ShadowSpec &spec);
-	void DrawSprite(const SpriteSpec &spec);
-	void DrawGlyph(const GlyphSpec &spec);
+	void draw_rect(const RectSpec &spec);
+	void draw_shadow(const ShadowSpec &spec);
+	void draw_sprite(const SpriteSpec &spec);
+	void draw_glyph(const GlyphSpec &spec);
 
-	void ResetStats() { m_Stats = {}; }
-	[[nodiscard]] uint32 GetDrawCallCount() const { return m_Stats.drawCalls; }
-	[[nodiscard]] uint32 GetQuadCount() const { return m_Stats.quadCount; }
+	void reset_stats() { m_stats = {}; }
+	[[nodiscard]] Uint32 get_draw_call_count() const { return m_stats.draw_calls; }
+	[[nodiscard]] Uint32 get_quad_count() const { return m_stats.quad_count; }
 
-	GFX::GfxPipeline &GetOrCreateFlatPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
-											  RHI::TextureFormat depthFormat);
-	GFX::GfxPipeline &GetOrCreateTexturePipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
-												 RHI::TextureFormat depthFormat);
-	GFX::GfxPipeline &GetOrCreateGUIPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
-											 RHI::TextureFormat depthFormat);
-	GFX::GfxPipeline &GetOrCreateTextPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
-											  RHI::TextureFormat depthFormat);
-	GFX::GfxPipeline &GetOrCreateShadowPipeline(RHI::TextureFormat colorFormat, RHI::SampleCount samples,
-												RHI::TextureFormat depthFormat);
+	GFX::GfxPipeline &get_or_create_flat_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+												  RHI::TextureFormat depth_format);
+	GFX::GfxPipeline &get_or_create_texture_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+													 RHI::TextureFormat depth_format);
+	GFX::GfxPipeline &get_or_create_gui_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+												 RHI::TextureFormat depth_format);
+	GFX::GfxPipeline &get_or_create_text_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+												  RHI::TextureFormat depth_format);
+	GFX::GfxPipeline &get_or_create_shadow_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+													RHI::TextureFormat depth_format);
 
   private:
 	struct Stats {
-		uint32 drawCalls = 0;
-		uint32 quadCount = 0;
+		Uint32 draw_calls = 0;
+		Uint32 quad_count = 0;
 	};
 
 	struct PipelineKey {
-		RHI::TextureFormat colorFormat;
-		RHI::SampleCount sampleCount;
-		RHI::TextureFormat depthFormat;
+		RHI::TextureFormat color_format;
+		RHI::SampleCount sample_count;
+		RHI::TextureFormat depth_format;
 		bool operator==(const PipelineKey &o) const {
-			return colorFormat == o.colorFormat && sampleCount == o.sampleCount && depthFormat == o.depthFormat;
+			return color_format == o.color_format && sample_count == o.sample_count && depth_format == o.depth_format;
 		}
 	};
 	struct PipelineKeyHash {
 		size_t operator()(const PipelineKey &k) const {
-			size_t h = std::hash<int>{}(static_cast<int>(k.colorFormat));
-			h ^= std::hash<int>{}(static_cast<int>(k.sampleCount)) << 16;
-			h ^= std::hash<int>{}(static_cast<int>(k.depthFormat)) << 24;
+			size_t h = std::hash<int>{}(static_cast<int>(k.color_format));
+			h ^= std::hash<int>{}(static_cast<int>(k.sample_count)) << 16;
+			h ^= std::hash<int>{}(static_cast<int>(k.depth_format)) << 24;
 			return h;
 		}
 	};
@@ -158,80 +160,80 @@ class QuadBatcher {
 
 	struct ReplayEntry {
 		GFX::GfxPipeline *pipeline;
-		GFX::GfxDescriptorSet *descSet; // null for pipelines with no descriptor set
-		bool isTextBuffer; // selects text VB vs quad VB
-		uint32 indexCount;
-		int32 vertexOffset;
-		bool isScissor = false;
-		int32 scissorX = 0;
-		int32 scissorY = 0;
-		uint32 scissorW = 0;
-		uint32 scissorH = 0;
+		GFX::GfxDescriptorSet *desc_set; // null for pipelines with no descriptor set
+		bool is_text_buffer; // selects text VB vs quad VB
+		Uint32 index_count;
+		Int32 vertex_offset;
+		bool is_scissor = false;
+		Int32 scissor_x = 0;
+		Int32 scissor_y = 0;
+		Uint32 scissor_w = 0;
+		Uint32 scissor_h = 0;
 	};
 
-	void StartBatch();
-	[[nodiscard]] mat4 BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const;
-	GFX::GfxDescriptorSet &GetOrCreateTextureSet(GFX::GfxTexture &texture);
-	GFX::GfxDescriptorSet &GetOrCreateTextDataSet(GFX::GfxTexture &curveTexture, GFX::GfxTexture &bandTexture);
+	void start_batch();
+	[[nodiscard]] Mat4 build_quad_transform(Vec2 position, Vec2 size, float rotation, float depth) const;
+	GFX::GfxDescriptorSet &get_or_create_texture_set(GFX::GfxTexture &texture);
+	GFX::GfxDescriptorSet &get_or_create_text_data_set(GFX::GfxTexture &curve_texture, GFX::GfxTexture &band_texture);
 
-	GFX::GfxContext &m_Ctx;
+	GFX::GfxContext &m_ctx;
 
 	// Per-frame ring buffers — cycle between two slots to avoid GPU/CPU sync stalls.
-	static constexpr uint32 kRingSize = SharedConstants::MAX_FRAMES_IN_FLIGHT;
-	std::array<Ref<GFX::GfxBuffer>, kRingSize> m_VertexBuffers;
-	std::array<Ref<GFX::GfxBuffer>, kRingSize> m_TextVertexBuffers;
-	QuadVertex *m_MappedQuadBases[kRingSize] = {};
-	TextVertex *m_MappedTextBases[kRingSize] = {};
-	GFX::GfxBuffer *m_ActiveVertexBuffer = nullptr;
-	GFX::GfxBuffer *m_ActiveTextVertexBuffer = nullptr;
+	static constexpr Uint32 K_RING_SIZE = SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	std::array<Ref<GFX::GfxBuffer>, K_RING_SIZE> m_vertex_buffers;
+	std::array<Ref<GFX::GfxBuffer>, K_RING_SIZE> m_text_vertex_buffers;
+	QuadVertex *m_mapped_quad_bases[K_RING_SIZE] = {};
+	TextVertex *m_mapped_text_bases[K_RING_SIZE] = {};
+	GFX::GfxBuffer *m_active_vertex_buffer = nullptr;
+	GFX::GfxBuffer *m_active_text_vertex_buffer = nullptr;
 	// Direct write pointers into the currently active mapped buffer — no intermediate vector.
-	QuadVertex *m_QuadWritePtr = nullptr;
-	TextVertex *m_TextWritePtr = nullptr;
-	uint32 m_FrameCounter = 0;
+	QuadVertex *m_quad_write_ptr = nullptr;
+	TextVertex *m_text_write_ptr = nullptr;
+	Uint32 m_frame_counter = 0;
 
-	Ref<GFX::GfxBuffer> m_IndexBuffer;
-	Ref<GFX::GfxDescriptorSetLayout> m_TextureLayout;
-	Ref<GFX::GfxDescriptorSetLayout> m_TextDataLayout;
-	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_TextureSetCache;
-	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_TextDataSetCache;
+	Ref<GFX::GfxBuffer> m_index_buffer;
+	Ref<GFX::GfxDescriptorSetLayout> m_texture_layout;
+	Ref<GFX::GfxDescriptorSetLayout> m_text_data_layout;
+	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_texture_set_cache;
+	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_text_data_set_cache;
 
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_FlatPipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_TexturePipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_GUIPipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_TextPipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_ShadowPipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_flat_pipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_texture_pipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_gui_pipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_text_pipelines;
+	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_shadow_pipelines;
 
-	GFX::GfxCommandList *m_ActiveCmd = nullptr;
-	RHI::TextureFormat m_ActiveColorFormat = RHI::TextureFormat::None;
-	RHI::TextureFormat m_ActiveDepthFormat = RHI::TextureFormat::None;
-	RHI::SampleCount m_ActiveSampleCount = RHI::SampleCount::x1;
-	mat4 m_ViewProjection = mat4(1.F);
+	GFX::GfxCommandList *m_active_cmd = nullptr;
+	RHI::TextureFormat m_active_color_format = RHI::TextureFormat::None;
+	RHI::TextureFormat m_active_depth_format = RHI::TextureFormat::None;
+	RHI::SampleCount m_active_sample_count = RHI::SampleCount::X1;
+	Mat4 m_view_projection = Mat4(1.F);
 	// Per-frame command recording state — avoids redundant GPU state changes.
-	GFX::GfxPipeline *m_LastBoundPipeline = nullptr;
-	GFX::GfxDescriptorSet *m_LastBoundDescSet0 = nullptr;
-	GFX::GfxBuffer *m_LastBoundVertexBuffer = nullptr;
-	bool m_PushConstantsDirty = true;
+	GFX::GfxPipeline *m_last_bound_pipeline = nullptr;
+	GFX::GfxDescriptorSet *m_last_bound_desc_set0 = nullptr;
+	GFX::GfxBuffer *m_last_bound_vertex_buffer = nullptr;
+	bool m_push_constants_dirty = true;
 	// Cached descriptor set pointers — updated when the batch texture changes, not per-flush.
-	GFX::GfxDescriptorSet *m_CachedTextDataSet = nullptr;
-	GFX::GfxDescriptorSet *m_CachedTextureSet = nullptr;
+	GFX::GfxDescriptorSet *m_cached_text_data_set = nullptr;
+	GFX::GfxDescriptorSet *m_cached_texture_set = nullptr;
 
-	uint32 m_QuadCount = 0;
-	uint32 m_VertexOffset = 0;
-	uint32 m_TextVertexOffset = 0;
-	BatchType m_BatchType = BatchType::Flat;
-	GFX::GfxTexture *m_BatchTexture = nullptr;
-	GFX::GfxTexture *m_BatchCurveTexture = nullptr;
-	GFX::GfxTexture *m_BatchBandTexture = nullptr;
+	Uint32 m_quad_count = 0;
+	Uint32 m_vertex_offset = 0;
+	Uint32 m_text_vertex_offset = 0;
+	BatchType m_batch_type = BatchType::Flat;
+	GFX::GfxTexture *m_batch_texture = nullptr;
+	GFX::GfxTexture *m_batch_curve_texture = nullptr;
+	GFX::GfxTexture *m_batch_band_texture = nullptr;
 
 	// Replay state — built during a captured Submit, consumed by ExecuteReplay.
-	std::vector<ReplayEntry> m_ReplayList;
-	bool m_Capturing = false;
-	uint32 m_CurrentSlot = 0; // ring slot in use this frame (set by Begin)
-	uint32 m_LastDirtySlot = 0; // ring slot written during last BeginCapture+Submit
-	uint64 m_ReplayQuadBytes = 0;
-	uint64 m_ReplayTextBytes = 0;
+	std::vector<ReplayEntry> m_replay_list;
+	bool m_capturing = false;
+	Uint32 m_current_slot = 0; // ring slot in use this frame (set by Begin)
+	Uint32 m_last_dirty_slot = 0; // ring slot written during last BeginCapture+Submit
+	Uint64 m_replay_quad_bytes = 0;
+	Uint64 m_replay_text_bytes = 0;
 
-	Stats m_Stats;
+	Stats m_stats;
 };
 
 } // namespace Aquila::Graphics

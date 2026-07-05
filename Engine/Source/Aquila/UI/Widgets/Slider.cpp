@@ -2,101 +2,101 @@
 
 namespace Aquila::UI::Core {
 
-static constexpr float kTrackHeight = 4.f;
-static constexpr float kHandleSize = 12.f;
-static constexpr float kHandlePad = kHandleSize * 0.5f;
+static constexpr float K_TRACK_HEIGHT = 4.F;
+static constexpr float K_HANDLE_SIZE = 12.F;
+static constexpr float K_HANDLE_PAD = K_HANDLE_SIZE * 0.5f;
 
 Slider::Slider() {
-	SetInputLeaf(true);
-	AddClass("slider");
+	set_input_leaf(true);
+	add_class("slider");
 }
 
-float Slider::Coerce(const float &value) const {
-	float clamped = std::clamp(value, m_Min, m_Max);
-	if (m_Step > 0.f) {
-		clamped = std::round((clamped - m_Min) / m_Step) * m_Step + m_Min;
+float Slider::coerce(const float &value) const {
+	float clamped = std::clamp(value, m_min, m_max);
+	if (m_step > 0.F) {
+		clamped = std::round((clamped - m_min) / m_step) * m_step + m_min;
 	}
 	return clamped;
 }
 
-void Slider::SetRange(float min, float max) {
-	m_Min = min;
-	m_Max = max;
-	SetValueWithoutNotify(GetValue());
+void Slider::set_range(float min, float max) {
+	m_min = min;
+	m_max = max;
+	set_value_without_notify(get_value());
 }
 
-void Slider::SetStep(float step) {
-	m_Step = step;
-	SetValueWithoutNotify(GetValue());
+void Slider::set_step(float step) {
+	m_step = step;
+	set_value_without_notify(get_value());
 }
 
-
-float Slider::ValueFromX(float x) const {
-	const Rect rect = GetAbsoluteRect();
-	const float left = rect.position.x + kHandlePad;
-	const float right = rect.position.x + rect.size.x - kHandlePad;
-	const float t = std::clamp((x - left) / (right - left), 0.f, 1.f);
-	float raw = m_Min + t * (m_Max - m_Min);
-	if (m_Step > 0.f) {
-		raw = std::round((raw - m_Min) / m_Step) * m_Step + m_Min;
+float Slider::value_from_x(float x) const {
+	const Rect rect = get_absolute_rect();
+	const float left = rect.position.x + K_HANDLE_PAD;
+	const float right = rect.position.x + rect.size.x - K_HANDLE_PAD;
+	const float t = std::clamp((x - left) / (right - left), 0.F, 1.F);
+	float raw = m_min + t * (m_max - m_min);
+	if (m_step > 0.F) {
+		raw = std::round((raw - m_min) / m_step) * m_step + m_min;
 	}
-	return std::clamp(raw, m_Min, m_Max);
+	return std::clamp(raw, m_min, m_max);
 }
 
-void Slider::OnMousePress(Platform::MouseButton btn, vec2 pos) {
+void Slider::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
-		SetValue(ValueFromX(pos.x));
+		set_value(value_from_x(pos.x));
 	}
-	View::OnMousePress(btn, pos);
+	View::on_mouse_press(btn, pos);
 }
 
-void Slider::OnMouseMove(vec2 pos) {
-	SetValue(ValueFromX(pos.x));
+void Slider::on_mouse_move(Vec2 pos) {
+	set_value(value_from_x(pos.x));
 }
 
-void Slider::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList);
+void Slider::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list);
 
-	const Rect rect = GetAbsoluteRect();
+	const Rect rect = get_absolute_rect();
 	using namespace Rendering;
-	const auto &style = GetDisplayStyle();
-	const int32 z = 0;
+	const auto &style = get_display_style();
+	const Int32 z = 0;
 	const float cy = rect.position.y + rect.size.y * 0.5f;
 
-	const float t = (m_Max > m_Min) ? (GetValue() - m_Min) / (m_Max - m_Min) : 0.f;
+	const float t = (m_max > m_min) ? (get_value() - m_min) / (m_max - m_min) : 0.F;
 
-	const vec4 accentColor = style.EffectiveAccentColor();
+	const Vec4 accent_color = style.effective_accent_color();
 
-	if (m_TrackTex) {
-		const float trackH = rect.size.y;
+	if (m_track_tex) {
+		const float track_h = rect.size.y;
 		const Rect track = {
 			.position = { rect.position.x, rect.position.y },
-			.size = { rect.size.x, trackH },
+			.size = { rect.size.x, track_h },
 		};
-		drawList.DrawImage(track, m_TrackTex, vec4(1.f), vec2(0.f), vec2(1.f), z + 1);
+		draw_list.draw_image(track, m_track_tex, Vec4(1.F), Vec2(0.F), Vec2(1.F), z + 1);
 
-		const float hx = rect.position.x + t * rect.size.x - kHandleSize * 0.5f;
-		const float hy = cy - kHandleSize * 0.5f;
-		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
-		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), style.borderWidth, style.borderColor, z + 2);
+		const float hx = rect.position.x + t * rect.size.x - K_HANDLE_SIZE * 0.5f;
+		const float hy = cy - K_HANDLE_SIZE * 0.5f;
+		const Rect handle = { .position = { hx, hy }, .size = { K_HANDLE_SIZE, K_HANDLE_SIZE } };
+		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5f), style.border_width, style.border_color,
+							z + 2);
 	} else {
 		const Rect track = {
-			.position = { rect.position.x + kHandlePad, cy - kTrackHeight * 0.5f },
-			.size = { rect.size.x - kHandlePad * 2.f, kTrackHeight },
+			.position = { rect.position.x + K_HANDLE_PAD, cy - K_TRACK_HEIGHT * 0.5f },
+			.size = { rect.size.x - K_HANDLE_PAD * 2.F, K_TRACK_HEIGHT },
 		};
-		const vec4 trackColor = vec4(accentColor.r, accentColor.g, accentColor.b, accentColor.a * 0.3f);
-		drawList.DrawRect(track, trackColor, vec4(kTrackHeight * 0.5f), 0.f, vec4(0.f), z + 1);
+		const Vec4 track_color = Vec4(accent_color.r, accent_color.g, accent_color.b, accent_color.a * 0.3f);
+		draw_list.draw_rect(track, track_color, Vec4(K_TRACK_HEIGHT * 0.5f), 0.F, Vec4(0.F), z + 1);
 
-		const float fillW = track.size.x * t;
-		if (fillW > 0.f) {
-			const Rect fill = { .position = track.position, .size = { fillW, kTrackHeight } };
-			drawList.DrawRect(fill, accentColor, vec4(kTrackHeight * 0.5f), 0.f, vec4(0.f), z + 1);
+		const float fill_w = track.size.x * t;
+		if (fill_w > 0.F) {
+			const Rect fill = { .position = track.position, .size = { fill_w, K_TRACK_HEIGHT } };
+			draw_list.draw_rect(fill, accent_color, Vec4(K_TRACK_HEIGHT * 0.5f), 0.F, Vec4(0.F), z + 1);
 		}
 
-		const float hx = track.position.x + fillW - kHandleSize * 0.5f;
-		const float hy = cy - kHandleSize * 0.5f;
-		const Rect handle = { .position = { hx, hy }, .size = { kHandleSize, kHandleSize } };
-		drawList.DrawRect(handle, accentColor, vec4(kHandleSize * 0.5f), 0.f, vec4(0.f), z + 2);
+		const float hx = track.position.x + fill_w - K_HANDLE_SIZE * 0.5f;
+		const float hy = cy - K_HANDLE_SIZE * 0.5f;
+		const Rect handle = { .position = { hx, hy }, .size = { K_HANDLE_SIZE, K_HANDLE_SIZE } };
+		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5f), 0.F, Vec4(0.F), z + 2);
 	}
 }
 

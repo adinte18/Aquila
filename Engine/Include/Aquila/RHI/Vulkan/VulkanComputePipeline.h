@@ -13,27 +13,27 @@ class VulkanCommandList;
 
 class VulkanComputePipeline final : public IRHIPipeline {
   public:
-	VulkanComputePipeline(VulkanDevice &device, VkShaderModule module, const std::string &entryPoint,
+	VulkanComputePipeline(VulkanDevice &device, VkShaderModule module, const std::string &entry_point,
 						  VkPipelineLayout layout);
 	~VulkanComputePipeline() override;
 
 	AQUILA_NONCOPYABLE(VulkanComputePipeline);
 
 	// IRHIPipeline
-	void Bind(IRHICommandList &cmd) override;
-	[[nodiscard]] PipelineBindPoint GetBindPoint() const override { return PipelineBindPoint::Compute; }
+	void bind(IRHICommandList &cmd) override;
+	[[nodiscard]] PipelineBindPoint get_bind_point() const override { return PipelineBindPoint::Compute; }
 
 	// Vulkan-specific
-	[[nodiscard]] VkPipeline GetPipeline() const { return m_Pipeline; }
-	[[nodiscard]] VkPipelineLayout GetLayout() const { return m_Layout; }
+	[[nodiscard]] VkPipeline get_pipeline() const { return m_pipeline; }
+	[[nodiscard]] VkPipelineLayout get_layout() const { return m_layout; }
 
   private:
-	void CreatePipelineCache();
+	void create_pipeline_cache();
 
-	VulkanDevice &m_Device;
-	VkPipeline m_Pipeline = VK_NULL_HANDLE;
-	VkPipelineLayout m_Layout = VK_NULL_HANDLE;
-	VkPipelineCache m_PipelineCache = VK_NULL_HANDLE;
+	VulkanDevice &m_device;
+	VkPipeline m_pipeline = VK_NULL_HANDLE;
+	VkPipelineLayout m_layout = VK_NULL_HANDLE;
+	VkPipelineCache m_pipeline_cache = VK_NULL_HANDLE;
 };
 
 } // namespace Aquila::RHI

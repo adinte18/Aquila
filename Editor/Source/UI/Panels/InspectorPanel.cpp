@@ -15,55 +15,55 @@ namespace Editor {
 using namespace Aquila;
 using namespace Aquila::SceneManagement;
 
-InspectorPanel::InspectorPanel(GFX::GfxContext &context) : m_Context(context) {}
+InspectorPanel::InspectorPanel(GFX::GfxContext &context) : m_context(context) {}
 
-void InspectorPanel::SetVisible(UI::Core::View *v, bool visible) {
-	v->SetHidden(!visible);
+void InspectorPanel::set_visible(UI::Core::View *v, bool visible) {
+	v->set_hidden(!visible);
 }
 
-void InspectorPanel::Build(UI::Core::DockPanel *panel, UI::Core::View *) {
-	m_ScrollView = panel->FindById("inspector-scroll");
-	if (m_ScrollView == nullptr) {
+void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *) {
+	m_scroll_view = panel->find_by_id("inspector-scroll");
+	if (m_scroll_view == nullptr) {
 		AQUILA_LOG_ERROR("InspectorPanel: 'inspector-scroll' not found in layout");
 		return;
 	}
 
-	m_NameInput = panel->FindById<UI::Core::TextInput>("inspector-name");
-	if (m_NameInput != nullptr) {
-		SetVisible(m_NameInput, false);
+	m_name_input = panel->find_by_id<UI::Core::TextInput>("inspector-name");
+	if (m_name_input != nullptr) {
+		set_visible(m_name_input, false);
 	}
 
-	auto AddUIComponent = [&](std::string_view sectionId, Unique<IComponentUI> componentUI) {
-		auto *section = panel->FindById<UI::Core::Collapsible>(sectionId);
+	auto add_ui_component = [&](std::string_view section_id, Unique<IComponentUI> component_ui) {
+		auto *section = panel->find_by_id<UI::Core::Collapsible>(section_id);
 		if (section == nullptr) {
-			AQUILA_LOG_ERROR("InspectorPanel: section '{}' not found in layout", sectionId);
+			AQUILA_LOG_ERROR("InspectorPanel: section '{}' not found in layout", section_id);
 			return;
 		}
-		auto *grid = section->AddContent<UI::Core::PropertyGrid>();
-		componentUI->Build(section, grid);
-		SetVisible(section, false);
-		m_Sections.push_back({ section, std::move(componentUI) });
+		auto *grid = section->add_content<UI::Core::PropertyGrid>();
+		component_ui->build(section, grid);
+		set_visible(section, false);
+		m_sections.push_back({ section, std::move(component_ui) });
 	};
 
-	AddUIComponent("section-transform", CreateUnique<TransformComponentUI>());
-	AddUIComponent("section-material", CreateUnique<MaterialComponentUI>(m_Context));
-	AddUIComponent("section-light", CreateUnique<LightComponentUI>(m_Context));
-	AddUIComponent("section-camera", CreateUnique<CameraComponentUI>());
+	add_ui_component("section-transform", create_unique<TransformComponentUI>());
+	add_ui_component("section-material", create_unique<MaterialComponentUI>(m_context));
+	add_ui_component("section-light", create_unique<LightComponentUI>(m_context));
+	add_ui_component("section-camera", create_unique<CameraComponentUI>());
 }
 
-void InspectorPanel::ShowEntity(Entity entity) {
-	if (!m_ScrollView) {
+void InspectorPanel::show_entity(Entity entity) {
+	if (!m_scroll_view) {
 		return;
 	}
 
-	SetVisible(m_NameInput, true);
-	m_NameInput->SetText(entity.GetName());
+	set_visible(m_name_input, true);
+	m_name_input->set_text(entity.get_name());
 
-	for (auto &section : m_Sections) {
-		bool has = section.ui->Matches(entity);
-		SetVisible(section.collapsible, has);
+	for (auto &section : m_sections) {
+		bool has = section.ui->matches(entity);
+		set_visible(section.collapsible, has);
 		if (has) {
-			section.ui->Show(entity);
+			section.ui->show(entity);
 		}
 	}
 }

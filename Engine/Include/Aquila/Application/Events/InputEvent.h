@@ -5,7 +5,7 @@
 
 namespace Aquila::Application::Events {
 
-enum class KeyCode : uint16 {
+enum class KeyCode : Uint16 {
 	Unknown = 0,
 	Space = 32,
 	A = 65,
@@ -65,137 +65,137 @@ enum class KeyCode : uint16 {
 	RightAlt = 346,
 };
 
-enum class MouseButton : uint8 { Left = 0, Right = 1, Middle = 2 };
+enum class MouseButton : Uint8 { Left = 0, Right = 1, Middle = 2 };
 
-static constexpr int ModShift = 0x0001;
-static constexpr int ModControl = 0x0002;
-static constexpr int ModAlt = 0x0004;
+static constexpr int MODIFIER_SHIFT = 0x0001;
+static constexpr int MODIFIER_CONTROL = 0x0002;
+static constexpr int MODIFIER_ALT = 0x0004;
 
 class KeyPressedEvent final : public Event {
   public:
-	KeyPressedEvent(const KeyCode keycode, const int repeatCount, const int mods = 0)
-		: m_KeyCode(keycode), m_RepeatCount(repeatCount), m_Mods(mods) {}
+	KeyPressedEvent(const KeyCode keycode, const int repeat_count, const int mods = 0)
+		: m_key_code(keycode), m_repeat_count(repeat_count), m_mods(mods) {}
 
-	[[nodiscard]] KeyCode GetKeyCode() const { return m_KeyCode; }
-	[[nodiscard]] int GetRepeatCount() const { return m_RepeatCount; }
-	[[nodiscard]] bool IsRepeat() const { return m_RepeatCount > 0; }
-	[[nodiscard]] int GetMods() const { return m_Mods; }
-	[[nodiscard]] bool IsCtrl() const { return (m_Mods & ModControl) != 0; }
-	[[nodiscard]] bool IsShift() const { return (m_Mods & ModShift) != 0; }
-	[[nodiscard]] bool IsAlt() const { return (m_Mods & ModAlt) != 0; }
+	[[nodiscard]] KeyCode get_key_code() const { return m_key_code; }
+	[[nodiscard]] int get_repeat_count() const { return m_repeat_count; }
+	[[nodiscard]] bool is_repeat() const { return m_repeat_count > 0; }
+	[[nodiscard]] int get_mods() const { return m_mods; }
+	[[nodiscard]] bool is_ctrl() const { return (m_mods & MODIFIER_CONTROL) != 0; }
+	[[nodiscard]] bool is_shift() const { return (m_mods & MODIFIER_SHIFT) != 0; }
+	[[nodiscard]] bool is_alt() const { return (m_mods & MODIFIER_ALT) != 0; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return std::string("KeyPressedEvent: ") + std::to_string(static_cast<int>(m_KeyCode)) + " (" +
-			std::to_string(m_RepeatCount) + " repeats)";
+	[[nodiscard]] std::string to_string() const override {
+		return std::string("KeyPressedEvent: ") + std::to_string(static_cast<int>(m_key_code)) + " (" +
+			std::to_string(m_repeat_count) + " repeats)";
 	}
 
 	EVENT_CLASS_TYPE(KeyPressedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Keyboard | EventCategory::Input)
 
   private:
-	KeyCode m_KeyCode;
-	int m_RepeatCount;
-	int m_Mods;
+	KeyCode m_key_code;
+	int m_repeat_count;
+	int m_mods;
 };
 
 class KeyReleasedEvent final : public Event {
   public:
-	explicit KeyReleasedEvent(const KeyCode keycode) : m_KeyCode(keycode) {}
+	explicit KeyReleasedEvent(const KeyCode keycode) : m_key_code(keycode) {}
 
-	[[nodiscard]] KeyCode GetKeyCode() const { return m_KeyCode; }
+	[[nodiscard]] KeyCode get_key_code() const { return m_key_code; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return std::string("KeyReleasedEvent: ") + std::to_string(static_cast<int>(m_KeyCode));
+	[[nodiscard]] std::string to_string() const override {
+		return std::string("KeyReleasedEvent: ") + std::to_string(static_cast<int>(m_key_code));
 	}
 
 	EVENT_CLASS_TYPE(KeyReleasedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Keyboard | EventCategory::Input)
 
   private:
-	KeyCode m_KeyCode;
+	KeyCode m_key_code;
 };
 
 class KeyTypedEvent final : public Event {
   public:
-	explicit KeyTypedEvent(const KeyCode keycode) : m_KeyCode(keycode) {}
+	explicit KeyTypedEvent(const KeyCode keycode) : m_key_code(keycode) {}
 
-	[[nodiscard]] KeyCode GetKeyCode() const { return m_KeyCode; }
+	[[nodiscard]] KeyCode get_key_code() const { return m_key_code; }
 
 	EVENT_CLASS_TYPE(KeyTypedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Keyboard | EventCategory::Input)
 
   private:
-	KeyCode m_KeyCode;
+	KeyCode m_key_code;
 };
 
 class MouseMovedEvent final : public Event {
   public:
-	MouseMovedEvent(const f32 x, const f32 y) : m_MouseX(x), m_MouseY(y) {}
+	MouseMovedEvent(const F32 x, const F32 y) : m_mouse_x(x), m_mouse_y(y) {}
 
-	[[nodiscard]] f32 GetX() const { return m_MouseX; }
-	[[nodiscard]] f32 GetY() const { return m_MouseY; }
+	[[nodiscard]] F32 get_x() const { return m_mouse_x; }
+	[[nodiscard]] F32 get_y() const { return m_mouse_y; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "MouseMovedEvent: " + std::to_string(m_MouseX) + ", " + std::to_string(m_MouseY);
+	[[nodiscard]] std::string to_string() const override {
+		return "MouseMovedEvent: " + std::to_string(m_mouse_x) + ", " + std::to_string(m_mouse_y);
 	}
 
 	EVENT_CLASS_TYPE(MouseMovedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input)
 
   private:
-	f32 m_MouseX, m_MouseY;
+	F32 m_mouse_x, m_mouse_y;
 };
 
 class MouseScrolledEvent final : public Event {
   public:
-	MouseScrolledEvent(const f32 xOffset, const f32 yOffset) : m_XOffset(xOffset), m_YOffset(yOffset) {}
+	MouseScrolledEvent(const F32 x_offset, const F32 y_offset) : m_x_offset(x_offset), m_y_offset(y_offset) {}
 
-	[[nodiscard]] f32 GetXOffset() const { return m_XOffset; }
-	[[nodiscard]] f32 GetYOffset() const { return m_YOffset; }
+	[[nodiscard]] F32 get_x_offset() const { return m_x_offset; }
+	[[nodiscard]] F32 get_y_offset() const { return m_y_offset; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "MouseScrolledEvent: " + std::to_string(m_XOffset) + ", " + std::to_string(m_YOffset);
+	[[nodiscard]] std::string to_string() const override {
+		return "MouseScrolledEvent: " + std::to_string(m_x_offset) + ", " + std::to_string(m_y_offset);
 	}
 
 	EVENT_CLASS_TYPE(MouseScrolledEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input)
 
   private:
-	f32 m_XOffset, m_YOffset;
+	F32 m_x_offset, m_y_offset;
 };
 
 class MouseButtonPressedEvent final : public Event {
   public:
-	explicit MouseButtonPressedEvent(const MouseButton button) : m_Button(button) {}
+	explicit MouseButtonPressedEvent(const MouseButton button) : m_button(button) {}
 
-	[[nodiscard]] MouseButton GetMouseButton() const { return m_Button; }
+	[[nodiscard]] MouseButton get_mouse_button() const { return m_button; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "MouseButtonPressedEvent: " + std::to_string(static_cast<int>(m_Button));
+	[[nodiscard]] std::string to_string() const override {
+		return "MouseButtonPressedEvent: " + std::to_string(static_cast<int>(m_button));
 	}
 
 	EVENT_CLASS_TYPE(MouseButtonPressedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton)
 
   private:
-	MouseButton m_Button;
+	MouseButton m_button;
 };
 
 class MouseButtonReleasedEvent final : public Event {
   public:
-	explicit MouseButtonReleasedEvent(const MouseButton button) : m_Button(button) {}
+	explicit MouseButtonReleasedEvent(const MouseButton button) : m_button(button) {}
 
-	[[nodiscard]] MouseButton GetMouseButton() const { return m_Button; }
+	[[nodiscard]] MouseButton get_mouse_button() const { return m_button; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "MouseButtonReleasedEvent: " + std::to_string(static_cast<int>(m_Button));
+	[[nodiscard]] std::string to_string() const override {
+		return "MouseButtonReleasedEvent: " + std::to_string(static_cast<int>(m_button));
 	}
 
 	EVENT_CLASS_TYPE(MouseButtonReleasedEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Mouse | EventCategory::Input | EventCategory::MouseButton)
 
   private:
-	MouseButton m_Button;
+	MouseButton m_button;
 };
 
 } // namespace Aquila::Application::Events

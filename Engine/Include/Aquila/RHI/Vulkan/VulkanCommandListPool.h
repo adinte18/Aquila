@@ -11,27 +11,27 @@ class VulkanDevice;
 
 class VulkanCommandListPool final : public IRHICommandListPool {
   public:
-	VulkanCommandListPool(VulkanDevice &device, uint32 framesInFlight);
+	VulkanCommandListPool(VulkanDevice &device, Uint32 frames_in_flight);
 	~VulkanCommandListPool() override;
 	AQUILA_NONCOPYABLE(VulkanCommandListPool);
 	AQUILA_NONMOVEABLE(VulkanCommandListPool);
 
 	// IRHICommandListPool
-	IRHICommandList *Allocate(CommandListType type, const std::string &name = "") override;
-	void Free(IRHICommandList *cmd) override;
-	void Reset() override;
-	[[nodiscard]] uint32 GetFramesInFlight() const override { return m_FramesInFlight; }
+	IRHICommandList *allocate(CommandListType type, const std::string &name = "") override;
+	void free(IRHICommandList *cmd) override;
+	void reset() override;
+	[[nodiscard]] Uint32 get_frames_in_flight() const override { return m_frames_in_flight; }
 
   private:
-	[[nodiscard]] VkCommandPool GetVkPool(CommandListType type) const;
+	[[nodiscard]] VkCommandPool get_vk_pool(CommandListType type) const;
 
-	VulkanDevice &m_Device;
-	VkCommandPool m_GraphicsPool = VK_NULL_HANDLE;
-	VkCommandPool m_ComputePool = VK_NULL_HANDLE;
-	VkCommandPool m_TransferPool = VK_NULL_HANDLE;
-	uint32 m_FramesInFlight;
+	VulkanDevice &m_device;
+	VkCommandPool m_graphics_pool = VK_NULL_HANDLE;
+	VkCommandPool m_compute_pool = VK_NULL_HANDLE;
+	VkCommandPool m_transfer_pool = VK_NULL_HANDLE;
+	Uint32 m_frames_in_flight;
 
-	std::vector<Unique<VulkanCommandList>> m_Allocated;
+	std::vector<Unique<VulkanCommandList>> m_allocated;
 };
 
 } // namespace Aquila::RHI

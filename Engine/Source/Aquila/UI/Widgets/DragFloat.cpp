@@ -4,218 +4,219 @@
 namespace Aquila::UI::Core {
 
 DragFloat::DragFloat() {
-	SetInputLeaf(true);
-	AddClass("drag-float");
+	set_input_leaf(true);
+	add_class("drag-float");
 }
 
 DragFloat::DragFloat(const Config &config) : DragFloat() {
-	SetRange(config.min, config.max);
-	SetStep(config.step);
-	SetSpeed(config.speed);
-	SetPrecision(config.precision);
-	SetPrefix(config.prefix);
+	set_range(config.min, config.max);
+	set_step(config.step);
+	set_speed(config.speed);
+	set_precision(config.precision);
+	set_prefix(config.prefix);
 }
 
-void DragFloat::SetValue(float value) {
-	m_Value = std::clamp(value, m_Min, m_Max);
-	if (m_Step > 0.f) {
-		m_Value = std::round(m_Value / m_Step) * m_Step;
+void DragFloat::set_value(float value) {
+	m_value = std::clamp(value, m_min, m_max);
+	if (m_step > 0.F) {
+		m_value = std::round(m_value / m_step) * m_step;
 	}
-	QueueRedraw();
+	queue_redraw();
 }
 
-void DragFloat::SetRange(float min, float max) {
-	m_Min = min;
-	m_Max = max;
-	SetValue(m_Value);
+void DragFloat::set_range(float min, float max) {
+	m_min = min;
+	m_max = max;
+	set_value(m_value);
 }
 
-void DragFloat::SetStep(float step) {
-	m_Step = step;
+void DragFloat::set_step(float step) {
+	m_step = step;
 }
 
-void DragFloat::SetSpeed(float pixelsPerUnit) {
-	m_Speed = pixelsPerUnit;
+void DragFloat::set_speed(float pixels_per_unit) {
+	m_speed = pixels_per_unit;
 }
 
-void DragFloat::SetPrecision(int decimals) {
-	m_Precision = std::max(0, decimals);
-	QueueRedraw();
+void DragFloat::set_precision(int decimals) {
+	m_precision = std::max(0, decimals);
+	queue_redraw();
 }
 
-void DragFloat::SetPrefix(std::string prefix) {
-	m_Prefix = std::move(prefix);
-	QueueRedraw();
+void DragFloat::set_prefix(std::string prefix) {
+	m_prefix = std::move(prefix);
+	queue_redraw();
 }
 
-
-std::string DragFloat::FormatValue() const {
+std::string DragFloat::format_value() const {
 	std::ostringstream ss;
-	ss.precision(m_Precision);
-	ss << std::fixed << m_Value;
-	return m_Prefix + ss.str();
+	ss.precision(m_precision);
+	ss << std::fixed << m_value;
+	return m_prefix + ss.str();
 }
 
-Text::FontAtlas *DragFloat::ResolveFont() const {
-	return GetResolvedFont();
+Text::FontAtlas *DragFloat::resolve_font() const {
+	return get_resolved_font();
 }
 
-void DragFloat::EnterEditMode() {
-	m_Mode = Mode::Edit;
-	m_EditState.SetText(FormatValue());
-	m_EditState.SelectAll();
-	QueueRedraw();
+void DragFloat::enter_edit_mode() {
+	m_mode = Mode::Edit;
+	m_edit_state.set_text(format_value());
+	m_edit_state.select_all();
+	queue_redraw();
 }
 
-void DragFloat::CommitEdit() {
+void DragFloat::commit_edit() {
 	try {
-		const float parsed = std::stof(m_EditState.text);
-		SetValue(parsed);
-		OnValueCommitted();
-		onChanged(m_Value);
+		const float parsed = std::stof(m_edit_state.text);
+		set_value(parsed);
+		on_value_committed();
+		on_changed(m_value);
 	} catch (...) {
 		// Restore last valid value on parse failure.
 	}
-	m_Mode = Mode::Drag;
-	QueueRedraw();
+	m_mode = Mode::Drag;
+	queue_redraw();
 }
 
-void DragFloat::CancelEdit() {
-	m_Mode = Mode::Drag;
-	QueueRedraw();
+void DragFloat::cancel_edit() {
+	m_mode = Mode::Drag;
+	queue_redraw();
 }
 
-void DragFloat::OnMousePress(Platform::MouseButton btn, vec2 pos) {
-	View::OnMousePress(btn, pos);
+void DragFloat::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
+	View::on_mouse_press(btn, pos);
 	if (btn != Platform::MouseButton::Left) {
 		return;
 	}
-	if (m_Mode == Mode::Edit) {
+	if (m_mode == Mode::Edit) {
 		return;
 	}
-	m_DragStartValue = m_Value;
-	m_DragStartX = pos.x;
-	m_HasDragged = false;
+	m_drag_start_value = m_value;
+	m_drag_start_x = pos.x;
+	m_has_dragged = false;
 }
 
-void DragFloat::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
+void DragFloat::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
-		if (m_Mode == Mode::Drag && !m_HasDragged) {
-			EnterEditMode();
+		if (m_mode == Mode::Drag && !m_has_dragged) {
+			enter_edit_mode();
 		}
 	}
-	View::OnMouseRelease(btn, pos);
+	View::on_mouse_release(btn, pos);
 }
 
-void DragFloat::OnMouseMove(vec2 pos) {
-	if (m_Mode != Mode::Drag || !m_IsPressed) {
+void DragFloat::on_mouse_move(Vec2 pos) {
+	if (m_mode != Mode::Drag || !m_is_pressed) {
 		return;
 	}
-	const float delta = (pos.x - m_DragStartX) * m_Speed;
-	if (!m_HasDragged && std::abs(pos.x - m_DragStartX) > kDragThreshold) {
-		m_HasDragged = true;
+	const float delta = (pos.x - m_drag_start_x) * m_speed;
+	if (!m_has_dragged && std::abs(pos.x - m_drag_start_x) > K_DRAG_THRESHOLD) {
+		m_has_dragged = true;
 	}
-	if (m_HasDragged) {
-		SetValue(m_DragStartValue + delta);
-		OnValueCommitted();
-		onChanged(m_Value);
+	if (m_has_dragged) {
+		set_value(m_drag_start_value + delta);
+		on_value_committed();
+		on_changed(m_value);
 	}
 }
 
-void DragFloat::OnKeyPress(Platform::KeyCode key, int mods) {
-	if (m_Mode == Mode::Edit) {
+void DragFloat::on_key_press(Platform::KeyCode key, int mods) {
+	if (m_mode == Mode::Edit) {
 		if (key == Platform::KeyCode::Enter || key == Platform::KeyCode::Tab) {
-			CommitEdit();
+			commit_edit();
 			return;
 		}
 		if (key == Platform::KeyCode::Escape) {
-			CancelEdit();
+			cancel_edit();
 			return;
 		}
-		if (m_EditState.HandleKeyPress(key, mods)) {
-			QueueRedraw();
+		if (m_edit_state.handle_key_press(key, mods)) {
+			queue_redraw();
 		}
 		return;
 	}
-	View::OnKeyPress(key, mods);
+	View::on_key_press(key, mods);
 }
 
-void DragFloat::OnCharInput(uint32 codepoint) {
-	if (m_Mode == Mode::Edit) {
-		if (m_EditState.HandleCharInput(codepoint)) {
-			QueueRedraw();
+void DragFloat::on_char_input(Uint32 codepoint) {
+	if (m_mode == Mode::Edit) {
+		if (m_edit_state.handle_char_input(codepoint)) {
+			queue_redraw();
 		}
 	}
 }
 
-void DragFloat::OnFocusLost() {
-	if (m_Mode == Mode::Edit) {
-		CommitEdit();
+void DragFloat::on_focus_lost() {
+	if (m_mode == Mode::Edit) {
+		commit_edit();
 	}
-	View::OnFocusLost();
+	View::on_focus_lost();
 }
 
-void DragFloat::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList);
+void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list);
 
 	using namespace Rendering;
-	const Rect rect = GetAbsoluteRect();
-	const auto &style = GetDisplayStyle();
-	const int32 z = 0;
-	const float fontSize = style.fontSize > 0.f ? style.fontSize : 14.f;
+	const Rect rect = get_absolute_rect();
+	const auto &style = get_display_style();
+	const Int32 z = 0;
+	const float font_size = style.font_size > 0.F ? style.font_size : 14.F;
 
-	Text::FontAtlas *font = ResolveFont();
+	Text::FontAtlas *font = resolve_font();
 	if (!font) {
 		return;
 	}
 
-	const float bakeSize = font->GetBakeSize();
-	const float scale = (bakeSize > 0.f) ? (fontSize / bakeSize) : 1.f;
-	const float lineH = font->GetLineHeight() * scale;
-	const float textY = rect.position.y + (rect.size.y - lineH) * 0.5f;
-	constexpr float kPadX = 4.f;
-	const Rect textRect = {
-		.position = { rect.position.x + kPadX, textY },
-		.size = { rect.size.x - kPadX * 2.f, lineH },
+	const float bake_size = font->get_bake_size();
+	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float line_h = font->get_line_height() * scale;
+	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5f;
+	constexpr float k_pad_x = 4.F;
+	const Rect text_rect = {
+		.position = { rect.position.x + k_pad_x, text_y },
+		.size = { rect.size.x - k_pad_x * 2.F, line_h },
 	};
 
-	if (m_Mode == Mode::Edit) {
-		if (m_IsFocused && m_EditState.HasSelection()) {
-			const float x0 = textRect.position.x + m_EditState.MeasureToPos(*font, scale, m_EditState.SelectionMin());
-			const float x1 = textRect.position.x + m_EditState.MeasureToPos(*font, scale, m_EditState.SelectionMax());
-			const Rect selRect = { .position = { x0, textY }, .size = { x1 - x0, lineH } };
-			const vec4 selColor = style.EffectiveSelectionColor();
-			drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z);
+	if (m_mode == Mode::Edit) {
+		if (m_is_focused && m_edit_state.has_selection()) {
+			const float x0 =
+				text_rect.position.x + m_edit_state.measure_to_pos(*font, scale, m_edit_state.selection_min());
+			const float x1 =
+				text_rect.position.x + m_edit_state.measure_to_pos(*font, scale, m_edit_state.selection_max());
+			const Rect sel_rect = { .position = { x0, text_y }, .size = { x1 - x0, line_h } };
+			const Vec4 sel_color = style.effective_selection_color();
+			draw_list.draw_rect(sel_rect, sel_color, Vec4(2.F), 0.F, Vec4(0.F), z);
 		}
 
-		if (!m_EditState.text.empty()) {
-			drawList.DrawText(textRect, m_EditState.text, font, style.color, fontSize, TextAlign::Left, z + 1);
+		if (!m_edit_state.text.empty()) {
+			draw_list.DrawText(text_rect, m_edit_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
 		}
 
-		if (m_IsFocused && !m_EditState.HasSelection()) {
-			const float cx = textRect.position.x + m_EditState.MeasureToPos(*font, scale, m_EditState.cursor);
-			const Rect cursor = { .position = { cx - 0.75f, textY }, .size = { 1.5f, lineH } };
-			drawList.DrawRect(cursor, style.color, vec4(0.f), 0.f, vec4(0.f), z);
+		if (m_is_focused && !m_edit_state.has_selection()) {
+			const float cx = text_rect.position.x + m_edit_state.measure_to_pos(*font, scale, m_edit_state.cursor);
+			const Rect cursor = { .position = { cx - 0.75f, text_y }, .size = { 1.5f, line_h } };
+			draw_list.draw_rect(cursor, style.color, Vec4(0.F), 0.F, Vec4(0.F), z);
 		}
 	} else {
 		// Drag mode: show the formatted value, optionally a subtle drag indicator.
-		const std::string display = FormatValue();
-		drawList.DrawText(textRect, display, font, style.color, fontSize, TextAlign::Center, z + 1);
+		const std::string display = format_value();
+		draw_list.DrawText(text_rect, display, font, style.color, font_size, TextAlign::Center, z + 1);
 
 		// Small arrows hint that the field is draggable.
-		constexpr float kArrowSize = 4.f;
+		constexpr float k_arrow_size = 4.F;
 		const float cy = rect.position.y + rect.size.y * 0.5f;
-		const vec4 arrowColor = vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.4f);
-		const Rect leftArrow = {
-			.position = { rect.position.x + 3.f, cy - kArrowSize * 0.5f },
-			.size = { kArrowSize, kArrowSize },
+		const Vec4 arrow_color = Vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.4f);
+		const Rect left_arrow = {
+			.position = { rect.position.x + 3.F, cy - k_arrow_size * 0.5f },
+			.size = { k_arrow_size, k_arrow_size },
 		};
-		const Rect rightArrow = {
-			.position = { rect.position.x + rect.size.x - kArrowSize - 3.f, cy - kArrowSize * 0.5f },
-			.size = { kArrowSize, kArrowSize },
+		const Rect right_arrow = {
+			.position = { rect.position.x + rect.size.x - k_arrow_size - 3.F, cy - k_arrow_size * 0.5f },
+			.size = { k_arrow_size, k_arrow_size },
 		};
-		drawList.DrawRect(leftArrow, arrowColor, vec4(1.f), 0.f, vec4(0.f), z + 2);
-		drawList.DrawRect(rightArrow, arrowColor, vec4(1.f), 0.f, vec4(0.f), z + 2);
+		draw_list.draw_rect(left_arrow, arrow_color, Vec4(1.F), 0.F, Vec4(0.F), z + 2);
+		draw_list.draw_rect(right_arrow, arrow_color, Vec4(1.F), 0.F, Vec4(0.F), z + 2);
 	}
 }
 

@@ -8,16 +8,16 @@ class ProgressBar : public View {
   public:
 	ProgressBar();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "ProgressBar"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "ProgressBar"; }
 
-	void SetValue(float value);
-	[[nodiscard]] float GetValue() const { return m_Value; }
+	void set_value(float value);
+	[[nodiscard]] float get_value() const { return m_value; }
 
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
 
   private:
-	float m_Value = 0.f;
-	View *m_Fill = nullptr;
+	float m_value = 0.F;
+	View *m_fill = nullptr;
 };
 
 } // namespace Aquila::UI::Core

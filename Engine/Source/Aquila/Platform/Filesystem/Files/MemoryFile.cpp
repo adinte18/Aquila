@@ -1,21 +1,21 @@
 #include "Aquila/Platform/Filesystem/Files/MemoryFile.h"
 
 namespace Aquila::Platform::Filesystem {
-MemoryFile::MemoryFile(std::vector<uint8_t> *data, bool canWrite) : m_data(data), m_position(0), m_canWrite(canWrite) {}
+MemoryFile::MemoryFile(std::vector<uint8_t> *data, bool can_write) : m_data(data), m_position(0), m_can_write(can_write) {}
 
-size_t MemoryFile::Read(void *buffer, size_t size) {
+size_t MemoryFile::read(void *buffer, size_t size) {
 	if (!m_data || m_position >= m_data->size()) {
 		return 0;
 	}
 
-	size_t bytesToRead = std::min(size, m_data->size() - m_position);
-	memcpy(buffer, m_data->data() + m_position, bytesToRead);
-	m_position += bytesToRead;
-	return bytesToRead;
+	size_t bytes_to_read = std::min(size, m_data->size() - m_position);
+	memcpy(buffer, m_data->data() + m_position, bytes_to_read);
+	m_position += bytes_to_read;
+	return bytes_to_read;
 }
 
-size_t MemoryFile::Write(const void *buffer, size_t size) {
-	if (!m_data || !m_canWrite) {
+size_t MemoryFile::write(const void *buffer, size_t size) {
+	if (!m_data || !m_can_write) {
 		return 0;
 	}
 
@@ -29,42 +29,42 @@ size_t MemoryFile::Write(const void *buffer, size_t size) {
 	return size;
 }
 
-bool MemoryFile::Seek(int64 offset, int origin) {
+bool MemoryFile::seek(Int64 offset, int origin) {
 	if (!m_data) {
 		return false;
 	}
 
-	int64 newPos;
+	Int64 new_pos;
 	switch (origin) {
 	case SEEK_SET:
-		newPos = offset;
+		new_pos = offset;
 		break;
 	case SEEK_CUR:
-		newPos = static_cast<int64>(m_position) + offset;
+		new_pos = static_cast<Int64>(m_position) + offset;
 		break;
 	case SEEK_END:
-		newPos = static_cast<int64>(m_data->size()) + offset;
+		new_pos = static_cast<Int64>(m_data->size()) + offset;
 		break;
 	default:
 		return false;
 	}
 
-	return !(newPos < 0 || newPos > static_cast<int64>(m_data->size()));
+	return !(new_pos < 0 || new_pos > static_cast<Int64>(m_data->size()));
 }
 
-int64 MemoryFile::Tell() const {
-	return static_cast<int64>(m_position);
+Int64 MemoryFile::tell() const {
+	return static_cast<Int64>(m_position);
 }
 
-int64 MemoryFile::Size() const {
-	return (m_data != nullptr) ? static_cast<int64>(m_data->size()) : 0;
+Int64 MemoryFile::size() const {
+	return (m_data != nullptr) ? static_cast<Int64>(m_data->size()) : 0;
 }
 
-bool MemoryFile::IsValid() const {
+bool MemoryFile::is_valid() const {
 	return m_data != nullptr;
 }
 
-void MemoryFile::Close() {
+void MemoryFile::close() {
 	// Memory files don't need explicit closing
 }
 

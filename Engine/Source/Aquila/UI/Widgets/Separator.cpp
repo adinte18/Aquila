@@ -3,36 +3,36 @@
 namespace Aquila::UI::Core {
 
 Separator::Separator() {
-	AddClass("separator");
-	ApplyOrientation();
+	add_class("separator");
+	apply_orientation();
 }
 
-Separator::Separator(bool vertical) : m_Vertical(vertical) {
-	AddClass("separator");
-	ApplyOrientation();
+Separator::Separator(bool vertical) : m_vertical(vertical) {
+	add_class("separator");
+	apply_orientation();
 }
 
-void Separator::SetVertical(bool vertical) {
-	if (vertical == m_Vertical) {
+void Separator::set_vertical(bool vertical) {
+	if (vertical == m_vertical) {
 		return;
 	}
-	m_Vertical = vertical;
-	ApplyOrientation();
+	m_vertical = vertical;
+	apply_orientation();
 }
 
-void Separator::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void Separator::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "vertical") {
-		SetVertical(value == "true");
+		set_vertical(value == "true");
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
-void Separator::ApplyOrientation() {
-	if (m_Vertical) {
-		AddClass("separator-v");
+void Separator::apply_orientation() {
+	if (m_vertical) {
+		add_class("separator-v");
 	} else {
-		RemoveClass("separator-v");
+		remove_class("separator-v");
 	}
 }
 

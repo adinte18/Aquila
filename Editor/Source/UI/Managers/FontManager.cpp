@@ -6,50 +6,50 @@
 
 namespace Editor::UI {
 
-FontManager &FontManager::Get() {
+FontManager &FontManager::get() {
 	static FontManager instance;
 	return instance;
 }
 
-void FontManager::Initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings) {
-	if (m_Initialized) {
+void FontManager::initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings) {
+	if (m_initialized) {
 		AQUILA_LOG_WARNING("FontManager: already initialized");
 		return;
 	}
 
 	auto load = [&](const char *name, const std::string &path) {
-		auto atlas = Aquila::UI::Text::FontAtlas::CreateFromFile(ctx, path, settings.size);
+		auto atlas = Aquila::UI::Text::FontAtlas::create_from_file(ctx, path, settings.size);
 		if (!atlas) {
 			AQUILA_LOG_ERROR("FontManager: failed to load '{}' from {}", name, path);
 			return;
 		}
 		Aquila::UI::Core::FontRegistry::Register(name, atlas.get());
-		m_FontMap[name] = atlas.get();
-		m_Atlases.push_back(std::move(atlas));
+		m_font_map[name] = atlas.get();
+		m_atlases.push_back(std::move(atlas));
 	};
 
-	load("regular", settings.regularPath);
-	load("thin", settings.thinPath);
-	load("medium", settings.mediumPath);
-	load("bold", settings.boldPath);
+	load("regular", settings.regular_path);
+	load("thin", settings.thin_path);
+	load("medium", settings.medium_path);
+	load("bold", settings.bold_path);
 
-	m_Initialized = true;
-	AQUILA_LOG_INFO("FontManager: loaded {} fonts at {}pt", m_Atlases.size(), settings.size);
+	m_initialized = true;
+	AQUILA_LOG_INFO("FontManager: loaded {} fonts at {}pt", m_atlases.size(), settings.size);
 }
 
-void FontManager::Shutdown() {
-	m_FontMap.clear();
-	m_Atlases.clear();
-	m_Initialized = false;
+void FontManager::shutdown() {
+	m_font_map.clear();
+	m_atlases.clear();
+	m_initialized = false;
 }
 
-Aquila::UI::Text::FontAtlas *FontManager::GetFont(const std::string &name) const {
-	auto it = m_FontMap.find(name);
-	if (it != m_FontMap.end()) {
+Aquila::UI::Text::FontAtlas *FontManager::get_font(const std::string &name) const {
+	auto it = m_font_map.find(name);
+	if (it != m_font_map.end()) {
 		return it->second;
 	}
 	AQUILA_LOG_WARNING("FontManager: font '{}' not found, returning fallback", name);
-	return m_Atlases.empty() ? nullptr : m_Atlases.front().get();
+	return m_atlases.empty() ? nullptr : m_atlases.front().get();
 }
 
 } // namespace Editor::UI

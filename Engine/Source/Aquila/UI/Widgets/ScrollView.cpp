@@ -3,21 +3,21 @@
 namespace Aquila::UI::Core {
 
 ScrollView::ScrollView() {
-	AddClass("scroll-view");
+	add_class("scroll-view");
 
-	auto inner = CreateUnique<View>();
-	inner->AddClass("scroll-inner");
-	m_Inner = AddChild(std::move(inner));
+	auto inner = create_unique<View>();
+	inner->add_class("scroll-inner");
+	m_inner = add_child(std::move(inner));
 }
 
-View *ScrollView::AddContent(Unique<View> child) {
-	return m_Inner->AddChild(std::move(child));
+View *ScrollView::add_content(Unique<View> child) {
+	return m_inner->add_child(std::move(child));
 }
 
-void ScrollView::RemoveOldestContent() {
-	const auto &children = m_Inner->GetChildren();
+void ScrollView::remove_oldest_content() {
+	const auto &children = m_inner->get_children();
 	if (!children.empty()) {
-		m_Inner->RemoveChild(children.front().get());
+		m_inner->remove_child(children.front().get());
 	}
 }
 

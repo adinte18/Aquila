@@ -4,52 +4,52 @@
 
 namespace Aquila::RHI {
 
-std::vector<char> VulkanShader::ReadFile(const std::string &filename) {
-	auto file = Platform::Filesystem::VirtualFileSystem::Get()->OpenFile(filename, AccessMode::Read, OpenMode::Binary);
-	if (!file || !file->IsValid()) {
+std::vector<char> VulkanShader::read_file(const std::string &filename) {
+	auto file = Platform::Filesystem::VirtualFileSystem::get()->open_file(filename, AccessMode::Read, OpenMode::Binary);
+	if (!file || !file->is_valid()) {
 		throw std::runtime_error("Failed to open file: " + filename);
 	}
 
-	const int64 size = file->Size();
+	const Int64 size = file->size();
 	std::vector<char> buffer(static_cast<size_t>(size));
-	file->Read(buffer.data(), static_cast<size_t>(size));
+	file->read(buffer.data(), static_cast<size_t>(size));
 	return buffer;
 }
 
-VkShaderModule VulkanShader::CreateShaderModule(const std::vector<uint32> &spirv, VulkanDevice &device,
-												const std::string &debugName) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = spirv.size() * sizeof(uint32);
-	createInfo.pCode = spirv.data();
+VkShaderModule VulkanShader::create_shader_module(const std::vector<Uint32> &spirv, VulkanDevice &device,
+												const std::string &debug_name) {
+	VkShaderModuleCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	create_info.codeSize = spirv.size() * sizeof(Uint32);
+	create_info.pCode = spirv.data();
 
-	VkShaderModule shaderModule = nullptr;
-	if (vkCreateShaderModule(device.GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+	VkShaderModule shader_module = nullptr;
+	if (vkCreateShaderModule(device.get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create shader module!");
 	}
 
-	device.SetObjectDebugName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64>(shaderModule), debugName.c_str());
-	return shaderModule;
+	device.set_object_debug_name(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<Uint64>(shader_module), debug_name.c_str());
+	return shader_module;
 }
 
-VkShaderModule VulkanShader::CreateShaderModule(const std::vector<char> &code, VulkanDevice &device,
-												const std::string &debugName) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
+VkShaderModule VulkanShader::create_shader_module(const std::vector<char> &code, VulkanDevice &device,
+												const std::string &debug_name) {
+	VkShaderModuleCreateInfo create_info{};
+	create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+	create_info.codeSize = code.size();
+	create_info.pCode = reinterpret_cast<const uint32_t *>(code.data());
 
-	VkShaderModule shaderModule = nullptr;
-	if (vkCreateShaderModule(device.GetDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
+	VkShaderModule shader_module = nullptr;
+	if (vkCreateShaderModule(device.get_device(), &create_info, nullptr, &shader_module) != VK_SUCCESS) {
 		throw std::runtime_error("Failed to create shader module!");
 	}
 
-	device.SetObjectDebugName(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<uint64>(shaderModule), debugName.c_str());
-	return shaderModule;
+	device.set_object_debug_name(VK_OBJECT_TYPE_SHADER_MODULE, reinterpret_cast<Uint64>(shader_module), debug_name.c_str());
+	return shader_module;
 }
 
-void VulkanShader::DestroyShaderModule(VkShaderModule &module, VulkanDevice &device) {
-	vkDestroyShaderModule(device.GetDevice(), module, nullptr);
+void VulkanShader::destroy_shader_module(VkShaderModule &module, VulkanDevice &device) {
+	vkDestroyShaderModule(device.get_device(), module, nullptr);
 }
 
 } // namespace Aquila::RHI

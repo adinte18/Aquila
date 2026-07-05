@@ -6,17 +6,17 @@ namespace Aquila::UI::Core {
 
 class Control : public View {
   public:
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Control"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Control"; }
 
-	void SetFocusable(bool focusable) { m_Focusable = focusable; }
-	[[nodiscard]] bool IsFocusable() const { return m_Focusable; }
+	void set_focusable(bool focusable) { m_focusable = focusable; }
+	[[nodiscard]] bool is_focusable() const { return m_focusable; }
 
-	void SetTabIndex(int index) { m_TabIndex = index; }
-	[[nodiscard]] int GetTabIndex() const { return m_TabIndex; }
+	void set_tab_index(int index) { m_tab_index = index; }
+	[[nodiscard]] int get_tab_index() const { return m_tab_index; }
 
   protected:
-	bool m_Focusable = true;
-	int m_TabIndex = -1;
+	bool m_focusable = true;
+	int m_tab_index = -1;
 };
 
 } // namespace Aquila::UI::Core

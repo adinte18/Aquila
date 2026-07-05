@@ -15,17 +15,17 @@ class HierarchyTreeNode : public Aquila::UI::Core::TreeNode {
   public:
 	HierarchyTreeNode(std::string label, HierarchyTreeView &owner, int depth,
 	                  Aquila::SceneManagement::Entity entity,
-	                  Aquila::SceneManagement::EntityManager &entityManager);
+	                  Aquila::SceneManagement::EntityManager &entity_manager);
 
-	[[nodiscard]] Aquila::SceneManagement::Entity GetEntity() const { return m_Entity; }
+	[[nodiscard]] Aquila::SceneManagement::Entity get_entity() const { return m_entity; }
 
   private:
-	void OnDragStart(Aquila::UI::Core::DragState &state) override;
-	void OnDrop(Aquila::UI::Core::DragState &state) override;
+	void on_drag_start(Aquila::UI::Core::DragState &state) override;
+	void on_drop(Aquila::UI::Core::DragState &state) override;
 
-	Aquila::SceneManagement::Entity m_Entity;
-	Aquila::SceneManagement::EntityManager &m_EntityManager;
-	HierarchyTreeView &m_HierarchyView;
+	Aquila::SceneManagement::Entity m_entity;
+	Aquila::SceneManagement::EntityManager &m_entity_manager;
+	HierarchyTreeView &m_hierarchy_view;
 };
 
 } // namespace Editor

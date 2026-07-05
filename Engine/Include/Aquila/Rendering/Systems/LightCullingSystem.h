@@ -11,15 +11,15 @@ class LightCullingSystem : public RenderingSystemBase {
 	LightCullingSystem() = default;
 	~LightCullingSystem() override = default;
 
-	void OnInit(GFX::GfxContext &ctx) override;
-	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void on_init(GFX::GfxContext &ctx) override;
+	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
   private:
-	Ref<GFX::GfxPipeline> m_Pipeline;
-	Ref<GFX::GfxDescriptorSetLayout> m_StorageLayout;
-	Ref<GFX::GfxBuffer> m_GlobalIndexCounter; // atomic counter reset each frame before dispatch
-	Ref<GFX::GfxDescriptorSet> m_StorageSet;
-	bool m_AABBBufferBound = false;
+	Ref<GFX::GfxPipeline> m_pipeline;
+	Ref<GFX::GfxDescriptorSetLayout> m_storage_layout;
+	Ref<GFX::GfxBuffer> m_global_index_counter; // atomic counter reset each frame before dispatch
+	Ref<GFX::GfxDescriptorSet> m_storage_set;
+	bool m_aabb_buffer_bound = false;
 };
 
 } // namespace Aquila::Rendering

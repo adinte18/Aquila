@@ -15,31 +15,31 @@ using namespace Aquila::UI::Rendering;
 
 class DrawCompositor {
   public:
-	void SetCanvasSize(uint32 width, uint32 height);
+	void set_canvas_size(Uint32 width, Uint32 height);
 
-	void InvalidateAll(View *root);
+	void invalidate_all(View *root);
 
-	bool RebuildDirty(View *root);
+	bool rebuild_dirty(View *root);
 
-	[[nodiscard]] View *HitTest(vec2 pos) const;
+	[[nodiscard]] View *hit_test(Vec2 pos) const;
 
-	void Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
 
   private:
-	void RebuildLists(View *root);
-	void Cull(View *node, int32 parentEffectiveZ, const Rect *clipRect);
-	void CollectLayer(View *node);
-	void CollectLayerSubtree(View *node);
-	void EmitFloatingLayer(View *node, const Rect *clipRect);
+	void rebuild_lists(View *root);
+	void cull(View *node, Int32 parent_effective_z, const Rect *clip_rect);
+	void collect_layer(View *node);
+	void collect_layer_subtree(View *node);
+	void emit_floating_layer(View *node, const Rect *clip_rect);
 
-	std::array<std::vector<DrawCmd>, SharedConstants::Z_RANGE> m_ZBuckets;
-	std::unordered_map<View *, std::vector<DrawCmd>> m_PerNodeCmds;
-	std::vector<View *> m_CanvasItems;
-	std::vector<View *> m_CanvasLayers;
-	std::vector<View *> m_FloatRoots;
-	DrawList m_DrawList;
-	uint32 m_Width = 0;
-	uint32 m_Height = 0;
+	std::array<std::vector<DrawCmd>, SharedConstants::Z_RANGE> m_z_buckets;
+	std::unordered_map<View *, std::vector<DrawCmd>> m_per_node_cmds;
+	std::vector<View *> m_canvas_items;
+	std::vector<View *> m_canvas_layers;
+	std::vector<View *> m_float_roots;
+	DrawList m_draw_list;
+	Uint32 m_width = 0;
+	Uint32 m_height = 0;
 };
 
 } // namespace Aquila::UI::Core

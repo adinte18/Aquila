@@ -12,69 +12,69 @@ namespace Aquila::Foundation::Color {
 
 // RGBA clear colors
 namespace RGBA {
-constexpr vec4 Black = { 0.0F, 0.0F, 0.0F, 1.0F };
-constexpr vec4 White = { 1.0F, 1.0F, 1.0F, 1.0F };
-constexpr vec4 Red = { 1.0F, 0.0F, 0.0F, 1.0F };
-constexpr vec4 Green = { 0.0F, 1.0F, 0.0F, 1.0F };
-constexpr vec4 Blue = { 0.0F, 0.0F, 1.0F, 1.0F };
-constexpr vec4 Yellow = { 1.0F, 1.0F, 0.0F, 1.0F };
-constexpr vec4 Cyan = { 0.0F, 1.0F, 1.0F, 1.0F };
-constexpr vec4 Magenta = { 1.0F, 0.0F, 1.0F, 1.0F };
-constexpr vec4 Orange = { 1.0F, 0.5F, 0.0F, 1.0F };
-constexpr vec4 Gray = { 0.5F, 0.5F, 0.5F, 1.0F };
-constexpr vec4 LightGray = { 0.75F, 0.75F, 0.75F, 1.0F };
-constexpr vec4 DarkGray = { 0.25F, 0.25F, 0.25F, 1.0F };
+constexpr Vec4 BLACK = { 0.0F, 0.0F, 0.0F, 1.0F };
+constexpr Vec4 WHITE = { 1.0F, 1.0F, 1.0F, 1.0F };
+constexpr Vec4 RED = { 1.0F, 0.0F, 0.0F, 1.0F };
+constexpr Vec4 GREEN = { 0.0F, 1.0F, 0.0F, 1.0F };
+constexpr Vec4 BLUE = { 0.0F, 0.0F, 1.0F, 1.0F };
+constexpr Vec4 YELLOW = { 1.0F, 1.0F, 0.0F, 1.0F };
+constexpr Vec4 CYAN = { 0.0F, 1.0F, 1.0F, 1.0F };
+constexpr Vec4 MAGENTA = { 1.0F, 0.0F, 1.0F, 1.0F };
+constexpr Vec4 ORANGE = { 1.0F, 0.5F, 0.0F, 1.0F };
+constexpr Vec4 GRAY = { 0.5F, 0.5F, 0.5F, 1.0F };
+constexpr Vec4 LIGHT_GRAY = { 0.75F, 0.75F, 0.75F, 1.0F };
+constexpr Vec4 DARK_GRAY = { 0.25F, 0.25F, 0.25F, 1.0F };
 } // namespace RGBA
 
 // RGB colors
-constexpr vec3 Black_v = { 0.0F, 0.0F, 0.0F };
-constexpr vec3 White_v = { 1.0F, 1.0F, 1.0F };
-constexpr vec3 Red_v = { 1.0F, 0.0F, 0.0F };
-constexpr vec3 Green_v = { 0.0F, 1.0F, 0.0F };
-constexpr vec3 Blue_v = { 0.0F, 0.0F, 1.0F };
-constexpr vec3 Yellow_v = { 1.0F, 1.0F, 0.0F };
-constexpr vec3 Cyan_v = { 0.0F, 1.0F, 1.0F };
-constexpr vec3 Magenta_v = { 1.0F, 0.0F, 1.0F };
-constexpr vec3 Orange_v = { 1.0F, 0.5F, 0.0F };
-constexpr vec3 Gray_v = { 0.5F, 0.5F, 0.5F };
-constexpr vec3 LightGray_v = { 0.75F, 0.75F, 0.75F };
-constexpr vec3 DarkGray_v = { 0.25F, 0.25F, 0.25F };
+constexpr Vec3 BLACK_V = { 0.0F, 0.0F, 0.0F };
+constexpr Vec3 WHITE_V = { 1.0F, 1.0F, 1.0F };
+constexpr Vec3 RED_V = { 1.0F, 0.0F, 0.0F };
+constexpr Vec3 GREEN_V = { 0.0F, 1.0F, 0.0F };
+constexpr Vec3 BLUE_V = { 0.0F, 0.0F, 1.0F };
+constexpr Vec3 YELLOW_V = { 1.0F, 1.0F, 0.0F };
+constexpr Vec3 CYAN_V = { 0.0F, 1.0F, 1.0F };
+constexpr Vec3 MAGENTA_V = { 1.0F, 0.0F, 1.0F };
+constexpr Vec3 ORANGE_V = { 1.0F, 0.5F, 0.0F };
+constexpr Vec3 GRAY_V = { 0.5F, 0.5F, 0.5F };
+constexpr Vec3 LIGHT_GRAY_V = { 0.75F, 0.75F, 0.75F };
+constexpr Vec3 DARK_GRAY_V = { 0.25F, 0.25F, 0.25F };
 
 // Console colors
-constexpr const char *Reset = "\033[0m";
-constexpr const char *Bold = "\033[1m";
-constexpr const char *Dim = "\033[2m";
+constexpr const char *RESET = "\033[0m";
+constexpr const char *BOLD = "\033[1m";
+constexpr const char *DIM = "\033[2m";
 
-constexpr const char *Black = "\033[30m";
-constexpr const char *Red = "\033[31m";
-constexpr const char *Green = "\033[32m";
-constexpr const char *Yellow = "\033[33m";
-constexpr const char *Blue = "\033[34m";
-constexpr const char *Magenta = "\033[35m";
-constexpr const char *Cyan = "\033[36m";
-constexpr const char *White = "\033[37m";
+constexpr const char *BLACK = "\033[30m";
+constexpr const char *RED = "\033[31m";
+constexpr const char *GREEN = "\033[32m";
+constexpr const char *YELLOW = "\033[33m";
+constexpr const char *BLUE = "\033[34m";
+constexpr const char *MAGENTA = "\033[35m";
+constexpr const char *CYAN = "\033[36m";
+constexpr const char *WHITE = "\033[37m";
 
-constexpr const char *BrightBlack = "\033[90m";
-constexpr const char *BrightRed = "\033[91m";
-constexpr const char *BrightGreen = "\033[92m";
-constexpr const char *BrightYellow = "\033[93m";
-constexpr const char *BrightBlue = "\033[94m";
-constexpr const char *BrightMagenta = "\033[95m";
-constexpr const char *BrightCyan = "\033[96m";
-constexpr const char *BrightWhite = "\033[97m";
+constexpr const char *BRIGHT_BLACK = "\033[90m";
+constexpr const char *BRIGHT_RED = "\033[91m";
+constexpr const char *BRIGHT_GREEN = "\033[92m";
+constexpr const char *BRIGHT_YELLOW = "\033[93m";
+constexpr const char *BRIGHT_BLUE = "\033[94m";
+constexpr const char *BRIGHT_MAGENTA = "\033[95m";
+constexpr const char *BRIGHT_CYAN = "\033[96m";
+constexpr const char *BRIGHT_WHITE = "\033[97m";
 
 // HSV <-> RGB conversions. All values in [0, 1].
 
-inline vec3 HsvToRgb(float h, float s, float v) {
-	if (s < 1e-6f) {
+inline Vec3 hsv_to_rgb(float h, float s, float v) {
+	if (s < 1e-6F) {
 		return { v, v, v };
 	}
-	h = std::fmod(h, 1.f) * 6.f;
+	h = std::fmod(h, 1.F) * 6.F;
 	const int i = static_cast<int>(h);
 	const float f = h - static_cast<float>(i);
-	const float p = v * (1.f - s);
-	const float q = v * (1.f - s * f);
-	const float t = v * (1.f - s * (1.f - f));
+	const float p = v * (1.F - s);
+	const float q = v * (1.F - (s * f));
+	const float t = v * (1.F - (s * (1.F - f)));
 	switch (i % 6) {
 	case 0:
 		return { v, t, p };
@@ -91,19 +91,19 @@ inline vec3 HsvToRgb(float h, float s, float v) {
 	}
 }
 
-inline vec3 RgbToHsv(float r, float g, float b) {
+inline Vec3 rgb_to_hsv(float r, float g, float b) {
 	const float mx = std::max({ r, g, b });
 	const float mn = std::min({ r, g, b });
 	const float d = mx - mn;
-	float h = 0.f;
-	const float s = (mx > 1e-6f) ? d / mx : 0.f;
-	if (d > 1e-6f) {
+	float h = 0.F;
+	const float s = (mx > 1e-6F) ? d / mx : 0.F;
+	if (d > 1e-6F) {
 		if (mx == r) {
-			h = (g - b) / d / 6.f + (g < b ? 1.f : 0.f);
+			h = ((g - b) / d / 6.F) + (g < b ? 1.F : 0.F);
 		} else if (mx == g) {
-			h = (b - r) / d / 6.f + 1.f / 3.f;
+			h = ((b - r) / d / 6.F) + (1.F / 3.F);
 		} else {
-			h = (r - g) / d / 6.f + 2.f / 3.f;
+			h = ((r - g) / d / 6.F) + (2.F / 3.F);
 		}
 	}
 	return { h, s, mx };
@@ -111,53 +111,55 @@ inline vec3 RgbToHsv(float r, float g, float b) {
 
 // Texture pixel data generators. All return RGBA8 data (w * h * 4 bytes).
 
-inline std::vector<uint8> GenSV(float hue, uint32 w, uint32 h) {
-	std::vector<uint8> px(w * h * 4);
-	for (uint32 y = 0; y < h; ++y) {
-		const float v = 1.f - y / static_cast<float>(h - 1);
-		for (uint32 x = 0; x < w; ++x) {
+inline std::vector<Uint8> gen_sv(float hue, Uint32 w, Uint32 h) {
+	std::vector<Uint8> px(w * h * 4);
+	for (Uint32 y = 0; y < h; ++y) {
+		const float v = 1.F - (y / static_cast<float>(h - 1));
+		for (Uint32 x = 0; x < w; ++x) {
 			const float s = x / static_cast<float>(w - 1);
-			const vec3 rgb = HsvToRgb(hue, s, v);
-			const size_t i = (static_cast<size_t>(y) * w + x) * 4;
-			px[i + 0] = uint8(rgb.r * 255.f);
-			px[i + 1] = uint8(rgb.g * 255.f);
-			px[i + 2] = uint8(rgb.b * 255.f);
+			const Vec3 rgb = hsv_to_rgb(hue, s, v);
+			const size_t i = ((static_cast<size_t>(y) * w) + x) * 4;
+			px[i + 0] = static_cast<Uint8>(rgb.r * 255.F);
+			px[i + 1] = static_cast<Uint8>(rgb.g * 255.F);
+			px[i + 2] = static_cast<Uint8>(rgb.b * 255.F);
 			px[i + 3] = 255;
 		}
 	}
 	return px;
 }
 
-inline std::vector<uint8> GenHue(uint32 w, uint32 h) {
-	std::vector<uint8> px(w * h * 4);
-	for (uint32 y = 0; y < h; ++y) {
-		for (uint32 x = 0; x < w; ++x) {
-			const vec3 rgb = HsvToRgb(x / static_cast<float>(w - 1), 1.f, 1.f);
-			const size_t i = (static_cast<size_t>(y) * w + x) * 4;
-			px[i + 0] = uint8(rgb.r * 255.f);
-			px[i + 1] = uint8(rgb.g * 255.f);
-			px[i + 2] = uint8(rgb.b * 255.f);
+inline std::vector<Uint8> gen_hue(Uint32 w, Uint32 h) {
+	std::vector<Uint8> px(w * h * 4);
+	for (Uint32 y = 0; y < h; ++y) {
+		for (Uint32 x = 0; x < w; ++x) {
+			const Vec3 rgb = hsv_to_rgb(x / static_cast<float>(w - 1), 1.F, 1.F);
+			const size_t i = ((static_cast<size_t>(y) * w) + x) * 4;
+			px[i + 0] = static_cast<Uint8>(rgb.r * 255.F);
+			px[i + 1] = static_cast<Uint8>(rgb.g * 255.F);
+			px[i + 2] = static_cast<Uint8>(rgb.b * 255.F);
 			px[i + 3] = 255;
 		}
 	}
 	return px;
 }
 
-inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, int ch, bool isHSV, uint32 w,
-										 uint32 texH) {
-	std::vector<uint8> px(w * texH * 4);
-	for (uint32 x = 0; x < w; ++x) {
+inline std::vector<Uint8> gen_channel_grad(Vec4 color, float h, float s, float v, int ch, bool is_hsv, Uint32 w,
+										   Uint32 tex_h) {
+	std::vector<Uint8> px(w * tex_h * 4);
+	for (Uint32 x = 0; x < w; ++x) {
 		const float t = x / static_cast<float>(w - 1);
-		for (uint32 y = 0; y < texH; ++y) {
-			const size_t i = (static_cast<size_t>(y) * w + x) * 4;
+		for (Uint32 y = 0; y < tex_h; ++y) {
+			const size_t i = ((static_cast<size_t>(y) * w) + x) * 4;
 			if (ch == 3) {
-				const float bg = ((x / 6) + (y / 6)) % 2 == 0 ? 0.75f : 0.5f;
-				px[i + 0] = uint8((color.r * t + bg * (1.f - t)) * 255.f);
-				px[i + 1] = uint8((color.g * t + bg * (1.f - t)) * 255.f);
-				px[i + 2] = uint8((color.b * t + bg * (1.f - t)) * 255.f);
+				const float bg = ((x / 6) + (y / 6)) % 2 == 0 ? 0.75F : 0.5F;
+				px[i + 0] = static_cast<Uint8>(((color.r * t) + (bg * (1.F - t))) * 255.F);
+				px[i + 1] = static_cast<Uint8>(((color.g * t) + (bg * (1.F - t))) * 255.F);
+				px[i + 2] = static_cast<Uint8>(((color.b * t) + (bg * (1.F - t))) * 255.F);
 				px[i + 3] = 255;
-			} else if (!isHSV) {
-				float cr = color.r, cg = color.g, cb = color.b;
+			} else if (!is_hsv) {
+				float cr = color.r;
+				float cg = color.g;
+				float cb = color.b;
 				switch (ch) {
 				case 0:
 					cr = t;
@@ -169,12 +171,14 @@ inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, 
 					cb = t;
 					break;
 				}
-				px[i + 0] = uint8(cr * 255.f);
-				px[i + 1] = uint8(cg * 255.f);
-				px[i + 2] = uint8(cb * 255.f);
+				px[i + 0] = static_cast<Uint8>(cr * 255.F);
+				px[i + 1] = static_cast<Uint8>(cg * 255.F);
+				px[i + 2] = static_cast<Uint8>(cb * 255.F);
 				px[i + 3] = 255;
 			} else {
-				float ch_h = h, ch_s = s, ch_v = v;
+				float ch_h = h;
+				float ch_s = s;
+				float ch_v = v;
 				switch (ch) {
 				case 0:
 					ch_h = t;
@@ -186,10 +190,10 @@ inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, 
 					ch_v = t;
 					break;
 				}
-				const vec3 rgb = HsvToRgb(ch_h, ch_s, ch_v);
-				px[i + 0] = uint8(rgb.r * 255.f);
-				px[i + 1] = uint8(rgb.g * 255.f);
-				px[i + 2] = uint8(rgb.b * 255.f);
+				const Vec3 rgb = hsv_to_rgb(ch_h, ch_s, ch_v);
+				px[i + 0] = static_cast<Uint8>(rgb.r * 255.F);
+				px[i + 1] = static_cast<Uint8>(rgb.g * 255.F);
+				px[i + 2] = static_cast<Uint8>(rgb.b * 255.F);
 				px[i + 3] = 255;
 			}
 		}
@@ -197,16 +201,16 @@ inline std::vector<uint8> GenChannelGrad(vec4 color, float h, float s, float v, 
 	return px;
 }
 
-inline std::vector<uint8> GenAlpha(vec3 rgb, uint32 w, uint32 h) {
-	std::vector<uint8> px(w * h * 4);
-	for (uint32 y = 0; y < h; ++y) {
-		for (uint32 x = 0; x < w; ++x) {
+inline std::vector<Uint8> gen_alpha(Vec3 rgb, Uint32 w, Uint32 h) {
+	std::vector<Uint8> px(w * h * 4);
+	for (Uint32 y = 0; y < h; ++y) {
+		for (Uint32 x = 0; x < w; ++x) {
 			const float a = x / static_cast<float>(w - 1);
-			const float bg = ((x / 6) + (y / 6)) % 2 == 0 ? 0.75f : 0.5f;
-			const size_t i = (static_cast<size_t>(y) * w + x) * 4;
-			px[i + 0] = uint8((rgb.r * a + bg * (1.f - a)) * 255.f);
-			px[i + 1] = uint8((rgb.g * a + bg * (1.f - a)) * 255.f);
-			px[i + 2] = uint8((rgb.b * a + bg * (1.f - a)) * 255.f);
+			const float bg = ((x / 6) + (y / 6)) % 2 == 0 ? 0.75F : 0.5F;
+			const size_t i = ((static_cast<size_t>(y) * w) + x) * 4;
+			px[i + 0] = static_cast<Uint8>(((rgb.r * a) + (bg * (1.F - a))) * 255.F);
+			px[i + 1] = static_cast<Uint8>(((rgb.g * a) + (bg * (1.F - a))) * 255.F);
+			px[i + 2] = static_cast<Uint8>(((rgb.b * a) + (bg * (1.F - a))) * 255.F);
 			px[i + 3] = 255;
 		}
 	}

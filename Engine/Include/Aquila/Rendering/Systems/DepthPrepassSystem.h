@@ -10,11 +10,11 @@ class DepthPrepassSystem : public RenderingSystemBase {
 	DepthPrepassSystem() = default;
 	~DepthPrepassSystem() override = default;
 
-	void OnInit(GFX::GfxContext &ctx) override;
-	void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	void on_init(GFX::GfxContext &ctx) override;
+	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
   private:
-	Ref<GFX::GfxPipeline> m_Pipeline;
+	Ref<GFX::GfxPipeline> m_pipeline;
 };
 
 } // namespace Aquila::Rendering

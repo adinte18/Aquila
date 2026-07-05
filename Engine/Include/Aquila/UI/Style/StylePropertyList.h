@@ -10,43 +10,44 @@
 
 // clang-format off
 #define AQ_STYLE_PROPERTY_LIST \
-	AQ_STYLE_PROP("background-color",   backgroundColor,  backgroundColor,  0, 1, 0) \
-	AQ_STYLE_PROP("border-color",       borderColor,      borderColor,      0, 1, 0) \
-	AQ_STYLE_PROP("border-width",       borderWidth,      borderWidth,      0, 1, 0) \
-	AQ_STYLE_PROP("border-radius",      borderRadius,     borderRadius,     0, 1, 0) \
+	AQ_STYLE_PROP("background-color",   background_color,  background_color,  0, 1, 0) \
+	AQ_STYLE_PROP("border-color",       border_color,      border_color,      0, 1, 0) \
+	AQ_STYLE_PROP("border-width",       border_width,      border_width,      0, 1, 0) \
+	AQ_STYLE_PROP("border-radius",      border_radius,     border_radius,     0, 1, 0) \
+	AQ_STYLE_PROP("border-style",       border_style,      border_style,      0, 0, 0) \
 	AQ_STYLE_PROP("opacity",            opacity,          opacity,          0, 1, 0) \
 	AQ_STYLE_PROP("overflow",           overflow,         overflow,         1, 0, 0) \
 	AQ_STYLE_PROP("display",            display,          display,          1, 0, 0) \
 	AQ_STYLE_PROP("width",              width,            width,            1, 0, 0) \
 	AQ_STYLE_PROP("height",             height,           height,           1, 0, 0) \
-	AQ_STYLE_PROP("min-width",          minWidth,         minWidth,         1, 0, 0) \
-	AQ_STYLE_PROP("max-width",          maxWidth,         maxWidth,         1, 0, 0) \
-	AQ_STYLE_PROP("min-height",         minHeight,        minHeight,        1, 0, 0) \
-	AQ_STYLE_PROP("max-height",         maxHeight,        maxHeight,        1, 0, 0) \
+	AQ_STYLE_PROP("min-width",          min_width,         min_width,         1, 0, 0) \
+	AQ_STYLE_PROP("max-width",          max_width,         max_width,         1, 0, 0) \
+	AQ_STYLE_PROP("min-height",         min_height,        min_height,        1, 0, 0) \
+	AQ_STYLE_PROP("max-height",         max_height,        max_height,        1, 0, 0) \
 	AQ_STYLE_PROP("padding",            padding,          padding,          1, 0, 0) \
 	AQ_STYLE_PROP("gap",                gap,              gap,              1, 0, 0) \
-	AQ_STYLE_PROP("aspect-ratio",       aspectRatio,      aspectRatio,      1, 0, 0) \
-	AQ_STYLE_PROP("flex-direction",     flexDirection,    flexDirection,    1, 0, 0) \
-	AQ_STYLE_PROP("justify-content",    justifyContent,   justify,          1, 0, 0) \
-	AQ_STYLE_PROP("align-items",        alignItems,       align,            1, 0, 0) \
-	AQ_STYLE_PROP("flex-wrap",          flexWrap,         wrap,             1, 0, 0) \
-	AQ_STYLE_PROP("flex-grow",          flexGrow,         flexGrow,         1, 0, 0) \
+	AQ_STYLE_PROP("aspect-ratio",       aspect_ratio,      aspect_ratio,      1, 0, 0) \
+	AQ_STYLE_PROP("flex-direction",     flex_direction,    flex_direction,    1, 0, 0) \
+	AQ_STYLE_PROP("justify-content",    justify_content,   justify,          1, 0, 0) \
+	AQ_STYLE_PROP("align-items",        align_items,       align,            1, 0, 0) \
+	AQ_STYLE_PROP("flex-wrap",          flex_wrap,         wrap,             1, 0, 0) \
+	AQ_STYLE_PROP("flex-grow",          flex_grow,         flex_grow,         1, 0, 0) \
 	AQ_STYLE_PROP("position",           position,         position,         1, 0, 0) \
 	AQ_STYLE_PROP("top",                top,              top,              1, 0, 0) \
 	AQ_STYLE_PROP("right",              right,            right,            1, 0, 0) \
 	AQ_STYLE_PROP("bottom",             bottom,           bottom,           1, 0, 0) \
 	AQ_STYLE_PROP("left",               left,             left,             1, 0, 0) \
-	AQ_STYLE_PROP("z-index",            zIndex,           zIndex,           1, 0, 0) \
+	AQ_STYLE_PROP("z-index",            z_index,           z_index,           1, 0, 0) \
 	AQ_STYLE_PROP("color",              color,            color,            0, 1, 1) \
-	AQ_STYLE_PROP("accent-color",       accentColor,      accentColor,      0, 0, 0) \
-	AQ_STYLE_PROP("selection-color",    selectionColor,   selectionColor,   0, 0, 0) \
-	AQ_STYLE_PROP("placeholder-color",  placeholderColor, placeholderColor, 0, 0, 0) \
-	AQ_STYLE_PROP("font-size",          fontSize,         fontSize,         1, 0, 1) \
-	AQ_STYLE_PROP("font-family",        fontFamily,       fontFamily,       1, 0, 1) \
-	AQ_STYLE_PROP("text-align",         textAlign,        textAlign,        0, 0, 0) \
-	AQ_STYLE_PROP("box-shadow",         boxShadows,       boxShadows,       0, 0, 0) \
-	AQ_STYLE_PROP("transition-duration",transitionDuration,transitionDuration,0,0,0) \
-	AQ_STYLE_PROP("transition-easing",  transitionEasing, transitionEasing, 0, 0, 0)
+	AQ_STYLE_PROP("accent-color",       accent_color,      accent_color,      0, 0, 0) \
+	AQ_STYLE_PROP("selection-color",    selection_color,   selection_color,   0, 0, 0) \
+	AQ_STYLE_PROP("placeholder-color",  placeholder_color, placeholder_color, 0, 0, 0) \
+	AQ_STYLE_PROP("font-size",          font_size,         font_size,         1, 0, 1) \
+	AQ_STYLE_PROP("font-family",        font_family,       font_family,       1, 0, 1) \
+	AQ_STYLE_PROP("text-align",         text_align,        text_align,        0, 0, 0) \
+	AQ_STYLE_PROP("box-shadow",         box_shadows,       box_shadows,       0, 0, 0) \
+	AQ_STYLE_PROP("transition-duration",transition_duration,transition_duration,0,0,0) \
+	AQ_STYLE_PROP("transition-easing",  transition_easing, transition_easing, 0, 0, 0)
 // clang-format on
 
 #define AQ_STYLE_WHEN_CAT_(a, b) a##b

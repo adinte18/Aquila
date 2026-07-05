@@ -9,16 +9,16 @@ class Checkbox : public BaseField<bool> {
 	Checkbox();
 	explicit Checkbox(bool checked);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Checkbox"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Checkbox"; }
 
-	void SetChecked(bool checked) { SetValue(checked); }
-	[[nodiscard]] bool IsChecked() const { return GetValue(); }
+	void set_checked(bool checked) { set_value(checked); }
+	[[nodiscard]] bool is_checked() const { return get_value(); }
 
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   protected:
-	void OnValueUpdated() override;
+	void on_value_updated() override;
 };
 
 } // namespace Aquila::UI::Core

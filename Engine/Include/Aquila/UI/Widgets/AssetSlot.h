@@ -11,35 +11,35 @@ namespace Aquila::UI::Core {
 class AssetSlot : public View {
   public:
 	AssetSlot();
-	explicit AssetSlot(std::string acceptedType);
+	explicit AssetSlot(std::string accepted_type);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "AssetSlot"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "AssetSlot"; }
 
-	void SetAcceptedType(std::string type);
-	[[nodiscard]] const std::string &GetAcceptedType() const { return m_AcceptedType; }
+	void set_accepted_type(std::string type);
+	[[nodiscard]] const std::string &get_accepted_type() const { return m_accepted_type; }
 
-	void SetValue(AssetPayload asset);
-	void Clear();
-	[[nodiscard]] bool HasValue() const { return m_HasValue; }
-	[[nodiscard]] const AssetPayload &GetValue() const { return m_Value; }
+	void set_value(AssetPayload asset);
+	void clear();
+	[[nodiscard]] bool has_value() const { return m_has_value; }
+	[[nodiscard]] const AssetPayload &get_value() const { return m_value; }
 
-	Signal<void(Option<AssetPayload>)> onChanged;
+	Signal<void(Option<AssetPayload>)> on_changed;
 
-	void OnDrop(DragState &state) override;
-	void OnDragEnter(DragState &state) override;
-	void OnDragLeave(DragState &state) override;
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	void on_drop(DragState &state) override;
+	void on_drag_enter(DragState &state) override;
+	void on_drag_leave(DragState &state) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
 
   private:
-	void UpdateDisplay();
-	[[nodiscard]] bool IsCompatible(const AssetPayload &payload) const;
+	void update_display();
+	[[nodiscard]] bool is_compatible(const AssetPayload &payload) const;
 
-	std::string m_AcceptedType;
-	AssetPayload m_Value;
-	bool m_HasValue = false;
+	std::string m_accepted_type;
+	AssetPayload m_value;
+	bool m_has_value = false;
 
-	Label *m_Label = nullptr;
-	Button *m_ClearButton = nullptr;
+	Label *m_label = nullptr;
+	Button *m_clear_button = nullptr;
 
 };
 

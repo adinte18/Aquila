@@ -5,11 +5,11 @@
 
 int main() {
 	ApplicationSpec spec;
-	spec.Name = "Aquila Runtime";
-	spec.Width = 1920;
-	spec.Height = 1080;
+	spec.name = "Aquila Runtime";
+	spec.width = 1920;
+	spec.height = 1080;
 
 	Aquila::Application::Application app{ spec };
-	app.Run();
+	app.run();
 	return EXIT_SUCCESS;
 }

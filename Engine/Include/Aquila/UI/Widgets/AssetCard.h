@@ -12,21 +12,21 @@ class AssetCard : public View {
   public:
 	AssetCard();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "AssetCard"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "AssetCard"; }
 
-	void SetAsset(AssetPayload payload);
-	[[nodiscard]] const AssetPayload &GetAsset() const { return m_Payload; }
+	void set_asset(AssetPayload payload);
+	[[nodiscard]] const AssetPayload &get_asset() const { return m_payload; }
 
-	void SetThumbnail(GFX::GfxTexture *texture);
+	void set_thumbnail(GFX::GfxTexture *texture);
 
-	void OnDragStart(DragState &state) override;
+	void on_drag_start(DragState &state) override;
 
   private:
-	AssetPayload m_Payload;
+	AssetPayload m_payload;
 
-	Image *m_Thumbnail = nullptr;
-	Label *m_TypeLabel = nullptr;
-	Label *m_NameLabel = nullptr;
+	Image *m_thumbnail = nullptr;
+	Label *m_type_label = nullptr;
+	Label *m_name_label = nullptr;
 };
 
 } // namespace Aquila::UI::Core

@@ -8,28 +8,28 @@ class NumberInput : public TextInput {
   public:
 	NumberInput();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "NumberInput"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "NumberInput"; }
 
-	void SetValue(f64 value);
-	void SetRange(f64 min, f64 max);
-	void SetStep(f64 step);
-	void SetPrecision(int decimals);
-	Signal<void(f64)> onValueChanged;
+	void set_value(F64 value);
+	void set_range(F64 min, F64 max);
+	void set_step(F64 step);
+	void set_precision(int decimals);
+	Signal<void(F64)> on_value_changed;
 
-	[[nodiscard]] f64 GetValue() const { return m_Value; }
+	[[nodiscard]] F64 get_value() const { return m_value; }
 
-	void OnKeyPress(Platform::KeyCode key, int mods = 0) override;
-	void OnFocusLost() override;
+	void on_key_press(Platform::KeyCode key, int mods = 0) override;
+	void on_focus_lost() override;
 
   private:
-	void CommitText();
-	void UpdateDisplayText();
+	void commit_text();
+	void update_display_text();
 
-	f64 m_Value = 0.0;
-	f64 m_Min = -1e18;
-	f64 m_Max = 1e18;
-	f64 m_Step = 1.0;
-	int m_Precision = 3;
+	F64 m_value = 0.0;
+	F64 m_min = -1e18;
+	F64 m_max = 1e18;
+	F64 m_step = 1.0;
+	int m_precision = 3;
 };
 
 } // namespace Aquila::UI::Core

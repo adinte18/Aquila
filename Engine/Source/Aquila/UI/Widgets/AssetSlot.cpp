@@ -3,113 +3,113 @@
 namespace Aquila::UI::Core {
 
 AssetSlot::AssetSlot() {
-	m_IsAcceptingPayload = true;
-	AddClass("asset-slot");
+	m_is_accepting_payload = true;
+	add_class("asset-slot");
 
-	auto label = CreateUnique<Label>("");
-	label->AddClass("asset-slot-label");
-	m_Label = static_cast<Label *>(AddChild(std::move(label)));
+	auto label = create_unique<Label>("");
+	label->add_class("asset-slot-label");
+	m_label = static_cast<Label *>(add_child(std::move(label)));
 
-	auto clearBtn = CreateUnique<Button>("×");
-	clearBtn->AddClass("asset-slot-clear");
-	clearBtn->onClick.Connect([this] { Clear(); });
-	m_ClearButton = static_cast<Button *>(AddChild(std::move(clearBtn)));
+	auto clear_btn = create_unique<Button>("×");
+	clear_btn->add_class("asset-slot-clear");
+	clear_btn->on_click.connect([this] { clear(); });
+	m_clear_button = static_cast<Button *>(add_child(std::move(clear_btn)));
 
-	UpdateDisplay();
+	update_display();
 }
 
-AssetSlot::AssetSlot(std::string acceptedType) : AssetSlot() {
-	m_AcceptedType = std::move(acceptedType);
-	UpdateDisplay();
+AssetSlot::AssetSlot(std::string accepted_type) : AssetSlot() {
+	m_accepted_type = std::move(accepted_type);
+	update_display();
 }
 
-void AssetSlot::SetAcceptedType(std::string type) {
-	m_AcceptedType = std::move(type);
-	UpdateDisplay();
+void AssetSlot::set_accepted_type(std::string type) {
+	m_accepted_type = std::move(type);
+	update_display();
 }
 
-void AssetSlot::SetValue(AssetPayload asset) {
-	m_Value = std::move(asset);
-	m_HasValue = true;
-	UpdateDisplay();
+void AssetSlot::set_value(AssetPayload asset) {
+	m_value = std::move(asset);
+	m_has_value = true;
+	update_display();
 }
 
-void AssetSlot::Clear() {
-	m_HasValue = false;
-	m_Value = {};
-	UpdateDisplay();
-	RemoveClass("asset-slot-filled");
-	onChanged(std::nullopt);
+void AssetSlot::clear() {
+	m_has_value = false;
+	m_value = {};
+	update_display();
+	remove_class("asset-slot-filled");
+	on_changed(std::nullopt);
 }
 
 
-void AssetSlot::OnDrop(DragState &state) {
+void AssetSlot::on_drop(DragState &state) {
 	if (!state.payload.has_value()) {
 		return;
 	}
 
 	try {
 		AssetPayload payload = std::any_cast<AssetPayload>(state.payload);
-		if (!IsCompatible(payload)) {
-			RemoveClass("drag-over-invalid");
+		if (!is_compatible(payload)) {
+			remove_class("drag-over-invalid");
 			return;
 		}
-		SetValue(payload);
-		AddClass("asset-slot-filled");
-		RemoveClass("drag-over");
-		RemoveClass("drag-over-invalid");
-		onChanged(m_Value);
+		set_value(payload);
+		add_class("asset-slot-filled");
+		remove_class("drag-over");
+		remove_class("drag-over-invalid");
+		on_changed(m_value);
 	} catch (const std::bad_any_cast &) {
 	}
 }
 
-void AssetSlot::OnDragEnter(DragState &state) {
+void AssetSlot::on_drag_enter(DragState &state) {
 	if (!state.payload.has_value()) {
 		return;
 	}
 	try {
 		AssetPayload payload = std::any_cast<AssetPayload>(state.payload);
-		if (IsCompatible(payload)) {
-			AddClass("drag-over");
+		if (is_compatible(payload)) {
+			add_class("drag-over");
 		} else {
-			AddClass("drag-over-invalid");
+			add_class("drag-over-invalid");
 		}
 	} catch (const std::bad_any_cast &) {
 	}
 }
 
-void AssetSlot::OnDragLeave(DragState &) {
-	RemoveClass("drag-over");
-	RemoveClass("drag-over-invalid");
+void AssetSlot::on_drag_leave(DragState &) {
+	remove_class("drag-over");
+	remove_class("drag-over-invalid");
 }
 
-void AssetSlot::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void AssetSlot::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "accept") {
-		SetAcceptedType(std::string(value));
+		set_accepted_type(std::string(value));
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
-void AssetSlot::UpdateDisplay() {
-	m_ClearButton->SetHidden(!m_HasValue);
+void AssetSlot::update_display() {
+	m_clear_button->set_hidden(!m_has_value);
 
-	if (m_HasValue) {
-		m_Label->SetText(m_Value.displayName.empty() ? m_Value.assetPath : m_Value.displayName);
+	if (m_has_value) {
+		m_label->set_text(m_value.display_name.empty() ? m_value.asset_path : m_value.display_name);
 	} else {
 		std::string placeholder = "None";
-		if (!m_AcceptedType.empty()) {
-			placeholder += " (" + m_AcceptedType + ")";
+		if (!m_accepted_type.empty()) {
+			placeholder += " (" + m_accepted_type + ")";
 		}
-		m_Label->SetText(placeholder);
+		m_label->set_text(placeholder);
 	}
 }
 
-bool AssetSlot::IsCompatible(const AssetPayload &payload) const {
-	if (m_AcceptedType.empty()) {
+bool AssetSlot::is_compatible(const AssetPayload &payload) const {
+	if (m_accepted_type.empty()) {
 		return true;
 	}
-	return payload.assetType == m_AcceptedType;
+	return payload.asset_type == m_accepted_type;
 }
 
 } // namespace Aquila::UI::Core

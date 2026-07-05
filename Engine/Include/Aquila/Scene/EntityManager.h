@@ -8,22 +8,22 @@ namespace Aquila::SceneManagement {
 
 class EntityManager {
   public:
-	explicit EntityManager(Scene *scene) : m_Scene(scene) { m_Registry = {}; }
+	explicit EntityManager(Scene *scene) : m_scene(scene) { m_registry = {}; }
 	~EntityManager();
 
-	entt::registry &GetRegistry();
+	entt::registry &get_registry();
 
-	static Entity Create(Scene *scene) {
-		const auto handle = scene->GetRegistry().create();
+	static Entity create(Scene *scene) {
+		const auto handle = scene->get_registry().create();
 		return Entity(handle, scene);
 	}
 
-	static std::vector<Entity> CreateMany(Scene *scene, size_t count) {
+	static std::vector<Entity> create_many(Scene *scene, size_t count) {
 		std::vector<Entity> entities;
 		entities.reserve(count);
 
 		auto handles = std::vector<entt::entity>(count);
-		scene->GetRegistry().create(handles.begin(), handles.end());
+		scene->get_registry().create(handles.begin(), handles.end());
 
 		for (auto handle : handles) {
 			entities.emplace_back(handle, scene);
@@ -31,114 +31,114 @@ class EntityManager {
 		return entities;
 	}
 
-	Entity CreateEntity(const std::string &name);
-	void ApplyPreset(Entity &entity, EntityPreset preset);
+	Entity create_entity(const std::string &name);
+	void apply_preset(Entity &entity, EntityPreset preset);
 
-	template <typename... Components, typename Func> void ForEach(Func &&func) {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		for (auto view = m_Registry.view<Components...>(); auto entityHandle : view) {
-			Entity entity(entityHandle, m_Scene);
+	template <typename... Components, typename Func> void for_each(Func &&func) {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		for (auto view = m_registry.view<Components...>(); auto entity_handle : view) {
+			Entity entity(entity_handle, m_scene);
 			if constexpr (std::is_invocable_v<Func, Entity, Components &...>) {
-				func(entity, view.template get<Components>(entityHandle)...);
+				func(entity, view.template get<Components>(entity_handle)...);
 			} else if constexpr (std::is_invocable_v<Func, Components &...>) {
-				func(view.template get<Components>(entityHandle)...);
+				func(view.template get<Components>(entity_handle)...);
 			} else {
 				func(entity);
 			}
 		}
 	}
 
-	template <typename... Components, typename Func> void ForEach(Func &&func) const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		for (auto view = m_Registry.view<const Components...>(); auto entityHandle : view) {
-			Entity entity(entityHandle, const_cast<Scene *>(m_Scene));
+	template <typename... Components, typename Func> void for_each(Func &&func) const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		for (auto view = m_registry.view<const Components...>(); auto entity_handle : view) {
+			Entity entity(entity_handle, const_cast<Scene *>(m_scene));
 			if constexpr (std::is_invocable_v<Func, Entity, const Components &...>) {
-				func(entity, view.template get<const Components>(entityHandle)...);
+				func(entity, view.template get<const Components>(entity_handle)...);
 			} else if constexpr (std::is_invocable_v<Func, const Components &...>) {
-				func(view.template get<const Components>(entityHandle)...);
+				func(view.template get<const Components>(entity_handle)...);
 			} else {
 				func(entity);
 			}
 		}
 	}
 
-	template <typename... Components> [[nodiscard]] size_t Count() const {
-		return m_Registry.view<Components...>().size();
+	template <typename... Components> [[nodiscard]] size_t count() const {
+		return m_registry.view<Components...>().size();
 	}
 
-	template <typename... Components> Entity GetFirstEntityWith() {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		auto view = m_Registry.view<Components...>();
+	template <typename... Components> Entity get_first_entity_with() {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		auto view = m_registry.view<Components...>();
 
 		if (view.begin() == view.end()) {
 			return Entity{};
 		}
 
-		return Entity{ *view.begin(), m_Scene };
+		return Entity{ *view.begin(), m_scene };
 	}
 
-	template <typename... Components> std::vector<Entity> GetAllWith() {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		auto view = m_Registry.view<Components...>();
+	template <typename... Components> std::vector<Entity> get_all_with() {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		auto view = m_registry.view<Components...>();
 
 		std::vector<Entity> result{};
 		result.reserve(std::distance(view.begin(), view.end()));
 
 		for (auto entity : view) {
-			result.emplace_back(Entity{ entity, m_Scene });
+			result.emplace_back(Entity{ entity, m_scene });
 		}
 
 		return result;
 	}
 
-	template <typename... Components, typename Predicate> Entity FindFirst(Predicate &&predicate) {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		auto view = m_Registry.view<Components...>();
-		for (auto entityHandle : view) {
-			Entity entity(entityHandle, m_Scene);
-			if (predicate(entity, view.template get<Components>(entityHandle)...)) {
+	template <typename... Components, typename Predicate> Entity find_first(Predicate &&predicate) {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		auto view = m_registry.view<Components...>();
+		for (auto entity_handle : view) {
+			Entity entity(entity_handle, m_scene);
+			if (predicate(entity, view.template get<Components>(entity_handle)...)) {
 				return entity;
 			}
 		}
-		return Entity::Null();
+		return Entity::null();
 	}
 
-	template <typename... Components> auto GetView() { return m_Registry.view<Components...>(); }
+	template <typename... Components> auto get_view() { return m_registry.view<Components...>(); }
 
-	template <typename... Owned, typename... Get, typename... Exclude> auto GetGroup() {
-		return m_Registry.group<Owned...>(entt::get<Get...>, entt::exclude<Exclude...>);
+	template <typename... Owned, typename... Get, typename... Exclude> auto get_group() {
+		return m_registry.group<Owned...>(entt::get<Get...>, entt::exclude<Exclude...>);
 	}
 
-	std::optional<Entity> FindEntityByName(const std::string &name);
-	std::optional<Entity> FindEntityByUUID(const Utils::UUID &uuid);
-	std::string GetDefaultName(EntityPreset preset);
-	[[nodiscard]] std::vector<Entity> GetChildren(Entity parent) const;
-	[[nodiscard]] std::optional<Entity> GetParent(Entity child) const;
+	std::optional<Entity> find_entity_by_name(const std::string &name);
+	std::optional<Entity> find_entity_by_uuid(const Foundation::UUID &uuid);
+	std::string get_default_name(EntityPreset preset);
+	[[nodiscard]] std::vector<Entity> get_children(Entity parent) const;
+	[[nodiscard]] std::optional<Entity> get_parent(Entity child) const;
 
-	[[nodiscard]] bool Exists(const Utils::UUID &uuid);
-	[[nodiscard]] bool IsValid(Entity entity) const;
-	[[nodiscard]] bool IsRegistryEmpty();
-	void DestroyEntity(Entity entity);
-	void QueueForKill(Entity entity);
-	void FlushDeletionQueue();
+	[[nodiscard]] bool exists(const Foundation::UUID &uuid);
+	[[nodiscard]] bool is_valid(Entity entity) const;
+	[[nodiscard]] bool is_registry_empty();
+	void destroy_entity(Entity entity);
+	void queue_for_kill(Entity entity);
+	void flush_deletion_queue();
 
-	void ConstructSceneGraph();
-	void AddChild(Entity parent, Entity child);
-	void AttachTo(Entity parent, Entity node);
-	void RemoveChild(Entity parent, Entity child);
-	void RemoveAllChildren(Entity parent);
-	bool IsDescendant(Entity potentialParent, Entity entityToCheck);
-	std::string GenerateUniqueName(const std::string &baseName);
+	void construct_scene_graph();
+	void add_child(Entity parent, Entity child);
+	void attach_to(Entity parent, Entity node);
+	void remove_child(Entity parent, Entity child);
+	void remove_all_children(Entity parent);
+	bool is_descendant(Entity potential_parent, Entity entity_to_check);
+	std::string generate_unique_name(const std::string &base_name);
 
-	void Clear();
+	void clear();
 
   private:
-	void OnSceneNodeConstruct(entt::registry &registry, entt::entity entityHandle);
-	void OnSceneNodeDestroy(entt::registry &registry, entt::entity entityHandle);
+	void on_scene_node_construct(entt::registry &registry, entt::entity entity_handle);
+	void on_scene_node_destroy(entt::registry &registry, entt::entity entity_handle);
 
-	Scene *m_Scene;
-	entt::registry m_Registry;
-	std::vector<entt::entity> m_DeletionQueue;
+	Scene *m_scene;
+	entt::registry m_registry;
+	std::vector<entt::entity> m_deletion_queue;
 };
 
 } // namespace Aquila::SceneManagement

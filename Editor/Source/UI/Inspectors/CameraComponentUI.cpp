@@ -13,26 +13,29 @@ using namespace Aquila;
 using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 
-bool CameraComponentUI::Matches(Entity entity) const {
-	return entity.HasComponent<CameraComponent>();
+bool CameraComponentUI::matches(Entity entity) const {
+	return entity.has_component<CameraComponent>();
 }
 
-void CameraComponentUI::Build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
+void CameraComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
 	using UI::Core::DragFloat;
-	m_Fov = grid->AddRow<DragFloat>("FOV", DragFloat::Config{ .min = 1.f, .max = 179.f, .speed = 0.5f, .precision = 1 });
-	m_Near = grid->AddRow<DragFloat>("Near", DragFloat::Config{ .min = 0.001f, .max = 100.f, .speed = 0.01f, .precision = 3 });
-	m_Far = grid->AddRow<DragFloat>("Far", DragFloat::Config{ .min = 0.1f, .max = 10000.f, .speed = 0.01f, .precision = 1 });
-	m_Primary = grid->AddRow<UI::Core::Toggle>("Primary", false);
-	m_Ortho = grid->AddRow<UI::Core::Checkbox>("Orthographic", false);
+	m_fov =
+		grid->add_row<DragFloat>("FOV", DragFloat::Config{ .min = 1.F, .max = 179.F, .speed = 0.5f, .precision = 1 });
+	m_near = grid->add_row<DragFloat>("Near",
+									  DragFloat::Config{ .min = 0.001f, .max = 100.F, .speed = 0.01f, .precision = 3 });
+	m_far = grid->add_row<DragFloat>("Far",
+									 DragFloat::Config{ .min = 0.1f, .max = 10000.F, .speed = 0.01f, .precision = 1 });
+	m_primary = grid->add_row<UI::Core::Toggle>("Primary", false);
+	m_ortho = grid->add_row<UI::Core::Checkbox>("Orthographic", false);
 }
 
-void CameraComponentUI::Show(Entity entity) {
+void CameraComponentUI::show(Entity entity) {
 	ComponentBinder<CameraComponent> bind(entity);
-	bind.Bind(m_Fov, [](auto &c) -> float & { return c.fov; });
-	bind.Bind(m_Near, [](auto &c) -> float & { return c.nearPlane; });
-	bind.Bind(m_Far, [](auto &c) -> float & { return c.farPlane; });
-	bind.Bind(m_Primary, [](auto &c) -> bool & { return c.primary; });
-	bind.Bind(m_Ortho, [](auto &c) -> bool & { return c.isOrthographic; });
+	bind.bind(m_fov, [](auto &c) -> float & { return c.fov; });
+	bind.bind(m_near, [](auto &c) -> float & { return c.near_plane; });
+	bind.bind(m_far, [](auto &c) -> float & { return c.far_plane; });
+	bind.bind(m_primary, [](auto &c) -> bool & { return c.primary; });
+	bind.bind(m_ortho, [](auto &c) -> bool & { return c.is_orthographic; });
 }
 
 } // namespace Editor

@@ -5,7 +5,7 @@
 
 namespace Aquila::UI {
 
-bool MediaCondition::Evaluate(float w, float h) const {
+bool MediaCondition::evaluate(float w, float h) const {
 	const float v = (axis == Axis::Width) ? w : h;
 	switch (op) {
 	case Op::Less:
@@ -22,18 +22,18 @@ bool MediaCondition::Evaluate(float w, float h) const {
 	return false;
 }
 
-static bool EvaluateBlock(const MediaBlock &block, float w, float h) {
+static bool evaluate_block(const MediaBlock &block, float w, float h) {
 	for (const auto &cond : block.conditions) {
-		if (!cond.Evaluate(w, h)) {
+		if (!cond.evaluate(w, h)) {
 			return false;
 		}
 	}
 	return true;
 }
 
-void StyleSheet::AddRule(StyleRule::SelectorType type, std::string selector, std::string pseudoClass,
+void StyleSheet::add_rule(StyleRule::SelectorType type, std::string selector, std::string pseudo_class,
 						 StyleProperties props) {
-	int32 specificity = 0;
+	Int32 specificity = 0;
 	switch (type) {
 	case StyleRule::SelectorType::Type:
 		specificity = 1;
@@ -45,130 +45,130 @@ void StyleSheet::AddRule(StyleRule::SelectorType type, std::string selector, std
 		specificity = 100;
 		break;
 	}
-	if (!pseudoClass.empty()) {
+	if (!pseudo_class.empty()) {
 		specificity += 10;
 	}
 
-	m_Rules.push_back({ type, std::move(selector), std::move(pseudoClass), specificity, std::move(props) });
+	m_rules.push_back({ type, std::move(selector), std::move(pseudo_class), specificity, std::move(props) });
 }
 
-void StyleSheet::AddMediaBlock(MediaBlock block) {
-	m_MediaBlocks.push_back(std::move(block));
+void StyleSheet::add_media_block(MediaBlock block) {
+	m_media_blocks.push_back(std::move(block));
 }
 
-void StyleSheet::AddContainerBlock(MediaBlock block) {
-	m_ContainerBlocks.push_back(std::move(block));
+void StyleSheet::add_container_block(MediaBlock block) {
+	m_container_blocks.push_back(std::move(block));
 }
 
-void StyleSheet::AddVariable(std::string name, std::string value) {
-	m_Variables[std::move(name)] = std::move(value);
+void StyleSheet::add_variable(std::string name, std::string value) {
+	m_variables[std::move(name)] = std::move(value);
 }
 
-const std::string *StyleSheet::GetVariable(std::string_view name) const {
-	const auto it = m_Variables.find(std::string(name));
-	return it != m_Variables.end() ? &it->second : nullptr;
+const std::string *StyleSheet::get_variable(std::string_view name) const {
+	const auto it = m_variables.find(std::string(name));
+	return it != m_variables.end() ? &it->second : nullptr;
 }
 
-void StyleSheet::ApplyMatchingRules(ComputedStyle &out, const std::vector<StyleRule> &rules,
+void StyleSheet::apply_matching_rules(ComputedStyle &out, const std::vector<StyleRule> &rules,
 									const Core::View &view) const {
 	std::vector<const StyleRule *> matching;
 	for (const auto &rule : rules) {
-		if (Matches(rule, view)) {
+		if (matches(rule, view)) {
 			matching.push_back(&rule);
 		}
 	}
 	std::ranges::stable_sort(matching, {}, [](const StyleRule *r) { return r->specificity; });
 	for (const StyleRule *rule : matching) {
-		ApplyProperties(out, rule->properties);
+		apply_properties(out, rule->properties);
 	}
 }
 
-ComputedStyle StyleSheet::Resolve(const Core::View &view, const ComputedStyle *parentComputed,
+ComputedStyle StyleSheet::resolve(const Core::View &view, const ComputedStyle *parent_computed,
 								  const ResolveContext &ctx) const {
 	ComputedStyle result;
 
-	if (parentComputed) {
+	if (parent_computed) {
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
-	AQ_STYLE_WHEN(inherit, result.cs = parentComputed->cs;)
+	AQ_STYLE_WHEN(inherit, result.cs = parent_computed->cs;)
 		AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
 	}
 
 	std::vector<const StyleRule *> matching;
-	for (const auto &rule : m_Rules) {
-		if (Matches(rule, view)) {
+	for (const auto &rule : m_rules) {
+		if (matches(rule, view)) {
 			matching.push_back(&rule);
 		}
 	}
 	std::ranges::stable_sort(matching, {}, [](const StyleRule *r) { return r->specificity; });
 	for (const StyleRule *rule : matching) {
-		ApplyProperties(result, rule->properties);
+		apply_properties(result, rule->properties);
 	}
 
-	for (const auto &block : m_MediaBlocks) {
-		if (EvaluateBlock(block, ctx.viewportSize.x, ctx.viewportSize.y)) {
-			ApplyMatchingRules(result, block.rules, view);
+	for (const auto &block : m_media_blocks) {
+		if (evaluate_block(block, ctx.viewport_size.x, ctx.viewport_size.y)) {
+			apply_matching_rules(result, block.rules, view);
 		}
 	}
 
-	for (const auto &block : m_ContainerBlocks) {
-		if (EvaluateBlock(block, ctx.containerSize.x, ctx.containerSize.y)) {
-			ApplyMatchingRules(result, block.rules, view);
+	for (const auto &block : m_container_blocks) {
+		if (evaluate_block(block, ctx.container_size.x, ctx.container_size.y)) {
+			apply_matching_rules(result, block.rules, view);
 		}
 	}
 
-	ApplyProperties(result, view.GetStyle());
+	apply_properties(result, view.get_style());
 
 	return result;
 }
 
-bool StyleSheet::Matches(const StyleRule &rule, const Core::View &view) const {
-	bool selectorMatch = false;
-	switch (rule.selectorType) {
+bool StyleSheet::matches(const StyleRule &rule, const Core::View &view) const {
+	bool selector_match = false;
+	switch (rule.selector_type) {
 	case StyleRule::SelectorType::Type:
-		selectorMatch = (view.GetTypeName() == rule.selector);
+		selector_match = (view.get_type_name() == rule.selector);
 		break;
 	case StyleRule::SelectorType::Class: {
-		const auto &classes = view.GetClasses();
-		selectorMatch = (std::ranges::find(classes, rule.selector) != classes.end());
+		const auto &classes = view.get_classes();
+		selector_match = (std::ranges::find(classes, rule.selector) != classes.end());
 		break;
 	}
 	case StyleRule::SelectorType::Id:
-		selectorMatch = (view.GetId() == rule.selector);
+		selector_match = (view.get_id() == rule.selector);
 		break;
 	}
 
-	if (!selectorMatch) {
+	if (!selector_match) {
 		return false;
 	}
 
-	if (rule.pseudoClass.empty()) {
+	if (rule.pseudo_class.empty()) {
 		return true;
 	}
-	if (rule.pseudoClass == "hover") {
-		return view.IsHovered();
+	if (rule.pseudo_class == "hover") {
+		return view.is_hovered();
 	}
-	if (rule.pseudoClass == "pressed") {
-		return view.IsPressed();
+	if (rule.pseudo_class == "pressed") {
+		return view.is_pressed();
 	}
-	if (rule.pseudoClass == "focus") {
-		return view.IsFocused();
+	if (rule.pseudo_class == "focus") {
+		return view.is_focused();
 	}
-	if (rule.pseudoClass == "disabled") {
-		return !view.IsEnabled();
+	if (rule.pseudo_class == "disabled") {
+		return !view.is_enabled();
 	}
 
 	return false;
 }
 
-void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &props) const {
+void StyleSheet::apply_properties(ComputedStyle &out, const StyleProperties &props) const {
 	if (props.min) {
-		out.minWidth = *props.min;
-		out.minHeight = *props.min;
+		out.min_width = *props.min;
+		out.min_height = *props.min;
 	}
 	if (props.max) {
-		out.maxWidth = *props.max;
-		out.maxHeight = *props.max;
+		out.max_width = *props.max;
+		out.max_height = *props.max;
 	}
 
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
@@ -178,17 +178,17 @@ void StyleSheet::ApplyProperties(ComputedStyle &out, const StyleProperties &prop
 	AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
 
-	if (props.paddingLeft) {
-		out.padding.left = *props.paddingLeft;
+	if (props.padding_left) {
+		out.padding.left = *props.padding_left;
 	}
-	if (props.paddingRight) {
-		out.padding.right = *props.paddingRight;
+	if (props.padding_right) {
+		out.padding.right = *props.padding_right;
 	}
-	if (props.paddingTop) {
-		out.padding.top = *props.paddingTop;
+	if (props.padding_top) {
+		out.padding.top = *props.padding_top;
 	}
-	if (props.paddingBottom) {
-		out.padding.bottom = *props.paddingBottom;
+	if (props.padding_bottom) {
+		out.padding.bottom = *props.padding_bottom;
 	}
 }
 

@@ -15,20 +15,20 @@ class ColorPicker : public Control {
   public:
 	class PickerArea;
 
-	ColorPicker(GFX::GfxContext &ctx, vec4 color = vec4(1.f));
+	ColorPicker(GFX::GfxContext &ctx, Vec4 color = Vec4(1.F));
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "ColorPicker"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "ColorPicker"; }
 
-	void SetColor(vec4 color);
-	[[nodiscard]] vec4 GetColor() const { return m_Color; }
+	void set_color(Vec4 color);
+	[[nodiscard]] Vec4 get_color() const { return m_color; }
 
-	void SetValue(vec4 color) { SetColor(color); }
-	[[nodiscard]] vec4 GetValue() const { return m_Color; }
+	void set_value(Vec4 color) { set_color(color); }
+	[[nodiscard]] Vec4 get_value() const { return m_color; }
 
-	Signal<void(vec4)> onChanged;
+	Signal<void(Vec4)> on_changed;
 
-	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void on_mouse_press(Platform::MouseButton btn, Vec2 pos) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   private:
 	enum class Mode { RGB, HSV, HEX };
@@ -40,59 +40,58 @@ class ColorPicker : public Control {
 		TextInput *input = nullptr;
 	};
 
-	void Init();
-	void TogglePopup();
-	void SetMode(Mode mode);
+	void init();
+	void toggle_popup();
+	void set_mode(Mode mode);
 
-	void SyncAll();
-	void SyncChannelDisplays();
-	void SyncHexDisplay();
-	void RebuildSVTexture();
-	void RebuildAlphaTexture();
-	void RebuildChannelTextures();
-	void ApplyChannelValue(int idx, float rawValue);
+	void sync_all();
+	void sync_channel_displays();
+	void sync_hex_display();
+	void rebuild_sv_texture();
+	void rebuild_alpha_texture();
+	void rebuild_channel_textures();
+	void apply_channel_value(int idx, float raw_value);
 
-	[[nodiscard]] static std::string FmtInt(int v);
-	[[nodiscard]] static std::string FmtHex(vec4 color);
-	[[nodiscard]] static bool ParseHex(const std::string &s, vec4 &out);
+	[[nodiscard]] static std::string fmt_int(int v);
+	[[nodiscard]] static std::string fmt_hex(Vec4 color);
+	[[nodiscard]] static bool parse_hex(const std::string &s, Vec4 &out);
 
-	GFX::GfxContext &m_Ctx;
+	GFX::GfxContext &m_ctx;
 
-	vec4 m_Color = vec4(1.f);
-	float m_H = 0.f, m_S = 0.f, m_V = 1.f;
-	Mode m_Mode = Mode::RGB;
+	Vec4 m_color = Vec4(1.F);
+	float m_h = 0.F, m_s = 0.F, m_v = 1.F;
+	Mode m_mode = Mode::RGB;
 
-	Ref<GFX::GfxTexture> m_SVTex;
-	Ref<GFX::GfxTexture> m_HueTex;
-	Ref<GFX::GfxTexture> m_AlphaTex;
-	Ref<GFX::GfxTexture> m_ChTex[4];
+	Ref<GFX::GfxTexture> m_sv_tex;
+	Ref<GFX::GfxTexture> m_hue_tex;
+	Ref<GFX::GfxTexture> m_alpha_tex;
+	Ref<GFX::GfxTexture> m_ch_tex[4];
 
-	View *m_Swatch = nullptr;
-	Popup *m_Popup = nullptr;
-	View *m_Preview = nullptr;
+	View *m_swatch = nullptr;
+	Popup *m_popup = nullptr;
+	View *m_preview = nullptr;
 
-	PickerArea *m_SVArea = nullptr;
-	PickerArea *m_HueBar = nullptr;
-	PickerArea *m_AlphaBar = nullptr;
+	PickerArea *m_sv_area = nullptr;
+	PickerArea *m_hue_bar = nullptr;
+	PickerArea *m_alpha_bar = nullptr;
 
-	Button *m_RGBBtn = nullptr;
-	Button *m_HSVBtn = nullptr;
-	Button *m_HEXBtn = nullptr;
+	Button *m_rgb_btn = nullptr;
+	Button *m_hsv_btn = nullptr;
+	Button *m_hex_btn = nullptr;
 
-	ChannelRow m_Ch[4];
+	ChannelRow m_ch[4];
 
-	View *m_HexRow = nullptr;
-	TextInput *m_HexInput = nullptr;
+	View *m_hex_row = nullptr;
+	TextInput *m_hex_input = nullptr;
 
-
-	static constexpr float kSwatchH = 28.f;
-	static constexpr float kPopupW = 272.f;
-	static constexpr float kPad = 8.f;
-	static constexpr float kSVH = 200.f;
-	static constexpr float kBarH = 14.f;
-	static constexpr uint32 kTexW = 256;
-	static constexpr uint32 kSVTexH = 256;
-	static constexpr uint32 kBarTexH = 8;
+	static constexpr float K_SWATCH_H = 28.F;
+	static constexpr float K_POPUP_W = 272.F;
+	static constexpr float K_PAD = 8.F;
+	static constexpr float K_SVH = 200.F;
+	static constexpr float K_BAR_H = 14.F;
+	static constexpr Uint32 K_TEX_W = 256;
+	static constexpr Uint32 K_SV_TEX_H = 256;
+	static constexpr Uint32 K_BAR_TEX_H = 8;
 };
 
 } // namespace Aquila::UI::Core

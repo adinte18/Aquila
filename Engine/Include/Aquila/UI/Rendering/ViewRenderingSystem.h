@@ -11,21 +11,21 @@ class ViewRenderingSystem final : public Aquila::Rendering::IRenderingSystem {
   public:
 	ViewRenderingSystem() = default;
 
-	void OnInit(GFX::GfxContext &ctx) override;
-	void AddPasses(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
-	void BlitToSwapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
-	void OnResize(uint32 width, uint32 height) override;
-	void OnShutdown() override {}
+	void on_init(GFX::GfxContext &ctx) override;
+	void add_passes(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
+	void blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
+	void on_resize(Uint32 width, Uint32 height) override;
+	void on_shutdown() override {}
 
   private:
-	void RebuildOverlayResources(uint32 w, uint32 h);
+	void rebuild_overlay_resources(Uint32 w, Uint32 h);
 
-	GFX::GfxContext *m_Ctx = nullptr;
-	Unique<Graphics::QuadBatcher> m_R2D;
-	Ref<GFX::GfxTexture> m_MSAAColor;
-	Ref<GFX::GfxRenderPass> m_OverlayPass;
-	uint32 m_Width = 0;
-	uint32 m_Height = 0;
+	GFX::GfxContext *m_ctx = nullptr;
+	Unique<Graphics::QuadBatcher> m_r2_d;
+	Ref<GFX::GfxTexture> m_msaa_color;
+	Ref<GFX::GfxRenderPass> m_overlay_pass;
+	Uint32 m_width = 0;
+	Uint32 m_height = 0;
 };
 
 } // namespace Aquila::UI::Rendering

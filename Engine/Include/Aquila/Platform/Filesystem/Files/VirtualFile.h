@@ -8,14 +8,14 @@ class VirtualFile {
   public:
 	virtual ~VirtualFile() = default;
 
-	virtual size_t Read(void *buffer, size_t size) = 0;
-	virtual size_t Write(const void *buffer, size_t size) = 0;
-	virtual void Close() = 0;
+	virtual size_t read(void *buffer, size_t size) = 0;
+	virtual size_t write(const void *buffer, size_t size) = 0;
+	virtual void close() = 0;
 
-	virtual bool Seek(int64 offset, int origin) = 0;
-	[[nodiscard]] virtual int64 Tell() const = 0;
-	[[nodiscard]] virtual int64 Size() const = 0;
-	[[nodiscard]] virtual bool IsValid() const = 0;
+	virtual bool seek(Int64 offset, int origin) = 0;
+	[[nodiscard]] virtual Int64 tell() const = 0;
+	[[nodiscard]] virtual Int64 size() const = 0;
+	[[nodiscard]] virtual bool is_valid() const = 0;
 };
 } // namespace Aquila::Platform::Filesystem
 

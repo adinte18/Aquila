@@ -2,13 +2,14 @@
 #define AQUILA_GUI2D_SLANG
 
 struct VSInput {
-	float3 position : POSITION;
-	float4 color : COLOR;
-	float2 uv : TEXCOORD0;
-	float2 size : TEXCOORD1;
-	float4 radius : TEXCOORD2;
-	float borderWidth : TEXCOORD3;
-	float4 borderColor : TEXCOORD4;
+	[[vk::location(0)]] float3 position : POSITION;
+	[[vk::location(1)]] float4 color : COLOR;
+	[[vk::location(2)]] float2 uv : TEXCOORD0;
+	[[vk::location(3)]] float2 size : TEXCOORD1;
+	[[vk::location(4)]] float4 radius : TEXCOORD2;
+	[[vk::location(5)]] float borderWidth : TEXCOORD3;
+	[[vk::location(6)]] float4 borderColor : TEXCOORD4;
+	[[vk::location(8)]] float borderStyle : TEXCOORD5;
 };
 
 struct VSOutput {
@@ -19,6 +20,7 @@ struct VSOutput {
 	float4 radius : TEXCOORD2;
 	float borderWidth : TEXCOORD3;
 	float4 borderColor : TEXCOORD4;
+	float borderStyle : TEXCOORD5;
 };
 
 struct PushConstants {
@@ -37,6 +39,7 @@ PushConstants pc;
 	output.radius = input.radius;
 	output.borderColor = input.borderColor;
 	output.borderWidth = input.borderWidth;
+	output.borderStyle = input.borderStyle;
 	output.uv = input.uv;
 	output.size = input.size;
 	return output;
@@ -47,6 +50,21 @@ float sdRoundBox(float2 point, float2 halfSize, float4 r) {
 	float corner = (point.y > 0.0) ? pick.x : pick.y;
 	float2 q = abs(point) - halfSize + corner;
 	return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - corner;
+}
+
+float perimeterCoord(float2 point, float2 halfSize) {
+	float distToVertical = halfSize.x - abs(point.x);
+	float distToHorizontal = halfSize.y - abs(point.y);
+	if (distToHorizontal <= distToVertical) {
+		if (point.y < 0.0) {
+			return point.x + halfSize.x;
+		}
+		return 2.0 * halfSize.x + 2.0 * halfSize.y + (halfSize.x - point.x);
+	}
+	if (point.x > 0.0) {
+		return 2.0 * halfSize.x + (point.y + halfSize.y);
+	}
+	return 4.0 * halfSize.x + 2.0 * halfSize.y + (halfSize.y - point.y);
 }
 
 [shader("fragment")] float4 main(VSOutput input) : SV_Target {
@@ -60,6 +78,24 @@ float sdRoundBox(float2 point, float2 halfSize, float4 r) {
 
 	float4 col = lerp(input.borderColor, input.color, innerAlpha);
 	col.a *= outerAlpha;
+
+	int style = (int)(input.borderStyle + 0.5);
+	if (style != 0 && input.borderWidth > 0.0) {
+		float period;
+		float duty;
+		if (style == 2) {
+			period = max(input.borderWidth * 2.0, 2.0);
+			duty = 0.5;
+		} else {
+			period = max(input.borderWidth * 3.0, 8.0);
+			duty = 0.6;
+		}
+		float phase = frac(perimeterCoord(localPos, halfSize) / period);
+		float aa = fwidth(phase);
+		float on = 1.0 - smoothstep(duty - aa, duty + aa, phase);
+		float ring = 1.0 - innerAlpha;
+		col.a *= lerp(1.0, on, ring);
+	}
 	return col;
 }
 

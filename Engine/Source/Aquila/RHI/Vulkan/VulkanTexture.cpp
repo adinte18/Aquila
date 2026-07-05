@@ -6,74 +6,74 @@
 
 namespace Aquila::RHI {
 
-VulkanTexture::VulkanTexture(VulkanDevice &device, const TextureDesc &desc) : m_Device(device), m_Desc(desc) {
-	m_ImageAllocation = m_Device.CreateImage<MemoryDomain::GPU_ONLY>(
-		desc.width, desc.height, ToVkFormat(desc.format), ToVkImageUsage(desc.usage), desc.mipLevels, desc.arrayLayers,
-		ToVkSampleCount(desc.samples), desc.debugName.c_str());
+VulkanTexture::VulkanTexture(VulkanDevice &device, const TextureDesc &desc) : m_device(device), m_desc(desc) {
+	m_image_allocation = m_device.create_image<MemoryDomain::GpuOnly>(
+		desc.width, desc.height, to_vk_format(desc.format), to_vk_image_usage(desc.usage), desc.mip_levels, desc.array_layers,
+		to_vk_sample_count(desc.samples), desc.debug_name.c_str());
 
-	CreateImageView();
-	CreateSampler();
+	create_image_view();
+	create_sampler();
 
-	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64>(m_ImageAllocation.image),
-								(desc.debugName + "_Image").c_str());
-	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64>(m_ImageView),
-								(desc.debugName + "_ImageView").c_str());
-	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_SAMPLER, reinterpret_cast<uint64>(m_Sampler),
-								(desc.debugName + "_Sampler").c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_IMAGE, reinterpret_cast<Uint64>(m_image_allocation.image),
+								(desc.debug_name + "_Image").c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<Uint64>(m_image_view),
+								(desc.debug_name + "_ImageView").c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_SAMPLER, reinterpret_cast<Uint64>(m_sampler),
+								(desc.debug_name + "_Sampler").c_str());
 }
 
 VulkanTexture::~VulkanTexture() {
-	auto &queue = m_Device.GetDeletionQueue();
+	auto &queue = m_device.get_deletion_queue();
 
-	if (m_ImageView != VK_NULL_HANDLE) {
-		queue.QueueDeletion(m_ImageView);
+	if (m_image_view != VK_NULL_HANDLE) {
+		queue.queue_deletion(m_image_view);
 	}
 
-	if (m_ImageAllocation.image != VK_NULL_HANDLE) {
-		queue.QueueDeletion(
-			Deletion::VmaImageDeletion{ .image = m_ImageAllocation.image, .allocation = m_ImageAllocation.allocation });
+	if (m_image_allocation.image != VK_NULL_HANDLE) {
+		queue.queue_deletion(
+			Deletion::VmaImageDeletion{ .image = m_image_allocation.image, .allocation = m_image_allocation.allocation });
 	}
 }
 
-void VulkanTexture::DestroyImmediate() {
-	if (m_ImageView != VK_NULL_HANDLE) {
-		vkDestroyImageView(m_Device.GetDevice(), m_ImageView, nullptr);
-		m_ImageView = VK_NULL_HANDLE;
+void VulkanTexture::destroy_immediate() {
+	if (m_image_view != VK_NULL_HANDLE) {
+		vkDestroyImageView(m_device.get_device(), m_image_view, nullptr);
+		m_image_view = VK_NULL_HANDLE;
 	}
-	vmaDestroyImage(m_Device.GetAllocator(), m_ImageAllocation.image, m_ImageAllocation.allocation);
-	m_ImageAllocation.image = VK_NULL_HANDLE;
-	m_ImageAllocation.allocation = VK_NULL_HANDLE;
+	vmaDestroyImage(m_device.get_allocator(), m_image_allocation.image, m_image_allocation.allocation);
+	m_image_allocation.image = VK_NULL_HANDLE;
+	m_image_allocation.allocation = VK_NULL_HANDLE;
 }
 
-VkDescriptorImageInfo VulkanTexture::GetDescriptorImageInfo() const {
+VkDescriptorImageInfo VulkanTexture::get_descriptor_image_info() const {
 	VkDescriptorImageInfo info{};
-	info.imageLayout = IsDepthFormat(m_Desc.format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+	info.imageLayout = is_depth_format(m_desc.format) ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
 													: VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	info.imageView = m_ImageView;
-	info.sampler = m_Sampler;
+	info.imageView = m_image_view;
+	info.sampler = m_sampler;
 	return info;
 }
 
-void VulkanTexture::CreateImageView() {
-	bool isDepth = IsDepthFormat(m_Desc.format);
+void VulkanTexture::create_image_view() {
+	bool is_depth = is_depth_format(m_desc.format);
 
-	VkImageViewCreateInfo viewInfo{};
-	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-	viewInfo.image = m_ImageAllocation.image;
-	viewInfo.viewType = ToVkImageViewType(m_Desc.viewType);
-	viewInfo.format = ToVkFormat(m_Desc.format);
-	viewInfo.components = ToVkComponentMapping(m_Desc.swizzle);
-	viewInfo.subresourceRange.aspectMask = isDepth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
-	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = m_Desc.mipLevels;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = m_Desc.arrayLayers;
+	VkImageViewCreateInfo view_info{};
+	view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+	view_info.image = m_image_allocation.image;
+	view_info.viewType = to_vk_image_view_type(m_desc.view_type);
+	view_info.format = to_vk_format(m_desc.format);
+	view_info.components = to_vk_component_mapping(m_desc.swizzle);
+	view_info.subresourceRange.aspectMask = is_depth ? VK_IMAGE_ASPECT_DEPTH_BIT : VK_IMAGE_ASPECT_COLOR_BIT;
+	view_info.subresourceRange.baseMipLevel = 0;
+	view_info.subresourceRange.levelCount = m_desc.mip_levels;
+	view_info.subresourceRange.baseArrayLayer = 0;
+	view_info.subresourceRange.layerCount = m_desc.array_layers;
 
-	AQUILA_VULKAN_CHECK(vkCreateImageView(m_Device.GetDevice(), &viewInfo, nullptr, &m_ImageView));
+	AQUILA_VULKAN_CHECK(vkCreateImageView(m_device.get_device(), &view_info, nullptr, &m_image_view));
 }
 
-void VulkanTexture::CreateSampler() {
-	m_Sampler = m_Device.GetOrCreateSampler(m_Desc.sampler);
+void VulkanTexture::create_sampler() {
+	m_sampler = m_device.get_or_create_sampler(m_desc.sampler);
 }
 
 } // namespace Aquila::RHI

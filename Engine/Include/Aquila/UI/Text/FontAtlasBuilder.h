@@ -12,8 +12,8 @@ namespace Aquila::UI::Text {
 // GlyphBuild accumulates the quadratic bezier curves for one glyph/icon during baking.
 struct GlyphBuild {
 	std::vector<Math::Bezier::QuadraticBezier> curves;
-	vec2 emMin{ 0.f, 0.f };
-	vec2 emMax{ 0.f, 0.f };
+	Vec2 em_min{ 0.F, 0.F };
+	Vec2 em_max{ 0.F, 0.F };
 };
 
 } // namespace Aquila::UI::Text
@@ -21,9 +21,9 @@ struct GlyphBuild {
 namespace Aquila::UI::Text::Internal {
 
 struct BandEntry {
-	uint32 texelX;
-	uint32 texelY;
-	f32 sortKey;
+	Uint32 texel_x;
+	Uint32 texel_y;
+	F32 sort_key;
 };
 
 struct GlyphBandData {
@@ -33,16 +33,16 @@ struct GlyphBandData {
 
 // Packs curve p0/p1/p2 data into a flat RGBA32F texel array.
 // count = number of builds to process (may be less than builds.size()).
-std::vector<std::array<f32, 4>> BuildCurveTextureData(const std::vector<GlyphBuild> &builds,
-													  const std::vector<uint32> &glyphCurveStart,
-													  uint32 curveTexelCount, uint32 count);
+std::vector<std::array<F32, 4>> build_curve_texture_data(const std::vector<GlyphBuild> &builds,
+														 const std::vector<Uint32> &glyph_curve_start,
+														 Uint32 curve_texel_count, Uint32 count);
 
 // Buckets the curves of a single glyph/icon into horizontal and vertical bands.
-GlyphBandData BucketCurvesIntoBands(const GlyphBuild &build, uint32 curveBase, f32 scaleX, f32 scaleY, f32 offsetX,
-									f32 offsetY);
+GlyphBandData bucket_curves_into_bands(const GlyphBuild &build, Uint32 curve_base, F32 scale_x, F32 scale_y,
+									   F32 offset_x, F32 offset_y);
 
 // Writes one glyph/icon's band data (headers + index lists) into the flat RGBA32U texel vector.
-void WriteGlyphBandEntries(std::vector<std::array<uint32, 4>> &bandTexData, uint32 bandStart,
-						   const GlyphBandData &bands);
+void write_glyph_band_entries(std::vector<std::array<Uint32, 4>> &band_tex_data, Uint32 band_start,
+							  const GlyphBandData &bands);
 
 } // namespace Aquila::UI::Text::Internal

@@ -3,41 +3,41 @@
 namespace Aquila::UI::Core {
 
 Checkbox::Checkbox() {
-	SetInputLeaf(true);
+	set_input_leaf(true);
 }
 
 Checkbox::Checkbox(bool checked) {
-	SetInputLeaf(true);
-	SetValueWithoutNotify(checked);
+	set_input_leaf(true);
+	set_value_without_notify(checked);
 }
 
-void Checkbox::OnValueUpdated() {
-	QueueRedraw();
+void Checkbox::on_value_updated() {
+	queue_redraw();
 }
 
-void Checkbox::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		SetValue(!GetValue());
+void Checkbox::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	if (btn == Platform::MouseButton::Left && m_is_hovered) {
+		set_value(!get_value());
 	}
-	View::OnMouseRelease(btn, pos);
+	View::on_mouse_release(btn, pos);
 }
 
-void Checkbox::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList); // draws background + border from style
+void Checkbox::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list); // draws background + border from style
 
-	if (!GetValue()) {
+	if (!get_value()) {
 		return;
 	}
 
-	const Rect rect = GetAbsoluteRect();
-	const auto &style = GetDisplayStyle();
-	constexpr float pad = 4.f;
-	const int32 z = 2;
+	const Rect rect = get_absolute_rect();
+	const auto &style = get_display_style();
+	constexpr float pad = 4.F;
+	const Int32 z = 2;
 	const Rect fill = {
-		.position = rect.position + vec2(pad),
-		.size = rect.size - vec2(pad * 2.f),
+		.position = rect.position + Vec2(pad),
+		.size = rect.size - Vec2(pad * 2.F),
 	};
-	drawList.DrawRect(fill, style.color, style.borderRadius, 0.f, vec4(0.f), z);
+	draw_list.draw_rect(fill, style.color, style.border_radius, 0.F, Vec4(0.F), z);
 }
 
 } // namespace Aquila::UI::Core

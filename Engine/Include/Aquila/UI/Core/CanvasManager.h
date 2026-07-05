@@ -7,7 +7,7 @@
 
 namespace Aquila::UI::Core {
 
-enum class UILayer : uint8 {
+enum class UILayer : Uint8 {
 	WorldSpace = 0,
 	ScreenCamera = 1,
 	ScreenOverlay = 2,
@@ -17,23 +17,23 @@ enum class UILayer : uint8 {
 
 class CanvasManager : public Foundation::Singleton<CanvasManager> {
   public:
-	Canvas &GetLayer(UILayer layer);
+	Canvas &get_layer(UILayer layer);
 
-	void OnEvent(Application::Events::Event &e);
-	void Update(float deltaTime);
-	void Compute();
+	void on_event(Application::Events::Event &e);
+	void update(float delta_time);
+	void compute();
 
-	void RenderLayers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
-	void Resize(uint32 width, uint32 height);
+	void render_layers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
+	void resize(Uint32 width, Uint32 height);
 
-	bool IsAnyLayerDirty(UILayer from, UILayer to) const;
-	void ClearLayerDirtyFlags(UILayer from, UILayer to);
+	bool is_any_layer_dirty(UILayer from, UILayer to) const;
+	void clear_layer_dirty_flags(UILayer from, UILayer to);
 
   private:
 	friend class Foundation::Singleton<CanvasManager>;
-	CanvasManager(uint32 width, uint32 height);
+	CanvasManager(Uint32 width, Uint32 height);
 
-	std::array<Unique<Canvas>, static_cast<size_t>(UILayer::Count)> m_Layers;
+	std::array<Unique<Canvas>, static_cast<size_t>(UILayer::Count)> m_layers;
 };
 
 } // namespace Aquila::UI::Core

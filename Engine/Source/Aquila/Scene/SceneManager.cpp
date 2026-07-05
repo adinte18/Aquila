@@ -7,77 +7,77 @@ namespace Aquila::SceneManagement {
 // TODO : should this class even exist? this can be done in the asset manager class but I guess its cleaner this way
 
 // Scene Retrieval
-Scene *SceneManager::GetActiveScene() const {
-	return m_ActiveScene;
+Scene *SceneManager::get_active_scene() const {
+	return m_active_scene;
 }
 
-Scene *SceneManager::GetScene(const Utils::UUID &handle) const {
-	if (auto it = m_Scenes.find(handle); it != m_Scenes.end()) {
+Scene *SceneManager::get_scene(const Foundation::UUID &handle) const {
+	if (auto it = m_scenes.find(handle); it != m_scenes.end()) {
 		return it->second.get();
 	}
 	return nullptr;
 }
 
-Scene *SceneManager::GetSceneByName(const std::string &name) const {
-	for (const auto &scene : m_Scenes | std::views::values) {
-		if (scene->GetSceneName() == name) {
+Scene *SceneManager::get_scene_by_name(const std::string &name) const {
+	for (const auto &scene : m_scenes | std::views::values) {
+		if (scene->get_scene_name() == name) {
 			return scene.get();
 		}
 	}
 	return nullptr;
 }
 
-bool SceneManager::HasScene() const {
-	return !m_Scenes.empty();
+bool SceneManager::has_scene() const {
+	return !m_scenes.empty();
 }
 
-bool SceneManager::HasScene(const Utils::UUID &handle) const {
-	return m_Scenes.contains(handle);
+bool SceneManager::has_scene(const Foundation::UUID &handle) const {
+	return m_scenes.contains(handle);
 }
 
 // Scene Creation & Loading
 
-Scene *SceneManager::CreateScene(const std::string &name) {
-	auto scene = CreateUnique<Scene>(name);
+Scene *SceneManager::create_scene(const std::string &name) {
+	auto scene = create_unique<Scene>(name);
 
-	auto handle = scene->GetHandle();
-	m_Scenes[handle] = std::move(scene);
+	auto handle = scene->get_handle();
+	m_scenes[handle] = std::move(scene);
 
 	AQUILA_LOG_INFO("Created new scene: {}", name);
-	return m_Scenes[handle].get();
+	return m_scenes[handle].get();
 }
 
-Scene *SceneManager::LoadScene(const std::string &filepath, Assets::AssetManager &assetManager) {
-	if (!ValidateSceneFile(filepath)) {
+Scene *SceneManager::load_scene(const std::string &filepath, Assets::AssetManager &asset_manager) {
+	if (!validate_scene_file(filepath)) {
 		AQUILA_LOG_ERROR("Failed to validate scene file: {}", filepath);
 		return nullptr;
 	}
 
-	auto scene = CreateUnique<Scene>();
-	auto handle = scene->GetHandle();
+	auto scene = create_unique<Scene>();
+	auto handle = scene->get_handle();
 
 	// Deserialize scene data
-	if (!scene->Deserialize(filepath, assetManager)) {
+	if (!scene->deserialize(filepath, asset_manager)) {
 		AQUILA_LOG_ERROR("Failed to deserialize scene from: {}", filepath);
 		return nullptr;
 	}
 
-	Scene *scenePtr = scene.get();
+	Scene *scene_ptr = scene.get();
 
-	EnqueueScene(std::move(scene));
-	ActivateScene(scenePtr);
+	enqueue_scene(std::move(scene));
+	activate_scene(scene_ptr);
 
-	AQUILA_LOG_INFO("Loaded scene: {} from {}", scenePtr->GetSceneName(), filepath);
-	return m_Scenes[handle].get();
+	AQUILA_LOG_INFO("Loaded scene: {} from {}", scene_ptr->get_scene_name(), filepath);
+	return m_scenes[handle].get();
 }
 
-Scene *SceneManager::LoadSceneAsync(const std::string &filepath, Assets::AssetManager &assetManager,
-									const Delegate<void(Scene *)> &onLoaded) {
+Scene *SceneManager::load_scene_async(const std::string &filepath, Assets::AssetManager &asset_manager,
+									  const Delegate<void(Scene *)> &on_loaded) {
 	// For now, just load synchronously lol
-	Scene *scene = LoadScene(filepath, assetManager);
+	Scene *scene = load_scene(filepath, asset_manager);
 
-	if ((scene != nullptr) && onLoaded) {
-		onLoaded(scene);
+	if ((scene != nullptr) && on_loaded) {
+		on_loaded(scene);
 	}
 
 	return scene;
@@ -85,118 +85,118 @@ Scene *SceneManager::LoadSceneAsync(const std::string &filepath, Assets::AssetMa
 
 // Scene Management
 
-void SceneManager::EnqueueScene(Unique<Scene> scene, const Delegate<void(Scene *)> &onActivated) {
-	m_Scenes[scene->GetHandle()] = std::move(scene);
-	m_OnSceneActivated = std::move(onActivated);
+void SceneManager::enqueue_scene(Unique<Scene> scene, const Delegate<void(Scene *)> &on_activated) {
+	m_scenes[scene->get_handle()] = std::move(scene);
+	m_on_scene_activated = std::move(on_activated);
 }
 
-void SceneManager::ChangeScene(const Utils::UUID &handle) {
-	if (auto it = m_Scenes.find(handle); it != m_Scenes.end()) {
-		if (m_ActiveScene && m_OnSceneUnloaded) {
-			m_OnSceneUnloaded(m_ActiveScene);
+void SceneManager::change_scene(const Foundation::UUID &handle) {
+	if (auto it = m_scenes.find(handle); it != m_scenes.end()) {
+		if (m_active_scene && m_on_scene_unloaded) {
+			m_on_scene_unloaded(m_active_scene);
 		}
 
-		m_ActiveScene = GetScene(handle);
+		m_active_scene = get_scene(handle);
 
-		AQUILA_LOG_INFO("Changed to scene: {}", m_ActiveScene->GetSceneName());
+		AQUILA_LOG_INFO("Changed to scene: {}", m_active_scene->get_scene_name());
 	} else {
-		AQUILA_LOG_ERROR("Scene not found with handle: {}", handle.ToString());
+		AQUILA_LOG_ERROR("Scene not found with handle: {}", handle.to_string());
 	}
 }
 
-void SceneManager::RemoveScene(const Utils::UUID &handle) {
-	if (const auto it = m_Scenes.find(handle); it != m_Scenes.end()) {
-		if (m_ActiveScene == it->second.get()) {
-			m_ActiveScene = nullptr;
+void SceneManager::remove_scene(const Foundation::UUID &handle) {
+	if (const auto it = m_scenes.find(handle); it != m_scenes.end()) {
+		if (m_active_scene == it->second.get()) {
+			m_active_scene = nullptr;
 		}
 
-		AQUILA_LOG_INFO("Removed scene: {}", it->second->GetSceneName());
-		m_Scenes.erase(it);
+		AQUILA_LOG_INFO("Removed scene: {}", it->second->get_scene_name());
+		m_scenes.erase(it);
 	}
 }
 
-void SceneManager::UnloadScene(const Utils::UUID &handle) {
-	if (const auto it = m_Scenes.find(handle); it != m_Scenes.end()) {
+void SceneManager::unload_scene(const Foundation::UUID &handle) {
+	if (const auto it = m_scenes.find(handle); it != m_scenes.end()) {
 		Scene *scene = it->second.get();
 
-		if (m_ActiveScene == scene) {
-			AQUILA_LOG_WARNING("Cannot unload active scene: {}", scene->GetSceneName());
+		if (m_active_scene == scene) {
+			AQUILA_LOG_WARNING("Cannot unload active scene: {}", scene->get_scene_name());
 			return;
 		}
 
-		if (m_OnSceneUnloaded) {
-			m_OnSceneUnloaded(scene);
+		if (m_on_scene_unloaded) {
+			m_on_scene_unloaded(scene);
 		}
 
-		AQUILA_LOG_INFO("Unloaded scene: {}", scene->GetSceneName());
-		m_Scenes.erase(it);
+		AQUILA_LOG_INFO("Unloaded scene: {}", scene->get_scene_name());
+		m_scenes.erase(it);
 	}
 }
 
-void SceneManager::UnloadAllScenesExceptActive() {
-	std::vector<Utils::UUID> toRemove;
+void SceneManager::unload_all_scenes_except_active() {
+	std::vector<Foundation::UUID> to_remove;
 
-	for (const auto &[handle, scene] : m_Scenes) {
-		if (scene.get() != m_ActiveScene) {
-			toRemove.push_back(handle);
+	for (const auto &[handle, scene] : m_scenes) {
+		if (scene.get() != m_active_scene) {
+			to_remove.push_back(handle);
 		}
 	}
 
-	for (const auto &handle : toRemove) {
-		UnloadScene(handle);
+	for (const auto &handle : to_remove) {
+		unload_scene(handle);
 	}
 
-	AQUILA_LOG_INFO("Unloaded {} non-active scenes", toRemove.size());
+	AQUILA_LOG_INFO("Unloaded {} non-active scenes", to_remove.size());
 }
 
 // Scene Activation
 
-void SceneManager::ActivateScene(const Utils::UUID &handle) {
-	if (!HasScene(handle)) {
-		AQUILA_LOG_ERROR("Cannot activate scene - not found: {}", handle.ToString());
+void SceneManager::activate_scene(const Foundation::UUID &handle) {
+	if (!has_scene(handle)) {
+		AQUILA_LOG_ERROR("Cannot activate scene - not found: {}", handle.to_string());
 		return;
 	}
 
-	RequestSceneChange(handle);
-	ProcessSceneChange();
+	request_scene_change(handle);
+	process_scene_change();
 }
 
-void SceneManager::ActivateScene(Scene *scene) {
+void SceneManager::activate_scene(Scene *scene) {
 	if (scene == nullptr) {
 		AQUILA_LOG_ERROR("Cannot activate null scene");
 		return;
 	}
 
-	ActivateScene(scene->GetHandle());
+	activate_scene(scene->get_handle());
 }
 
-Scene *SceneManager::LoadSceneInBackground(const std::string &filepath, Assets::AssetManager &assetManager) {
-	if (!ValidateSceneFile(filepath)) {
+Scene *SceneManager::load_scene_in_background(const std::string &filepath, Assets::AssetManager &asset_manager) {
+	if (!validate_scene_file(filepath)) {
 		AQUILA_LOG_ERROR("Failed to validate scene file: {}", filepath);
 		return nullptr;
 	}
 
 	// Create new scene
-	auto scene = CreateUnique<Scene>();
+	auto scene = create_unique<Scene>();
 
 	// Deserialize scene data
-	if (!scene->Deserialize(filepath, assetManager)) {
+	if (!scene->deserialize(filepath, asset_manager)) {
 		AQUILA_LOG_ERROR("Failed to deserialize scene from: {}", filepath);
 		return nullptr;
 	}
 
-	auto handle = scene->GetHandle();
-	m_Scenes[handle] = std::move(scene);
-	AQUILA_LOG_INFO("Loaded scene (inactive): {} from {}", m_Scenes[handle]->GetSceneName(), filepath);
-	return m_Scenes[handle].get();
+	auto handle = scene->get_handle();
+	m_scenes[handle] = std::move(scene);
+	AQUILA_LOG_INFO("Loaded scene (inactive): {} from {}", m_scenes[handle]->get_scene_name(), filepath);
+	return m_scenes[handle].get();
 }
 
-std::vector<Scene *> SceneManager::GetInactiveScenes() const {
+std::vector<Scene *> SceneManager::get_inactive_scenes() const {
 	std::vector<Scene *> inactive;
-	inactive.reserve(m_Scenes.size() > 0 ? m_Scenes.size() - 1 : 0);
+	inactive.reserve(m_scenes.size() > 0 ? m_scenes.size() - 1 : 0);
 
-	for (const auto &[handle, scene] : m_Scenes) {
-		if (scene.get() != m_ActiveScene) {
+	for (const auto &[handle, scene] : m_scenes) {
+		if (scene.get() != m_active_scene) {
 			inactive.push_back(scene.get());
 		}
 	}
@@ -204,135 +204,135 @@ std::vector<Scene *> SceneManager::GetInactiveScenes() const {
 	return inactive;
 }
 
-bool SceneManager::IsSceneActive(const Utils::UUID &handle) const {
-	if (Scene *scene = GetScene(handle)) {
-		return scene == m_ActiveScene;
+bool SceneManager::is_scene_active(const Foundation::UUID &handle) const {
+	if (Scene *scene = get_scene(handle)) {
+		return scene == m_active_scene;
 	}
 	return false;
 }
 
 // Scene Operations
 
-bool SceneManager::SaveScene(const Utils::UUID &handle, const std::string &filepath) {
-	Scene *scene = GetScene(handle);
+bool SceneManager::save_scene(const Foundation::UUID &handle, const std::string &filepath) {
+	Scene *scene = get_scene(handle);
 	if (!scene) {
-		AQUILA_LOG_ERROR("Scene not found with handle: {}", handle.ToString());
+		AQUILA_LOG_ERROR("Scene not found with handle: {}", handle.to_string());
 		return false;
 	}
 
-	if (!scene->Serialize(filepath)) {
-		AQUILA_LOG_ERROR("Failed to serialize scene: {} to {}", scene->GetSceneName(), filepath);
+	if (!scene->serialize(filepath)) {
+		AQUILA_LOG_ERROR("Failed to serialize scene: {} to {}", scene->get_scene_name(), filepath);
 		return false;
 	}
 
-	AQUILA_LOG_INFO("Saved scene: {} to {}", scene->GetSceneName(), filepath);
+	AQUILA_LOG_INFO("Saved scene: {} to {}", scene->get_scene_name(), filepath);
 	return true;
 }
 
-bool SceneManager::SaveActiveScene(const std::string &filepath) {
-	if (!m_ActiveScene) {
+bool SceneManager::save_active_scene(const std::string &filepath) {
+	if (!m_active_scene) {
 		AQUILA_LOG_ERROR("No active scene to save");
 		return false;
 	}
 
-	return SaveScene(m_ActiveScene->GetHandle(), filepath);
+	return save_scene(m_active_scene->get_handle(), filepath);
 }
 
-Scene *SceneManager::DuplicateScene(const Utils::UUID &handle, Assets::AssetManager &assetManager,
-									const std::string &newName) {
-	Scene *sourceScene = GetScene(handle);
-	if (!sourceScene) {
-		AQUILA_LOG_ERROR("Source scene not found with handle: {}", handle.ToString());
+Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, Assets::AssetManager &asset_manager,
+									 const std::string &new_name) {
+	Scene *source_scene = get_scene(handle);
+	if (!source_scene) {
+		AQUILA_LOG_ERROR("Source scene not found with handle: {}", handle.to_string());
 		return nullptr;
 	}
 
 	// Create new scene with new name
-	std::string duplicateName = newName.empty() ? sourceScene->GetSceneName() + " (Copy)" : newName;
+	std::string duplicate_name = new_name.empty() ? source_scene->get_scene_name() + " (Copy)" : new_name;
 
-	auto duplicateScene = CreateUnique<Scene>(duplicateName);
+	auto duplicate_scene = create_unique<Scene>(duplicate_name);
 
 	// Serialize source to temporary string
-	std::string tempPath = "temp://scene_duplicate.aqscene";
-	if (!sourceScene->Serialize(tempPath)) {
+	std::string temp_path = "temp://scene_duplicate.aqscene";
+	if (!source_scene->serialize(temp_path)) {
 		AQUILA_LOG_ERROR("Failed to serialize source scene for duplication");
 		return nullptr;
 	}
 
 	// Deserialize into duplicate
-	if (!duplicateScene->Deserialize(tempPath, assetManager)) {
+	if (!duplicate_scene->deserialize(temp_path, asset_manager)) {
 		AQUILA_LOG_ERROR("Failed to deserialize into duplicate scene");
 		return nullptr;
 	}
 
-	Scene *duplicatePtr = duplicateScene.get();
-	m_Scenes[duplicateScene->GetHandle()] = std::move(duplicateScene);
+	Scene *duplicate_ptr = duplicate_scene.get();
+	m_scenes[duplicate_scene->get_handle()] = std::move(duplicate_scene);
 
-	AQUILA_LOG_INFO("Duplicated scene: {} -> {}", sourceScene->GetSceneName(), duplicateName);
-	return duplicatePtr;
+	AQUILA_LOG_INFO("Duplicated scene: {} -> {}", source_scene->get_scene_name(), duplicate_name);
+	return duplicate_ptr;
 }
 
 // Scene Change Requests
 
-void SceneManager::RequestSceneChange(const Utils::UUID &handle) {
-	if (!HasScene(handle)) {
-		AQUILA_LOG_ERROR("Cannot request scene change - scene not found: {}", handle.ToString());
+void SceneManager::request_scene_change(const Foundation::UUID &handle) {
+	if (!has_scene(handle)) {
+		AQUILA_LOG_ERROR("Cannot request scene change - scene not found: {}", handle.to_string());
 		return;
 	}
 
-	m_PendingSceneChangeHandle = handle;
-	m_HasPendingSceneChange = true;
+	m_pending_scene_change_handle = handle;
+	m_has_pending_scene_change = true;
 }
 
-void SceneManager::RequestSceneChange() {
-	if (m_Scenes.empty()) {
+void SceneManager::request_scene_change() {
+	if (m_scenes.empty()) {
 		AQUILA_LOG_WARNING("Cannot request scene change - no scenes loaded");
 		return;
 	}
 
 	// Take the last enqueued scene
-	m_PendingSceneChangeHandle = m_Scenes.begin()->first;
-	m_HasPendingSceneChange = true;
+	m_pending_scene_change_handle = m_scenes.begin()->first;
+	m_has_pending_scene_change = true;
 }
 
-bool SceneManager::HasPendingSceneChange() const {
-	return m_HasPendingSceneChange;
+bool SceneManager::has_pending_scene_change() const {
+	return m_has_pending_scene_change;
 }
 
-void SceneManager::ProcessSceneChange() {
-	if (!m_HasPendingSceneChange) {
+void SceneManager::process_scene_change() {
+	if (!m_has_pending_scene_change) {
 		return;
 	}
 
-	ChangeScene(m_PendingSceneChangeHandle);
-	m_PendingSceneChangeHandle = Utils::UUID::Null();
-	m_HasPendingSceneChange = false;
+	change_scene(m_pending_scene_change_handle);
+	m_pending_scene_change_handle = Foundation::UUID::null();
+	m_has_pending_scene_change = false;
 
-	if (m_OnSceneActivated && m_ActiveScene) {
-		m_OnSceneActivated(m_ActiveScene);
+	if (m_on_scene_activated && m_active_scene) {
+		m_on_scene_activated(m_active_scene);
 	}
 
-	AQUILA_LOG_DEBUG("Current active scene: {}", GetActiveScene()->GetSceneName());
+	AQUILA_LOG_DEBUG("Current active scene: {}", get_active_scene()->get_scene_name());
 }
 
 // Utilities
 
-std::vector<Scene *> SceneManager::GetAllScenes() const {
+std::vector<Scene *> SceneManager::get_all_scenes() const {
 	std::vector<Scene *> scenes;
-	scenes.reserve(m_Scenes.size());
+	scenes.reserve(m_scenes.size());
 
-	for (const auto &[handle, scene] : m_Scenes) {
+	for (const auto &[handle, scene] : m_scenes) {
 		scenes.push_back(scene.get());
 	}
 
 	return scenes;
 }
 
-std::vector<std::string> SceneManager::GetAllSceneNames() const {
+std::vector<std::string> SceneManager::get_all_scene_names() const {
 	std::vector<std::string> names;
-	names.reserve(m_Scenes.size());
+	names.reserve(m_scenes.size());
 
-	for (const auto &[handle, scene] : m_Scenes) {
-		names.push_back(scene->GetSceneName());
+	for (const auto &[handle, scene] : m_scenes) {
+		names.push_back(scene->get_scene_name());
 	}
 
 	return names;
@@ -340,30 +340,30 @@ std::vector<std::string> SceneManager::GetAllSceneNames() const {
 
 // Helper Methods
 
-std::string SceneManager::ExtractSceneName(const std::string &filepath) {
+std::string SceneManager::extract_scene_name(const std::string &filepath) {
 	// Handle VFS paths like "assets::/path/to/myscene.aqscene" or "/path/to/myscene.aqscene"
 	std::string path = filepath;
 
 	// Find the last slash (works for both / and \)
-	size_t lastSlash = path.find_last_of("/\\");
-	if (lastSlash != std::string::npos) {
-		path = path.substr(lastSlash + 1);
+	size_t last_slash = path.find_last_of("/\\");
+	if (last_slash != std::string::npos) {
+		path = path.substr(last_slash + 1);
 	}
 
 	// Remove file extension
-	size_t lastDot = path.find_last_of('.');
-	if (lastDot != std::string::npos) {
-		path = path.substr(0, lastDot);
+	size_t last_dot = path.find_last_of('.');
+	if (last_dot != std::string::npos) {
+		path = path.substr(0, last_dot);
 	}
 
 	return path;
 }
 
-bool SceneManager::ValidateSceneFile(const std::string &filepath) {
-	auto vfs = Platform::Filesystem::VirtualFileSystem::Get();
+bool SceneManager::validate_scene_file(const std::string &filepath) {
+	auto vfs = Platform::Filesystem::VirtualFileSystem::get();
 
 	// Check if file exists in VFS
-	if (!vfs->Exists(filepath)) {
+	if (!vfs->exists(filepath)) {
 		AQUILA_LOG_ERROR("Scene file does not exist: {}", filepath);
 		return false;
 	}

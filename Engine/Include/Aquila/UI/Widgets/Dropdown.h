@@ -12,34 +12,34 @@ class Dropdown : public Control {
   public:
 	Dropdown();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Dropdown"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Dropdown"; }
 
-	void AddOption(std::string value, std::string display = "");
-	void ClearOptions();
+	void add_option(std::string value, std::string display = "");
+	void clear_options();
 
-	void SetValue(const std::string &value);
-	[[nodiscard]] const std::string &GetValue() const { return m_Value; }
+	void set_value(const std::string &value);
+	[[nodiscard]] const std::string &get_value() const { return m_value; }
 
-	void SetPlaceholder(std::string text);
-	Signal<void(const std::string &)> onChanged;
+	void set_placeholder(std::string text);
+	Signal<void(const std::string &)> on_changed;
 
   private:
 	struct Option {
 		std::string value;
 		std::string display;
-		[[nodiscard]] const std::string &Label() const { return display.empty() ? value : display; }
+		[[nodiscard]] const std::string &label() const { return display.empty() ? value : display; }
 	};
 
-	void Rebuild();
-	void Select(const std::string &value);
-	void UpdateHeaderText();
+	void rebuild();
+	void select(const std::string &value);
+	void update_header_text();
 
-	Button *m_Header = nullptr;
-	Popup *m_Popup = nullptr;
-	std::vector<Option> m_Options;
-	std::string m_Value;
-	std::string m_Placeholder = "Select…";
-	std::vector<View *> m_OptionButtons;
+	Button *m_header = nullptr;
+	Popup *m_popup = nullptr;
+	std::vector<Option> m_options;
+	std::string m_value;
+	std::string m_placeholder = "Select…";
+	std::vector<View *> m_option_buttons;
 };
 
 } // namespace Aquila::UI::Core

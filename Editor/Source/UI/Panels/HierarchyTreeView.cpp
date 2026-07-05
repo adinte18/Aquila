@@ -11,36 +11,36 @@ using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 using namespace Aquila::UI::Core;
 
-HierarchyTreeView::HierarchyTreeView(EntityManager &entityManager) : m_EntityManager(entityManager) {
-	m_IsAcceptingPayload = true;
-	m_IsDraggable = false;
+HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_manager(entity_manager) {
+	m_is_accepting_payload = true;
+	m_is_draggable = false;
 
-	onSelected.Connect([this](Aquila::UI::Core::TreeNode *node) {
-		auto *hierarchyNode = static_cast<HierarchyTreeNode *>(node);
-		auto it = m_NodeEntityMap.find(hierarchyNode);
-		if (it != m_NodeEntityMap.end()) {
-			onEntitySelected(it->second);
+	on_selected.connect([this](Aquila::UI::Core::TreeNode *node) {
+		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
+		auto it = m_node_entity_map.find(hierarchy_node);
+		if (it != m_node_entity_map.end()) {
+			on_entity_selected(it->second);
 		}
 	});
 
-	onNodeRightClicked.Connect([this](Aquila::UI::Core::TreeNode *node, vec2 pos) {
-		auto *hierarchyNode = static_cast<HierarchyTreeNode *>(node);
-		auto it = m_NodeEntityMap.find(hierarchyNode);
-		if (it != m_NodeEntityMap.end()) {
-			onEntityRightClicked(it->second, pos);
+	on_node_right_clicked.connect([this](Aquila::UI::Core::TreeNode *node, Vec2 pos) {
+		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
+		auto it = m_node_entity_map.find(hierarchy_node);
+		if (it != m_node_entity_map.end()) {
+			on_entity_right_clicked(it->second, pos);
 		}
 	});
 }
 
-HierarchyTreeNode *HierarchyTreeView::AddEntityNode(std::string label, Entity entity) {
-	auto node = CreateUnique<HierarchyTreeNode>(std::move(label), *this, 0, entity, m_EntityManager);
-	auto *raw = static_cast<HierarchyTreeNode *>(AddChild(std::move(node)));
-	m_NodeEntityMap[raw] = entity;
+HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity entity) {
+	auto node = create_unique<HierarchyTreeNode>(std::move(label), *this, 0, entity, m_entity_manager);
+	auto *raw = static_cast<HierarchyTreeNode *>(add_child(std::move(node)));
+	m_node_entity_map[raw] = entity;
 	return raw;
 }
 
-HierarchyTreeNode *HierarchyTreeView::FindNodeForEntity(Entity entity) const {
-	for (auto &[node, e] : m_NodeEntityMap) {
+HierarchyTreeNode *HierarchyTreeView::find_node_for_entity(Entity entity) const {
+	for (auto &[node, e] : m_node_entity_map) {
 		if (e == entity) {
 			return node;
 		}
@@ -48,7 +48,7 @@ HierarchyTreeNode *HierarchyTreeView::FindNodeForEntity(Entity entity) const {
 	return nullptr;
 }
 
-void HierarchyTreeView::OnDrop(DragState &state) {
+void HierarchyTreeView::on_drop(DragState &state) {
 	AQUILA_LOG_DEBUG("HierarchyTreeView::OnDrop called");
 
 	if (!state.payload.has_value()) {
@@ -56,35 +56,35 @@ void HierarchyTreeView::OnDrop(DragState &state) {
 		return;
 	}
 
-	auto draggedEntity = std::any_cast<Entity>(state.payload);
+	auto dragged_entity = std::any_cast<Entity>(state.payload);
 
-	HierarchyTreeNode *sourceNode = FindNodeForEntity(draggedEntity);
-	if (sourceNode == nullptr) {
+	HierarchyTreeNode *source_node = find_node_for_entity(dragged_entity);
+	if (source_node == nullptr) {
 		AQUILA_LOG_ERROR("SourceNode not found");
 		return;
 	}
 
-	if (sourceNode->GetParent() == m_Content) {
+	if (source_node->get_parent() == m_content) {
 		return;
 	}
 
-	auto *node = draggedEntity.TryGetComponent<Components::SceneNodeComponent>();
-	if (node != nullptr && node->Parent.IsValid()) {
-		m_EntityManager.RemoveChild(node->Parent, draggedEntity);
+	auto *node = dragged_entity.try_get_component<Components::SceneNodeComponent>();
+	if (node != nullptr && node->parent.is_valid()) {
+		m_entity_manager.remove_child(node->parent, dragged_entity);
 	}
 
-	View *oldParentContainer = sourceNode->GetParent();
-	auto *oldParentNode = dynamic_cast<TreeNode *>(oldParentContainer ? oldParentContainer->GetParent() : nullptr);
+	View *old_parent_container = source_node->get_parent();
+	auto *old_parent_node = dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
 
-	auto detached = oldParentContainer->DetachChild(sourceNode);
+	auto detached = old_parent_container->detach_child(source_node);
 
-	if (oldParentNode) {
-		oldParentNode->QueueRedraw();
+	if (old_parent_node) {
+		old_parent_node->queue_redraw();
 	}
 
-	auto *movedNode = static_cast<HierarchyTreeNode *>(AddChild(std::move(detached)));
-	if (movedNode) {
-		movedNode->UpdateDepth(0);
+	auto *moved_node = static_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
+	if (moved_node) {
+		moved_node->update_depth(0);
 	}
 }
 

@@ -12,13 +12,13 @@ struct DockDragContext {
 	bool active = false;
 	std::string title = "";
 	DockPanel *panel = nullptr;
-	DockNode *sourceNode = nullptr;
+	DockNode *source_node = nullptr;
 
-	Unique<View> externalView;
+	Unique<View> external_view;
 
-	std::function<void(vec2)> onMove;
-	std::function<void(vec2)> onRelease;
-	std::function<void(DockNode *)> onNodeEmptied;
+	std::function<void(Vec2)> on_move;
+	std::function<void(Vec2)> on_release;
+	std::function<void(DockNode *)> on_node_emptied;
 };
 
 } // namespace Aquila::UI::Core

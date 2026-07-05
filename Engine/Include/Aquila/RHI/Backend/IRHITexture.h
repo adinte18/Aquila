@@ -12,18 +12,18 @@ class IRHITexture {
 	IRHITexture(const IRHITexture &) = delete;
 	IRHITexture &operator=(const IRHITexture &) = delete;
 
-	virtual void DestroyImmediate() = 0;
+	virtual void destroy_immediate() = 0;
 
 	// Returns false if the underlying image view is not yet valid (e.g. lazy init or after DestroyImmediate).
-	[[nodiscard]] virtual bool IsReady() const = 0;
+	[[nodiscard]] virtual bool is_ready() const = 0;
 
-	[[nodiscard]] virtual uint32 GetWidth() const = 0;
-	[[nodiscard]] virtual uint32 GetHeight() const = 0;
-	[[nodiscard]] virtual uint32 GetMipLevels() const = 0;
-	[[nodiscard]] virtual uint32 GetArrayLayers() const = 0;
-	[[nodiscard]] virtual TextureFormat GetFormat() const = 0;
-	[[nodiscard]] virtual SampleCount GetSampleCount() const = 0;
-	[[nodiscard]] virtual const TextureDesc &GetDesc() const = 0;
+	[[nodiscard]] virtual Uint32 get_width() const = 0;
+	[[nodiscard]] virtual Uint32 get_height() const = 0;
+	[[nodiscard]] virtual Uint32 get_mip_levels() const = 0;
+	[[nodiscard]] virtual Uint32 get_array_layers() const = 0;
+	[[nodiscard]] virtual TextureFormat get_format() const = 0;
+	[[nodiscard]] virtual SampleCount get_sample_count() const = 0;
+	[[nodiscard]] virtual const TextureDesc &get_desc() const = 0;
 
   protected:
 	IRHITexture() = default;

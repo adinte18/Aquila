@@ -3,70 +3,70 @@
 namespace Aquila::UI::Core {
 
 ListBox::ListBox() {
-	AddClass("list-box");
+	add_class("list-box");
 
-	auto scroll = CreateUnique<ScrollView>();
-	scroll->AddClass("list-box-scroll");
-	m_Scroll = static_cast<ScrollView *>(AddChild(std::move(scroll)));
+	auto scroll = create_unique<ScrollView>();
+	scroll->add_class("list-box-scroll");
+	m_scroll = static_cast<ScrollView *>(add_child(std::move(scroll)));
 }
 
-void ListBox::AddItem(std::string id, std::string display) {
-	auto btn = CreateUnique<Button>(display);
-	btn->AddClass("list-item");
-	btn->onClick.Connect([this, id] { SelectItem(id); });
+void ListBox::add_item(std::string id, std::string display) {
+	auto btn = create_unique<Button>(display);
+	btn->add_class("list-item");
+	btn->on_click.connect([this, id] { select_item(id); });
 
-	Button *btnPtr = static_cast<Button *>(m_Scroll->AddContent(std::move(btn)));
-	m_Items.push_back({ std::move(id), std::move(display), btnPtr });
+	Button *btn_ptr = static_cast<Button *>(m_scroll->add_content(std::move(btn)));
+	m_items.push_back({ std::move(id), std::move(display), btn_ptr });
 }
 
-void ListBox::RemoveItem(const std::string &id) {
-	auto it = std::ranges::find_if(m_Items, [&](const Item &item) { return item.id == id; });
-	if (it == m_Items.end()) {
+void ListBox::remove_item(const std::string &id) {
+	auto it = std::ranges::find_if(m_items, [&](const Item &item) { return item.id == id; });
+	if (it == m_items.end()) {
 		return;
 	}
 
-	if (it->button->GetParent()) {
-		it->button->GetParent()->RemoveChild(it->button);
+	if (it->button->get_parent()) {
+		it->button->get_parent()->remove_child(it->button);
 	}
 
-	if (m_SelectedId == it->id) {
-		m_SelectedId.clear();
+	if (m_selected_id == it->id) {
+		m_selected_id.clear();
 	}
-	m_Items.erase(it);
+	m_items.erase(it);
 }
 
-void ListBox::ClearItems() {
-	for (auto &item : m_Items) {
-		View *parent = item.button->GetParent();
+void ListBox::clear_items() {
+	for (auto &item : m_items) {
+		View *parent = item.button->get_parent();
 		if (parent) {
-			parent->RemoveChild(item.button);
+			parent->remove_child(item.button);
 		}
 	}
-	m_Items.clear();
-	m_SelectedId.clear();
+	m_items.clear();
+	m_selected_id.clear();
 }
 
-void ListBox::SetSelectedId(const std::string &id) {
-	m_SelectedId = id;
-	UpdateSelectionStyles();
+void ListBox::set_selected_id(const std::string &id) {
+	m_selected_id = id;
+	update_selection_styles();
 }
 
 
-void ListBox::SelectItem(const std::string &id) {
-	if (m_SelectedId == id) {
+void ListBox::select_item(const std::string &id) {
+	if (m_selected_id == id) {
 		return;
 	}
-	m_SelectedId = id;
-	UpdateSelectionStyles();
-	onSelectionChanged(m_SelectedId);
+	m_selected_id = id;
+	update_selection_styles();
+	on_selection_changed(m_selected_id);
 }
 
-void ListBox::UpdateSelectionStyles() {
-	for (auto &item : m_Items) {
-		if (item.id == m_SelectedId) {
-			item.button->AddClass("selected");
+void ListBox::update_selection_styles() {
+	for (auto &item : m_items) {
+		if (item.id == m_selected_id) {
+			item.button->add_class("selected");
 		} else {
-			item.button->RemoveClass("selected");
+			item.button->remove_class("selected");
 		}
 	}
 }

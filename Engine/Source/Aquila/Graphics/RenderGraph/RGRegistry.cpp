@@ -2,112 +2,112 @@
 
 namespace Aquila::Graphics::RG {
 
-RGTextureHandle RGRegistry::DeclareTexture(const RGTextureDesc &desc) {
-	const auto index = static_cast<uint32>(m_Textures.size());
-	auto &entry = m_Textures.emplace_back();
+RGTextureHandle RGRegistry::declare_texture(const RGTextureDesc &desc) {
+	const auto index = static_cast<Uint32>(m_textures.size());
+	auto &entry = m_textures.emplace_back();
 	entry.desc = desc;
-	return RGTextureHandle{ EncodeHandle(index, 0) };
+	return RGTextureHandle{ encode_handle(index, 0) };
 }
 
-RGBufferHandle RGRegistry::DeclareBuffer(const RGBufferDesc &desc) {
-	const auto index = static_cast<uint32>(m_Buffers.size());
-	auto &entry = m_Buffers.emplace_back();
+RGBufferHandle RGRegistry::declare_buffer(const RGBufferDesc &desc) {
+	const auto index = static_cast<Uint32>(m_buffers.size());
+	auto &entry = m_buffers.emplace_back();
 	entry.desc = desc;
-	return RGBufferHandle{ EncodeHandle(index, 0) };
+	return RGBufferHandle{ encode_handle(index, 0) };
 }
 
-RGTextureHandle RGRegistry::ImportTexture(GFX::GfxTexture *texture, std::string_view debugName,
-										  ResourceState initialState) {
+RGTextureHandle RGRegistry::import_texture(GFX::GfxTexture *texture, std::string_view debug_name,
+										  ResourceState initial_state) {
 	AQUILA_ASSERT(texture, "Cannot import a null texture");
 
-	const RHI::TextureDesc &rhiDesc = texture->GetDesc();
+	const RHI::TextureDesc &rhi_desc = texture->get_desc();
 
 	RGTextureDesc desc{};
-	desc.width = rhiDesc.width;
-	desc.height = rhiDesc.height;
-	desc.mipLevels = rhiDesc.mipLevels;
-	desc.arrayLayers = rhiDesc.arrayLayers;
-	desc.format = rhiDesc.format;
-	desc.usage = rhiDesc.usage;
-	desc.samples = rhiDesc.samples;
-	desc.debugName = debugName;
+	desc.width = rhi_desc.width;
+	desc.height = rhi_desc.height;
+	desc.mip_levels = rhi_desc.mip_levels;
+	desc.array_layers = rhi_desc.array_layers;
+	desc.format = rhi_desc.format;
+	desc.usage = rhi_desc.usage;
+	desc.samples = rhi_desc.samples;
+	desc.debug_name = debug_name;
 
-	const auto index = static_cast<uint32>(m_Textures.size());
-	auto &entry = m_Textures.emplace_back();
+	const auto index = static_cast<Uint32>(m_textures.size());
+	auto &entry = m_textures.emplace_back();
 	entry.desc = desc;
 	entry.imported = true;
-	entry.initialState = initialState;
-	entry.importedPtr = texture;
+	entry.initial_state = initial_state;
+	entry.imported_ptr = texture;
 	entry.physical = texture; // Already resolved, no allocation needed.
 
-	return RGTextureHandle{ EncodeHandle(index, 0) };
+	return RGTextureHandle{ encode_handle(index, 0) };
 }
 
-RGBufferHandle RGRegistry::ImportBuffer(GFX::GfxBuffer *buffer, std::string_view debugName,
-										ResourceState initialState) {
+RGBufferHandle RGRegistry::import_buffer(GFX::GfxBuffer *buffer, std::string_view debug_name,
+										ResourceState initial_state) {
 	AQUILA_ASSERT(buffer, "Cannot import a null buffer");
 
 	RGBufferDesc desc{};
-	desc.size = buffer->GetSize();
-	desc.debugName = debugName;
+	desc.size = buffer->get_size();
+	desc.debug_name = debug_name;
 
-	const auto index = static_cast<uint32>(m_Buffers.size());
-	auto &entry = m_Buffers.emplace_back();
+	const auto index = static_cast<Uint32>(m_buffers.size());
+	auto &entry = m_buffers.emplace_back();
 	entry.desc = desc;
 	entry.imported = true;
-	entry.initialState = initialState;
-	entry.importedPtr = buffer;
+	entry.initial_state = initial_state;
+	entry.imported_ptr = buffer;
 	entry.physical = buffer;
 
-	return RGBufferHandle{ EncodeHandle(index, 0) };
+	return RGBufferHandle{ encode_handle(index, 0) };
 }
 
-RGTextureHandle RGRegistry::WriteTexture(RGTextureHandle handle) {
-	ValidateTextureHandle(handle);
-	const uint32 index = SlotOf(handle.id);
-	auto &entry = m_Textures[index];
-	const uint32 newVer = ++entry.version;
+RGTextureHandle RGRegistry::write_texture(RGTextureHandle handle) {
+	validate_texture_handle(handle);
+	const Uint32 index = slot_of(handle.id);
+	auto &entry = m_textures[index];
+	const Uint32 new_ver = ++entry.version;
 
-	AQUILA_ASSERT(newVer < (1u << (32u - kVersionShift)),
+	AQUILA_ASSERT(new_ver < (1u << (32u - K_VERSION_SHIFT)),
 				  "Texture version counter overflow — too many writes to one slot");
 
-	return RGTextureHandle{ EncodeHandle(index, newVer) };
+	return RGTextureHandle{ encode_handle(index, new_ver) };
 }
 
-RGBufferHandle RGRegistry::WriteBuffer(RGBufferHandle handle) {
-	ValidateBufferHandle(handle);
-	const uint32 index = SlotOf(handle.id);
-	auto &entry = m_Buffers[index];
-	const uint32 newVer = ++entry.version;
+RGBufferHandle RGRegistry::write_buffer(RGBufferHandle handle) {
+	validate_buffer_handle(handle);
+	const Uint32 index = slot_of(handle.id);
+	auto &entry = m_buffers[index];
+	const Uint32 new_ver = ++entry.version;
 
-	AQUILA_ASSERT(newVer < (1u << (32u - kVersionShift)),
+	AQUILA_ASSERT(new_ver < (1u << (32u - K_VERSION_SHIFT)),
 				  "Buffer version counter overflow — too many writes to one slot");
 
-	return RGBufferHandle{ EncodeHandle(index, newVer) };
+	return RGBufferHandle{ encode_handle(index, new_ver) };
 }
 
-void RGRegistry::ResolveTexture(RGTextureHandle handle, GFX::GfxTexture *physical) {
+void RGRegistry::resolve_texture(RGTextureHandle handle, GFX::GfxTexture *physical) {
 	AQUILA_ASSERT(physical, "Resolving texture with null physical pointer");
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle out of range");
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_textures.size(), "RGTextureHandle out of range");
 
-	auto &entry = m_Textures[index];
+	auto &entry = m_textures[index];
 	if (entry.imported) {
-		AQUILA_ASSERT(physical == entry.importedPtr,
+		AQUILA_ASSERT(physical == entry.imported_ptr,
 					  "Imported texture resolved with a different pointer — "
 					  "did you pass the wrong GfxTexture?");
 	}
 	entry.physical = physical;
 }
 
-void RGRegistry::ResolveBuffer(RGBufferHandle handle, GFX::GfxBuffer *physical) {
+void RGRegistry::resolve_buffer(RGBufferHandle handle, GFX::GfxBuffer *physical) {
 	AQUILA_ASSERT(physical, "Resolving buffer with null physical pointer");
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle out of range");
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_buffers.size(), "RGBufferHandle out of range");
 
-	auto &entry = m_Buffers[index];
+	auto &entry = m_buffers[index];
 	if (entry.imported) {
-		AQUILA_ASSERT(physical == entry.importedPtr, "Imported buffer resolved with a different pointer");
+		AQUILA_ASSERT(physical == entry.imported_ptr, "Imported buffer resolved with a different pointer");
 	}
 	entry.physical = physical;
 }
@@ -117,28 +117,28 @@ void RGRegistry::ResolveBuffer(RGBufferHandle handle, GFX::GfxBuffer *physical) 
 // 	return m_Textures[SlotOf(handle.id)].desc;
 // }
 
-const RGTextureDesc &RGRegistry::GetTextureDesc(RGTextureHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle index out of range");
-	return m_Textures[index].desc;
+const RGTextureDesc &RGRegistry::get_texture_desc(RGTextureHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_textures.size(), "RGTextureHandle index out of range");
+	return m_textures[index].desc;
 }
 
-const RGBufferDesc &RGRegistry::GetBufferDesc(RGBufferHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
-	return m_Buffers[index].desc;
+const RGBufferDesc &RGRegistry::get_buffer_desc(RGBufferHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_buffers.size(), "RGBufferHandle index out of range");
+	return m_buffers[index].desc;
 }
 
-GFX::GfxTexture &RGRegistry::GetTexture(RGTextureHandle handle) const {
+GFX::GfxTexture &RGRegistry::get_texture(RGTextureHandle handle) const {
 	// ValidateTextureHandle(handle);
-	const auto &entry = m_Textures[SlotOf(handle.id)];
+	const auto &entry = m_textures[slot_of(handle.id)];
 	AQUILA_ASSERT(entry.physical, "Texture has not been resolved yet — called GetTexture before Execute?");
 	return *entry.physical;
 }
 
-GFX::GfxBuffer &RGRegistry::GetBuffer(RGBufferHandle handle) const {
+GFX::GfxBuffer &RGRegistry::get_buffer(RGBufferHandle handle) const {
 	// ValidateBufferHandle(handle);
-	const auto &entry = m_Buffers[SlotOf(handle.id)];
+	const auto &entry = m_buffers[slot_of(handle.id)];
 	AQUILA_ASSERT(entry.physical, "Buffer has not been resolved yet — called GetBuffer before Execute?");
 	return *entry.physical;
 }
@@ -153,67 +153,67 @@ GFX::GfxBuffer &RGRegistry::GetBuffer(RGBufferHandle handle) const {
 // 	return m_Buffers[SlotOf(handle.id)].imported;
 // }
 
-bool RGRegistry::IsImportedTexture(RGTextureHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle index out of range");
-	return m_Textures[index].imported;
+bool RGRegistry::is_imported_texture(RGTextureHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_textures.size(), "RGTextureHandle index out of range");
+	return m_textures[index].imported;
 }
 
-bool RGRegistry::IsImportedBuffer(RGBufferHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
-	return m_Buffers[index].imported;
+bool RGRegistry::is_imported_buffer(RGBufferHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_buffers.size(), "RGBufferHandle index out of range");
+	return m_buffers[index].imported;
 }
 
-uint32 RGRegistry::GetTextureVersion(RGTextureHandle handle) const {
-	AQUILA_ASSERT(SlotOf(handle.id) < m_Textures.size(), "RGTextureHandle out of range");
-	return m_Textures[SlotOf(handle.id)].version;
+Uint32 RGRegistry::get_texture_version(RGTextureHandle handle) const {
+	AQUILA_ASSERT(slot_of(handle.id) < m_textures.size(), "RGTextureHandle out of range");
+	return m_textures[slot_of(handle.id)].version;
 }
 
-uint32 RGRegistry::GetBufferVersion(RGBufferHandle handle) const {
-	AQUILA_ASSERT(SlotOf(handle.id) < m_Buffers.size(), "RGBufferHandle out of range");
-	return m_Buffers[SlotOf(handle.id)].version;
+Uint32 RGRegistry::get_buffer_version(RGBufferHandle handle) const {
+	AQUILA_ASSERT(slot_of(handle.id) < m_buffers.size(), "RGBufferHandle out of range");
+	return m_buffers[slot_of(handle.id)].version;
 }
 
-ResourceState RGRegistry::GetTextureInitialState(RGTextureHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle index out of range");
-	return m_Textures[index].initialState;
+ResourceState RGRegistry::get_texture_initial_state(RGTextureHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_textures.size(), "RGTextureHandle index out of range");
+	return m_textures[index].initial_state;
 }
 
-ResourceState RGRegistry::GetBufferInitialState(RGBufferHandle handle) const {
-	const uint32 index = SlotOf(handle.id);
-	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
-	return m_Buffers[index].initialState;
+ResourceState RGRegistry::get_buffer_initial_state(RGBufferHandle handle) const {
+	const Uint32 index = slot_of(handle.id);
+	AQUILA_ASSERT(index < m_buffers.size(), "RGBufferHandle index out of range");
+	return m_buffers[index].initial_state;
 }
 
-void RGRegistry::Reset() {
-	m_Textures.clear();
-	m_Buffers.clear();
+void RGRegistry::reset() {
+	m_textures.clear();
+	m_buffers.clear();
 }
 
-void RGRegistry::ValidateTextureHandle(RGTextureHandle handle) const {
-	AQUILA_ASSERT(handle.IsValid(), "Using an invalid RGTextureHandle");
-	const uint32 index = SlotOf(handle.id);
-	const uint32 ver = VersionOf(handle.id);
-	AQUILA_ASSERT(index < m_Textures.size(), "RGTextureHandle index out of range");
+void RGRegistry::validate_texture_handle(RGTextureHandle handle) const {
+	AQUILA_ASSERT(handle.is_valid(), "Using an invalid RGTextureHandle");
+	const Uint32 index = slot_of(handle.id);
+	const Uint32 ver = version_of(handle.id);
+	AQUILA_ASSERT(index < m_textures.size(), "RGTextureHandle index out of range");
 
-	if (ver != m_Textures[index].version) {
+	if (ver != m_textures[index].version) {
 		AQUILA_LOG_CRITICAL("Stale handle: slot={} handle_ver={} current_ver={} name={}", index, ver,
-							m_Textures[index].version, m_Textures[index].desc.debugName);
+							m_textures[index].version, m_textures[index].desc.debug_name);
 	}
 
-	AQUILA_ASSERT(ver == m_Textures[index].version,
+	AQUILA_ASSERT(ver == m_textures[index].version,
 				  "Stale RGTextureHandle: a write pass has produced a newer version. "
 				  "Use the handle returned by WriteTexture() instead.");
 }
 
-void RGRegistry::ValidateBufferHandle(RGBufferHandle handle) const {
-	AQUILA_ASSERT(handle.IsValid(), "Using an invalid RGBufferHandle");
-	const uint32 index = SlotOf(handle.id);
-	const uint32 ver = VersionOf(handle.id);
-	AQUILA_ASSERT(index < m_Buffers.size(), "RGBufferHandle index out of range");
-	AQUILA_ASSERT(ver == m_Buffers[index].version,
+void RGRegistry::validate_buffer_handle(RGBufferHandle handle) const {
+	AQUILA_ASSERT(handle.is_valid(), "Using an invalid RGBufferHandle");
+	const Uint32 index = slot_of(handle.id);
+	const Uint32 ver = version_of(handle.id);
+	AQUILA_ASSERT(index < m_buffers.size(), "RGBufferHandle index out of range");
+	AQUILA_ASSERT(ver == m_buffers[index].version,
 				  "Stale RGBufferHandle: a write pass has produced a newer version. "
 				  "Use the handle returned by WriteBuffer() instead.");
 }

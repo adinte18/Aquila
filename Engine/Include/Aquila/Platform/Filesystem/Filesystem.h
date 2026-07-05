@@ -3,27 +3,27 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 namespace Aquila::Platform::Filesystem {
 struct FileStatInfo {
-	uint32 size = 0;
+	Uint32 size = 0;
 	bool exists = false;
-	bool isDirectory = false;
-	bool isRegularFile = false;
-	uint32 lastWriteTime = 0;
+	bool is_directory = false;
+	bool is_regular_file = false;
+	Uint32 last_write_time = 0;
 };
-std::string PathJoin(const std::string &a, const std::string &b);
-std::string PathNormalize(const std::string &path);
-bool PathIsAbsolute(const std::string &path);
-std::string DirGetCurrent();
-bool DirSetCurrent(const std::string &path);
-bool FileExists(const std::string &path);
-FileStatInfo FileStat_(const std::string &path);
-bool DirCreate(const std::string &path);
-bool DirRemove(const std::string &path);
-bool FileRemove(const std::string &path);
-bool FileMove(const std::string &from, const std::string &to);
-std::vector<std::string> DirList(const std::string &path, bool recursive = false);
+std::string path_join(const std::string &a, const std::string &b);
+std::string path_normalize(const std::string &path);
+bool path_is_absolute(const std::string &path);
+std::string dir_get_current();
+bool dir_set_current(const std::string &path);
+bool file_exists(const std::string &path);
+FileStatInfo file_stat(const std::string &path);
+bool dir_create(const std::string &path);
+bool dir_remove(const std::string &path);
+bool file_remove(const std::string &path);
+bool file_move(const std::string &from, const std::string &to);
+std::vector<std::string> dir_list(const std::string &path, bool recursive = false);
 
 // Helpers
-std::string PathToAbsolute(const std::string &path);
-std::string PathExtension(const std::string &path);
+std::string path_to_absolute(const std::string &path);
+std::string path_extension(const std::string &path);
 } // namespace Aquila::Platform::Filesystem
 #endif // FILESYSTEM_H

@@ -9,40 +9,40 @@ namespace Aquila::UI::Rendering {
 
 class DrawList {
   public:
-	void DrawRect(Rect rect, vec4 color, vec4 radius = vec4(0.F), float borderWidth = 0.F, vec4 borderColor = vec4(0.F),
-				  int32 z = 0);
-	void DrawLine(vec2 from, vec2 to, float width, vec4 color, int32 z = 0);
-	void DrawShadow(Rect widgetRect, vec2 offset, float blur, float spread, vec4 color, vec4 radius, int32 z = 0);
-	void DrawImage(Rect rect, GFX::GfxTexture *tex, vec4 tint = vec4(1.F), vec2 uvMin = vec2(0.F),
-				   vec2 uvMax = vec2(1.F), int32 z = 0);
-	void DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, vec4 color, float fontSize = 0.f,
-				  TextAlign align = TextAlign::Left, int32 z = 0);
-	void PushClip(Rect clipRect);
-	void PopClip();
+	void draw_rect(Rect rect, Vec4 color, Vec4 radius = Vec4(0.F), float border_width = 0.F,
+				   Vec4 border_color = Vec4(0.F), Int32 z = 0, BorderStyle border_style = BorderStyle::Solid);
+	void draw_line(Vec2 from, Vec2 to, float width, Vec4 color, Int32 z = 0);
+	void draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spread, Vec4 color, Vec4 radius, Int32 z = 0);
+	void draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint = Vec4(1.F), Vec2 uv_min = Vec2(0.F),
+					Vec2 uv_max = Vec2(1.F), Int32 z = 0);
+	void DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, Vec4 color, float font_size = 0.F,
+				  TextAlign align = TextAlign::Left, Int32 z = 0);
+	void push_clip(Rect clip_rect);
+	void pop_clip();
 
-	void Sort();
+	void sort();
 
-	void Submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
 
-	void AppendCmd(const DrawCmd &cmd);
+	void append_cmd(const DrawCmd &cmd);
 
-	[[nodiscard]] std::vector<DrawCmd> TakeCommands();
+	[[nodiscard]] std::vector<DrawCmd> take_commands();
 
-	void Clear();
-	[[nodiscard]] bool IsEmpty() const;
+	void clear();
+	[[nodiscard]] bool is_empty() const;
 
 	// TODO : DELETE, debug only
-	const std::vector<DrawCmd> &GetCommands() const { return m_Commands; }
+	const std::vector<DrawCmd> &get_commands() const { return m_commands; }
 
-	void SetCanvasSize(uint32 width, uint32 height);
+	void set_canvas_size(Uint32 width, Uint32 height);
 
   private:
-	[[nodiscard]] Option<Rect> ActiveClip() const;
+	[[nodiscard]] Option<Rect> active_clip() const;
 
-	std::vector<DrawCmd> m_Commands;
-	std::vector<Rect> m_ClipStack;
-	uint32 m_CanvasWidth = 0;
-	uint32 m_CanvasHeight = 0;
+	std::vector<DrawCmd> m_commands;
+	std::vector<Rect> m_clip_stack;
+	Uint32 m_canvas_width = 0;
+	Uint32 m_canvas_height = 0;
 };
 
 } // namespace Aquila::UI::Rendering

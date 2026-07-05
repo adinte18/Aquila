@@ -8,56 +8,56 @@
 namespace Aquila::SceneManagement::Components {
 
 struct SHCoefficients {
-	std::array<vec3, 9> coeffs{};
+	std::array<Vec3, 9> coeffs{};
 
 	SHCoefficients() {
 		for (auto &coefficient : coeffs) {
-			coefficient = vec3(0.0F);
+			coefficient = Vec3(0.0F);
 		}
 	}
 };
 
 struct SkyLightComponent {
-	Ref<GFX::GfxTexture> m_HDRTexture;
-	SHCoefficients m_Irradiance;
+	Ref<GFX::GfxTexture> m_hdr_texture;
+	SHCoefficients m_irradiance;
 
-	f32 m_Intensity = 1.0f;
-	f32 m_SkyboxLOD = 0;
-	vec3 m_Tint = vec3(1.0f);
-	bool m_IsActive = true;
-	bool m_IsDirty = true;
-	bool m_RenderSkybox = true;
+	F32 m_intensity = 1.0f;
+	F32 m_skybox_lod = 0;
+	Vec3 m_tint = Vec3(1.0f);
+	bool m_is_active = true;
+	bool m_is_dirty = true;
+	bool m_render_skybox = true;
 
   public:
-	[[nodiscard]] bool IsActive() const noexcept { return m_IsActive; }
-	[[nodiscard]] f32 GetIntensity() const noexcept { return m_Intensity; }
-	[[nodiscard]] f32 GetSkyboxLOD() const noexcept { return m_SkyboxLOD; }
-	[[nodiscard]] vec3 GetTint() const noexcept { return m_Tint; }
-	[[nodiscard]] bool IsDirty() const noexcept { return m_IsDirty; }
-	[[nodiscard]] bool ShouldRenderSkybox() const noexcept { return m_RenderSkybox && m_IsActive; }
+	[[nodiscard]] bool is_active() const noexcept { return m_is_active; }
+	[[nodiscard]] F32 get_intensity() const noexcept { return m_intensity; }
+	[[nodiscard]] F32 get_skybox_lod() const noexcept { return m_skybox_lod; }
+	[[nodiscard]] Vec3 get_tint() const noexcept { return m_tint; }
+	[[nodiscard]] bool is_dirty() const noexcept { return m_is_dirty; }
+	[[nodiscard]] bool should_render_skybox() const noexcept { return m_render_skybox && m_is_active; }
 
-	[[nodiscard]] const Ref<GFX::GfxTexture> &GetHDRTexture() const noexcept { return m_HDRTexture; }
-	[[nodiscard]] const SHCoefficients &GetIrradiance() const noexcept { return m_Irradiance; }
+	[[nodiscard]] const Ref<GFX::GfxTexture> &get_hdr_texture() const noexcept { return m_hdr_texture; }
+	[[nodiscard]] const SHCoefficients &get_irradiance() const noexcept { return m_irradiance; }
 
-	void SetActive(bool active) noexcept { m_IsActive = active; }
-	void SetIntensity(f32 intensity) noexcept { m_Intensity = intensity; }
-	void SetSkyboxLOD(f32 lod) noexcept { m_SkyboxLOD = lod; }
-	void SetTint(const vec3 &tint) noexcept { m_Tint = tint; }
-	void SetRenderSkybox(bool render) noexcept { m_RenderSkybox = render; }
+	void set_active(bool active) noexcept { m_is_active = active; }
+	void set_intensity(F32 intensity) noexcept { m_intensity = intensity; }
+	void set_skybox_lod(F32 lod) noexcept { m_skybox_lod = lod; }
+	void set_tint(const Vec3 &tint) noexcept { m_tint = tint; }
+	void set_render_skybox(bool render) noexcept { m_render_skybox = render; }
 
-	void SetHDRTexture(const Ref<GFX::GfxTexture> &texture) {
-		m_HDRTexture = texture;
-		m_IsDirty = true;
+	void set_hdr_texture(const Ref<GFX::GfxTexture> &texture) {
+		m_hdr_texture = texture;
+		m_is_dirty = true;
 	}
 
-	void SetIrradiance(const SHCoefficients &sh) {
-		m_Irradiance = sh;
-		m_IsDirty = false;
+	void set_irradiance(const SHCoefficients &sh) {
+		m_irradiance = sh;
+		m_is_dirty = false;
 	}
 
 	SkyLightComponent() = default;
-	explicit SkyLightComponent(const Ref<GFX::GfxTexture> &texture, f32 intensity = 1.0f, int lod = 0.0f)
-		: m_HDRTexture(texture), m_Intensity(intensity), m_SkyboxLOD(lod) {}
+	explicit SkyLightComponent(const Ref<GFX::GfxTexture> &texture, F32 intensity = 1.0f, int lod = 0.0f)
+		: m_hdr_texture(texture), m_intensity(intensity), m_skybox_lod(lod) {}
 };
 
 } // namespace Aquila::SceneManagement::Components

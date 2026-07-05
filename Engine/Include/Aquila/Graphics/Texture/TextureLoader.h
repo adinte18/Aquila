@@ -10,41 +10,41 @@ namespace Aquila::Graphics::Texture {
 class TextureLoader {
   public:
 	struct ImageData {
-		Unique<f32[]> pixels;
-		uint32 width = 0;
-		uint32 height = 0;
+		Unique<F32[]> pixels;
+		Uint32 width = 0;
+		Uint32 height = 0;
 		RHI::TextureFormat format = RHI::TextureFormat::RGBA8;
-		uint32 mipLevels = 1;
+		Uint32 mip_levels = 1;
 	};
 
 	struct RawImageData {
-		Unique<uint8[]> pixels;
-		uint32 width = 0;
-		uint32 height = 0;
-		uint32 channels = 0;
+		Unique<Uint8[]> pixels;
+		Uint32 width = 0;
+		Uint32 height = 0;
+		Uint32 channels = 0;
 
-		[[nodiscard]] bool IsValid() const { return pixels != nullptr && width > 0 && height > 0; }
-		[[nodiscard]] size_t SizeBytes() const { return static_cast<size_t>(width) * height * 4; }
+		[[nodiscard]] bool is_valid() const { return pixels != nullptr && width > 0 && height > 0; }
+		[[nodiscard]] size_t size_bytes() const { return static_cast<size_t>(width) * height * 4; }
 	};
 
 	struct RawHDRData {
-		Unique<f32[]> pixels;
-		uint32 width = 0;
-		uint32 height = 0;
-		uint32 channels = 0;
+		Unique<F32[]> pixels;
+		Uint32 width = 0;
+		Uint32 height = 0;
+		Uint32 channels = 0;
 
-		[[nodiscard]] bool IsValid() const { return pixels != nullptr && width > 0 && height > 0; }
-		[[nodiscard]] size_t SizeBytes() const { return static_cast<size_t>(width) * height * 4 * sizeof(f32); }
+		[[nodiscard]] bool is_valid() const { return pixels != nullptr && width > 0 && height > 0; }
+		[[nodiscard]] size_t size_bytes() const { return static_cast<size_t>(width) * height * 4 * sizeof(F32); }
 	};
 
 	TextureLoader() = default;
 
-	RawImageData LoadFromFile(const std::string &filepath);
-	RawImageData LoadFromVFS(const std::string &filepath);
-	RawHDRData LoadHDRFromFile(const std::string &filepath);
+	RawImageData load_from_file(const std::string &filepath);
+	RawImageData load_from_vfs(const std::string &filepath);
+	RawHDRData load_hdr_from_file(const std::string &filepath);
 
   private:
-	static std::array<uint8, 4> ColorToPixel(vec4 color);
+	static std::array<Uint8, 4> color_to_pixel(Vec4 color);
 };
 
 } // namespace Aquila::Graphics::Texture

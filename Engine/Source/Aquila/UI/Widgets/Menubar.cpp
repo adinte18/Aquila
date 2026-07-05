@@ -2,125 +2,125 @@
 
 namespace Aquila::UI::Core {
 
-MenuDropdown::MenuDropdown(MenuBar *owner) : FloatingOverlay(10), m_Owner(owner) {
-	AddClass("menu-dropdown");
-	SetDismissOnClickAway(true);
+MenuDropdown::MenuDropdown(MenuBar *owner) : FloatingOverlay(10), m_owner(owner) {
+	add_class("menu-dropdown");
+	set_dismiss_on_click_away(true);
 
 	FloatingConfig fc;
-	fc.attachTo = FloatingAttachTo::Root;
-	fc.elementPoint = FloatingAttachPoint::LeftTop;
-	fc.parentPoint = FloatingAttachPoint::LeftTop;
-	fc.zIndex = 50;
-	SetFloating(fc);
+	fc.attach_to = FloatingAttachTo::Root;
+	fc.element_point = FloatingAttachPoint::LeftTop;
+	fc.parent_point = FloatingAttachPoint::LeftTop;
+	fc.z_index = 50;
+	set_floating(fc);
 }
 
-void MenuDropdown::AddItem(std::string text, Delegate<void()> callback) {
-	m_Items.push_back({ std::move(text), std::move(callback), false });
+void MenuDropdown::add_item(std::string text, Delegate<void()> callback) {
+	m_items.push_back({ std::move(text), std::move(callback), false });
 }
 
-void MenuDropdown::AddSeparator() {
-	m_Items.push_back({ {}, {}, true });
+void MenuDropdown::add_separator() {
+	m_items.push_back({ {}, {}, true });
 }
 
-void MenuDropdown::ClearItems() {
-	for (View *v : m_ItemViews) {
-		RemoveChild(v);
+void MenuDropdown::clear_items() {
+	for (View *v : m_item_views) {
+		remove_child(v);
 	}
-	m_ItemViews.clear();
-	m_Items.clear();
+	m_item_views.clear();
+	m_items.clear();
 }
 
-void MenuDropdown::OpenBelow(vec2 buttonAbsPos, float buttonHeight) {
-	FloatingConfig fc = GetFloating();
-	fc.offset = { buttonAbsPos.x, buttonAbsPos.y + buttonHeight };
-	SetFloating(fc);
+void MenuDropdown::open_below(Vec2 button_abs_pos, float button_height) {
+	FloatingConfig fc = get_floating();
+	fc.offset = { button_abs_pos.x, button_abs_pos.y + button_height };
+	set_floating(fc);
 
-	Rebuild();
-	Open();
+	rebuild();
+	open();
 }
 
-void MenuDropdown::Rebuild() {
-	for (View *v : m_ItemViews) {
-		RemoveChild(v);
+void MenuDropdown::rebuild() {
+	for (View *v : m_item_views) {
+		remove_child(v);
 	}
-	m_ItemViews.clear();
+	m_item_views.clear();
 
-	for (auto &item : m_Items) {
-		if (item.isSeparator) {
-			auto sep = CreateUnique<Separator>();
-			sep->AddClass("menu-separator");
-			m_ItemViews.push_back(AddChild(std::move(sep)));
+	for (auto &item : m_items) {
+		if (item.is_separator) {
+			auto sep = create_unique<Separator>();
+			sep->add_class("menu-separator");
+			m_item_views.push_back(add_child(std::move(sep)));
 			continue;
 		}
 
-		auto btn = CreateUnique<Button>();
-		btn->SetText(item.text);
-		btn->AddClass("menu-item");
-		btn->onClick.Connect([this, cb = item.callback] {
+		auto btn = create_unique<Button>();
+		btn->set_text(item.text);
+		btn->add_class("menu-item");
+		btn->on_click.connect([this, cb = item.callback] {
 			if (cb) {
 				cb();
 			}
-			if (m_Owner) {
-				m_Owner->CloseAll();
+			if (m_owner) {
+				m_owner->close_all();
 			}
 		});
-		m_ItemViews.push_back(AddChild(std::move(btn)));
+		m_item_views.push_back(add_child(std::move(btn)));
 	}
 
-	InvalidateLayout();
+	invalidate_layout();
 }
 
 MenuBar::MenuBar() {
-	AddClass("menu-bar");
+	add_class("menu-bar");
 }
 
-MenuDropdown *MenuBar::AddMenu(std::string title) {
-	auto btn = CreateUnique<Button>();
-	btn->SetText(title);
-	btn->AddClass("menu-bar-item");
+MenuDropdown *MenuBar::add_menu(std::string title) {
+	auto btn = create_unique<Button>();
+	btn->set_text(title);
+	btn->add_class("menu-bar-item");
 
-	auto dropdown = CreateUnique<MenuDropdown>(this);
-	MenuDropdown *dropdownPtr = dropdown.get();
+	auto dropdown = create_unique<MenuDropdown>(this);
+	MenuDropdown *dropdown_ptr = dropdown.get();
 
-	btn->onClick.Connect([this, dropdownPtr] {
-		if (m_OpenDropdown == dropdownPtr) {
-			CloseAll();
+	btn->on_click.connect([this, dropdown_ptr] {
+		if (m_open_dropdown == dropdown_ptr) {
+			close_all();
 			return;
 		}
-		for (auto &entry : m_Entries) {
-			if (entry.dropdown == dropdownPtr) {
-				Rect rect = entry.button->GetAbsoluteRect();
-				OpenDropdown(dropdownPtr, rect.position, rect.size.y);
+		for (auto &entry : m_entries) {
+			if (entry.dropdown == dropdown_ptr) {
+				Rect rect = entry.button->get_absolute_rect();
+				open_dropdown(dropdown_ptr, rect.position, rect.size.y);
 				return;
 			}
 		}
 	});
 
-	Button *btnPtr = static_cast<Button *>(AddChild(std::move(btn)));
-	View *dropdownParent = m_OverlayRoot ? m_OverlayRoot : static_cast<View *>(this);
-	dropdownParent->AddChild(std::move(dropdown));
+	Button *btn_ptr = static_cast<Button *>(add_child(std::move(btn)));
+	View *dropdown_parent = m_overlay_root ? m_overlay_root : static_cast<View *>(this);
+	dropdown_parent->add_child(std::move(dropdown));
 
-	m_Entries.push_back({ btnPtr, dropdownPtr });
-	return dropdownPtr;
+	m_entries.push_back({ btn_ptr, dropdown_ptr });
+	return dropdown_ptr;
 }
 
-void MenuBar::SetOverlayRoot(View *root) {
-	m_OverlayRoot = root;
+void MenuBar::set_overlay_root(View *root) {
+	m_overlay_root = root;
 }
 
-void MenuBar::CloseAll() {
-	if (m_OpenDropdown) {
-		m_OpenDropdown->Close();
-		m_OpenDropdown = nullptr;
+void MenuBar::close_all() {
+	if (m_open_dropdown) {
+		m_open_dropdown->close();
+		m_open_dropdown = nullptr;
 	}
 }
 
-void MenuBar::OpenDropdown(MenuDropdown *dropdown, vec2 buttonAbsPos, float buttonHeight) {
-	if (m_OpenDropdown && m_OpenDropdown != dropdown) {
-		m_OpenDropdown->Close();
+void MenuBar::open_dropdown(MenuDropdown *dropdown, Vec2 button_abs_pos, float button_height) {
+	if (m_open_dropdown && m_open_dropdown != dropdown) {
+		m_open_dropdown->close();
 	}
-	m_OpenDropdown = dropdown;
-	dropdown->OpenBelow(buttonAbsPos, buttonHeight);
+	m_open_dropdown = dropdown;
+	dropdown->open_below(button_abs_pos, button_height);
 }
 
 } // namespace Aquila::UI::Core

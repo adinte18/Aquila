@@ -9,13 +9,13 @@ class Tooltip : public FloatingOverlay {
   public:
 	Tooltip();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Tooltip"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Tooltip"; }
 
-	void ShowAt(vec2 canvasPos, std::string text);
-	void Hide();
+	void show_at(Vec2 canvas_pos, std::string text);
+	void hide();
 
   private:
-	Label *m_Label = nullptr;
+	Label *m_label = nullptr;
 };
 
 } // namespace Aquila::UI::Core

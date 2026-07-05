@@ -12,56 +12,56 @@ class VulkanDevice;
 
 class VulkanBuffer final : public IRHIBuffer {
   public:
-	VulkanBuffer(VulkanDevice &device, const std::string &debugName, VkDeviceSize instanceSize, uint32_t instanceCount,
-				 VkBufferUsageFlags usageFlags, MemoryDomain domain, VkDeviceSize minOffsetAlignment);
+	VulkanBuffer(VulkanDevice &device, const std::string &debug_name, VkDeviceSize instance_size, uint32_t instance_count,
+				 VkBufferUsageFlags usage_flags, MemoryDomain domain, VkDeviceSize min_offset_alignment);
 	~VulkanBuffer() override;
 
 	AQUILA_NONCOPYABLE(VulkanBuffer);
 	AQUILA_NONMOVEABLE(VulkanBuffer);
 
 	// IRHIBuffer
-	void Write(const void *data, uint64 size, uint64 offset = 0) override;
-	void *Map() override;
-	void Unmap() override;
-	void Flush(uint64 size = 0, uint64 offset = 0) override;
+	void write(const void *data, Uint64 size, Uint64 offset = 0) override;
+	void *map() override;
+	void unmap() override;
+	void flush(Uint64 size = 0, Uint64 offset = 0) override;
 
-	void DestroyImmediate() override;
+	void destroy_immediate() override;
 
-	[[nodiscard]] uint64 GetSize() const override { return m_BufferSize; }
-	[[nodiscard]] uint32 GetInstanceCount() const override { return m_InstanceCount; }
-	[[nodiscard]] bool IsMapped() const override { return m_MappedPtr != nullptr; }
+	[[nodiscard]] Uint64 get_size() const override { return m_buffer_size; }
+	[[nodiscard]] Uint32 get_instance_count() const override { return m_instance_count; }
+	[[nodiscard]] bool is_mapped() const override { return m_mapped_ptr != nullptr; }
 
 	// Extended API (used internally by other Vulkan classes)
 	[[nodiscard]] VkResult Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
-	[[nodiscard]] VkResult Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
-	[[nodiscard]] VkDescriptorBufferInfo DescriptorInfo(VkDeviceSize size = VK_WHOLE_SIZE,
+	[[nodiscard]] VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
+	[[nodiscard]] VkDescriptorBufferInfo descriptor_info(VkDeviceSize size = VK_WHOLE_SIZE,
 														VkDeviceSize offset = 0) const;
-	[[nodiscard]] VkDescriptorBufferInfo DescriptorInfoForIndex(int index) const;
-	void WriteToIndex(const void *data, int index) const;
-	[[nodiscard]] VkResult FlushIndex(int index) const;
-	[[nodiscard]] VkResult InvalidateIndex(int index) const;
+	[[nodiscard]] VkDescriptorBufferInfo descriptor_info_for_index(int index) const;
+	void write_to_index(const void *data, int index) const;
+	[[nodiscard]] VkResult flush_index(int index) const;
+	[[nodiscard]] VkResult invalidate_index(int index) const;
 
-	[[nodiscard]] VkBuffer GetBuffer() const { return m_Buffer; }
-	[[nodiscard]] void *GetMappedMemory() const { return m_MappedPtr; }
-	[[nodiscard]] VkDeviceSize GetInstanceSize() const { return m_InstanceSize; }
-	[[nodiscard]] VkDeviceSize GetAlignmentSize() const { return m_AlignmentSize; }
-	[[nodiscard]] VkBufferUsageFlags GetUsageFlags() const { return m_UsageFlags; }
+	[[nodiscard]] VkBuffer get_buffer() const { return m_buffer; }
+	[[nodiscard]] void *get_mapped_memory() const { return m_mapped_ptr; }
+	[[nodiscard]] VkDeviceSize get_instance_size() const { return m_instance_size; }
+	[[nodiscard]] VkDeviceSize get_alignment_size() const { return m_alignment_size; }
+	[[nodiscard]] VkBufferUsageFlags get_usage_flags() const { return m_usage_flags; }
 
-	static VkDeviceSize GetAlignment(VkDeviceSize instanceSize, VkDeviceSize minOffsetAlignment);
+	static VkDeviceSize get_alignment(VkDeviceSize instance_size, VkDeviceSize min_offset_alignment);
 
   private:
-	VulkanDevice &m_Device;
-	VkBuffer m_Buffer = VK_NULL_HANDLE;
-	VmaAllocation m_Allocation = VK_NULL_HANDLE;
-	void *m_MappedPtr = nullptr;
-	bool m_PersistentMap = false;
+	VulkanDevice &m_device;
+	VkBuffer m_buffer = VK_NULL_HANDLE;
+	VmaAllocation m_allocation = VK_NULL_HANDLE;
+	void *m_mapped_ptr = nullptr;
+	bool m_persistent_map = false;
 
-	VkDeviceSize m_BufferSize = 0;
-	VkDeviceSize m_InstanceSize = 0;
-	VkDeviceSize m_AlignmentSize = 0;
-	uint32_t m_InstanceCount = 0;
-	VkBufferUsageFlags m_UsageFlags = 0;
-	MemoryDomain m_Domain;
+	VkDeviceSize m_buffer_size = 0;
+	VkDeviceSize m_instance_size = 0;
+	VkDeviceSize m_alignment_size = 0;
+	uint32_t m_instance_count = 0;
+	VkBufferUsageFlags m_usage_flags = 0;
+	MemoryDomain m_domain;
 };
 
 } // namespace Aquila::RHI

@@ -2,95 +2,95 @@
 
 namespace Aquila::GFX {
 
-GfxCommandList::GfxCommandList(Unique<RHI::IRHICommandList> cmd) : m_Cmd(std::move(cmd)) {}
+GfxCommandList::GfxCommandList(Unique<RHI::IRHICommandList> cmd) : m_cmd(std::move(cmd)) {}
 
-void GfxCommandList::Begin() {
-	m_Cmd->Begin();
+void GfxCommandList::begin() {
+	m_cmd->begin();
 }
-void GfxCommandList::End() {
-	m_Cmd->End();
+void GfxCommandList::end() {
+	m_cmd->end();
 }
-void GfxCommandList::Reset() {
-	m_Cmd->Reset();
-}
-
-bool GfxCommandList::IsRecording() const {
-	return m_Cmd->IsRecording();
-}
-RHI::CommandListType GfxCommandList::GetType() const {
-	return m_Cmd->GetType();
-}
-const std::string &GfxCommandList::GetName() const {
-	return m_Cmd->GetName();
+void GfxCommandList::reset() {
+	m_cmd->reset();
 }
 
-void GfxCommandList::TransitionTexture(GfxTexture &texture, RHI::ResourceState oldState, RHI::ResourceState newState) {
-	m_Cmd->TransitionTexture(texture.GetRHI(), oldState, newState);
+bool GfxCommandList::is_recording() const {
+	return m_cmd->is_recording();
+}
+RHI::CommandListType GfxCommandList::get_type() const {
+	return m_cmd->get_type();
+}
+const std::string &GfxCommandList::get_name() const {
+	return m_cmd->get_name();
 }
 
-void GfxCommandList::TransitionBuffer(GfxBuffer &buffer, RHI::ResourceState oldState, RHI::ResourceState newState) {
-	m_Cmd->TransitionBuffer(buffer.GetRHI(), oldState, newState);
+void GfxCommandList::transition_texture(GfxTexture &texture, RHI::ResourceState old_state, RHI::ResourceState new_state) {
+	m_cmd->transition_texture(texture.get_rhi(), old_state, new_state);
 }
 
-void GfxCommandList::BindPipeline(GfxPipeline &pipeline) {
-	m_Cmd->BindPipeline(pipeline.GetRHI());
+void GfxCommandList::transition_buffer(GfxBuffer &buffer, RHI::ResourceState old_state, RHI::ResourceState new_state) {
+	m_cmd->transition_buffer(buffer.get_rhi(), old_state, new_state);
 }
 
-void GfxCommandList::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) {
-	m_Cmd->SetViewport(x, y, width, height, minDepth, maxDepth);
+void GfxCommandList::bind_pipeline(GfxPipeline &pipeline) {
+	m_cmd->bind_pipeline(pipeline.get_rhi());
 }
 
-void GfxCommandList::SetScissor(int32 x, int32 y, uint32 width, uint32 height) {
-	m_Cmd->SetScissor(x, y, width, height);
+void GfxCommandList::set_viewport(float x, float y, float width, float height, float min_depth, float max_depth) {
+	m_cmd->set_viewport(x, y, width, height, min_depth, max_depth);
 }
 
-void GfxCommandList::BindDescriptorSet(uint32 set, GfxDescriptorSet &descriptorSet) {
-	m_Cmd->BindDescriptorSet(set, descriptorSet.GetRHI());
+void GfxCommandList::set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height) {
+	m_cmd->set_scissor(x, y, width, height);
 }
 
-void GfxCommandList::BindVertexBuffer(GfxBuffer &buf, uint32 binding, uint64 offset) {
-	m_Cmd->BindVertexBuffer(buf.GetRHI(), binding, offset);
+void GfxCommandList::bind_descriptor_set(Uint32 set, GfxDescriptorSet &descriptor_set) {
+	m_cmd->bind_descriptor_set(set, descriptor_set.get_rhi());
 }
 
-void GfxCommandList::BindIndexBuffer(GfxBuffer &buf, RHI::IndexFormat fmt, uint64 offset) {
-	m_Cmd->BindIndexBuffer(buf.GetRHI(), fmt, offset);
+void GfxCommandList::bind_vertex_buffer(GfxBuffer &buf, Uint32 binding, Uint64 offset) {
+	m_cmd->bind_vertex_buffer(buf.get_rhi(), binding, offset);
 }
 
-void GfxCommandList::Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance) {
-	m_Cmd->Draw(vertexCount, instanceCount, firstVertex, firstInstance);
+void GfxCommandList::bind_index_buffer(GfxBuffer &buf, RHI::IndexFormat fmt, Uint64 offset) {
+	m_cmd->bind_index_buffer(buf.get_rhi(), fmt, offset);
 }
 
-void GfxCommandList::DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset,
-								 uint32 firstInstance) {
-	m_Cmd->DrawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+void GfxCommandList::draw(Uint32 vertex_count, Uint32 instance_count, Uint32 first_vertex, Uint32 first_instance) {
+	m_cmd->draw(vertex_count, instance_count, first_vertex, first_instance);
 }
 
-void GfxCommandList::DrawIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) {
-	m_Cmd->DrawIndirect(buffer.GetRHI(), offset, drawCount, stride);
+void GfxCommandList::draw_indexed(Uint32 index_count, Uint32 instance_count, Uint32 first_index, Int32 vertex_offset,
+								 Uint32 first_instance) {
+	m_cmd->draw_indexed(index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void GfxCommandList::DrawIndexedIndirect(GfxBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) {
-	m_Cmd->DrawIndexedIndirect(buffer.GetRHI(), offset, drawCount, stride);
+void GfxCommandList::draw_indirect(GfxBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) {
+	m_cmd->draw_indirect(buffer.get_rhi(), offset, draw_count, stride);
 }
 
-void GfxCommandList::CopyBufferToTexture(GfxBuffer &src, GfxTexture &dst, uint32 width, uint32 height,
-										 uint32 dstArrayLayer, uint32 dstMipLevel) {
-	m_Cmd->CopyBufferToTexture(src.GetRHI(), dst.GetRHI(), width, height, dstArrayLayer, dstMipLevel);
+void GfxCommandList::draw_indexed_indirect(GfxBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) {
+	m_cmd->draw_indexed_indirect(buffer.get_rhi(), offset, draw_count, stride);
 }
 
-void GfxCommandList::FillBuffer(GfxBuffer &buffer, uint32 value, uint64 offset, uint64 size) {
-	m_Cmd->FillBuffer(buffer.GetRHI(), offset, size, value);
+void GfxCommandList::copy_buffer_to_texture(GfxBuffer &src, GfxTexture &dst, Uint32 width, Uint32 height,
+										 Uint32 dst_array_layer, Uint32 dst_mip_level) {
+	m_cmd->copy_buffer_to_texture(src.get_rhi(), dst.get_rhi(), width, height, dst_array_layer, dst_mip_level);
 }
 
-void GfxCommandList::Dispatch(uint32 x, uint32 y, uint32 z) {
-	m_Cmd->Dispatch(x, y, z);
+void GfxCommandList::fill_buffer(GfxBuffer &buffer, Uint32 value, Uint64 offset, Uint64 size) {
+	m_cmd->fill_buffer(buffer.get_rhi(), offset, size, value);
 }
 
-void GfxCommandList::PushDebugGroup(const char *name) {
-	m_Cmd->PushDebugGroup(name);
+void GfxCommandList::dispatch(Uint32 x, Uint32 y, Uint32 z) {
+	m_cmd->dispatch(x, y, z);
 }
-void GfxCommandList::PopDebugGroup() {
-	m_Cmd->PopDebugGroup();
+
+void GfxCommandList::push_debug_group(const char *name) {
+	m_cmd->push_debug_group(name);
+}
+void GfxCommandList::pop_debug_group() {
+	m_cmd->pop_debug_group();
 }
 
 } // namespace Aquila::GFX

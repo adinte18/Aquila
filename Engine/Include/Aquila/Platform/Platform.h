@@ -8,15 +8,15 @@ namespace Aquila::Platform {
 struct PlatformSpec {
 	const char *name;
 	const char *version;
-	bool is64Bit;
-	int cpuCores;
-	usize totalMemory;
+	bool is64_bit;
+	int cpu_cores;
+	Usize total_memory;
 };
 
-bool Initialize();
-void Shutdown();
+bool initialize();
+void shutdown();
 
-const PlatformSpec &GetPlatformInfo();
+const PlatformSpec &get_platform_info();
 
 } // namespace Aquila::Platform
 

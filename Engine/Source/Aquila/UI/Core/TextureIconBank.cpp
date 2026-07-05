@@ -3,24 +3,24 @@
 
 namespace Aquila::UI::Core {
 
-void TextureIconBank::AddIcon(const std::string &name, vec2 uvMin, vec2 uvMax) {
-	m_Icons[name] = IconEntry{ m_Texture, uvMin, uvMax };
+void TextureIconBank::add_icon(const std::string &name, Vec2 uv_min, Vec2 uv_max) {
+	m_icons[name] = IconEntry{ m_texture, uv_min, uv_max };
 }
 
-void TextureIconBank::AddIconPixels(const std::string &name, float x, float y, float w, float h) {
-	AQUILA_ASSERT(m_Texture != nullptr, "TextureIconBank::AddIconPixels called before SetTexture");
+void TextureIconBank::add_icon_pixels(const std::string &name, float x, float y, float w, float h) {
+	AQUILA_ASSERT(m_texture != nullptr, "TextureIconBank::AddIconPixels called before SetTexture");
 
-	const float atlasW = static_cast<float>(m_Texture->GetWidth());
-	const float atlasH = static_cast<float>(m_Texture->GetHeight());
+	const float atlas_w = static_cast<float>(m_texture->get_width());
+	const float atlas_h = static_cast<float>(m_texture->get_height());
 
-	const vec2 uvMin = { x / atlasW, y / atlasH };
-	const vec2 uvMax = { (x + w) / atlasW, (y + h) / atlasH };
-	AddIcon(name, uvMin, uvMax);
+	const Vec2 uv_min = { x / atlas_w, y / atlas_h };
+	const Vec2 uv_max = { (x + w) / atlas_w, (y + h) / atlas_h };
+	add_icon(name, uv_min, uv_max);
 }
 
-const IconEntry *TextureIconBank::GetIcon(std::string_view name) const {
-	auto it = m_Icons.find(std::string(name));
-	return (it != m_Icons.end()) ? &it->second : nullptr;
+const IconEntry *TextureIconBank::get_icon(std::string_view name) const {
+	auto it = m_icons.find(std::string(name));
+	return (it != m_icons.end()) ? &it->second : nullptr;
 }
 
 } // namespace Aquila::UI::Core

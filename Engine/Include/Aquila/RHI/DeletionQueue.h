@@ -30,22 +30,22 @@ class DeletionQueue {
 
 	AQUILA_NONCOPYABLE(DeletionQueue);
 
-	void QueueDeletion(const Deletion::ResourceVariant &resource);
+	void queue_deletion(const Deletion::ResourceVariant &resource);
 
-	void DestroyNow(const Deletion::ResourceVariant &resource);
+	void destroy_now(const Deletion::ResourceVariant &resource);
 
-	void SetCurrentSlot(uint32 slot);
+	void set_current_slot(Uint32 slot);
 
-	void Flush(uint32 slot);
+	void flush(Uint32 slot);
 
-	void FlushAll();
+	void flush_all();
 
   private:
-	void Dispatch(const Deletion::ResourceVariant &resource);
+	void dispatch(const Deletion::ResourceVariant &resource);
 
-	VulkanDevice &m_Device;
-	uint32 m_CurrentSlot = 0;
-	std::array<std::vector<Deletion::ResourceVariant>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_Buckets;
+	VulkanDevice &m_device;
+	Uint32 m_current_slot = 0;
+	std::array<std::vector<Deletion::ResourceVariant>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_buckets;
 };
 
 } // namespace Aquila::RHI

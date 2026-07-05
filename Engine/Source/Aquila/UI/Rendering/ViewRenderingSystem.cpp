@@ -11,102 +11,104 @@
 
 namespace Aquila::UI::Rendering {
 
-void ViewRenderingSystem::OnInit(GFX::GfxContext &ctx) {
-	m_Ctx = &ctx;
-	m_R2D = CreateUnique<Graphics::QuadBatcher>(ctx);
+void ViewRenderingSystem::on_init(GFX::GfxContext &ctx) {
+	m_ctx = &ctx;
+	m_r2_d = create_unique<Graphics::QuadBatcher>(ctx);
 }
 
-void ViewRenderingSystem::RebuildOverlayResources(uint32 w, uint32 h) {
-	m_MSAAColor = m_Ctx->CreateTexture({
+void ViewRenderingSystem::rebuild_overlay_resources(Uint32 w, Uint32 h) {
+	m_msaa_color = m_ctx->create_texture({
 		.width = w,
 		.height = h,
 		.format = RHI::TextureFormat::BGRA8,
 		.usage = RHI::TextureUsage::ColorAttachment,
-		.samples = RHI::SampleCount::x4,
-		.debugName = "UIMSAAColor",
+		.samples = RHI::SampleCount::X4,
+		.debug_name = "UIMSAAColor",
 	});
 
-	m_OverlayPass = m_Ctx->CreateRenderPass({
-		.colorAttachments = { {
-			.texture = &m_MSAAColor->GetRHI(),
-			.loadOp = RHI::AttachmentLoadOp::Clear,
-			.storeOp = RHI::AttachmentStoreOp::DontCare,
+	m_overlay_pass = m_ctx->create_render_pass({
+		.color_attachments = { {
+			.texture = &m_msaa_color->get_rhi(),
+			.load_op = RHI::AttachmentLoadOp::Clear,
+			.store_op = RHI::AttachmentStoreOp::DontCare,
 		} },
-		.useSwapchainAsResolve = true,
-		.debugName = "UIOverlay",
+		.use_swapchain_as_resolve = true,
+		.debug_name = "UIOverlay",
 	});
 }
 
-void ViewRenderingSystem::AddPasses(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) {
-	const uint32 w = ctx.width;
-	const uint32 h = ctx.height;
-	auto *r2d = m_R2D.get();
+void ViewRenderingSystem::add_passes(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) {
+	const Uint32 w = ctx.width;
+	const Uint32 h = ctx.height;
+	auto *r2d = m_r2_d.get();
 
 	// WorldSpace + ScreenCamera composite into scene color.
-	graph.AddPass(
+	graph.add_pass(
 		"GameUI",
 		[&ctx](Graphics::RG::RGPassBuilder &builder) {
-			ctx.hSceneColor = builder.SetColorAttachment(0, ctx.hSceneColor, Graphics::RG::AttachmentLoadOp::Load,
-														 Graphics::RG::AttachmentStoreOp::Store);
+			ctx.h_scene_color = builder.set_color_attachment(0, ctx.h_scene_color, Graphics::RG::AttachmentLoadOp::Load,
+															 Graphics::RG::AttachmentStoreOp::Store);
 		},
 		[r2d, w, h](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
-			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);
-			r2d->Begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::x1, ortho);
-			Core::CanvasManager::Get()->RenderLayers(*r2d, cmd, Core::UILayer::WorldSpace, Core::UILayer::ScreenCamera);
-			r2d->End();
+			const Mat4 ortho = glm::ortho(0.F, static_cast<float>(w), static_cast<float>(h), 0.F, -1.F, 1.F);
+			r2d->begin(cmd, RHI::TextureFormat::RGBA16F, RHI::SampleCount::X1, ortho);
+			Core::CanvasManager::get()->render_layers(*r2d, cmd, Core::UILayer::WorldSpace,
+													  Core::UILayer::ScreenCamera);
+			r2d->end();
 		});
 }
 
-void ViewRenderingSystem::BlitToSwapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) {
+void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) {
 	if (!ctx.swapchain) {
 		return;
 	}
 
-	const uint32 w = ctx.width;
-	const uint32 h = ctx.height;
+	const Uint32 w = ctx.width;
+	const Uint32 h = ctx.height;
 
-	if (!m_OverlayPass || w != m_Width || h != m_Height) {
-		m_Width = w;
-		m_Height = h;
-		RebuildOverlayResources(w, h);
+	if (!m_overlay_pass || w != m_width || h != m_height) {
+		m_width = w;
+		m_height = h;
+		rebuild_overlay_resources(w, h);
 	}
 
-	auto *r2d = m_R2D.get();
+	auto *r2d = m_r2_d.get();
 	auto *swapchain = ctx.swapchain;
-	auto imageIndex = ctx.swapchainImageIndex;
-	auto *overlayPass = m_OverlayPass.get();
+	auto image_index = ctx.swapchain_image_index;
+	auto *overlay_pass = m_overlay_pass.get();
 
 	// ScreenOverlay + Editor onto swapchain with MSAA resolve, after SwapchainBlit
-	graph.AddPass(
+	graph.add_pass(
 		"UIOverlay",
 		[&ctx](Graphics::RG::RGPassBuilder &builder) {
-			builder.MarkAsSideEffect();
-			builder.ReadTexture(ctx.hSceneColor, Graphics::RG::ResourceState::ShaderRead);
+			builder.mark_as_side_effect();
+			builder.read_texture(ctx.h_scene_color, Graphics::RG::ResourceState::ShaderRead);
 		},
-		[r2d, swapchain, imageIndex, overlayPass, w, h](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
-			const mat4 ortho = glm::ortho(0.f, static_cast<float>(w), static_cast<float>(h), 0.f, -1.f, 1.f);
+		[r2d, swapchain, image_index, overlay_pass, w, h](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
+			const Mat4 ortho = glm::ortho(0.F, static_cast<float>(w), static_cast<float>(h), 0.F, -1.F, 1.F);
 			const bool dirty =
-				Core::CanvasManager::Get()->IsAnyLayerDirty(Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
+				Core::CanvasManager::get()->is_any_layer_dirty(Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
 
-			overlayPass->Begin(cmd, swapchain, imageIndex);
+			overlay_pass->begin(cmd, swapchain, image_index);
 			if (dirty) {
 				PROFILE_SCOPE("UIOverlay::DirtyRebuild");
-				r2d->BeginCapture();
-				r2d->Begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, ortho);
-				Core::CanvasManager::Get()->RenderLayers(*r2d, cmd, Core::UILayer::ScreenOverlay,
-														 Core::UILayer::Editor);
-				r2d->End();
-				Core::CanvasManager::Get()->ClearLayerDirtyFlags(Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
+				r2d->begin_capture();
+				r2d->begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, ortho);
+				Core::CanvasManager::get()->render_layers(*r2d, cmd, Core::UILayer::ScreenOverlay,
+														  Core::UILayer::Editor);
+				r2d->end();
+				Core::CanvasManager::get()->clear_layer_dirty_flags(Core::UILayer::ScreenOverlay,
+																	Core::UILayer::Editor);
 			} else {
 				PROFILE_SCOPE("UIOverlay::Replay");
-				r2d->ExecuteReplay(cmd);
+				r2d->execute_replay(cmd);
 			}
-			overlayPass->End(cmd);
+			overlay_pass->end(cmd);
 		});
 }
 
-void ViewRenderingSystem::OnResize(uint32 width, uint32 height) {
-	Core::CanvasManager::Get()->Resize(width, height);
+void ViewRenderingSystem::on_resize(Uint32 width, Uint32 height) {
+	Core::CanvasManager::get()->resize(width, height);
 }
 
 } // namespace Aquila::UI::Rendering

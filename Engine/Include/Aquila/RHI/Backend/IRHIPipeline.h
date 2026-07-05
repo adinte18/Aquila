@@ -7,7 +7,7 @@ namespace Aquila::RHI {
 
 class IRHICommandList;
 
-enum class PipelineBindPoint : uint8 { Graphics, Compute };
+enum class PipelineBindPoint : Uint8 { Graphics, Compute };
 
 class IRHIPipeline {
   public:
@@ -16,8 +16,8 @@ class IRHIPipeline {
 	IRHIPipeline(const IRHIPipeline &) = delete;
 	IRHIPipeline &operator=(const IRHIPipeline &) = delete;
 
-	virtual void Bind(IRHICommandList &cmd) = 0;
-	[[nodiscard]] virtual PipelineBindPoint GetBindPoint() const = 0;
+	virtual void bind(IRHICommandList &cmd) = 0;
+	[[nodiscard]] virtual PipelineBindPoint get_bind_point() const = 0;
 
   protected:
 	IRHIPipeline() = default;

@@ -11,15 +11,15 @@ class DockCloseButton : public Button {
   public:
 	DockCloseButton() = default;
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "DockCloseButton"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "DockCloseButton"; }
 
-	void SetCloseInfo(DockNode *node, DockPanel *panel);
+	void set_close_info(DockNode *node, DockPanel *panel);
 
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
+	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
 
   private:
-	DockNode *m_Node = nullptr;
-	DockPanel *m_Panel = nullptr;
+	DockNode *m_node = nullptr;
+	DockPanel *m_panel = nullptr;
 };
 
 } // namespace Aquila::UI::Core

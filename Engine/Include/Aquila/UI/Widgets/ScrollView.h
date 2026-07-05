@@ -8,18 +8,18 @@ class ScrollView : public View {
   public:
 	ScrollView();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "ScrollView"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "ScrollView"; }
 
-	View *AddContent(Unique<View> child);
+	View *add_content(Unique<View> child);
 
-	template <typename T, typename... Args> T *AddContent(Args &&...args) {
-		return static_cast<T *>(AddContent(CreateUnique<T>(std::forward<Args>(args)...)));
+	template <typename T, typename... Args> T *add_content(Args &&...args) {
+		return static_cast<T *>(add_content(create_unique<T>(std::forward<Args>(args)...)));
 	}
 
-	void RemoveOldestContent();
+	void remove_oldest_content();
 
   private:
-	View *m_Inner = nullptr;
+	View *m_inner = nullptr;
 };
 
 } // namespace Aquila::UI::Core

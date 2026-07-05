@@ -3,17 +3,17 @@
 
 namespace Aquila::UI::Core {
 
-void DockCloseButton::SetCloseInfo(DockNode *node, DockPanel *panel) {
-	m_Node = node;
-	m_Panel = panel;
+void DockCloseButton::set_close_info(DockNode *node, DockPanel *panel) {
+	m_node = node;
+	m_panel = panel;
 }
 
-void DockCloseButton::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	View::OnMouseRelease(btn, pos);
-	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		DockNode *node = m_Node;
-		DockPanel *panel = m_Panel;
-		node->ClosePanel(panel);
+void DockCloseButton::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	View::on_mouse_release(btn, pos);
+	if (btn == Platform::MouseButton::Left && m_is_hovered) {
+		DockNode *node = m_node;
+		DockPanel *panel = m_panel;
+		node->close_panel(panel);
 	}
 }
 

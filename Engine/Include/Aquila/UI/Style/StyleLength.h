@@ -8,24 +8,24 @@ struct StyleLength {
 	LengthUnit unit = LengthUnit::Auto;
 	float value = 0.0f;
 
-	constexpr static StyleLength Pixel(float pixels) { return { .unit = LengthUnit::Pixel, .value = pixels }; }
-	constexpr static StyleLength Percent(float percent) { return { .unit = LengthUnit::Percent, .value = percent }; }
-	constexpr static StyleLength Auto() { return { .unit = LengthUnit::Auto, .value = 0.f }; }
-	constexpr static StyleLength Grow() { return { .unit = LengthUnit::Grow, .value = 0.f }; }
+	constexpr static StyleLength pixel(float pixels) { return { .unit = LengthUnit::Pixel, .value = pixels }; }
+	constexpr static StyleLength percent(float percent) { return { .unit = LengthUnit::Percent, .value = percent }; }
+	constexpr static StyleLength Auto() { return { .unit = LengthUnit::Auto, .value = 0.F }; }
+	constexpr static StyleLength grow() { return { .unit = LengthUnit::Grow, .value = 0.F }; }
 
-	[[nodiscard]] bool IsAuto() const { return unit == LengthUnit::Auto; }
-	[[nodiscard]] bool IsGrow() const { return unit == LengthUnit::Grow; }
-	[[nodiscard]] bool IsPixel() const { return unit == LengthUnit::Pixel; }
-	[[nodiscard]] bool IsPercent() const { return unit == LengthUnit::Percent; }
+	[[nodiscard]] bool is_auto() const { return unit == LengthUnit::Auto; }
+	[[nodiscard]] bool is_grow() const { return unit == LengthUnit::Grow; }
+	[[nodiscard]] bool is_pixel() const { return unit == LengthUnit::Pixel; }
+	[[nodiscard]] bool is_percent() const { return unit == LengthUnit::Percent; }
 
-	[[nodiscard]] float Resolve(float parentSize) const {
+	[[nodiscard]] float resolve(float parent_size) const {
 		switch (unit) {
 		case LengthUnit::Pixel:
 			return value;
 		case LengthUnit::Percent:
-			return parentSize * (value / 100.0f);
+			return parent_size * (value / 100.0f);
 		default:
-			return 0.f;
+			return 0.F;
 		}
 	}
 
@@ -36,13 +36,13 @@ struct StyleLength {
 struct StyleEdges {
 	StyleLength top, right, bottom, left;
 
-	constexpr static StyleEdges All(StyleLength value) {
+	constexpr static StyleEdges all(StyleLength value) {
 		return { .top = value, .right = value, .bottom = value, .left = value };
 	}
-	constexpr static StyleEdges Axes(StyleLength vertical, StyleLength horizontal) {
+	constexpr static StyleEdges axes(StyleLength vertical, StyleLength horizontal) {
 		return { .top = vertical, .right = horizontal, .bottom = vertical, .left = horizontal };
 	}
-	constexpr static StyleEdges Zero() { return All(StyleLength::Pixel(0.f)); }
+	constexpr static StyleEdges zero() { return all(StyleLength::pixel(0.F)); }
 
 	bool operator==(const StyleEdges &other) const {
 		return top == other.top && right == other.right && bottom == other.bottom && left == other.left;

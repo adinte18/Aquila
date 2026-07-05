@@ -17,23 +17,23 @@ using namespace SceneManagement::Components;
 using namespace Graphics;
 
 struct MeshPushConstants {
-	mat4 model;
-	vec4 color = vec4(1.F);
-	uint32 materialIndex = 0;
+	Mat4 model;
+	Vec4 color = Vec4(1.F);
+	Uint32 material_index = 0;
 };
 
-void GeometrySystem::OnInit(GFX::GfxContext &ctx) {
-	RenderingSystemBase::OnInit(ctx);
+void GeometrySystem::on_init(GFX::GfxContext &ctx) {
+	RenderingSystemBase::on_init(ctx);
 }
 
-void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
-	auto &registry = ctx.scene->GetRegistry();
+void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
+	auto &registry = ctx.scene->get_registry();
 	auto view = registry.view<TransformComponent, MeshComponent>();
 
 	struct DrawCall {
-		Ref<GFX::GfxMesh> gpuMesh;
-		mat4 model;
-		uint32 materialIndex = 0;
+		Ref<GFX::GfxMesh> gpu_mesh;
+		Mat4 model;
+		Uint32 material_index = 0;
 	};
 
 	std::unordered_map<Material *, std::vector<DrawCall>> batches;
@@ -41,7 +41,7 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 	for (auto entity : view) {
 		auto &transform = view.get<TransformComponent>(entity);
 		auto &mesh = view.get<MeshComponent>(entity);
-		if (!mesh.IsValid()) {
+		if (!mesh.is_valid()) {
 			continue;
 		}
 
@@ -51,9 +51,9 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 		}
 
 		batches[mat->material.get()].push_back({
-			.gpuMesh = GetOrUploadMesh(mesh.data),
-			.model = transform.GetWorldMatrix(),
-			.materialIndex = mat->materialIndex,
+			.gpu_mesh = get_or_upload_mesh(mesh.data),
+			.model = transform.get_world_matrix(),
+			.material_index = mat->material_index,
 		});
 	}
 
@@ -61,35 +61,35 @@ void GeometrySystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
 		return;
 	}
 
-	auto *frameData = ctx.frameData;
-	const uint32 frameSlot = ctx.frameSlot;
+	auto *frame_data = ctx.frame_data;
+	const Uint32 frame_slot = ctx.frame_slot;
 
-	graph.AddPass(
+	graph.add_pass(
 		"Geometry",
 		[&ctx](RG::RGPassBuilder &builder) {
-			builder.ReadBuffer(ctx.hLightList, RG::ResourceState::ShaderRead);
-			builder.ReadBuffer(ctx.hClusterLightInfo, RG::ResourceState::ShaderRead);
+			builder.read_buffer(ctx.h_light_list, RG::ResourceState::ShaderRead);
+			builder.read_buffer(ctx.h_cluster_light_info, RG::ResourceState::ShaderRead);
 
-			ctx.hSceneColor =
-				builder.SetColorAttachment(0, ctx.hSceneColor, RG::AttachmentLoadOp::Clear,
-										   RG::AttachmentStoreOp::Store, { Foundation::Color::RGBA::DarkGray });
+			ctx.h_scene_color =
+				builder.set_color_attachment(0, ctx.h_scene_color, RG::AttachmentLoadOp::Clear,
+											 RG::AttachmentStoreOp::Store, { Foundation::Color::RGBA::DARK_GRAY });
 
-			builder.SetDepthAttachment(ctx.hDepth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
-									   RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
-									   /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
+			builder.set_depth_attachment(ctx.h_depth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
+										 RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
+										 /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
-		[batches = std::move(batches), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+		[batches = std::move(batches), frame_data, frame_slot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 			for (auto &[material, drawCalls] : batches) {
-				material->Flush(frameSlot);
-				material->Bind(cmd, 1, frameSlot);
-				cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
+				material->flush(frame_slot);
+				material->bind(cmd, 1, frame_slot);
+				cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 
 				for (const auto &dc : drawCalls) {
-					MeshPushConstants push{ .model = dc.model, .materialIndex = dc.materialIndex };
-					cmd.PushConstants(push, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
-					cmd.BindVertexBuffer(dc.gpuMesh->GetVertexBuffer());
-					cmd.BindIndexBuffer(dc.gpuMesh->GetIndexBuffer());
-					cmd.DrawIndexed(dc.gpuMesh->GetIndexCount());
+					MeshPushConstants push{ .model = dc.model, .material_index = dc.material_index };
+					cmd.push_constants(push, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
+					cmd.bind_vertex_buffer(dc.gpu_mesh->get_vertex_buffer());
+					cmd.bind_index_buffer(dc.gpu_mesh->get_index_buffer());
+					cmd.draw_indexed(dc.gpu_mesh->get_index_count());
 				}
 			}
 		});

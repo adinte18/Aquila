@@ -20,11 +20,11 @@ class IRenderer {
 	AQUILA_NONCOPYABLE(IRenderer);
 	AQUILA_NONMOVEABLE(IRenderer);
 
-	virtual void OnInit(GFX::GfxContext &ctx) = 0;
-	virtual void AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) = 0;
-	virtual void BlitToSwapchain(Graphics::RG::RenderGraph & /*graph*/, FrameContext & /*ctx*/) {}
-	virtual void OnResize(uint32 width, uint32 height) {}
-	virtual void OnShutdown() {}
+	virtual void on_init(GFX::GfxContext &ctx) = 0;
+	virtual void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) = 0;
+	virtual void blit_to_swapchain(Graphics::RG::RenderGraph & /*graph*/, FrameContext & /*ctx*/) {}
+	virtual void on_resize(Uint32 width, Uint32 height) {}
+	virtual void on_shutdown() {}
 
   protected:
 	IRenderer() = default;

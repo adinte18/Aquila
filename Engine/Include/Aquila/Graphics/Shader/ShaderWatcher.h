@@ -6,83 +6,83 @@
 namespace Aquila::Graphics::Shader {
 
 struct WatchedShader {
-	std::string slangPath; // original path as supplied (VFS or native)
-	std::string programName;
-	uint64 lastModified = 0;
-	bool isNative = false; // true = bypass VFS, use std::filesystem directly
+	std::string slang_path; // original path as supplied (VFS or native)
+	std::string program_name;
+	Uint64 last_modified = 0;
+	bool is_native = false; // true = bypass VFS, use std::filesystem directly
 };
 
 class ShaderWatcher {
   public:
 	ShaderWatcher() = default;
 
-	void Enable(bool enable) { m_Enabled = enable; }
-	bool IsEnabled() const { return m_Enabled; }
+	void enable(bool enable) { m_enabled = enable; }
+	bool is_enabled() const { return m_enabled; }
 
 	// Accepts either:
 	//   - A VFS virtual path  (e.g. "assets://Shaders/GBuffer.slang")
 	//   - A native absolute path (e.g. "C:/Programming/Aquila/Engine/Shaders/GBuffer.slang")
-	void WatchSlangFile(const std::string &slangPath, const std::string &programName) {
-		bool native = IsNativePath(slangPath);
+	void watch_slang_file(const std::string &slang_path, const std::string &program_name) {
+		bool native = is_native_path(slang_path);
 
 		if (native) {
-			if (!std::filesystem::exists(slangPath)) {
-				AQUILA_LOG_WARNING("ShaderWatcher: cannot watch non-existent file '{}'", slangPath);
+			if (!std::filesystem::exists(slang_path)) {
+				AQUILA_LOG_WARNING("ShaderWatcher: cannot watch non-existent file '{}'", slang_path);
 				return;
 			}
-			uint64 lastWrite = NativeLastWriteTime(slangPath);
-			m_WatchedFiles[slangPath] = { .slangPath = slangPath,
-										  .programName = programName,
-										  .lastModified = lastWrite,
-										  .isNative = true };
+			Uint64 last_write = native_last_write_time(slang_path);
+			m_watched_files[slang_path] = { .slang_path = slang_path,
+										  .program_name = program_name,
+										  .last_modified = last_write,
+										  .is_native = true };
 		} else {
-			auto *vfs = Platform::Filesystem::VirtualFileSystem::Get();
-			if (!vfs->Exists(slangPath)) {
-				AQUILA_LOG_WARNING("ShaderWatcher: cannot watch non-existent VFS file '{}'", slangPath);
+			auto *vfs = Platform::Filesystem::VirtualFileSystem::get();
+			if (!vfs->exists(slang_path)) {
+				AQUILA_LOG_WARNING("ShaderWatcher: cannot watch non-existent VFS file '{}'", slang_path);
 				return;
 			}
-			m_WatchedFiles[slangPath] = { .slangPath = slangPath,
-										  .programName = programName,
-										  .lastModified = vfs->GetLastWriteTime(slangPath),
-										  .isNative = false };
+			m_watched_files[slang_path] = { .slang_path = slang_path,
+										  .program_name = program_name,
+										  .last_modified = vfs->get_last_write_time(slang_path),
+										  .is_native = false };
 		}
 
-		AQUILA_LOG_INFO("ShaderWatcher: watching '{}' ({}) -> program '{}'", slangPath, native ? "native" : "VFS",
-						programName);
+		AQUILA_LOG_INFO("ShaderWatcher: watching '{}' ({}) -> program '{}'", slang_path, native ? "native" : "VFS",
+						program_name);
 	}
 
-	void Unwatch(const std::string &slangPath) { m_WatchedFiles.erase(slangPath); }
-	void Clear() { m_WatchedFiles.clear(); }
+	void unwatch(const std::string &slang_path) { m_watched_files.erase(slang_path); }
+	void clear() { m_watched_files.clear(); }
 
 	// Returns the set of program names that need to be reloaded.
-	std::unordered_set<std::string> CheckForChanges() {
-		if (!m_Enabled) {
+	std::unordered_set<std::string> check_for_changes() {
+		if (!m_enabled) {
 			return {};
 		}
 
 		std::unordered_set<std::string> changed;
-		auto *vfs = Platform::Filesystem::VirtualFileSystem::Get();
+		auto *vfs = Platform::Filesystem::VirtualFileSystem::get();
 
-		for (auto &[path, watch] : m_WatchedFiles) {
-			uint64 current = 0;
+		for (auto &[path, watch] : m_watched_files) {
+			Uint64 current = 0;
 
-			if (watch.isNative) {
+			if (watch.is_native) {
 				if (!std::filesystem::exists(path)) {
 					continue;
 				}
-				current = NativeLastWriteTime(path);
+				current = native_last_write_time(path);
 			} else {
-				if (!vfs->Exists(path)) {
+				if (!vfs->exists(path)) {
 					continue;
 				}
-				current = vfs->GetLastWriteTime(path);
+				current = vfs->get_last_write_time(path);
 			}
 
-			if (current > watch.lastModified) {
+			if (current > watch.last_modified) {
 				AQUILA_LOG_INFO("ShaderWatcher: '{}' modified, queuing reload of program '{}'", path,
-								watch.programName);
-				watch.lastModified = current;
-				changed.insert(watch.programName);
+								watch.program_name);
+				watch.last_modified = current;
+				changed.insert(watch.program_name);
 			}
 		}
 
@@ -93,7 +93,7 @@ class ShaderWatcher {
 	// A path is treated as native if it is an absolute filesystem path
 	// (starts with a drive letter on Windows, or '/' on Unix) and does NOT
 	// contain "://" which is the VFS scheme separator.
-	static bool IsNativePath(const std::string &path) {
+	static bool is_native_path(const std::string &path) {
 		if (path.find("://") != std::string::npos) {
 			return false; // VFS virtual path
 		}
@@ -102,18 +102,18 @@ class ShaderWatcher {
 		return std::filesystem::path(path).is_absolute();
 	}
 
-	static uint64 NativeLastWriteTime(const std::string &path) {
+	static Uint64 native_last_write_time(const std::string &path) {
 		std::error_code ec;
 		auto ftime = std::filesystem::last_write_time(path, ec);
 		if (ec) {
 			return 0;
 		}
 		// Convert to a plain integer comparable across calls
-		return static_cast<uint64>(ftime.time_since_epoch().count());
+		return static_cast<Uint64>(ftime.time_since_epoch().count());
 	}
 
-	std::unordered_map<std::string, WatchedShader> m_WatchedFiles;
-	bool m_Enabled = false;
+	std::unordered_map<std::string, WatchedShader> m_watched_files;
+	bool m_enabled = false;
 };
 
 } // namespace Aquila::Graphics::Shader

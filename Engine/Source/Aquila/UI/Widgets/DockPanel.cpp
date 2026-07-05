@@ -3,24 +3,24 @@
 
 namespace Aquila::UI::Core {
 
-DockPanel::DockPanel(std::string title) : m_Title(std::move(title)) {
-	AddClass("dock-panel");
+DockPanel::DockPanel(std::string title) : m_title(std::move(title)) {
+	add_class("dock-panel");
 }
 
-void DockPanel::SetTitle(std::string title) {
-	m_Title = std::move(title);
+void DockPanel::set_title(std::string title) {
+	m_title = std::move(title);
 }
 
-void DockPanel::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void DockPanel::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "src" || name == "icon") {
-		if (auto *loader = static_cast<LayoutLoader *>(loaderCtx)) {
-			if (GFX::GfxTexture *tex = loader->ResolveTexture(std::string(value))) {
-				m_TabIcon = tex;
+		if (auto *loader = static_cast<LayoutLoader *>(loader_ctx)) {
+			if (GFX::GfxTexture *tex = loader->resolve_texture(std::string(value))) {
+				m_tab_icon = tex;
 			}
 		}
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
 } // namespace Aquila::UI::Core

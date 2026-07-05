@@ -8,59 +8,59 @@
 using namespace Aquila;
 using namespace Aquila::Graphics;
 
-static constexpr const char *kFlatShader = AQUILA_SHADERS_DIR "2D/Flat2D.slang";
-static constexpr const char *kTextureShader = AQUILA_SHADERS_DIR "2D/Sprite2D.slang";
-static constexpr const char *kGUIShader = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
-static constexpr const char *kTextShader = AQUILA_SHADERS_DIR "2D/Text2D.slang";
-static constexpr const char *kShadowShader = AQUILA_SHADERS_DIR "2D/Shadow2D.slang";
+static constexpr const char *K_FLAT_SHADER = AQUILA_SHADERS_DIR "2D/Flat2D.slang";
+static constexpr const char *K_TEXTURE_SHADER = AQUILA_SHADERS_DIR "2D/Sprite2D.slang";
+static constexpr const char *K_GUI_SHADER = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
+static constexpr const char *K_TEXT_SHADER = AQUILA_SHADERS_DIR "2D/Text2D.slang";
+static constexpr const char *K_SHADOW_SHADER = AQUILA_SHADERS_DIR "2D/Shadow2D.slang";
 
-static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, const char *shaderPath,
-										   const std::vector<GFX::GfxDescriptorSetLayout *> &setLayouts,
-										   uint32 pushConstantSize, RHI::TextureFormat colorFormat,
-										   RHI::SampleCount sampleCount, RHI::TextureFormat depthFormat,
-										   RHI::VertexBindingDesc vertexLayout, bool minSampleShading = false) {
+static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *shader_path,
+											const std::vector<GFX::GfxDescriptorSetLayout *> &set_layouts,
+											Uint32 push_constant_size, RHI::TextureFormat color_format,
+											RHI::SampleCount sample_count, RHI::TextureFormat depth_format,
+											RHI::VertexBindingDesc vertex_layout, bool min_sample_shading = false) {
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(shaderPath, stages, err)) {
-		AQUILA_LOG_ERROR("QuadBatcher shader failed [{}]: {}", shaderPath, err);
+	if (!RHI::VulkanShaderCompiler::compile_file(shader_path, stages, err)) {
+		AQUILA_LOG_ERROR("QuadBatcher shader failed [{}]: {}", shader_path, err);
 	}
 
 	RHI::GraphicsPipelineDesc desc{};
 	for (auto &s : stages) {
-		RHI::ShaderStageDesc sd{ .spirv = s.spirv, .entryPoint = s.entryPointName };
+		RHI::ShaderStageDesc sd{ .spirv = s.spirv, .entry_point = s.entry_point_name };
 		if (s.stage == VK_SHADER_STAGE_VERTEX_BIT) {
 			sd.stage = RHI::ShaderStageFlags::Vertex;
-			desc.vertexShader = sd;
+			desc.vertex_shader = sd;
 		} else {
 			sd.stage = RHI::ShaderStageFlags::Fragment;
-			desc.fragmentShader = sd;
+			desc.fragment_shader = sd;
 		}
 	}
 
 	std::vector<RHI::IRHIDescriptorSetLayout *> temp;
-	temp.reserve(setLayouts.size());
-	for (const auto &layout : setLayouts) {
-		temp.push_back(&layout->GetRHI());
+	temp.reserve(set_layouts.size());
+	for (const auto &layout : set_layouts) {
+		temp.push_back(&layout->get_rhi());
 	}
 
-	desc.setLayouts = temp;
-	desc.colorFormats = { colorFormat };
-	desc.depthFormat = depthFormat;
+	desc.set_layouts = temp;
+	desc.color_formats = { color_format };
+	desc.depth_format = depth_format;
 	desc.topology = RHI::PrimitiveTopology::TriangleList;
-	desc.raster.cullMode = RHI::CullMode::None;
-	desc.raster.frontFace = RHI::FrontFace::Clockwise;
-	desc.depthStencil.depthTest = false;
-	desc.depthStencil.depthWrite = false;
-	desc.blendAttachments = { { true } };
-	desc.pushConstants = { { RHI::ShaderStageFlags::Vertex, 0, pushConstantSize } };
-	desc.sampleCount = sampleCount;
-	desc.minSampleShading = minSampleShading;
-	desc.customVertexLayout = std::move(vertexLayout);
+	desc.raster.cull_mode = RHI::CullMode::None;
+	desc.raster.front_face = RHI::FrontFace::Clockwise;
+	desc.depth_stencil.depth_test = false;
+	desc.depth_stencil.depth_write = false;
+	desc.blend_attachments = { { true } };
+	desc.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, push_constant_size } };
+	desc.sample_count = sample_count;
+	desc.min_sample_shading = min_sample_shading;
+	desc.custom_vertex_layout = std::move(vertex_layout);
 
-	return ctx.CreateGraphicsPipeline(desc);
+	return ctx.create_graphics_pipeline(desc);
 }
 
-static RHI::VertexBindingDesc QuadVertexLayout() {
+static RHI::VertexBindingDesc quad_vertex_layout() {
 	return RHI::VertexBindingDesc{
 		.stride = sizeof(QuadVertex),
 		.attributes = {
@@ -69,32 +69,33 @@ static RHI::VertexBindingDesc QuadVertexLayout() {
 			{ 2, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, uv) },
 			{ 3, 0, RHI::TextureFormat::RG32F, offsetof(QuadVertex, size) },
 			{ 4, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, radius) },
-			{ 5, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, borderWidth) },
-			{ 6, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, borderColor) },
-			{ 7, 0, RHI::TextureFormat::R32UI, offsetof(QuadVertex, glyphID) },
+			{ 5, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, border_width) },
+			{ 6, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, border_color) },
+			{ 7, 0, RHI::TextureFormat::R32UI, offsetof(QuadVertex, glyph_id) },
+			{ 8, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, border_style) },
 		},
 	};
 }
 
-static RHI::VertexBindingDesc TextVertexLayout() {
+static RHI::VertexBindingDesc text_vertex_layout() {
 	return RHI::VertexBindingDesc{
 		.stride = sizeof(TextVertex),
 		.attributes = {
 			{ 0, 0, RHI::TextureFormat::RGB32F, offsetof(TextVertex, position) },
 			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, color) },
 			{ 2, 0, RHI::TextureFormat::RG32F, offsetof(TextVertex, texcoord) },
-			{ 3, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, texLoc) },
-			{ 4, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, bandMax) },
+			{ 3, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, tex_loc) },
+			{ 4, 0, RHI::TextureFormat::R32F, offsetof(TextVertex, band_max) },
 			{ 5, 0, RHI::TextureFormat::RGBA32F, offsetof(TextVertex, banding) },
 		},
 	};
 }
 
-static std::vector<uint32> GenerateQuadIndices(uint32 maxQuads) {
-	std::vector<uint32> indices;
-	indices.reserve(maxQuads * SharedConstants::INDICES_PER_QUAD);
-	for (uint32 i = 0; i < maxQuads; ++i) {
-		const uint32 base = i * SharedConstants::VERTS_PER_QUAD;
+static std::vector<Uint32> generate_quad_indices(Uint32 max_quads) {
+	std::vector<Uint32> indices;
+	indices.reserve(max_quads * SharedConstants::INDICES_PER_QUAD);
+	for (Uint32 i = 0; i < max_quads; ++i) {
+		const Uint32 base = i * SharedConstants::VERTS_PER_QUAD;
 		indices.push_back(base + 0);
 		indices.push_back(base + 1);
 		indices.push_back(base + 2);
@@ -105,37 +106,37 @@ static std::vector<uint32> GenerateQuadIndices(uint32 maxQuads) {
 	return indices;
 }
 
-QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
-	const uint64 quadVbSize = sizeof(QuadVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
-	const uint64 textVbSize = sizeof(TextVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
+QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_ctx(ctx) {
+	const Uint64 quad_vb_size = sizeof(QuadVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
+	const Uint64 text_vb_size = sizeof(TextVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
 
-	for (uint32 i = 0; i < kRingSize; ++i) {
-		m_VertexBuffers[i] = ctx.CreateBuffer({
-			.size = quadVbSize,
+	for (Uint32 i = 0; i < K_RING_SIZE; ++i) {
+		m_vertex_buffers[i] = ctx.create_buffer({
+			.size = quad_vb_size,
 			.usage = RHI::BufferUsage::VertexBuffer,
-			.domain = RHI::MemoryDomain::CPU_TO_GPU,
-			.debugName = "QuadBatcher_VB",
+			.domain = RHI::MemoryDomain::CpuToGpu,
+			.debug_name = "QuadBatcher_VB",
 		});
-		m_TextVertexBuffers[i] = ctx.CreateBuffer({
-			.size = textVbSize,
+		m_text_vertex_buffers[i] = ctx.create_buffer({
+			.size = text_vb_size,
 			.usage = RHI::BufferUsage::VertexBuffer,
-			.domain = RHI::MemoryDomain::CPU_TO_GPU,
-			.debugName = "QuadBatcher_TextVB",
+			.domain = RHI::MemoryDomain::CpuToGpu,
+			.debug_name = "QuadBatcher_TextVB",
 		});
-		m_MappedQuadBases[i] = static_cast<QuadVertex *>(m_VertexBuffers[i]->Map());
-		m_MappedTextBases[i] = static_cast<TextVertex *>(m_TextVertexBuffers[i]->Map());
+		m_mapped_quad_bases[i] = static_cast<QuadVertex *>(m_vertex_buffers[i]->map());
+		m_mapped_text_bases[i] = static_cast<TextVertex *>(m_text_vertex_buffers[i]->map());
 	}
 
-	auto indices = GenerateQuadIndices(SharedConstants::MAX_QUADS);
-	m_IndexBuffer = ctx.CreateBuffer({
-		.size = static_cast<uint64>(sizeof(uint32) * indices.size()),
+	auto indices = generate_quad_indices(SharedConstants::MAX_QUADS);
+	m_index_buffer = ctx.create_buffer({
+		.size = static_cast<Uint64>(sizeof(Uint32) * indices.size()),
 		.usage = RHI::BufferUsage::IndexBuffer | RHI::BufferUsage::TransferDst,
-		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "QuadBatcher_IB",
+		.domain = RHI::MemoryDomain::CpuToGpu,
+		.debug_name = "QuadBatcher_IB",
 	});
-	m_IndexBuffer->Write(indices.data(), sizeof(uint32) * indices.size());
+	m_index_buffer->write(indices.data(), sizeof(Uint32) * indices.size());
 
-	m_TextureLayout = ctx.CreateDescriptorSetLayout({
+	m_texture_layout = ctx.create_descriptor_set_layout({
 		.bindings = { {
 			.binding = 0,
 			.type = RHI::DescriptorType::CombinedImageSampler,
@@ -144,7 +145,7 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 		} },
 	});
 
-	m_TextDataLayout = ctx.CreateDescriptorSetLayout({
+	m_text_data_layout = ctx.create_descriptor_set_layout({
 		.bindings = {
 			{
 				.binding = 0,
@@ -162,254 +163,256 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_Ctx(ctx) {
 	});
 
 	for (auto fmt : { RHI::TextureFormat::BGRA8, RHI::TextureFormat::RGBA16F }) {
-		GetOrCreateFlatPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
-		GetOrCreateGUIPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
-		GetOrCreateTexturePipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
-		GetOrCreateTextPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
-		GetOrCreateShadowPipeline(fmt, RHI::SampleCount::x1, RHI::TextureFormat::None);
+		get_or_create_flat_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
+		get_or_create_gui_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
+		get_or_create_texture_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
+		get_or_create_text_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
+		get_or_create_shadow_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
 	}
 
-	GetOrCreateTextPipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, RHI::TextureFormat::None);
+	get_or_create_text_pipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, RHI::TextureFormat::None);
 }
 
-void QuadBatcher::Begin(GFX::GfxCommandList &cmd, RHI::TextureFormat colorFormat, RHI::SampleCount sampleCount,
-						const mat4 &viewProjection, RHI::TextureFormat depthFormat) {
-	AQUILA_ASSERT(!m_ActiveCmd, "QuadBatcher::Begin called while already recording");
-	m_ActiveCmd = &cmd;
-	m_ActiveColorFormat = colorFormat;
-	m_ActiveSampleCount = sampleCount;
-	m_ActiveDepthFormat = depthFormat;
-	m_ViewProjection = viewProjection;
+void QuadBatcher::begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format, RHI::SampleCount sample_count,
+						const Mat4 &view_projection, RHI::TextureFormat depth_format) {
+	AQUILA_ASSERT(!m_active_cmd, "QuadBatcher::Begin called while already recording");
+	m_active_cmd = &cmd;
+	m_active_color_format = color_format;
+	m_active_sample_count = sample_count;
+	m_active_depth_format = depth_format;
+	m_view_projection = view_projection;
 
-	const uint32 fi = m_FrameCounter % kRingSize;
-	++m_FrameCounter;
-	m_CurrentSlot = fi;
-	m_ActiveVertexBuffer = m_VertexBuffers[fi].get();
-	m_ActiveTextVertexBuffer = m_TextVertexBuffers[fi].get();
-	m_QuadWritePtr = m_MappedQuadBases[fi];
-	m_TextWritePtr = m_MappedTextBases[fi];
+	const Uint32 fi = m_frame_counter % K_RING_SIZE;
+	++m_frame_counter;
+	m_current_slot = fi;
+	m_active_vertex_buffer = m_vertex_buffers[fi].get();
+	m_active_text_vertex_buffer = m_text_vertex_buffers[fi].get();
+	m_quad_write_ptr = m_mapped_quad_bases[fi];
+	m_text_write_ptr = m_mapped_text_bases[fi];
 
-	m_VertexOffset = 0;
-	m_TextVertexOffset = 0;
-	m_LastBoundPipeline = nullptr;
-	m_LastBoundDescSet0 = nullptr;
-	m_LastBoundVertexBuffer = nullptr;
-	m_PushConstantsDirty = true;
+	m_vertex_offset = 0;
+	m_text_vertex_offset = 0;
+	m_last_bound_pipeline = nullptr;
+	m_last_bound_desc_set0 = nullptr;
+	m_last_bound_vertex_buffer = nullptr;
+	m_push_constants_dirty = true;
 
-	cmd.BindIndexBuffer(*m_IndexBuffer);
-	StartBatch();
+	cmd.bind_index_buffer(*m_index_buffer);
+	start_batch();
 }
 
-void QuadBatcher::End() {
-	AQUILA_ASSERT(m_ActiveCmd, "QuadBatcher::End called without Begin");
-	Flush();
-	if (m_Capturing) {
-		m_LastDirtySlot = m_CurrentSlot;
-		m_ReplayQuadBytes = static_cast<uint64>(m_VertexOffset) * sizeof(QuadVertex);
-		m_ReplayTextBytes = static_cast<uint64>(m_TextVertexOffset) * sizeof(TextVertex);
-		m_Capturing = false;
+void QuadBatcher::end() {
+	AQUILA_ASSERT(m_active_cmd, "QuadBatcher::End called without Begin");
+	flush();
+	if (m_capturing) {
+		m_last_dirty_slot = m_current_slot;
+		m_replay_quad_bytes = static_cast<Uint64>(m_vertex_offset) * sizeof(QuadVertex);
+		m_replay_text_bytes = static_cast<Uint64>(m_text_vertex_offset) * sizeof(TextVertex);
+		m_capturing = false;
 	}
-	m_ActiveCmd = nullptr;
+	m_active_cmd = nullptr;
 }
 
-void QuadBatcher::BeginCapture() {
-	m_ReplayList.clear();
-	m_Capturing = true;
+void QuadBatcher::begin_capture() {
+	m_replay_list.clear();
+	m_capturing = true;
 }
 
-void QuadBatcher::ExecuteReplay(GFX::GfxCommandList &cmd) {
-	if (m_ReplayList.empty()) {
+void QuadBatcher::execute_replay(GFX::GfxCommandList &cmd) {
+	if (m_replay_list.empty()) {
 		return;
 	}
 
-	GFX::GfxBuffer *replayQuadVB = m_VertexBuffers[m_LastDirtySlot].get();
-	GFX::GfxBuffer *replayTextVB = m_TextVertexBuffers[m_LastDirtySlot].get();
+	GFX::GfxBuffer *replay_quad_vb = m_vertex_buffers[m_last_dirty_slot].get();
+	GFX::GfxBuffer *replay_text_vb = m_text_vertex_buffers[m_last_dirty_slot].get();
 
-	cmd.BindIndexBuffer(*m_IndexBuffer);
+	cmd.bind_index_buffer(*m_index_buffer);
 
-	GFX::GfxPipeline *lastPipeline = nullptr;
-	GFX::GfxDescriptorSet *lastDescSet = nullptr;
-	GFX::GfxBuffer *lastVB = nullptr;
+	GFX::GfxPipeline *last_pipeline = nullptr;
+	GFX::GfxDescriptorSet *last_desc_set = nullptr;
+	GFX::GfxBuffer *last_vb = nullptr;
 
-	for (const ReplayEntry &entry : m_ReplayList) {
-		if (entry.isScissor) {
-			cmd.SetScissor(entry.scissorX, entry.scissorY, entry.scissorW, entry.scissorH);
+	for (const ReplayEntry &entry : m_replay_list) {
+		if (entry.is_scissor) {
+			cmd.set_scissor(entry.scissor_x, entry.scissor_y, entry.scissor_w, entry.scissor_h);
 			continue;
 		}
 
-		if (entry.pipeline != lastPipeline) {
-			cmd.BindPipeline(*entry.pipeline);
-			lastPipeline = entry.pipeline;
-			QuadPushConstants pc{ .viewProjection = m_ViewProjection };
-			cmd.PushConstants(pc, RHI::ShaderStageFlags::Vertex);
+		if (entry.pipeline != last_pipeline) {
+			cmd.bind_pipeline(*entry.pipeline);
+			last_pipeline = entry.pipeline;
+			QuadPushConstants pc{ .view_projection = m_view_projection };
+			cmd.push_constants(pc, RHI::ShaderStageFlags::Vertex);
 		}
 
-		GFX::GfxBuffer *vb = entry.isTextBuffer ? replayTextVB : replayQuadVB;
-		if (vb != lastVB) {
-			cmd.BindVertexBuffer(*vb, 0, 0);
-			lastVB = vb;
+		GFX::GfxBuffer *vb = entry.is_text_buffer ? replay_text_vb : replay_quad_vb;
+		if (vb != last_vb) {
+			cmd.bind_vertex_buffer(*vb, 0, 0);
+			last_vb = vb;
 		}
 
-		if (entry.descSet != nullptr && entry.descSet != lastDescSet) {
-			cmd.BindDescriptorSet(0, *entry.descSet);
-			lastDescSet = entry.descSet;
+		if (entry.desc_set != nullptr && entry.desc_set != last_desc_set) {
+			cmd.bind_descriptor_set(0, *entry.desc_set);
+			last_desc_set = entry.desc_set;
 		}
 
-		cmd.DrawIndexed(entry.indexCount, 1, 0, entry.vertexOffset);
+		cmd.draw_indexed(entry.index_count, 1, 0, entry.vertex_offset);
 	}
 }
 
-GFX::GfxPipeline &QuadBatcher::GetOrCreateFlatPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-													   RHI::TextureFormat depthFormat) {
-	PipelineKey key{ format, samples, depthFormat };
-	auto it = m_FlatPipelines.find(key);
-	if (it != m_FlatPipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_flat_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+														   RHI::TextureFormat depth_format) {
+	PipelineKey key{ format, samples, depth_format };
+	auto it = m_flat_pipelines.find(key);
+	if (it != m_flat_pipelines.end()) {
 		return *it->second;
 	}
-	m_FlatPipelines[key] = BuildPipeline(m_Ctx, kFlatShader, {}, sizeof(QuadPushConstants), format, samples,
-										 depthFormat, QuadVertexLayout());
-	return *m_FlatPipelines[key];
+	m_flat_pipelines[key] = build_pipeline(m_ctx, K_FLAT_SHADER, {}, sizeof(QuadPushConstants), format, samples,
+										   depth_format, quad_vertex_layout());
+	return *m_flat_pipelines[key];
 }
 
-GFX::GfxPipeline &QuadBatcher::GetOrCreateTexturePipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-														  RHI::TextureFormat depthFormat) {
-	PipelineKey key{ format, samples, depthFormat };
-	auto it = m_TexturePipelines.find(key);
-	if (it != m_TexturePipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_texture_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+															  RHI::TextureFormat depth_format) {
+	PipelineKey key{ format, samples, depth_format };
+	auto it = m_texture_pipelines.find(key);
+	if (it != m_texture_pipelines.end()) {
 		return *it->second;
 	}
-	m_TexturePipelines[key] = BuildPipeline(m_Ctx, kTextureShader, { m_TextureLayout.get() }, sizeof(QuadPushConstants),
-											format, samples, depthFormat, QuadVertexLayout());
-	return *m_TexturePipelines[key];
+	m_texture_pipelines[key] =
+		build_pipeline(m_ctx, K_TEXTURE_SHADER, { m_texture_layout.get() }, sizeof(QuadPushConstants), format, samples,
+					   depth_format, quad_vertex_layout());
+	return *m_texture_pipelines[key];
 }
 
-GFX::GfxPipeline &QuadBatcher::GetOrCreateGUIPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-													  RHI::TextureFormat depthFormat) {
-	PipelineKey key{ format, samples, depthFormat };
-	auto it = m_GUIPipelines.find(key);
-	if (it != m_GUIPipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_gui_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+														  RHI::TextureFormat depth_format) {
+	PipelineKey key{ format, samples, depth_format };
+	auto it = m_gui_pipelines.find(key);
+	if (it != m_gui_pipelines.end()) {
 		return *it->second;
 	}
-	m_GUIPipelines[key] = BuildPipeline(m_Ctx, kGUIShader, {}, sizeof(QuadPushConstants), format, samples, depthFormat,
-										QuadVertexLayout());
-	return *m_GUIPipelines[key];
+	m_gui_pipelines[key] = build_pipeline(m_ctx, K_GUI_SHADER, {}, sizeof(QuadPushConstants), format, samples,
+										  depth_format, quad_vertex_layout());
+	return *m_gui_pipelines[key];
 }
 
-GFX::GfxPipeline &QuadBatcher::GetOrCreateTextPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-													   RHI::TextureFormat depthFormat) {
-	PipelineKey key{ format, samples, depthFormat };
-	auto it = m_TextPipelines.find(key);
-	if (it != m_TextPipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_text_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+														   RHI::TextureFormat depth_format) {
+	PipelineKey key{ format, samples, depth_format };
+	auto it = m_text_pipelines.find(key);
+	if (it != m_text_pipelines.end()) {
 		return *it->second;
 	}
-	const bool perSampleShading = (samples != RHI::SampleCount::x1);
-	m_TextPipelines[key] = BuildPipeline(m_Ctx, kTextShader, { m_TextDataLayout.get() }, sizeof(QuadPushConstants),
-										 format, samples, depthFormat, TextVertexLayout(), perSampleShading);
-	return *m_TextPipelines[key];
+	const bool per_sample_shading = (samples != RHI::SampleCount::X1);
+	m_text_pipelines[key] =
+		build_pipeline(m_ctx, K_TEXT_SHADER, { m_text_data_layout.get() }, sizeof(QuadPushConstants), format, samples,
+					   depth_format, text_vertex_layout(), per_sample_shading);
+	return *m_text_pipelines[key];
 }
 
-GFX::GfxPipeline &QuadBatcher::GetOrCreateShadowPipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-														 RHI::TextureFormat depthFormat) {
-	PipelineKey key{ format, samples, depthFormat };
-	auto it = m_ShadowPipelines.find(key);
-	if (it != m_ShadowPipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_shadow_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+															 RHI::TextureFormat depth_format) {
+	PipelineKey key{ format, samples, depth_format };
+	auto it = m_shadow_pipelines.find(key);
+	if (it != m_shadow_pipelines.end()) {
 		return *it->second;
 	}
-	m_ShadowPipelines[key] = BuildPipeline(m_Ctx, kShadowShader, {}, sizeof(QuadPushConstants), format, samples,
-										   depthFormat, QuadVertexLayout());
-	return *m_ShadowPipelines[key];
+	m_shadow_pipelines[key] = build_pipeline(m_ctx, K_SHADOW_SHADER, {}, sizeof(QuadPushConstants), format, samples,
+											 depth_format, quad_vertex_layout());
+	return *m_shadow_pipelines[key];
 }
 
-void QuadBatcher::DrawShadow(const ShadowSpec &spec) {
-	if (m_BatchTexture != nullptr || m_BatchType != BatchType::Shadow) {
-		Flush();
-		StartBatch();
+void QuadBatcher::draw_shadow(const ShadowSpec &spec) {
+	if (m_batch_texture != nullptr || m_batch_type != BatchType::Shadow) {
+		flush();
+		start_batch();
 	}
-	if (m_QuadCount >= SharedConstants::MAX_QUADS) {
-		Flush();
-		StartBatch();
+	if (m_quad_count >= SharedConstants::MAX_QUADS) {
+		flush();
+		start_batch();
 	}
-	m_BatchType = BatchType::Shadow;
+	m_batch_type = BatchType::Shadow;
 
-	static constexpr vec2 kUVs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
+	static constexpr Vec2 k_u_vs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
 
 	const float x0 = spec.position.x, y0 = spec.position.y;
 	const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
 	const float z = spec.depth;
-	const vec4 enc = { spec.offset.x, spec.offset.y, spec.originalHalfSize.x, spec.originalHalfSize.y };
+	const Vec4 enc = { spec.offset.x, spec.offset.y, spec.original_half_size.x, spec.original_half_size.y };
 
-	QuadVertex *v = m_QuadWritePtr;
-	m_QuadWritePtr += 4;
+	QuadVertex *v = m_quad_write_ptr;
+	m_quad_write_ptr += 4;
 
 	v[0] = { .position = { x0, y0, z },
 			 .color = spec.color,
-			 .uv = kUVs[0],
+			 .uv = k_u_vs[0],
 			 .size = spec.size,
 			 .radius = spec.radius,
-			 .borderWidth = spec.blur,
-			 .borderColor = enc };
+			 .border_width = spec.blur,
+			 .border_color = enc };
 	v[1] = { .position = { x1, y0, z },
 			 .color = spec.color,
-			 .uv = kUVs[1],
+			 .uv = k_u_vs[1],
 			 .size = spec.size,
 			 .radius = spec.radius,
-			 .borderWidth = spec.blur,
-			 .borderColor = enc };
+			 .border_width = spec.blur,
+			 .border_color = enc };
 	v[2] = { .position = { x1, y1, z },
 			 .color = spec.color,
-			 .uv = kUVs[2],
+			 .uv = k_u_vs[2],
 			 .size = spec.size,
 			 .radius = spec.radius,
-			 .borderWidth = spec.blur,
-			 .borderColor = enc };
+			 .border_width = spec.blur,
+			 .border_color = enc };
 	v[3] = { .position = { x0, y1, z },
 			 .color = spec.color,
-			 .uv = kUVs[3],
+			 .uv = k_u_vs[3],
 			 .size = spec.size,
 			 .radius = spec.radius,
-			 .borderWidth = spec.blur,
-			 .borderColor = enc };
+			 .border_width = spec.blur,
+			 .border_color = enc };
 
-	++m_QuadCount;
-	++m_Stats.quadCount;
+	++m_quad_count;
+	++m_stats.quad_count;
 }
 
-void QuadBatcher::DrawRect(const RectSpec &spec) {
-	const bool hasRadius = glm::any(glm::greaterThan(spec.radius, vec4(0.F)));
-	const BatchType needed = (hasRadius || spec.borderWidth > 0.F) ? BatchType::GUI : BatchType::Flat;
+void QuadBatcher::draw_rect(const RectSpec &spec) {
+	const bool has_radius = glm::any(glm::greaterThan(spec.radius, Vec4(0.F)));
+	const BatchType needed = (has_radius || spec.border_width > 0.F) ? BatchType::GUI : BatchType::Flat;
 
-	if (m_BatchTexture != nullptr || m_BatchType != needed) {
-		Flush();
-		StartBatch();
+	if (m_batch_texture != nullptr || m_batch_type != needed) {
+		flush();
+		start_batch();
 	}
-	if (m_QuadCount >= SharedConstants::MAX_QUADS) {
-		Flush();
-		StartBatch();
+	if (m_quad_count >= SharedConstants::MAX_QUADS) {
+		flush();
+		start_batch();
 	}
-	m_BatchType = needed;
+	m_batch_type = needed;
 
-	static constexpr vec2 kUVs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
+	static constexpr Vec2 k_u_vs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
 
-	QuadVertex *v = m_QuadWritePtr;
-	m_QuadWritePtr += 4;
+	QuadVertex *v = m_quad_write_ptr;
+	m_quad_write_ptr += 4;
 
 	if (spec.rotation != 0.F) {
-		static constexpr vec4 kLocalCorners[4] = {
+		static constexpr Vec4 k_local_corners[4] = {
 			{ -0.5F, -0.5F, 0.F, 1.F },
 			{ 0.5F, -0.5F, 0.F, 1.F },
 			{ 0.5F, 0.5F, 0.F, 1.F },
 			{ -0.5F, 0.5F, 0.F, 1.F },
 		};
-		mat4 transform = BuildQuadTransform(spec.position, spec.size, spec.rotation, spec.depth);
-		for (uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
-			vec4 worldPos = transform * kLocalCorners[i];
-			v[i] = { .position = vec3(worldPos),
+		Mat4 transform = build_quad_transform(spec.position, spec.size, spec.rotation, spec.depth);
+		for (Uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
+			Vec4 world_pos = transform * k_local_corners[i];
+			v[i] = { .position = Vec3(world_pos),
 					 .color = spec.color,
-					 .uv = kUVs[i],
+					 .uv = k_u_vs[i],
 					 .size = spec.size,
 					 .radius = spec.radius,
-					 .borderWidth = spec.borderWidth,
-					 .borderColor = spec.borderColor };
+					 .border_width = spec.border_width,
+					 .border_color = spec.border_color };
 		}
 	} else {
 		const float x0 = spec.position.x, y0 = spec.position.y;
@@ -417,76 +420,80 @@ void QuadBatcher::DrawRect(const RectSpec &spec) {
 		const float z = spec.depth;
 		v[0] = { .position = { x0, y0, z },
 				 .color = spec.color,
-				 .uv = kUVs[0],
+				 .uv = k_u_vs[0],
 				 .size = spec.size,
 				 .radius = spec.radius,
-				 .borderWidth = spec.borderWidth,
-				 .borderColor = spec.borderColor };
+				 .border_width = spec.border_width,
+				 .border_color = spec.border_color };
 		v[1] = { .position = { x1, y0, z },
 				 .color = spec.color,
-				 .uv = kUVs[1],
+				 .uv = k_u_vs[1],
 				 .size = spec.size,
 				 .radius = spec.radius,
-				 .borderWidth = spec.borderWidth,
-				 .borderColor = spec.borderColor };
+				 .border_width = spec.border_width,
+				 .border_color = spec.border_color };
 		v[2] = { .position = { x1, y1, z },
 				 .color = spec.color,
-				 .uv = kUVs[2],
+				 .uv = k_u_vs[2],
 				 .size = spec.size,
 				 .radius = spec.radius,
-				 .borderWidth = spec.borderWidth,
-				 .borderColor = spec.borderColor };
+				 .border_width = spec.border_width,
+				 .border_color = spec.border_color };
 		v[3] = { .position = { x0, y1, z },
 				 .color = spec.color,
-				 .uv = kUVs[3],
+				 .uv = k_u_vs[3],
 				 .size = spec.size,
 				 .radius = spec.radius,
-				 .borderWidth = spec.borderWidth,
-				 .borderColor = spec.borderColor };
+				 .border_width = spec.border_width,
+				 .border_color = spec.border_color };
 	}
 
-	++m_QuadCount;
-	++m_Stats.quadCount;
+	for (Uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
+		v[i].border_style = spec.border_style;
+	}
+
+	++m_quad_count;
+	++m_stats.quad_count;
 }
 
-void QuadBatcher::DrawSprite(const SpriteSpec &spec) {
-	if (spec.texture != nullptr && !spec.texture->IsReady()) {
+void QuadBatcher::draw_sprite(const SpriteSpec &spec) {
+	if (spec.texture != nullptr && !spec.texture->is_ready()) {
 		return;
 	}
-	if (m_BatchTexture != spec.texture) {
-		Flush();
-		StartBatch();
-		m_BatchTexture = spec.texture;
+	if (m_batch_texture != spec.texture) {
+		flush();
+		start_batch();
+		m_batch_texture = spec.texture;
 		if (spec.texture != nullptr) {
-			m_CachedTextureSet = &GetOrCreateTextureSet(*spec.texture);
+			m_cached_texture_set = &get_or_create_texture_set(*spec.texture);
 		}
 	}
-	if (m_QuadCount >= SharedConstants::MAX_QUADS) {
-		Flush();
-		StartBatch();
+	if (m_quad_count >= SharedConstants::MAX_QUADS) {
+		flush();
+		start_batch();
 	}
 
-	const vec2 uvs[4] = {
-		{ spec.uvMin.x, spec.uvMin.y },
-		{ spec.uvMax.x, spec.uvMin.y },
-		{ spec.uvMax.x, spec.uvMax.y },
-		{ spec.uvMin.x, spec.uvMax.y },
+	const Vec2 uvs[4] = {
+		{ spec.uv_min.x, spec.uv_min.y },
+		{ spec.uv_max.x, spec.uv_min.y },
+		{ spec.uv_max.x, spec.uv_max.y },
+		{ spec.uv_min.x, spec.uv_max.y },
 	};
 
-	QuadVertex *v = m_QuadWritePtr;
-	m_QuadWritePtr += 4;
+	QuadVertex *v = m_quad_write_ptr;
+	m_quad_write_ptr += 4;
 
 	if (spec.rotation != 0.F) {
-		static constexpr vec4 kLocalCorners[4] = {
+		static constexpr Vec4 k_local_corners[4] = {
 			{ -0.5F, -0.5F, 0.F, 1.F },
 			{ 0.5F, -0.5F, 0.F, 1.F },
 			{ 0.5F, 0.5F, 0.F, 1.F },
 			{ -0.5F, 0.5F, 0.F, 1.F },
 		};
-		mat4 transform = BuildQuadTransform(spec.position, spec.size, spec.rotation, spec.depth);
-		for (uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
-			vec4 worldPos = transform * kLocalCorners[i];
-			v[i] = { .position = vec3(worldPos), .color = spec.tint, .uv = uvs[i] };
+		Mat4 transform = build_quad_transform(spec.position, spec.size, spec.rotation, spec.depth);
+		for (Uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
+			Vec4 world_pos = transform * k_local_corners[i];
+			v[i] = { .position = Vec3(world_pos), .color = spec.tint, .uv = uvs[i] };
 		}
 	} else {
 		const float x0 = spec.position.x, y0 = spec.position.y;
@@ -498,222 +505,225 @@ void QuadBatcher::DrawSprite(const SpriteSpec &spec) {
 		v[3] = { .position = { x0, y1, z }, .color = spec.tint, .uv = uvs[3] };
 	}
 
-	++m_QuadCount;
-	++m_Stats.quadCount;
+	++m_quad_count;
+	++m_stats.quad_count;
 }
 
-void QuadBatcher::DrawGlyph(const GlyphSpec &spec) {
-	if (m_BatchType != BatchType::Text || m_BatchCurveTexture != spec.curveTexture) {
-		Flush();
-		StartBatch();
-		m_BatchType = BatchType::Text;
-		m_BatchCurveTexture = spec.curveTexture;
-		m_BatchBandTexture = spec.bandTexture;
-		m_CachedTextDataSet = &GetOrCreateTextDataSet(*spec.curveTexture, *spec.bandTexture);
+void QuadBatcher::draw_glyph(const GlyphSpec &spec) {
+	if (m_batch_type != BatchType::Text || m_batch_curve_texture != spec.curve_texture) {
+		flush();
+		start_batch();
+		m_batch_type = BatchType::Text;
+		m_batch_curve_texture = spec.curve_texture;
+		m_batch_band_texture = spec.band_texture;
+		m_cached_text_data_set = &get_or_create_text_data_set(*spec.curve_texture, *spec.band_texture);
 	}
-	if (m_QuadCount >= SharedConstants::MAX_QUADS) {
-		Flush();
-		StartBatch();
-		m_BatchType = BatchType::Text;
-		m_BatchCurveTexture = spec.curveTexture;
-		m_BatchBandTexture = spec.bandTexture;
-		m_CachedTextDataSet = &GetOrCreateTextDataSet(*spec.curveTexture, *spec.bandTexture);
+	if (m_quad_count >= SharedConstants::MAX_QUADS) {
+		flush();
+		start_batch();
+		m_batch_type = BatchType::Text;
+		m_batch_curve_texture = spec.curve_texture;
+		m_batch_band_texture = spec.band_texture;
+		m_cached_text_data_set = &get_or_create_text_data_set(*spec.curve_texture, *spec.band_texture);
 	}
 
-	const float texLoc = std::bit_cast<float>((spec.glyphLocX & 0xFFFFu) | ((spec.glyphLocY & 0xFFFFu) << 16u));
-	const float bandMax = std::bit_cast<float>((spec.bandMaxX & 0xFFu) | ((spec.bandMaxY & 0xFFu) << 16u));
+	const float tex_loc = std::bit_cast<float>((spec.glyph_loc_x & 0xFFFFu) | ((spec.glyph_loc_y & 0xFFFFu) << 16u));
+	const float band_max = std::bit_cast<float>((spec.band_max_x & 0xFFu) | ((spec.band_max_y & 0xFFu) << 16u));
 
-	const float emY0 = spec.flipY ? spec.emMin.y : spec.emMax.y;
-	const float emY1 = spec.flipY ? spec.emMax.y : spec.emMin.y;
+	const float em_y0 = spec.flip_y ? spec.em_min.y : spec.em_max.y;
+	const float em_y1 = spec.flip_y ? spec.em_max.y : spec.em_min.y;
 
 	const float x0 = spec.position.x, y0 = spec.position.y;
 	const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
 	const float z = spec.depth;
 
-	TextVertex *v = m_TextWritePtr;
-	m_TextWritePtr += 4;
+	TextVertex *v = m_text_write_ptr;
+	m_text_write_ptr += 4;
 
 	v[0] = { .position = { x0, y0, z },
 			 .color = spec.color,
-			 .texcoord = { spec.emMin.x, emY0 },
-			 .texLoc = texLoc,
-			 .bandMax = bandMax,
+			 .texcoord = { spec.em_min.x, em_y0 },
+			 .tex_loc = tex_loc,
+			 .band_max = band_max,
 			 .banding = spec.banding };
 	v[1] = { .position = { x1, y0, z },
 			 .color = spec.color,
-			 .texcoord = { spec.emMax.x, emY0 },
-			 .texLoc = texLoc,
-			 .bandMax = bandMax,
+			 .texcoord = { spec.em_max.x, em_y0 },
+			 .tex_loc = tex_loc,
+			 .band_max = band_max,
 			 .banding = spec.banding };
 	v[2] = { .position = { x1, y1, z },
 			 .color = spec.color,
-			 .texcoord = { spec.emMax.x, emY1 },
-			 .texLoc = texLoc,
-			 .bandMax = bandMax,
+			 .texcoord = { spec.em_max.x, em_y1 },
+			 .tex_loc = tex_loc,
+			 .band_max = band_max,
 			 .banding = spec.banding };
 	v[3] = { .position = { x0, y1, z },
 			 .color = spec.color,
-			 .texcoord = { spec.emMin.x, emY1 },
-			 .texLoc = texLoc,
-			 .bandMax = bandMax,
+			 .texcoord = { spec.em_min.x, em_y1 },
+			 .tex_loc = tex_loc,
+			 .band_max = band_max,
 			 .banding = spec.banding };
 
-	++m_QuadCount;
-	++m_Stats.quadCount;
+	++m_quad_count;
+	++m_stats.quad_count;
 }
 
-void QuadBatcher::Flush() {
-	if (m_QuadCount == 0) {
+void QuadBatcher::flush() {
+	if (m_quad_count == 0) {
 		return;
 	}
 
-	auto bindPipelineIfChanged = [&](GFX::GfxPipeline &pipeline) {
-		if (&pipeline != m_LastBoundPipeline) {
-			m_ActiveCmd->BindPipeline(pipeline);
-			m_LastBoundPipeline = &pipeline;
+	auto bind_pipeline_if_changed = [&](GFX::GfxPipeline &pipeline) {
+		if (&pipeline != m_last_bound_pipeline) {
+			m_active_cmd->bind_pipeline(pipeline);
+			m_last_bound_pipeline = &pipeline;
 
-			m_PushConstantsDirty = true;
+			m_push_constants_dirty = true;
 		}
 	};
 
-	auto bindDescSet0IfChanged = [&](GFX::GfxDescriptorSet &set) {
-		if (&set != m_LastBoundDescSet0) {
-			m_ActiveCmd->BindDescriptorSet(0, set);
-			m_LastBoundDescSet0 = &set;
+	auto bind_desc_set0_if_changed = [&](GFX::GfxDescriptorSet &set) {
+		if (&set != m_last_bound_desc_set0) {
+			m_active_cmd->bind_descriptor_set(0, set);
+			m_last_bound_desc_set0 = &set;
 		}
 	};
 
-	auto bindVertexBufferIfChanged = [&](GFX::GfxBuffer &buf) {
-		if (&buf != m_LastBoundVertexBuffer) {
-			m_ActiveCmd->BindVertexBuffer(buf, 0, 0);
-			m_LastBoundVertexBuffer = &buf;
+	auto bind_vertex_buffer_if_changed = [&](GFX::GfxBuffer &buf) {
+		if (&buf != m_last_bound_vertex_buffer) {
+			m_active_cmd->bind_vertex_buffer(buf, 0, 0);
+			m_last_bound_vertex_buffer = &buf;
 		}
 	};
 
-	if (m_BatchType == BatchType::Text) {
-		bindPipelineIfChanged(GetOrCreateTextPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat));
+	if (m_batch_type == BatchType::Text) {
+		bind_pipeline_if_changed(
+			get_or_create_text_pipeline(m_active_color_format, m_active_sample_count, m_active_depth_format));
 
-		if (m_PushConstantsDirty) {
-			QuadPushConstants pc{ .viewProjection = m_ViewProjection };
-			m_ActiveCmd->PushConstants(pc, RHI::ShaderStageFlags::Vertex);
-			m_PushConstantsDirty = false;
+		if (m_push_constants_dirty) {
+			QuadPushConstants pc{ .view_projection = m_view_projection };
+			m_active_cmd->push_constants(pc, RHI::ShaderStageFlags::Vertex);
+			m_push_constants_dirty = false;
 		}
 
-		bindVertexBufferIfChanged(*m_ActiveTextVertexBuffer);
-		bindDescSet0IfChanged(*m_CachedTextDataSet);
+		bind_vertex_buffer_if_changed(*m_active_text_vertex_buffer);
+		bind_desc_set0_if_changed(*m_cached_text_data_set);
 
-		const uint32 indexCount = m_QuadCount * SharedConstants::INDICES_PER_QUAD;
-		const int32 vertexOff = static_cast<int32>(m_TextVertexOffset);
-		m_ActiveCmd->DrawIndexed(indexCount, 1, 0, vertexOff);
-		++m_Stats.drawCalls;
+		const Uint32 index_count = m_quad_count * SharedConstants::INDICES_PER_QUAD;
+		const Int32 vertex_off = static_cast<Int32>(m_text_vertex_offset);
+		m_active_cmd->draw_indexed(index_count, 1, 0, vertex_off);
+		++m_stats.draw_calls;
 
-		if (m_Capturing) {
-			m_ReplayList.push_back({ m_LastBoundPipeline, m_CachedTextDataSet, true, indexCount, vertexOff });
+		if (m_capturing) {
+			m_replay_list.push_back({ m_last_bound_pipeline, m_cached_text_data_set, true, index_count, vertex_off });
 		}
 
-		m_TextVertexOffset += m_QuadCount * SharedConstants::VERTS_PER_QUAD;
+		m_text_vertex_offset += m_quad_count * SharedConstants::VERTS_PER_QUAD;
 	} else {
 		GFX::GfxPipeline &pipeline = [&]() -> GFX::GfxPipeline & {
-			if (m_BatchTexture != nullptr) {
-				return GetOrCreateTexturePipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+			if (m_batch_texture != nullptr) {
+				return get_or_create_texture_pipeline(m_active_color_format, m_active_sample_count,
+													  m_active_depth_format);
 			}
-			if (m_BatchType == BatchType::GUI) {
-				return GetOrCreateGUIPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+			if (m_batch_type == BatchType::GUI) {
+				return get_or_create_gui_pipeline(m_active_color_format, m_active_sample_count, m_active_depth_format);
 			}
-			if (m_BatchType == BatchType::Shadow) {
-				return GetOrCreateShadowPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+			if (m_batch_type == BatchType::Shadow) {
+				return get_or_create_shadow_pipeline(m_active_color_format, m_active_sample_count,
+													 m_active_depth_format);
 			}
-			return GetOrCreateFlatPipeline(m_ActiveColorFormat, m_ActiveSampleCount, m_ActiveDepthFormat);
+			return get_or_create_flat_pipeline(m_active_color_format, m_active_sample_count, m_active_depth_format);
 		}();
 
-		bindPipelineIfChanged(pipeline);
+		bind_pipeline_if_changed(pipeline);
 
-		if (m_PushConstantsDirty) {
-			QuadPushConstants pc{ .viewProjection = m_ViewProjection };
-			m_ActiveCmd->PushConstants(pc, RHI::ShaderStageFlags::Vertex);
-			m_PushConstantsDirty = false;
+		if (m_push_constants_dirty) {
+			QuadPushConstants pc{ .view_projection = m_view_projection };
+			m_active_cmd->push_constants(pc, RHI::ShaderStageFlags::Vertex);
+			m_push_constants_dirty = false;
 		}
 
-		bindVertexBufferIfChanged(*m_ActiveVertexBuffer);
+		bind_vertex_buffer_if_changed(*m_active_vertex_buffer);
 
-		GFX::GfxDescriptorSet *boundSet = nullptr;
-		if (m_BatchTexture != nullptr) {
-			bindDescSet0IfChanged(*m_CachedTextureSet);
-			boundSet = m_CachedTextureSet;
+		GFX::GfxDescriptorSet *bound_set = nullptr;
+		if (m_batch_texture != nullptr) {
+			bind_desc_set0_if_changed(*m_cached_texture_set);
+			bound_set = m_cached_texture_set;
 		}
 
-		const uint32 indexCount = m_QuadCount * SharedConstants::INDICES_PER_QUAD;
-		const int32 vertexOff = static_cast<int32>(m_VertexOffset);
-		m_ActiveCmd->DrawIndexed(indexCount, 1, 0, vertexOff);
-		++m_Stats.drawCalls;
+		const Uint32 index_count = m_quad_count * SharedConstants::INDICES_PER_QUAD;
+		const Int32 vertex_off = static_cast<Int32>(m_vertex_offset);
+		m_active_cmd->draw_indexed(index_count, 1, 0, vertex_off);
+		++m_stats.draw_calls;
 
-		if (m_Capturing) {
-			m_ReplayList.push_back({ m_LastBoundPipeline, boundSet, false, indexCount, vertexOff });
+		if (m_capturing) {
+			m_replay_list.push_back({ m_last_bound_pipeline, bound_set, false, index_count, vertex_off });
 		}
 
-		m_VertexOffset += m_QuadCount * SharedConstants::VERTS_PER_QUAD;
+		m_vertex_offset += m_quad_count * SharedConstants::VERTS_PER_QUAD;
 	}
-	StartBatch();
+	start_batch();
 }
 
-GFX::GfxDescriptorSet &QuadBatcher::GetOrCreateTextureSet(GFX::GfxTexture &texture) {
-	auto it = m_TextureSetCache.find(&texture);
-	if (it != m_TextureSetCache.end()) {
+GFX::GfxDescriptorSet &QuadBatcher::get_or_create_texture_set(GFX::GfxTexture &texture) {
+	auto it = m_texture_set_cache.find(&texture);
+	if (it != m_texture_set_cache.end()) {
 		return *it->second;
 	}
-	auto set = m_Ctx.AllocateDescriptorSet(*m_TextureLayout);
-	set->SetTexture(0, texture);
-	set->Flush();
-	m_TextureSetCache[&texture] = std::move(set);
-	return *m_TextureSetCache[&texture];
+	auto set = m_ctx.allocate_descriptor_set(*m_texture_layout);
+	set->set_texture(0, texture);
+	set->flush();
+	m_texture_set_cache[&texture] = std::move(set);
+	return *m_texture_set_cache[&texture];
 }
 
-GFX::GfxDescriptorSet &QuadBatcher::GetOrCreateTextDataSet(GFX::GfxTexture &curveTexture,
-														   GFX::GfxTexture &bandTexture) {
-	auto it = m_TextDataSetCache.find(&curveTexture);
-	if (it != m_TextDataSetCache.end()) {
+GFX::GfxDescriptorSet &QuadBatcher::get_or_create_text_data_set(GFX::GfxTexture &curve_texture,
+																GFX::GfxTexture &band_texture) {
+	auto it = m_text_data_set_cache.find(&curve_texture);
+	if (it != m_text_data_set_cache.end()) {
 		return *it->second;
 	}
-	auto set = m_Ctx.AllocateDescriptorSet(*m_TextDataLayout);
-	set->SetTexture(0, curveTexture);
-	set->SetTexture(1, bandTexture);
-	set->Flush();
-	m_TextDataSetCache[&curveTexture] = std::move(set);
-	return *m_TextDataSetCache[&curveTexture];
+	auto set = m_ctx.allocate_descriptor_set(*m_text_data_layout);
+	set->set_texture(0, curve_texture);
+	set->set_texture(1, band_texture);
+	set->flush();
+	m_text_data_set_cache[&curve_texture] = std::move(set);
+	return *m_text_data_set_cache[&curve_texture];
 }
 
-void QuadBatcher::StartBatch() {
-	m_QuadCount = 0;
-	m_BatchType = BatchType::Flat;
-	m_BatchTexture = nullptr;
-	m_BatchCurveTexture = nullptr;
-	m_BatchBandTexture = nullptr;
+void QuadBatcher::start_batch() {
+	m_quad_count = 0;
+	m_batch_type = BatchType::Flat;
+	m_batch_texture = nullptr;
+	m_batch_curve_texture = nullptr;
+	m_batch_band_texture = nullptr;
 }
 
-void QuadBatcher::SetScissor(GFX::GfxCommandList &cmd, int32 x, int32 y, uint32 w, uint32 h) {
-	cmd.SetScissor(x, y, w, h);
-	if (m_Capturing) {
-		m_ReplayList.push_back({
+void QuadBatcher::set_scissor(GFX::GfxCommandList &cmd, Int32 x, Int32 y, Uint32 w, Uint32 h) {
+	cmd.set_scissor(x, y, w, h);
+	if (m_capturing) {
+		m_replay_list.push_back({
 			.pipeline = nullptr,
-			.descSet = nullptr,
-			.isTextBuffer = false,
-			.indexCount = 0,
-			.vertexOffset = 0,
-			.isScissor = true,
-			.scissorX = x,
-			.scissorY = y,
-			.scissorW = w,
-			.scissorH = h,
+			.desc_set = nullptr,
+			.is_text_buffer = false,
+			.index_count = 0,
+			.vertex_offset = 0,
+			.is_scissor = true,
+			.scissor_x = x,
+			.scissor_y = y,
+			.scissor_w = w,
+			.scissor_h = h,
 		});
 	}
 }
 
-mat4 QuadBatcher::BuildQuadTransform(vec2 position, vec2 size, float rotation, float depth) const {
-	vec2 center = position + size * 0.5F;
-	mat4 t = glm::translate(mat4(1.F), vec3(center, depth));
+Mat4 QuadBatcher::build_quad_transform(Vec2 position, Vec2 size, float rotation, float depth) const {
+	Vec2 center = position + size * 0.5F;
+	Mat4 t = glm::translate(Mat4(1.F), Vec3(center, depth));
 	if (rotation != 0.F) {
-		t = glm::rotate(t, rotation, vec3(0.F, 0.F, 1.F));
+		t = glm::rotate(t, rotation, Vec3(0.F, 0.F, 1.F));
 	}
-	t = glm::scale(t, vec3(size, 1.F));
+	t = glm::scale(t, Vec3(size, 1.F));
 	return t;
 }

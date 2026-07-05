@@ -3,26 +3,26 @@
 namespace Aquila::GFX {
 
 GfxDescriptorSetLayout::GfxDescriptorSetLayout(Unique<RHI::IRHIDescriptorSetLayout> layout)
-	: m_Layout(std::move(layout)) {}
+	: m_layout(std::move(layout)) {}
 
-uint32 GfxDescriptorSetLayout::GetBindingCount() const {
-	return m_Layout->GetBindingCount();
+Uint32 GfxDescriptorSetLayout::get_binding_count() const {
+	return m_layout->get_binding_count();
 }
 
-GfxDescriptorSet::GfxDescriptorSet(Unique<RHI::IRHIDescriptorSet> set) : m_Set(std::move(set)) {}
+GfxDescriptorSet::GfxDescriptorSet(Unique<RHI::IRHIDescriptorSet> set) : m_set(std::move(set)) {}
 
-GfxDescriptorSet &GfxDescriptorSet::SetBuffer(uint32 binding, GfxBuffer &buffer, uint64 offset, uint64 range) {
-	m_Set->SetBuffer(binding, buffer.GetRHI(), offset, range);
+GfxDescriptorSet &GfxDescriptorSet::set_buffer(Uint32 binding, GfxBuffer &buffer, Uint64 offset, Uint64 range) {
+	m_set->set_buffer(binding, buffer.get_rhi(), offset, range);
 	return *this;
 }
 
-GfxDescriptorSet &GfxDescriptorSet::SetTexture(uint32 binding, GfxTexture &texture) {
-	m_Set->SetTexture(binding, texture.GetRHI());
+GfxDescriptorSet &GfxDescriptorSet::set_texture(Uint32 binding, GfxTexture &texture) {
+	m_set->set_texture(binding, texture.get_rhi());
 	return *this;
 }
 
-void GfxDescriptorSet::Flush() {
-	m_Set->Flush();
+void GfxDescriptorSet::flush() {
+	m_set->flush();
 }
 
 } // namespace Aquila::GFX

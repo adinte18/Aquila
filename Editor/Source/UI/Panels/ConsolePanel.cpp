@@ -15,12 +15,12 @@ namespace {
 
 class ClickableView : public UI::Core::View {
   public:
-	Signal<void()> onClick;
+	Signal<void()> on_click;
 
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override {
-		View::OnMouseRelease(btn, pos);
+	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override {
+		View::on_mouse_release(btn, pos);
 		if (btn == Platform::MouseButton::Left) {
-			onClick();
+			on_click();
 		}
 	}
 };
@@ -32,12 +32,12 @@ int LogCaptureBuf::overflow(int c) {
 		return traits_type::eof();
 	}
 	if (static_cast<char>(c) == '\n') {
-		if (m_Callback && !m_Line.empty()) {
-			m_Callback(m_Line);
+		if (m_callback && !m_line.empty()) {
+			m_callback(m_line);
 		}
-		m_Line.clear();
+		m_line.clear();
 	} else {
-		m_Line += static_cast<char>(c);
+		m_line += static_cast<char>(c);
 	}
 	return c;
 }
@@ -49,233 +49,234 @@ std::streamsize LogCaptureBuf::xsputn(const char *s, std::streamsize n) {
 	return n;
 }
 
-ConsolePanel::ConsolePanel(UI::Core::TextureCache *textureCache) : m_TextureCache(textureCache) {
-	m_CaptureBuf.SetCallback([this](std::string line) { m_Pending.push_back(std::move(line)); });
-	Logger::EnableColors(false);
-	Logger::SetSink(&m_CaptureStream);
+ConsolePanel::ConsolePanel(UI::Core::TextureCache *texture_cache) : m_texture_cache(texture_cache) {
+	m_capture_buf.set_callback([this](std::string line) { m_pending.push_back(std::move(line)); });
+	Logger::enable_colors(false);
+	Logger::set_sink(&m_capture_stream);
 }
 
 ConsolePanel::~ConsolePanel() {
-	Logger::SetSink(nullptr);
+	Logger::set_sink(nullptr);
 }
 
-void ConsolePanel::Build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayRoot*/) {
-	if (m_TextureCache) {
-		m_InfoIcon = m_TextureCache->Load("Engine/UI/Icons/info.png");
-		m_AlertIcon = m_TextureCache->Load("Engine/UI/Icons/triangle-alert.png");
-		m_ErrorIcon = m_TextureCache->Load("Engine/UI/Icons/circle-x.png");
+void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayRoot*/) {
+	if (m_texture_cache) {
+		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.png");
+		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.png");
+		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.png");
 	}
 
-	m_ScrollView = panel->FindById<UI::Core::ScrollView>("console-scroll");
-	m_DetailLabel = panel->FindById<UI::Core::Label>("console-detail-text");
+	m_scroll_view = panel->find_by_id<UI::Core::ScrollView>("console-scroll");
+	m_detail_label = panel->find_by_id<UI::Core::Label>("console-detail-text");
 
-	UI::Core::View *toolbarPtr = panel->FindById("console-toolbar");
-	if (toolbarPtr == nullptr) {
+	UI::Core::View *toolbar_ptr = panel->find_by_id("console-toolbar");
+	if (toolbar_ptr == nullptr) {
 		return;
 	}
 
-	auto makeFilterBtn = [&](vec4 iconTint, FilterGroup group, UI::Core::View *&btnOut, UI::Core::Label *&countOut) {
-		auto btn = CreateUnique<ClickableView>();
-		btn->AddClass("console-filter-btn");
-		btnOut = btn.get();
+	auto make_filter_btn = [&](Vec4 icon_tint, FilterGroup group, UI::Core::View *&btn_out,
+							   UI::Core::Label *&count_out) {
+		auto btn = create_unique<ClickableView>();
+		btn->add_class("console-filter-btn");
+		btn_out = btn.get();
 
-		GfxTexture *iconTex = nullptr;
+		GfxTexture *icon_tex = nullptr;
 		switch (group) {
 		case FilterGroup::Info:
-			iconTex = m_InfoIcon;
+			icon_tex = m_info_icon;
 			break;
 		case FilterGroup::Warning:
-			iconTex = m_AlertIcon;
+			icon_tex = m_alert_icon;
 			break;
 		case FilterGroup::Error:
-			iconTex = m_ErrorIcon;
+			icon_tex = m_error_icon;
 			break;
 		}
-		auto icon = CreateUnique<UI::Core::Image>(iconTex, iconTint);
-		icon->AddClass("console-filter-icon");
-		btn->AddChild(std::move(icon));
+		auto icon = create_unique<UI::Core::Image>(icon_tex, icon_tint);
+		icon->add_class("console-filter-icon");
+		btn->add_child(std::move(icon));
 
-		auto count = CreateUnique<UI::Core::Label>("0");
-		count->AddClass("console-filter-count");
-		countOut = static_cast<UI::Core::Label *>(btn->AddChild(std::move(count)));
+		auto count = create_unique<UI::Core::Label>("0");
+		count->add_class("console-filter-count");
+		count_out = static_cast<UI::Core::Label *>(btn->add_child(std::move(count)));
 
-		btn->onClick.Connect([this, group]() { ToggleFilter(group); });
-		toolbarPtr->AddChild(std::move(btn));
+		btn->on_click.connect([this, group]() { toggle_filter(group); });
+		toolbar_ptr->add_child(std::move(btn));
 	};
 
-	makeFilterBtn({ 0.42f, 0.69f, 0.86f, 1.f }, FilterGroup::Info, m_InfoFilterBtn, m_InfoCountLabel);
-	makeFilterBtn({ 0.83f, 0.67f, 0.29f, 1.f }, FilterGroup::Warning, m_WarningFilterBtn, m_WarningCountLabel);
-	makeFilterBtn({ 0.83f, 0.42f, 0.42f, 1.f }, FilterGroup::Error, m_ErrorFilterBtn, m_ErrorCountLabel);
+	make_filter_btn({ 0.42f, 0.69f, 0.86f, 1.F }, FilterGroup::Info, m_info_filter_btn, m_info_count_label);
+	make_filter_btn({ 0.83f, 0.67f, 0.29f, 1.F }, FilterGroup::Warning, m_warning_filter_btn, m_warning_count_label);
+	make_filter_btn({ 0.83f, 0.42f, 0.42f, 1.F }, FilterGroup::Error, m_error_filter_btn, m_error_count_label);
 }
 
-void ConsolePanel::FlushPending() {
-	if (m_Pending.empty() || !m_ScrollView) {
+void ConsolePanel::flush_pending() {
+	if (m_pending.empty() || !m_scroll_view) {
 		return;
 	}
-	for (auto &line : m_Pending) {
-		LogLevel level = ParseLevel(line);
-		AppendEntry({ level, std::move(line) });
+	for (auto &line : m_pending) {
+		LogLevel level = parse_level(line);
+		append_entry({ level, std::move(line) });
 	}
-	m_Pending.clear();
-	UpdateFilterButtons();
+	m_pending.clear();
+	update_filter_buttons();
 }
 
-void ConsolePanel::AppendEntry(LogEntry entry) {
-	if ((int)m_Entries.size() >= kMaxMessages) {
-		auto &oldest = m_Entries.front();
-		switch (LevelToGroup(oldest.level)) {
+void ConsolePanel::append_entry(LogEntry entry) {
+	if ((int)m_entries.size() >= K_MAX_MESSAGES) {
+		auto &oldest = m_entries.front();
+		switch (level_to_group(oldest.level)) {
 		case FilterGroup::Info:
-			--m_InfoCount;
+			--m_info_count;
 			break;
 		case FilterGroup::Warning:
-			--m_WarningCount;
+			--m_warning_count;
 			break;
 		case FilterGroup::Error:
-			--m_ErrorCount;
+			--m_error_count;
 			break;
 		}
-		m_Entries.erase(m_Entries.begin());
-		m_Rows.erase(m_Rows.begin());
-		if (m_SelectedIndex == 0) {
-			m_SelectedIndex = -1;
-			if (m_DetailLabel) {
-				m_DetailLabel->SetText("");
+		m_entries.erase(m_entries.begin());
+		m_rows.erase(m_rows.begin());
+		if (m_selected_index == 0) {
+			m_selected_index = -1;
+			if (m_detail_label) {
+				m_detail_label->set_text("");
 			}
-		} else if (m_SelectedIndex > 0) {
-			--m_SelectedIndex;
+		} else if (m_selected_index > 0) {
+			--m_selected_index;
 		}
-		m_ScrollView->RemoveOldestContent();
+		m_scroll_view->remove_oldest_content();
 	}
 
-	int rowIndex = (int)m_Entries.size();
+	int row_index = (int)m_entries.size();
 
-	switch (LevelToGroup(entry.level)) {
+	switch (level_to_group(entry.level)) {
 	case FilterGroup::Info:
-		++m_InfoCount;
+		++m_info_count;
 		break;
 	case FilterGroup::Warning:
-		++m_WarningCount;
+		++m_warning_count;
 		break;
 	case FilterGroup::Error:
-		++m_ErrorCount;
+		++m_error_count;
 		break;
 	}
 
-	auto row = CreateUnique<ClickableView>();
-	row->AddClass("console-row");
-	row->AddClass(LevelClass(entry.level));
-	row->AddClass((rowIndex % 2 == 0) ? "console-row-even" : "console-row-odd");
+	auto row = create_unique<ClickableView>();
+	row->add_class("console-row");
+	row->add_class(level_class(entry.level));
+	row->add_class((row_index % 2 == 0) ? "console-row-even" : "console-row-odd");
 
-	auto icon = CreateUnique<UI::Core::Image>(LevelIcon(entry.level), LevelIconTint(entry.level));
-	icon->AddClass("console-row-icon");
-	row->AddChild(std::move(icon));
+	auto icon = create_unique<UI::Core::Image>(level_icon(entry.level), level_icon_tint(entry.level));
+	icon->add_class("console-row-icon");
+	row->add_child(std::move(icon));
 
-	auto text = CreateUnique<UI::Core::Label>(entry.message);
-	text->AddClass("console-row-text");
-	row->AddChild(std::move(text));
+	auto text = create_unique<UI::Core::Label>(entry.message);
+	text->add_class("console-row-text");
+	row->add_child(std::move(text));
 
-	ClickableView *rowPtr = static_cast<ClickableView *>(m_ScrollView->AddContent(std::move(row)));
-	rowPtr->onClick.Connect([this, rowPtr]() {
-		auto it = std::find(m_Rows.begin(), m_Rows.end(), static_cast<UI::Core::View *>(rowPtr));
-		if (it != m_Rows.end()) {
-			SelectRow((int)(it - m_Rows.begin()));
+	ClickableView *row_ptr = static_cast<ClickableView *>(m_scroll_view->add_content(std::move(row)));
+	row_ptr->on_click.connect([this, row_ptr]() {
+		auto it = std::find(m_rows.begin(), m_rows.end(), static_cast<UI::Core::View *>(row_ptr));
+		if (it != m_rows.end()) {
+			select_row((int)(it - m_rows.begin()));
 		}
 	});
 
-	m_Rows.push_back(rowPtr);
-	m_Entries.push_back(std::move(entry));
+	m_rows.push_back(row_ptr);
+	m_entries.push_back(std::move(entry));
 
-	ApplyRowVisibility(rowIndex);
+	apply_row_visibility(row_index);
 }
 
-void ConsolePanel::SelectRow(int index) {
-	if (m_SelectedIndex >= 0 && m_SelectedIndex < (int)m_Rows.size()) {
-		m_Rows[m_SelectedIndex]->RemoveClass("console-row-selected");
+void ConsolePanel::select_row(int index) {
+	if (m_selected_index >= 0 && m_selected_index < (int)m_rows.size()) {
+		m_rows[m_selected_index]->remove_class("console-row-selected");
 	}
-	m_SelectedIndex = index;
-	if (index >= 0 && index < (int)m_Rows.size()) {
-		m_Rows[index]->AddClass("console-row-selected");
-		if (m_DetailLabel) {
-			m_DetailLabel->SetText(m_Entries[index].message);
+	m_selected_index = index;
+	if (index >= 0 && index < (int)m_rows.size()) {
+		m_rows[index]->add_class("console-row-selected");
+		if (m_detail_label) {
+			m_detail_label->set_text(m_entries[index].message);
 		}
 	}
 }
 
-void ConsolePanel::ClearAll() {
-	while (!m_Rows.empty()) {
-		m_ScrollView->RemoveOldestContent();
-		m_Rows.erase(m_Rows.begin());
+void ConsolePanel::clear_all() {
+	while (!m_rows.empty()) {
+		m_scroll_view->remove_oldest_content();
+		m_rows.erase(m_rows.begin());
 	}
-	m_Entries.clear();
-	m_InfoCount = 0;
-	m_WarningCount = 0;
-	m_ErrorCount = 0;
-	m_SelectedIndex = -1;
-	if (m_DetailLabel) {
-		m_DetailLabel->SetText("");
+	m_entries.clear();
+	m_info_count = 0;
+	m_warning_count = 0;
+	m_error_count = 0;
+	m_selected_index = -1;
+	if (m_detail_label) {
+		m_detail_label->set_text("");
 	}
-	UpdateFilterButtons();
+	update_filter_buttons();
 }
 
-void ConsolePanel::ToggleFilter(FilterGroup group) {
+void ConsolePanel::toggle_filter(FilterGroup group) {
 	switch (group) {
 	case FilterGroup::Info:
-		m_ShowInfo = !m_ShowInfo;
-		if (m_InfoFilterBtn) {
-			m_InfoFilterBtn->SetClass("dimmed", !m_ShowInfo);
+		m_show_info = !m_show_info;
+		if (m_info_filter_btn) {
+			m_info_filter_btn->set_class("dimmed", !m_show_info);
 		}
 		break;
 	case FilterGroup::Warning:
-		m_ShowWarning = !m_ShowWarning;
-		if (m_WarningFilterBtn) {
-			m_WarningFilterBtn->SetClass("dimmed", !m_ShowWarning);
+		m_show_warning = !m_show_warning;
+		if (m_warning_filter_btn) {
+			m_warning_filter_btn->set_class("dimmed", !m_show_warning);
 		}
 		break;
 	case FilterGroup::Error:
-		m_ShowError = !m_ShowError;
-		if (m_ErrorFilterBtn) {
-			m_ErrorFilterBtn->SetClass("dimmed", !m_ShowError);
+		m_show_error = !m_show_error;
+		if (m_error_filter_btn) {
+			m_error_filter_btn->set_class("dimmed", !m_show_error);
 		}
 		break;
 	}
-	for (int i = 0; i < (int)m_Rows.size(); ++i) {
-		ApplyRowVisibility(i);
+	for (int i = 0; i < (int)m_rows.size(); ++i) {
+		apply_row_visibility(i);
 	}
 }
 
-void ConsolePanel::ApplyRowVisibility(int index) {
-	if (index < 0 || index >= (int)m_Rows.size()) {
+void ConsolePanel::apply_row_visibility(int index) {
+	if (index < 0 || index >= (int)m_rows.size()) {
 		return;
 	}
-	FilterGroup group = LevelToGroup(m_Entries[index].level);
+	FilterGroup group = level_to_group(m_entries[index].level);
 	bool visible = false;
 	switch (group) {
 	case FilterGroup::Info:
-		visible = m_ShowInfo;
+		visible = m_show_info;
 		break;
 	case FilterGroup::Warning:
-		visible = m_ShowWarning;
+		visible = m_show_warning;
 		break;
 	case FilterGroup::Error:
-		visible = m_ShowError;
+		visible = m_show_error;
 		break;
 	}
-	m_Rows[index]->SetHidden(!visible);
+	m_rows[index]->set_hidden(!visible);
 }
 
-void ConsolePanel::UpdateFilterButtons() {
-	if (m_InfoCountLabel) {
-		m_InfoCountLabel->SetText(std::to_string(m_InfoCount));
+void ConsolePanel::update_filter_buttons() {
+	if (m_info_count_label) {
+		m_info_count_label->set_text(std::to_string(m_info_count));
 	}
-	if (m_WarningCountLabel) {
-		m_WarningCountLabel->SetText(std::to_string(m_WarningCount));
+	if (m_warning_count_label) {
+		m_warning_count_label->set_text(std::to_string(m_warning_count));
 	}
-	if (m_ErrorCountLabel) {
-		m_ErrorCountLabel->SetText(std::to_string(m_ErrorCount));
+	if (m_error_count_label) {
+		m_error_count_label->set_text(std::to_string(m_error_count));
 	}
 }
 
-LogLevel ConsolePanel::ParseLevel(const std::string &line) {
+LogLevel ConsolePanel::parse_level(const std::string &line) {
 	if (line.find("[AQUILA CRITICAL]") != std::string::npos) {
 		return LogLevel::Critical;
 	}
@@ -294,7 +295,7 @@ LogLevel ConsolePanel::ParseLevel(const std::string &line) {
 	return LogLevel::Info;
 }
 
-ConsolePanel::FilterGroup ConsolePanel::LevelToGroup(LogLevel level) {
+ConsolePanel::FilterGroup ConsolePanel::level_to_group(LogLevel level) {
 	switch (level) {
 	case LogLevel::Warning:
 		return FilterGroup::Warning;
@@ -307,7 +308,7 @@ ConsolePanel::FilterGroup ConsolePanel::LevelToGroup(LogLevel level) {
 	}
 }
 
-const char *ConsolePanel::LevelClass(LogLevel level) {
+const char *ConsolePanel::level_class(LogLevel level) {
 	switch (level) {
 	case LogLevel::Critical:
 		return "console-critical";
@@ -324,7 +325,7 @@ const char *ConsolePanel::LevelClass(LogLevel level) {
 	}
 }
 
-const char *ConsolePanel::LevelIconClass(LogLevel level) {
+const char *ConsolePanel::level_icon_class(LogLevel level) {
 	switch (level) {
 	case LogLevel::Critical:
 		return "console-icon-critical";
@@ -341,31 +342,31 @@ const char *ConsolePanel::LevelIconClass(LogLevel level) {
 	}
 }
 
-vec4 ConsolePanel::LevelIconTint(LogLevel level) {
+Vec4 ConsolePanel::level_icon_tint(LogLevel level) {
 	switch (level) {
 	case LogLevel::Warning:
-		return { 0.83f, 0.67f, 0.29f, 1.f };
+		return { 0.83f, 0.67f, 0.29f, 1.F };
 	case LogLevel::Error:
-		return { 0.83f, 0.42f, 0.42f, 1.f };
+		return { 0.83f, 0.42f, 0.42f, 1.F };
 	case LogLevel::Critical:
-		return { 1.f, 0.25f, 0.25f, 1.f };
+		return { 1.F, 0.25f, 0.25f, 1.F };
 	case LogLevel::Debug:
-		return { 0.42f, 0.69f, 0.86f, 1.f };
+		return { 0.42f, 0.69f, 0.86f, 1.F };
 	case LogLevel::Trace:
-		return { 0.53f, 0.53f, 0.53f, 1.f };
+		return { 0.53f, 0.53f, 0.53f, 1.F };
 	default:
-		return { 0.42f, 0.69f, 0.86f, 1.f };
+		return { 0.42f, 0.69f, 0.86f, 1.F };
 	}
 }
 
-GfxTexture *ConsolePanel::LevelIcon(LogLevel level) const {
-	switch (LevelToGroup(level)) {
+GfxTexture *ConsolePanel::level_icon(LogLevel level) const {
+	switch (level_to_group(level)) {
 	case FilterGroup::Warning:
-		return m_AlertIcon;
+		return m_alert_icon;
 	case FilterGroup::Error:
-		return m_ErrorIcon;
+		return m_error_icon;
 	default:
-		return m_InfoIcon;
+		return m_info_icon;
 	}
 }
 

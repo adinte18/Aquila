@@ -5,10 +5,10 @@
 namespace Aquila::Graphics::RG {
 
 template <typename Tag> struct RGHandle {
-	static constexpr uint32 Invalid = UINT32_MAX;
-	uint32 id = Invalid;
+	static constexpr Uint32 INVALID = UINT32_MAX;
+	Uint32 id = INVALID;
 
-	[[nodiscard]] bool IsValid() const { return id != Invalid; }
+	[[nodiscard]] bool is_valid() const { return id != INVALID; }
 	bool operator==(const RGHandle &) const = default;
 };
 
@@ -21,33 +21,33 @@ using RGBufferHandle = RGHandle<RGBufferTag>;
 using ResourceState = RHI::ResourceState;
 
 struct RGTextureDesc {
-	uint32 width = 1;
-	uint32 height = 1;
-	uint32 mipLevels = 1;
-	uint32 arrayLayers = 1;
+	Uint32 width = 1;
+	Uint32 height = 1;
+	Uint32 mip_levels = 1;
+	Uint32 array_layers = 1;
 	RHI::TextureFormat format = RHI::TextureFormat::RGBA8;
 	RHI::TextureUsage usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
-	RHI::SampleCount samples = RHI::SampleCount::x1;
-	std::string_view debugName;
+	RHI::SampleCount samples = RHI::SampleCount::X1;
+	std::string_view debug_name;
 };
 
 struct RGBufferDesc {
-	uint64 size = 0;
+	Uint64 size = 0;
 	RHI::BufferUsage usage = RHI::BufferUsage::None;
-	RHI::MemoryDomain domain = RHI::MemoryDomain::GPU_ONLY;
-	std::string_view debugName;
+	RHI::MemoryDomain domain = RHI::MemoryDomain::GpuOnly;
+	std::string_view debug_name;
 };
 
-enum class AttachmentLoadOp : uint8 { Load, Clear, DontCare };
-enum class AttachmentStoreOp : uint8 { Store, DontCare };
+enum class AttachmentLoadOp : Uint8 { Load, Clear, DontCare };
+enum class AttachmentStoreOp : Uint8 { Store, DontCare };
 
 struct ClearColor {
-	vec4 color;
+	Vec4 color;
 };
 
 struct ClearDepth {
-	float depth = 1.f;
-	uint8 stencil = 0;
+	float depth = 1.F;
+	Uint8 stencil = 0;
 };
 
 } // namespace Aquila::Graphics::RG

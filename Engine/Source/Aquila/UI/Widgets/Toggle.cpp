@@ -3,55 +3,55 @@
 namespace Aquila::UI::Core {
 
 Toggle::Toggle() {
-	SetInputLeaf(true);
-	AddClass("toggle");
+	set_input_leaf(true);
+	add_class("toggle");
 }
 
 Toggle::Toggle(bool on) {
-	SetInputLeaf(true);
-	AddClass("toggle");
-	SetValueWithoutNotify(on);
+	set_input_leaf(true);
+	add_class("toggle");
+	set_value_without_notify(on);
 }
 
-void Toggle::OnValueUpdated() {
-	if (GetValue()) {
-		AddClass("toggle-on");
+void Toggle::on_value_updated() {
+	if (get_value()) {
+		add_class("toggle-on");
 	} else {
-		RemoveClass("toggle-on");
+		remove_class("toggle-on");
 	}
-	QueueRedraw();
+	queue_redraw();
 }
 
-void Toggle::OnMouseRelease(Platform::MouseButton btn, vec2 pos) {
-	if (btn == Platform::MouseButton::Left && m_IsHovered) {
-		SetValue(!GetValue());
+void Toggle::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	if (btn == Platform::MouseButton::Left && m_is_hovered) {
+		set_value(!get_value());
 	}
-	View::OnMouseRelease(btn, pos);
+	View::on_mouse_release(btn, pos);
 }
 
-void Toggle::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList);
+void Toggle::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list);
 
 	using namespace Rendering;
-	const Rect rect = GetAbsoluteRect();
-	const auto &style = GetDisplayStyle();
-	const int32 z = 0;
+	const Rect rect = get_absolute_rect();
+	const auto &style = get_display_style();
+	const Int32 z = 0;
 
-	const vec4 trackColor = style.EffectiveAccentColor();
-	const vec4 thumbColor = style.color;
+	const Vec4 track_color = style.effective_accent_color();
+	const Vec4 thumb_color = style.color;
 
 	// Track
-	const float trackH = rect.size.y * 0.55f;
-	const float trackY = rect.position.y + (rect.size.y - trackH) * 0.5f;
-	const Rect track = { .position = { rect.position.x, trackY }, .size = { rect.size.x, trackH } };
-	drawList.DrawRect(track, trackColor, vec4(trackH * 0.5f), 0.f, vec4(0.f), z + 2);
+	const float track_h = rect.size.y * 0.55f;
+	const float track_y = rect.position.y + (rect.size.y - track_h) * 0.5f;
+	const Rect track = { .position = { rect.position.x, track_y }, .size = { rect.size.x, track_h } };
+	draw_list.draw_rect(track, track_color, Vec4(track_h * 0.5f), 0.F, Vec4(0.F), z + 2);
 
 	// Thumb — drawn on top of track
-	const float thumbDiam = rect.size.y - 4.f;
-	const float thumbY = rect.position.y + 2.f;
-	const float thumbX = GetValue() ? rect.position.x + rect.size.x - thumbDiam - 2.f : rect.position.x + 2.f;
-	const Rect thumb = { .position = { thumbX, thumbY }, .size = { thumbDiam, thumbDiam } };
-	drawList.DrawRect(thumb, thumbColor, vec4(thumbDiam * 0.5f), 0.f, vec4(0.f), z + 3);
+	const float thumb_diam = rect.size.y - 4.F;
+	const float thumb_y = rect.position.y + 2.F;
+	const float thumb_x = get_value() ? rect.position.x + rect.size.x - thumb_diam - 2.F : rect.position.x + 2.F;
+	const Rect thumb = { .position = { thumb_x, thumb_y }, .size = { thumb_diam, thumb_diam } };
+	draw_list.draw_rect(thumb, thumb_color, Vec4(thumb_diam * 0.5f), 0.F, Vec4(0.F), z + 3);
 }
 
 } // namespace Aquila::UI::Core

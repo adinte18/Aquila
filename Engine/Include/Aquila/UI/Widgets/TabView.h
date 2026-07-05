@@ -11,26 +11,26 @@ class TabView : public View {
   public:
 	TabView();
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "TabView"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "TabView"; }
 
-	View *AddTab(std::string title, GFX::GfxTexture *icon = nullptr);
+	View *add_tab(std::string title, GFX::GfxTexture *icon = nullptr);
 
-	void SetActiveTab(int index);
-	[[nodiscard]] int GetActiveTab() const { return m_ActiveTab; }
-	Signal<void(int)> onTabChanged;
+	void set_active_tab(int index);
+	[[nodiscard]] int get_active_tab() const { return m_active_tab; }
+	Signal<void(int)> on_tab_changed;
 
   private:
-	void ApplyActiveTab();
+	void apply_active_tab();
 
 	struct Tab {
 		Button *button = nullptr;
 		View *panel = nullptr;
 	};
 
-	View *m_TabBar = nullptr;
-	View *m_Panels = nullptr;
-	std::vector<Tab> m_Tabs;
-	int m_ActiveTab = -1;
+	View *m_tab_bar = nullptr;
+	View *m_panels = nullptr;
+	std::vector<Tab> m_tabs;
+	int m_active_tab = -1;
 };
 
 } // namespace Aquila::UI::Core

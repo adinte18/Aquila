@@ -3,10 +3,10 @@
 
 namespace Aquila::GFX {
 
-GfxPipeline::GfxPipeline(Unique<RHI::IRHIPipeline> pipeline) : m_Pipeline(std::move(pipeline)) {}
+GfxPipeline::GfxPipeline(Unique<RHI::IRHIPipeline> pipeline) : m_pipeline(std::move(pipeline)) {}
 
-void GfxPipeline::Bind(GfxCommandList &cmd) {
-	m_Pipeline->Bind(cmd.GetRHI());
+void GfxPipeline::bind(GfxCommandList &cmd) {
+	m_pipeline->bind(cmd.get_rhi());
 }
 
 } // namespace Aquila::GFX

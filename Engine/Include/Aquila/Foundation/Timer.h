@@ -8,46 +8,46 @@ namespace Aquila::Foundation {
 using Clock = std::chrono::steady_clock;
 using TimePoint = Clock::time_point;
 
-inline TimePoint Now() {
+inline TimePoint now() {
 	return Clock::now();
 }
 
-inline double ElapsedSeconds(const TimePoint &start, const TimePoint &end) {
+inline double elapsed_seconds(const TimePoint &start, const TimePoint &end) {
 	return std::chrono::duration<double>(end - start).count();
 }
 
-inline double ElapsedMilliseconds(const TimePoint &start, const TimePoint &end) {
+inline double elapsed_milliseconds(const TimePoint &start, const TimePoint &end) {
 	return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
-inline double GetTimeSinceStart(const TimePoint &start) {
-	return ElapsedSeconds(start, Now());
+inline double get_time_since_start(const TimePoint &start) {
+	return elapsed_seconds(start, now());
 }
 
 class Stopwatch {
   public:
-	Stopwatch() { Start(); }
+	Stopwatch() { start(); }
 
-	void Start() {
-		m_StartTime = Now();
-		m_LastFrameTime = m_StartTime;
-		m_DeltaTime = 0.0f;
+	void start() {
+		m_start_time = now();
+		m_last_frame_time = m_start_time;
+		m_delta_time = 0.0F;
 	}
 
-	void Tick() {
-		auto currentTime = Now();
-		m_DeltaTime = ElapsedSeconds(m_LastFrameTime, currentTime);
-		m_LastFrameTime = currentTime;
+	void tick() {
+		auto current_time = now();
+		m_delta_time = elapsed_seconds(m_last_frame_time, current_time);
+		m_last_frame_time = current_time;
 	}
 
-	f32 GetDeltaTime() const { return m_DeltaTime; }
+	F32 get_delta_time() const { return m_delta_time; }
 
-	f32 GetElapsedTime() const { return ElapsedSeconds(m_StartTime, Now()); }
+	F32 get_elapsed_time() const { return elapsed_seconds(m_start_time, now()); }
 
   private:
-	TimePoint m_StartTime;
-	TimePoint m_LastFrameTime;
-	f32 m_DeltaTime = 0.0f;
+	TimePoint m_start_time;
+	TimePoint m_last_frame_time;
+	F32 m_delta_time = 0.0F;
 };
 
 } // namespace Aquila::Foundation

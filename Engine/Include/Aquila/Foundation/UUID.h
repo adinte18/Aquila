@@ -1,16 +1,24 @@
 #pragma once
+#include <cstdint>
+#include <functional>
+#include <cstddef>
+#include <ios>
+#include <iomanip>
+#include <cstdio>
 #include <random>
+#include <string>
+#include <sstream>
 namespace Aquila::Foundation {
 struct UUID {
 	uint64_t high;
 	uint64_t low;
 
-	static UUID Generate() {
+	static UUID generate() {
 		std::random_device rd;
 		std::mt19937_64 gen(rd());
 		std::uniform_int_distribution<uint64_t> dist;
 
-		UUID uuid;
+		UUID uuid{};
 		uuid.high = dist(gen);
 		uuid.low = dist(gen);
 
@@ -23,14 +31,14 @@ struct UUID {
 		return uuid;
 	}
 
-	static UUID FromFilepath(const std::string &filepath) {
+	static UUID from_filepath(const std::string &filepath) {
 		std::hash<std::string> hasher;
-		size_t hash = hasher(filepath);
+		size_t const hash = hasher(filepath);
 
 		std::hash<size_t> hasher2;
-		size_t hash2 = hasher2(hash ^ 0xDEADBEEF);
+		size_t const hash2 = hasher2(hash ^ 0xDEADBEEF);
 
-		UUID uuid;
+		UUID uuid{};
 		uuid.high = static_cast<uint64_t>(hash);
 		uuid.low = static_cast<uint64_t>(hash2);
 
@@ -42,25 +50,27 @@ struct UUID {
 		return uuid;
 	}
 
-	static UUID Null() { return UUID{ 0, 0 }; }
+	static UUID null() { return UUID{ .high = 0, .low = 0 }; }
 
-	std::string ToString() const {
+	std::string to_string() const {
 		std::ostringstream oss;
-		oss << std::hex << std::setfill('0') << std::setw(8) << (uint32_t)(high >> 32) << "-" << std::setw(4)
-			<< (uint16_t)(high >> 16) << "-" << std::setw(4) << (uint16_t)high << "-" << std::setw(4)
-			<< (uint16_t)(low >> 48) << "-" << std::setw(12) << (low & 0x0000FFFFFFFFFFFFULL);
+		oss << std::hex << std::setfill('0') << std::setw(8) << static_cast<uint32_t>(high >> 32) << "-" << std::setw(4)
+			<< static_cast<uint16_t>(high >> 16) << "-" << std::setw(4) << static_cast<uint16_t>(high) << "-"
+			<< std::setw(4) << static_cast<uint16_t>(low >> 48) << "-" << std::setw(12)
+			<< (low & 0x0000FFFFFFFFFFFFULL);
 		return oss.str();
 	}
 
-	static UUID FromString(const std::string &str) {
+	static UUID from_string(const std::string &str) {
 		UUID uuid{};
-		uint32_t data1;
-		uint16_t data2, data3;
-		uint16_t data4;
-		uint64_t data5;
+		uint32_t data1 = 0;
+		uint16_t data2 = 0;
+		uint16_t data3 = 0;
+		uint16_t data4 = 0;
+		uint64_t data5 = 0;
 
-#if defined(AQUILA_PLATFORM_WINDOWS)
-		std::sscanf(str.c_str(), "%8x-%4hx-%4hx-%4hx-%12llx", &data1, &data2, &data3, &data4, &data5);
+#ifdef AQUILA_PLATFORM_WINDOWS
+		sscanf_s(str.c_str(), "%8x-%4hx-%4hx-%4hx-%12llx", &data1, &data2, &data3, &data4, &data5);
 #elif defined(AQUILA_PLATFORM_LINUX)
 		std::sscanf(str.c_str(), "%8x-%4hx-%4hx-%4hx-%12" SCNx64, &data1, &data2, &data3, &data4, &data5);
 #endif
@@ -87,5 +97,3 @@ template <> struct hash<Aquila::Foundation::UUID> {
 	}
 };
 } // namespace std
-
-namespace Utils = Aquila::Foundation;

@@ -16,45 +16,45 @@ class LayoutLoader {
 
 	LayoutLoader();
 
-	void RegisterFont(const std::string &name, Text::FontAtlas *font);
-	void SetDefaultFont(Text::FontAtlas *font);
-	void RegisterWidget(const std::string &typeName, WidgetFactory factory);
+	void register_font(const std::string &name, Text::FontAtlas *font);
+	void set_default_font(Text::FontAtlas *font);
+	void register_widget(const std::string &type_name, WidgetFactory factory);
 
 	// Texture-based image loading for <Image src="..."/>.
-	void RegisterTextureCache(TextureCache *cache);
-	[[nodiscard]] GFX::GfxTexture *ResolveTexture(const std::string &path) const;
+	void register_texture_cache(TextureCache *cache);
+	[[nodiscard]] GFX::GfxTexture *resolve_texture(const std::string &path) const;
 
 	// Texture-based icon banks for <Image icon="name" bank="bankName"/>.
-	void RegisterTextureIconBank(const std::string &name, TextureIconBank *bank);
-	[[nodiscard]] TextureIconBank *ResolveTextureIconBank(const std::string &name) const;
+	void register_texture_icon_bank(const std::string &name, TextureIconBank *bank);
+	[[nodiscard]] TextureIconBank *resolve_texture_icon_bank(const std::string &name) const;
 
-	void RegisterCommand(const std::string &name, Delegate<void()> command);
-	[[nodiscard]] Delegate<void()> ResolveCommand(const std::string &name) const;
+	void register_command(const std::string &name, Delegate<void()> command);
+	[[nodiscard]] Delegate<void()> resolve_command(const std::string &name) const;
 
-	Unique<View> LoadFile(const std::string &path);
+	Unique<View> load_file(const std::string &path);
 	Unique<View> LoadString(std::string_view xml);
 
-	[[nodiscard]] Text::FontAtlas *ResolveFont(const std::string &name) const;
-	[[nodiscard]] Unique<View> CreateWidget(const std::string &type, std::string_view text,
+	[[nodiscard]] Text::FontAtlas *resolve_font(const std::string &name) const;
+	[[nodiscard]] Unique<View> create_widget(const std::string &type, std::string_view text,
 											Text::FontAtlas *font) const;
 
   private:
-	std::unordered_map<std::string, Text::FontAtlas *> m_Fonts;
-	Text::FontAtlas *m_DefaultFont = nullptr;
-	std::unordered_map<std::string, WidgetFactory> m_Factories;
+	std::unordered_map<std::string, Text::FontAtlas *> m_fonts;
+	Text::FontAtlas *m_default_font = nullptr;
+	std::unordered_map<std::string, WidgetFactory> m_factories;
 
-	TextureCache *m_TextureCache = nullptr;
-	std::unordered_map<std::string, TextureIconBank *> m_IconBanks;
-	std::unordered_map<std::string, Delegate<void()>> m_Commands;
+	TextureCache *m_texture_cache = nullptr;
+	std::unordered_map<std::string, TextureIconBank *> m_icon_banks;
+	std::unordered_map<std::string, Delegate<void()>> m_commands;
 
-	std::string m_CurrentDir;
-	std::vector<std::string> m_IncludeStack;
+	std::string m_current_dir;
+	std::vector<std::string> m_include_stack;
 
-	template <typename T> void Register(const std::string &typeName) {
-		m_Factories[typeName] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return CreateUnique<T>(); };
+	template <typename T> void Register(const std::string &type_name) {
+		m_factories[type_name] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return create_unique<T>(); };
 	}
 
-	void RegisterBuiltins();
+	void register_builtins();
 };
 
 } // namespace Aquila::UI::Core

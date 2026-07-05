@@ -3,80 +3,80 @@
 namespace Aquila::UI::Core {
 
 Dropdown::Dropdown() {
-	auto header = CreateUnique<Button>();
-	header->AddClass("dropdown-header");
-	header->onClick.Connect([this] { m_Popup->Toggle(); });
-	m_Header = static_cast<Button *>(AddChild(std::move(header)));
+	auto header = create_unique<Button>();
+	header->add_class("dropdown-header");
+	header->on_click.connect([this] { m_popup->toggle(); });
+	m_header = static_cast<Button *>(add_child(std::move(header)));
 
-	auto popup = CreateUnique<Popup>();
-	popup->AddClass("dropdown-popup");
-	m_Popup = static_cast<Popup *>(AddChild(std::move(popup)));
+	auto popup = create_unique<Popup>();
+	popup->add_class("dropdown-popup");
+	m_popup = static_cast<Popup *>(add_child(std::move(popup)));
 
-	UpdateHeaderText();
+	update_header_text();
 }
 
-void Dropdown::AddOption(std::string value, std::string display) {
-	m_Options.push_back({ std::move(value), std::move(display) });
-	Rebuild();
+void Dropdown::add_option(std::string value, std::string display) {
+	m_options.push_back({ std::move(value), std::move(display) });
+	rebuild();
 }
 
-void Dropdown::ClearOptions() {
-	m_Options.clear();
-	m_Value.clear();
-	Rebuild();
-	UpdateHeaderText();
+void Dropdown::clear_options() {
+	m_options.clear();
+	m_value.clear();
+	rebuild();
+	update_header_text();
 }
 
-void Dropdown::SetValue(const std::string &value) {
-	for (const auto &opt : m_Options) {
+void Dropdown::set_value(const std::string &value) {
+	for (const auto &opt : m_options) {
 		if (opt.value == value) {
-			m_Value = value;
-			UpdateHeaderText();
+			m_value = value;
+			update_header_text();
 			return;
 		}
 	}
 }
 
-void Dropdown::SetPlaceholder(std::string text) {
-	m_Placeholder = std::move(text);
-	UpdateHeaderText();
+void Dropdown::set_placeholder(std::string text) {
+	m_placeholder = std::move(text);
+	update_header_text();
 }
 
 
-void Dropdown::Rebuild() {
-	for (View *v : m_OptionButtons) {
-		m_Popup->RemoveChild(v);
+void Dropdown::rebuild() {
+	for (View *v : m_option_buttons) {
+		m_popup->remove_child(v);
 	}
-	m_OptionButtons.clear();
+	m_option_buttons.clear();
 
-	for (const auto &opt : m_Options) {
-		auto btn = CreateUnique<Button>();
-		btn->SetText(opt.Label());
-		btn->AddClass("dropdown-option");
-		btn->onClick.Connect([this, value = opt.value] {
-			Select(value);
-			m_Popup->Close();
+	for (const auto &opt : m_options) {
+		auto btn = create_unique<Button>();
+		btn->set_text(opt.label());
+		btn->add_class("dropdown-option");
+		btn->on_click.connect([this, value = opt.value] {
+			select(value);
+			m_popup->close();
 		});
-		m_OptionButtons.push_back(m_Popup->AddChild(std::move(btn)));
+		m_option_buttons.push_back(m_popup->add_child(std::move(btn)));
 	}
 }
 
-void Dropdown::Select(const std::string &value) {
-	m_Value = value;
-	UpdateHeaderText();
-	onChanged(m_Value);
+void Dropdown::select(const std::string &value) {
+	m_value = value;
+	update_header_text();
+	on_changed(m_value);
 }
 
-void Dropdown::UpdateHeaderText() {
-	if (!m_Value.empty()) {
-		for (const auto &opt : m_Options) {
-			if (opt.value == m_Value) {
-				m_Header->SetText(opt.Label());
+void Dropdown::update_header_text() {
+	if (!m_value.empty()) {
+		for (const auto &opt : m_options) {
+			if (opt.value == m_value) {
+				m_header->set_text(opt.label());
 				return;
 			}
 		}
 	}
-	m_Header->SetText(m_Placeholder);
+	m_header->set_text(m_placeholder);
 }
 
 } // namespace Aquila::UI::Core

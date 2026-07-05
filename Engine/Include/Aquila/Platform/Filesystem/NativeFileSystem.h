@@ -7,34 +7,34 @@ namespace Aquila::Platform::Filesystem {
 
 class NativeFileSystem final : public IFileSystem {
   private:
-	std::string m_RootPath;
+	std::string m_root_path;
 
-	[[nodiscard]] std::string ResolvePath(const std::string &path) const;
-	static std::string ToFopenMode(AccessMode accessMode, OpenMode openMode);
+	[[nodiscard]] std::string resolve_path(const std::string &path) const;
+	static std::string to_fopen_mode(AccessMode access_mode, OpenMode open_mode);
 
   public:
-	explicit NativeFileSystem(const std::string &rootPath);
+	explicit NativeFileSystem(const std::string &root_path);
 	~NativeFileSystem() override = default;
 
 	// File operations
-	Unique<NativeFile> FileOpen(const std::string &path, AccessMode accessMode, OpenMode openMode) override;
-	bool FileExists(const std::string &path) override;
-	bool FileRemove(const std::string &path) override;
-	int64 FileGetSize(const std::string &path) override;
-	uint64 FileGetLastWriteTime(const std::string &path) override;
+	Unique<NativeFile> file_open(const std::string &path, AccessMode access_mode, OpenMode open_mode) override;
+	bool file_exists(const std::string &path) override;
+	bool file_remove(const std::string &path) override;
+	Int64 file_get_size(const std::string &path) override;
+	Uint64 file_get_last_write_time(const std::string &path) override;
 
-	bool FileMove(const std::string &oldPath, const std::string &newPath) override;
+	bool file_move(const std::string &old_path, const std::string &new_path) override;
 
-	bool FileCopy(const std::string &srcPath, const std::string &dstPath) override;
+	bool file_copy(const std::string &src_path, const std::string &dst_path) override;
 
 	// Directory operations
-	bool DirExists(const std::string &path) override;
-	bool DirCreate(const std::string &path) override;
-	bool DirRemove(const std::string &path) override;
-	std::vector<std::string> DirList(const std::string &path) override;
+	bool dir_exists(const std::string &path) override;
+	bool dir_create(const std::string &path) override;
+	bool dir_remove(const std::string &path) override;
+	std::vector<std::string> dir_list(const std::string &path) override;
 
-	[[nodiscard]] bool IsReadOnly() const override { return false; }
-	[[nodiscard]] std::string GetDisplayName() const override { return "Native: " + m_RootPath; }
+	[[nodiscard]] bool is_read_only() const override { return false; }
+	[[nodiscard]] std::string get_display_name() const override { return "Native: " + m_root_path; }
 };
 
 } // namespace Aquila::Platform::Filesystem

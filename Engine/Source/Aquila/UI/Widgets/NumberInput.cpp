@@ -3,69 +3,69 @@
 namespace Aquila::UI::Core {
 
 NumberInput::NumberInput() {
-	UpdateDisplayText();
+	update_display_text();
 }
 
-void NumberInput::SetValue(double value) {
-	m_Value = std::clamp(value, m_Min, m_Max);
-	UpdateDisplayText();
+void NumberInput::set_value(double value) {
+	m_value = std::clamp(value, m_min, m_max);
+	update_display_text();
 }
 
-void NumberInput::SetRange(double min, double max) {
-	m_Min = min;
-	m_Max = max;
-	m_Value = std::clamp(m_Value, m_Min, m_Max);
-	UpdateDisplayText();
+void NumberInput::set_range(double min, double max) {
+	m_min = min;
+	m_max = max;
+	m_value = std::clamp(m_value, m_min, m_max);
+	update_display_text();
 }
 
-void NumberInput::SetStep(double step) {
-	m_Step = step;
+void NumberInput::set_step(double step) {
+	m_step = step;
 }
 
-void NumberInput::SetPrecision(int decimals) {
-	m_Precision = std::max(0, decimals);
-	UpdateDisplayText();
+void NumberInput::set_precision(int decimals) {
+	m_precision = std::max(0, decimals);
+	update_display_text();
 }
 
 
-void NumberInput::OnKeyPress(Platform::KeyCode key, int mods) {
+void NumberInput::on_key_press(Platform::KeyCode key, int mods) {
 	if (key == Platform::KeyCode::Up) {
-		SetValue(m_Value + m_Step);
-		onValueChanged(m_Value);
+		set_value(m_value + m_step);
+		on_value_changed(m_value);
 		return;
 	}
 	if (key == Platform::KeyCode::Down) {
-		SetValue(m_Value - m_Step);
-		onValueChanged(m_Value);
+		set_value(m_value - m_step);
+		on_value_changed(m_value);
 		return;
 	}
 	if (key == Platform::KeyCode::Enter) {
-		CommitText();
+		commit_text();
 		return;
 	}
-	TextInput::OnKeyPress(key, mods);
+	TextInput::on_key_press(key, mods);
 }
 
-void NumberInput::OnFocusLost() {
-	CommitText();
-	TextInput::OnFocusLost();
+void NumberInput::on_focus_lost() {
+	commit_text();
+	TextInput::on_focus_lost();
 }
 
-void NumberInput::CommitText() {
+void NumberInput::commit_text() {
 	try {
-		const double parsed = std::stod(m_State.text);
-		m_Value = std::clamp(parsed, m_Min, m_Max);
-		onValueChanged(m_Value);
+		const double parsed = std::stod(m_state.text);
+		m_value = std::clamp(parsed, m_min, m_max);
+		on_value_changed(m_value);
 	} catch (...) {
 	}
-	UpdateDisplayText();
+	update_display_text();
 }
 
-void NumberInput::UpdateDisplayText() {
+void NumberInput::update_display_text() {
 	std::ostringstream ss;
-	ss.precision(m_Precision);
-	ss << std::fixed << m_Value;
-	TextInput::SetText(ss.str());
+	ss.precision(m_precision);
+	ss << std::fixed << m_value;
+	TextInput::set_text(ss.str());
 }
 
 } // namespace Aquila::UI::Core

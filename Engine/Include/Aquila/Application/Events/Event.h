@@ -10,7 +10,7 @@ class Window;
 
 namespace Aquila::Application::Events {
 
-enum class EventCategory : uint8 {
+enum class EventCategory : Uint8 {
 	None = 0,
 	Application = BIT(0),
 	Input = BIT(1),
@@ -32,33 +32,33 @@ inline bool operator&(EventCategory a, EventCategory b) {
 class Event {
   public:
 	virtual ~Event() = default;
-	[[nodiscard]] virtual const char *GetName() const = 0;
-	[[nodiscard]] virtual EventCategory GetCategory() const = 0;
-	[[nodiscard]] virtual std::type_index GetTypeIndex() const = 0;
-	[[nodiscard]] virtual std::string ToString() const { return GetName(); }
-	[[nodiscard]] Window *GetSource() const { return m_Source; }
+	[[nodiscard]] virtual const char *get_name() const = 0;
+	[[nodiscard]] virtual EventCategory get_category() const = 0;
+	[[nodiscard]] virtual std::type_index get_type_index() const = 0;
+	[[nodiscard]] virtual std::string to_string() const { return get_name(); }
+	[[nodiscard]] Window *get_source() const { return m_source; }
 
-	void SetSource(Window *window) { m_Source = window; };
+	void set_source(Window *window) { m_source = window; };
 	bool handled = false;
 
   private:
-	Window *m_Source = nullptr;
+	Window *m_source = nullptr;
 };
 
 class EventDispatcher {
   public:
-	explicit EventDispatcher(Event &event) : m_Event(event) {}
+	explicit EventDispatcher(Event &event) : m_event(event) {}
 
-	template <typename T, typename F> bool Dispatch(const F &func) {
-		if (m_Event.GetTypeIndex() == std::type_index(typeid(T))) {
-			m_Event.handled = func(static_cast<T &>(m_Event));
+	template <typename T, typename F> bool dispatch(const F &func) {
+		if (m_event.get_type_index() == std::type_index(typeid(T))) {
+			m_event.handled = func(static_cast<T &>(m_event));
 			return true;
 		}
 		return false;
 	}
 
   private:
-	Event &m_Event;
+	Event &m_event;
 };
 
 } // namespace Aquila::Application::Events

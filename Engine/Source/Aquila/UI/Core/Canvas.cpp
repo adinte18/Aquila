@@ -5,93 +5,93 @@ namespace Aquila::UI::Core {
 
 using namespace Aquila::UI::Rendering;
 
-Canvas::Canvas(uint32 width, uint32 height)
-	: m_Width(width), m_Height(height), m_LayoutEngine(width, height), m_InputRouter(*this, m_DrawCompositor) {
-	m_Root = CreateUnique<View>();
-	m_Root->SetCanvas(this);
+Canvas::Canvas(Uint32 width, Uint32 height)
+	: m_width(width), m_height(height), m_layout_engine(width, height), m_input_router(*this, m_draw_compositor) {
+	m_root = create_unique<View>();
+	m_root->set_canvas(this);
 
-	m_DrawCompositor.SetCanvasSize(width, height);
+	m_draw_compositor.set_canvas_size(width, height);
 
-	StyleProperties rootStyle;
-	rootStyle.width = StyleLength::Grow();
-	rootStyle.height = StyleLength::Grow();
-	m_Root->SetStyle(rootStyle);
-	NotifyStyleDirty(m_Root.get());
-	StylePass();
+	StyleProperties root_style;
+	root_style.width = StyleLength::grow();
+	root_style.height = StyleLength::grow();
+	m_root->set_style(root_style);
+	notify_style_dirty(m_root.get());
+	style_pass();
 }
 
-void Canvas::MarkDirty() {
-	m_Dirty = true;
-	Aquila::Rendering::FrameScheduler::Get()->RequestFrame();
+void Canvas::mark_dirty() {
+	m_dirty = true;
+	Aquila::Rendering::FrameScheduler::get()->request_frame();
 }
 
-void Canvas::RequestLayout() {
-	m_LayoutDirty = true;
-	MarkDirty();
+void Canvas::request_layout() {
+	m_layout_dirty = true;
+	mark_dirty();
 }
 
-void Canvas::NotifyStyleDirty(View *view) {
-	m_StyleEngine.Invalidate(view);
-	MarkDirty();
+void Canvas::notify_style_dirty(View *view) {
+	m_style_engine.invalidate(view);
+	mark_dirty();
 }
 
-void Canvas::NotifyAnimationStarted(View *view) {
-	for (const View *v : m_ActiveAnims) {
+void Canvas::notify_animation_started(View *view) {
+	for (const View *v : m_active_anims) {
 		if (v == view) {
 			return;
 		}
 	}
-	m_ActiveAnims.push_back(view);
-	MarkDirty();
+	m_active_anims.push_back(view);
+	mark_dirty();
 }
 
-void Canvas::NotifyDrawDirty(View *view) {
-	MarkNodeDrawDirty(view);
+void Canvas::notify_draw_dirty(View *view) {
+	mark_node_draw_dirty(view);
 }
 
-void Canvas::NotifyLayoutDirty(View *view) {
-	m_LayoutDirty = true;
-	MarkNodeDrawDirty(view);
+void Canvas::notify_layout_dirty(View *view) {
+	m_layout_dirty = true;
+	mark_node_draw_dirty(view);
 }
 
-void Canvas::NotifyFocusRequest(View *view) {
-	m_InputRouter.SetFocus(view);
+void Canvas::notify_focus_request(View *view) {
+	m_input_router.set_focus(view);
 }
 
-void Canvas::NotifyViewRemoved(View *view) {
-	m_StyleEngine.Remove(view);
-	m_InputRouter.OnViewRemoved(view);
-	UnregisterPopup(view);
-	UnregisterTick(view);
-	if (m_ScrollTarget == view) {
-		m_ScrollTarget = nullptr;
+void Canvas::notify_view_removed(View *view) {
+	m_style_engine.remove(view);
+	m_input_router.on_view_removed(view);
+	unregister_popup(view);
+	unregister_tick(view);
+	if (m_scroll_target == view) {
+		m_scroll_target = nullptr;
 	}
-	if (auto it = std::ranges::find(m_ActiveAnims, view); it != m_ActiveAnims.end()) {
-		m_ActiveAnims.erase(it);
-	}
-}
-
-void Canvas::RegisterPopup(View *popup, Delegate<void()> onDismiss) {
-	UnregisterPopup(popup);
-	m_OpenPopups.push_back({ popup, std::move(onDismiss) });
-}
-
-void Canvas::UnregisterPopup(View *popup) {
-	std::erase_if(m_OpenPopups, [popup](const OpenPopup &p) { return p.root == popup; });
-}
-
-void Canvas::RegisterTick(View *view) {
-	if (std::ranges::find(m_Ticking, view) == m_Ticking.end()) {
-		m_Ticking.push_back(view);
+	if (auto it = std::ranges::find(m_active_anims, view); it != m_active_anims.end()) {
+		m_active_anims.erase(it);
 	}
 }
 
-void Canvas::UnregisterTick(View *view) {
-	std::erase(m_Ticking, view);
+void Canvas::register_popup(View *popup, Delegate<void()> on_dismiss) {
+	unregister_popup(popup);
+	m_open_popups.push_back({ popup, std::move(on_dismiss) });
 }
 
-static bool IsWithin(View *node, View *root) {
-	for (View *v = node; v; v = v->GetParent()) {
+void Canvas::unregister_popup(View *popup) {
+	std::erase_if(m_open_popups, [popup](const OpenPopup &p) { return p.root == popup; });
+}
+
+void Canvas::register_tick(View *view) {
+	if (std::ranges::find(m_ticking, view) == m_ticking.end()) {
+		m_ticking.push_back(view);
+	}
+}
+
+void Canvas::unregister_tick(View *view) {
+	std::erase(m_ticking, view);
+}
+
+static bool is_within(View *node, View *root) {
+	for (View *v = node; v; v = v->get_parent()) {
 		if (v == root) {
 			return true;
 		}
@@ -99,146 +99,146 @@ static bool IsWithin(View *node, View *root) {
 	return false;
 }
 
-void Canvas::DismissPopupsOutside(View *hit) {
-	if (m_OpenPopups.empty()) {
+void Canvas::dismiss_popups_outside(View *hit) {
+	if (m_open_popups.empty()) {
 		return;
 	}
-	std::vector<Delegate<void()>> toDismiss;
-	for (const auto &popup : m_OpenPopups) {
-		if (!IsWithin(hit, popup.root)) {
-			toDismiss.push_back(popup.onDismiss);
+	std::vector<Delegate<void()>> to_dismiss;
+	for (const auto &popup : m_open_popups) {
+		if (!is_within(hit, popup.root)) {
+			to_dismiss.push_back(popup.on_dismiss);
 		}
 	}
-	for (auto &dismiss : toDismiss) {
+	for (auto &dismiss : to_dismiss) {
 		if (dismiss) {
 			dismiss();
 		}
 	}
 }
 
-void Canvas::ReloadStyles() {
-	MarkSubtreeDirty(m_Root.get());
+void Canvas::reload_styles() {
+	mark_subtree_dirty(m_root.get());
 }
 
-void Canvas::MarkSubtreeDirty(View *node) {
-	NotifyStyleDirty(node);
-	for (const auto &child : node->GetChildren()) {
-		MarkSubtreeDirty(child.get());
+void Canvas::mark_subtree_dirty(View *node) {
+	notify_style_dirty(node);
+	for (const auto &child : node->get_children()) {
+		mark_subtree_dirty(child.get());
 	}
 }
 
-void Canvas::StylePass() {
-	const StyleEngine::ResolveResult result = m_StyleEngine.Resolve(m_Width, m_Height, m_LayoutDirty);
-	m_LayoutDirty = result.layoutAffected;
+void Canvas::style_pass() {
+	const StyleEngine::ResolveResult result = m_style_engine.resolve(m_width, m_height, m_layout_dirty);
+	m_layout_dirty = result.layout_affected;
 	if (result.changed) {
-		MarkDirty();
+		mark_dirty();
 	}
 }
 
-void Canvas::AnimationPass(f32 dt) {
-	auto it = m_ActiveAnims.begin();
-	while (it != m_ActiveAnims.end()) {
+void Canvas::animation_pass(F32 dt) {
+	auto it = m_active_anims.begin();
+	while (it != m_active_anims.end()) {
 		View *v = *it;
-		v->UpdateAnimation(dt);
-		MarkNodeDrawDirty(v);
-		if (v->IsAnimationFinished()) {
-			it = m_ActiveAnims.erase(it);
+		v->update_animation(dt);
+		mark_node_draw_dirty(v);
+		if (v->is_animation_finished()) {
+			it = m_active_anims.erase(it);
 		} else {
 			++it;
 		}
 	}
 }
 
-void Canvas::Compute() {
-	if (!m_Root || !m_Dirty) {
+void Canvas::compute() {
+	if (!m_root || !m_dirty) {
 		return;
 	}
 
-	if (m_LayoutDirty) {
-		m_LayoutEngine.RunLayout(m_Root.get(), m_InputRouter.MousePos(), m_InputRouter.MouseDown(),
-								 m_InputRouter.TakeScrollDelta(), m_DeltaTime);
-		m_LayoutDirty = false;
+	if (m_layout_dirty) {
+		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(),
+								 m_input_router.take_scroll_delta(), m_delta_time);
+		m_layout_dirty = false;
 
 		// @container rules depend on element sizes — re-resolve immediately after
 		// layout so rules see the current frame's container sizes.
-		if (m_StyleEngine.GetStyleSheet().HasContainerBlocks()) {
-			MarkSubtreeDirty(m_Root.get());
-			StylePass();
+		if (m_style_engine.get_style_sheet().has_container_blocks()) {
+			mark_subtree_dirty(m_root.get());
+			style_pass();
 		}
 
-		m_DrawCompositor.InvalidateAll(m_Root.get());
+		m_draw_compositor.invalidate_all(m_root.get());
 	}
 
-	if (m_ScrollTarget) {
-		m_LayoutEngine.ScrollIntoView(m_ScrollTarget);
-		m_ScrollTarget = nullptr;
-		m_LayoutEngine.RunLayout(m_Root.get(), m_InputRouter.MousePos(), m_InputRouter.MouseDown(), {}, m_DeltaTime);
-		m_DrawCompositor.InvalidateAll(m_Root.get());
+	if (m_scroll_target) {
+		m_layout_engine.scroll_into_view(m_scroll_target);
+		m_scroll_target = nullptr;
+		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {}, m_delta_time);
+		m_draw_compositor.invalidate_all(m_root.get());
 	}
 
-	if (m_DrawCompositor.RebuildDirty(m_Root.get())) {
-		m_DrawListDirty = true;
+	if (m_draw_compositor.rebuild_dirty(m_root.get())) {
+		m_draw_list_dirty = true;
 	}
-	m_Dirty = false;
+	m_dirty = false;
 }
 
-void Canvas::MarkNodeDrawDirty(View *node) {
-	node->SetDrawDirty();
-	MarkDirty();
+void Canvas::mark_node_draw_dirty(View *node) {
+	node->set_draw_dirty();
+	mark_dirty();
 }
 
-void Canvas::SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
-	if (!m_Root) {
+void Canvas::submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
+	if (!m_root) {
 		return;
 	}
-	m_DrawCompositor.Submit(r2d, cmd);
+	m_draw_compositor.submit(r2d, cmd);
 }
 
-void Canvas::OnEvent(Application::Events::Event &e) {
-	m_InputRouter.OnEvent(e);
+void Canvas::on_event(Application::Events::Event &e) {
+	m_input_router.on_event(e);
 }
 
-View *Canvas::HitTest(vec2 pos) {
-	return m_DrawCompositor.HitTest(pos);
+View *Canvas::hit_test(Vec2 pos) {
+	return m_draw_compositor.hit_test(pos);
 }
 
-void Canvas::ScrollIntoView(View *target) {
-	m_ScrollTarget = target;
-	m_LayoutDirty = true;
-	MarkDirty();
+void Canvas::scroll_into_view(View *target) {
+	m_scroll_target = target;
+	m_layout_dirty = true;
+	mark_dirty();
 }
 
-void Canvas::Update(f32 deltaTime) {
-	m_DeltaTime = deltaTime;
-	if (!m_Ticking.empty()) {
-		for (View *view : m_Ticking) {
-			view->OnUpdate(deltaTime);
+void Canvas::update(F32 delta_time) {
+	m_delta_time = delta_time;
+	if (!m_ticking.empty()) {
+		for (View *view : m_ticking) {
+			view->on_update(delta_time);
 		}
-		Aquila::Rendering::FrameScheduler::Get()->RequestFrame();
+		Aquila::Rendering::FrameScheduler::get()->request_frame();
 	}
-	StylePass();
-	AnimationPass(deltaTime);
+	style_pass();
+	animation_pass(delta_time);
 }
 
-void Canvas::Resize(uint32 width, uint32 height) {
-	m_Width = width;
-	m_Height = height;
-	m_DrawCompositor.SetCanvasSize(width, height);
-	m_LayoutDirty = true;
-	MarkDirty();
+void Canvas::resize(Uint32 width, Uint32 height) {
+	m_width = width;
+	m_height = height;
+	m_draw_compositor.set_canvas_size(width, height);
+	m_layout_dirty = true;
+	mark_dirty();
 	// @media rules depend on viewport size — re-resolve all styles on resize.
-	if (m_StyleEngine.GetStyleSheet().HasMediaBlocks()) {
-		MarkSubtreeDirty(m_Root.get());
+	if (m_style_engine.get_style_sheet().has_media_blocks()) {
+		mark_subtree_dirty(m_root.get());
 	}
-	m_LayoutEngine.SetDimensions(width, height);
+	m_layout_engine.set_dimensions(width, height);
 }
 
-StyleSheet &Canvas::GetStyleSheet() {
-	return m_StyleEngine.GetStyleSheet();
+StyleSheet &Canvas::get_style_sheet() {
+	return m_style_engine.get_style_sheet();
 }
 
-View *Canvas::GetRoot() {
-	return m_Root.get();
+View *Canvas::get_root() {
+	return m_root.get();
 }
 
 } // namespace Aquila::UI::Core

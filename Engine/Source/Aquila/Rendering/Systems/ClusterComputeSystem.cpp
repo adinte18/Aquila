@@ -13,23 +13,23 @@ namespace Aquila::Rendering {
 
 using Aquila::SharedConstants::SHADERS_DIR;
 
-static constexpr uint32 kElementCount = 3456; // cluster size so 16x9x24
+static constexpr Uint32 K_ELEMENT_COUNT = 3456; // cluster size so 16x9x24
 
-void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
-	RenderingSystemBase::OnInit(ctx);
+void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
+	RenderingSystemBase::on_init(ctx);
 
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "ClusterCompute.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "ClusterCompute.slang", stages, err)) {
 		AQUILA_LOG_ERROR("ClusterComputeSystem: shader compile failed: {}", err);
 		return;
 	}
 
-	m_GridData.grid.x = 16;
-	m_GridData.grid.y = 9;
-	m_GridData.grid.z = 24;
+	m_grid_data.grid.x = 16;
+	m_grid_data.grid.y = 9;
+	m_grid_data.grid.z = 24;
 
-	m_StorageLayout = ctx.CreateDescriptorSetLayout({
+	m_storage_layout = ctx.create_descriptor_set_layout({
 		.bindings = { {
 						  .binding = 0,
 						  .type = RHI::DescriptorType::StorageBuffer,
@@ -44,67 +44,67 @@ void ClusterComputeSystem::OnInit(GFX::GfxContext &ctx) {
 					  } },
 	});
 
-	RHI::ComputePipelineDesc pipelineDesc{};
-	pipelineDesc.computeShader = {
+	RHI::ComputePipelineDesc pipeline_desc{};
+	pipeline_desc.compute_shader = {
 		.stage = RHI::ShaderStageFlags::Compute,
 		.spirv = stages[0].spirv,
-		.entryPoint = stages[0].entryPointName,
+		.entry_point = stages[0].entry_point_name,
 	};
-	pipelineDesc.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI(), &m_StorageLayout->GetRHI() };
-	pipelineDesc.debugName = "ClusterCompute";
-	m_Pipeline = ctx.CreateComputePipeline(pipelineDesc);
+	pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
+	pipeline_desc.debug_name = "ClusterCompute";
+	m_pipeline = ctx.create_compute_pipeline(pipeline_desc);
 
-	m_OutputBuffer = ctx.CreateBuffer({
-		.size = sizeof(AABB) * kElementCount,
+	m_output_buffer = ctx.create_buffer({
+		.size = sizeof(AABB) * K_ELEMENT_COUNT,
 		.usage = RHI::BufferUsage::StorageBuffer,
-		.domain = RHI::MemoryDomain::GPU_TO_CPU,
-		.debugName = "ClusterCompute_AABBOutput",
+		.domain = RHI::MemoryDomain::GpuToCpu,
+		.debug_name = "ClusterCompute_AABBOutput",
 	});
 
-	m_GridBuffer = ctx.CreateBuffer({
+	m_grid_buffer = ctx.create_buffer({
 		.size = sizeof(GridData),
 		.usage = RHI::BufferUsage::UniformBuffer,
-		.domain = RHI::MemoryDomain::CPU_TO_GPU,
-		.debugName = "ClusteCompute_GridData",
+		.domain = RHI::MemoryDomain::CpuToGpu,
+		.debug_name = "ClusteCompute_GridData",
 	});
 
-	m_GridBuffer->Write(&m_GridData);
+	m_grid_buffer->write(&m_grid_data);
 
-	m_StorageSet = ctx.AllocateDescriptorSet(*m_StorageLayout);
-	m_StorageSet->SetBuffer(0, *m_OutputBuffer).Flush();
-	m_StorageSet->SetBuffer(1, *m_GridBuffer).Flush();
+	m_storage_set = ctx.allocate_descriptor_set(*m_storage_layout);
+	m_storage_set->set_buffer(0, *m_output_buffer).flush();
+	m_storage_set->set_buffer(1, *m_grid_buffer).flush();
 }
 
-void ClusterComputeSystem::AddPasses(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_Pipeline) {
+void ClusterComputeSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
+	if (!m_pipeline) {
 		return;
 	}
 
-	auto *frameData = ctx.frameData;
-	const uint32 frameSlot = ctx.frameSlot;
+	auto *frame_data = ctx.frame_data;
+	const Uint32 frame_slot = ctx.frame_slot;
 
-	auto hAABBs =
-		graph.ImportBuffer(m_OutputBuffer.get(), "ClusterAABBs", Graphics::RG::ResourceState::UnorderedAccess);
+	auto h_aab_bs =
+		graph.import_buffer(m_output_buffer.get(), "ClusterAABBs", Graphics::RG::ResourceState::UnorderedAccess);
 
-	graph.AddPass(
-		"ClusterCompute", [&hAABBs](Graphics::RG::RGPassBuilder &builder) { hAABBs = builder.WriteBuffer(hAABBs); },
-		[this, frameData, frameSlot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
-			cmd.BindPipeline(*m_Pipeline);
-			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
-			cmd.BindDescriptorSet(1, *m_StorageSet);
-			cmd.Dispatch((m_GridData.grid.x + 4 - 1) / 4, (m_GridData.grid.y + 4 - 1) / 4,
-						 (m_GridData.grid.z + 4 - 1) / 4);
+	graph.add_pass(
+		"ClusterCompute", [&h_aab_bs](Graphics::RG::RGPassBuilder &builder) { h_aab_bs = builder.write_buffer(h_aab_bs); },
+		[this, frame_data, frame_slot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
+			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
+			cmd.bind_descriptor_set(1, *m_storage_set);
+			cmd.dispatch((m_grid_data.grid.x + 4 - 1) / 4, (m_grid_data.grid.y + 4 - 1) / 4,
+						 (m_grid_data.grid.z + 4 - 1) / 4);
 
-			if (!m_Verified) {
-				auto *data = static_cast<uint32 *>(m_OutputBuffer->Map());
+			if (!m_verified) {
+				auto *data = static_cast<Uint32 *>(m_output_buffer->map());
 				if (data) {
-					m_OutputBuffer->Unmap();
+					m_output_buffer->unmap();
 				}
-				m_Verified = true;
+				m_verified = true;
 			}
 		});
 
-	ctx.hClusterAABBs = hAABBs;
+	ctx.h_cluster_aab_bs = h_aab_bs;
 }
 
 } // namespace Aquila::Rendering

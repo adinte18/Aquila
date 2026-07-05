@@ -26,23 +26,23 @@ class FloatingPanelWindow {
 	FloatingPanelWindow();
 	~FloatingPanelWindow();
 
-	void Build(Unique<Aquila::UI::Core::View> panelSubtree, const std::string &title, uint32 width, uint32 height,
-			   const std::string &stylePath);
+	void build(Unique<Aquila::UI::Core::View> panel_subtree, const std::string &title, Uint32 width, Uint32 height,
+			   const std::string &style_path);
 
-	void Update(f32 deltaTime);
-	void Render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
-	void OnEvent(Aquila::Application::Events::Event &event);
+	void update(F32 delta_time);
+	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
+	void on_event(Aquila::Application::Events::Event &event);
 
-	[[nodiscard]] bool HasContent() const;
-	Unique<Aquila::UI::Core::View> DetachContent();
-	[[nodiscard]] const std::string &GetTitle() const { return m_Title; }
-	[[nodiscard]] Aquila::UI::Core::DockSpace *GetDockSpace() const { return m_DockSpace; }
+	[[nodiscard]] bool has_content() const;
+	Unique<Aquila::UI::Core::View> detach_content();
+	[[nodiscard]] const std::string &get_title() const { return m_title; }
+	[[nodiscard]] Aquila::UI::Core::DockSpace *get_dock_space() const { return m_dock_space; }
 
   private:
-	Unique<Aquila::UI::Core::Canvas> m_Canvas;
-	Aquila::UI::Core::View *m_Body = nullptr;
-	Aquila::UI::Core::DockSpace *m_DockSpace = nullptr;
-	std::string m_Title;
+	Unique<Aquila::UI::Core::Canvas> m_canvas;
+	Aquila::UI::Core::View *m_body = nullptr;
+	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
+	std::string m_title;
 };
 
 } // namespace Editor

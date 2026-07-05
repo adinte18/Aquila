@@ -25,25 +25,25 @@ class RenderingSystemBase : public IRenderingSystem {
 	AQUILA_NONCOPYABLE(RenderingSystemBase);
 	AQUILA_NONMOVEABLE(RenderingSystemBase);
 
-	void OnInit(GFX::GfxContext &ctx) override { m_Ctx = &ctx; }
+	void on_init(GFX::GfxContext &ctx) override { m_ctx = &ctx; }
 
-	void OnShutdown() override { m_MeshCache.clear(); }
+	void on_shutdown() override { m_mesh_cache.clear(); }
 
   protected:
-	Ref<GFX::GfxMesh> GetOrUploadMesh(const Ref<Graphics::Resources::Mesh> &mesh) {
-		auto it = m_MeshCache.find(mesh.get());
-		if (it != m_MeshCache.end()) {
+	Ref<GFX::GfxMesh> get_or_upload_mesh(const Ref<Graphics::Resources::Mesh> &mesh) {
+		auto it = m_mesh_cache.find(mesh.get());
+		if (it != m_mesh_cache.end()) {
 			return it->second;
 		}
-		auto gpu = GFX::GfxMesh::Create(*m_Ctx, *mesh);
-		m_MeshCache[mesh.get()] = gpu;
+		auto gpu = GFX::GfxMesh::create(*m_ctx, *mesh);
+		m_mesh_cache[mesh.get()] = gpu;
 		return gpu;
 	}
 
-	GFX::GfxContext *m_Ctx = nullptr;
+	GFX::GfxContext *m_ctx = nullptr;
 
   private:
-	std::unordered_map<Graphics::Resources::Mesh *, Ref<GFX::GfxMesh>> m_MeshCache;
+	std::unordered_map<Graphics::Resources::Mesh *, Ref<GFX::GfxMesh>> m_mesh_cache;
 };
 
 } // namespace Aquila::Rendering

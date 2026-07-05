@@ -362,7 +362,7 @@
 // 	return m_SceneManager->LoadSceneAsync(filepath, *this, onLoaded);
 // }
 
-// SceneManagement::Scene *AssetManager::GetScene(const Utils::UUID &uuid) const {
+// SceneManagement::Scene *AssetManager::GetScene(const Foundation::UUID &uuid) const {
 // 	return m_SceneManager->GetScene(uuid);
 // }
 
@@ -370,7 +370,7 @@
 // 	return m_SceneManager->GetSceneByName(name);
 // }
 
-// void AssetManager::ActivateScene(const Utils::UUID &uuid) {
+// void AssetManager::ActivateScene(const Foundation::UUID &uuid) {
 // 	auto *oldScene = m_SceneManager->GetActiveScene();
 // 	m_SceneManager->ActivateScene(uuid);
 // 	auto *newScene = m_SceneManager->GetActiveScene();
@@ -424,7 +424,7 @@
 // 	return m_SceneManager->GetActiveScene();
 // }
 
-// bool AssetManager::SaveScene(const Utils::UUID &uuid, const std::string &filepath) {
+// bool AssetManager::SaveScene(const Foundation::UUID &uuid, const std::string &filepath) {
 // 	return m_SceneManager->SaveScene(uuid, filepath);
 // }
 
@@ -432,7 +432,7 @@
 // 	return m_SceneManager->SaveActiveScene(filepath);
 // }
 
-// SceneManagement::Scene *AssetManager::DuplicateScene(const Utils::UUID &uuid, const std::string &newName) {
+// SceneManagement::Scene *AssetManager::DuplicateScene(const Foundation::UUID &uuid, const std::string &newName) {
 // 	return m_SceneManager->DuplicateScene(uuid, *this, newName);
 // }
 
@@ -444,11 +444,11 @@
 // 	return m_SceneManager->GetInactiveScenes();
 // }
 
-// bool AssetManager::IsSceneActive(const Utils::UUID &uuid) const {
+// bool AssetManager::IsSceneActive(const Foundation::UUID &uuid) const {
 // 	return m_SceneManager->IsSceneActive(uuid);
 // }
 
-// void AssetManager::UnloadScene(const Utils::UUID &uuid) {
+// void AssetManager::UnloadScene(const Foundation::UUID &uuid) {
 // 	if (auto *scene = m_SceneManager->GetScene(uuid)) {
 // 		if (m_OnSceneDestroyed) {
 // 			m_OnSceneDestroyed(scene);
@@ -457,7 +457,7 @@
 // 	m_SceneManager->UnloadScene(uuid);
 // }
 
-// void AssetManager::RemoveScene(const Utils::UUID &uuid) {
+// void AssetManager::RemoveScene(const Foundation::UUID &uuid) {
 // 	if (auto *scene = m_SceneManager->GetScene(uuid)) {
 // 		if (m_OnSceneDestroyed) {
 // 			m_OnSceneDestroyed(scene);
@@ -466,7 +466,7 @@
 // 	m_SceneManager->RemoveScene(uuid);
 // }
 
-// void AssetManager::ChangeScene(const Utils::UUID &uuid) {
+// void AssetManager::ChangeScene(const Foundation::UUID &uuid) {
 // 	auto *oldScene = m_SceneManager->GetActiveScene();
 // 	m_SceneManager->ChangeScene(uuid);
 // 	auto *newScene = m_SceneManager->GetActiveScene();
@@ -584,7 +584,7 @@
 // 			// Register as fully loaded
 // 			{
 // 				std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 				Utils::UUID uuid = GetOrCreateUUID(filepath);
+// 				Foundation::UUID uuid = GetOrCreateUUID(filepath);
 
 // 				if (auto *entry = FindAssetEntry(uuid)) {
 // 					entry->metadata.isLoaded = true;
@@ -645,7 +645,7 @@
 // 	return LoadMesh(filepath);
 // }
 
-// Ref<Graphics::Resources::Mesh> AssetManager::GetMesh(const Utils::UUID &uuid) {
+// Ref<Graphics::Resources::Mesh> AssetManager::GetMesh(const Foundation::UUID &uuid) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 // 	if (auto *entry = FindAssetEntry(uuid)) {
 // 		return entry->GetAs<Graphics::Resources::Mesh>();
@@ -728,7 +728,7 @@
 // 		return Core::JobHandle<Ref<Graphics::Resources::Texture2D>>(promise.get_future());
 // 	}
 
-// 	Utils::UUID uuid{};
+// 	Foundation::UUID uuid{};
 // 	{
 // 		std::lock_guard<std::mutex> lock(m_RegistryMutex);
 // 		uuid = GetOrCreateUUID(filepath);
@@ -817,7 +817,7 @@
 // 			// Register
 // 			{
 // 				std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 				Utils::UUID uuid = GetOrCreateUUID(filepath);
+// 				Foundation::UUID uuid = GetOrCreateUUID(filepath);
 
 // 				AssetEntry entry;
 // 				entry.uuid = uuid;
@@ -937,7 +937,7 @@
 // 			// Register
 // 			{
 // 				std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 				Utils::UUID uuid = GetOrCreateUUID(filepath);
+// 				Foundation::UUID uuid = GetOrCreateUUID(filepath);
 
 // 				AssetEntry entry;
 // 				entry.uuid = uuid;
@@ -1052,7 +1052,7 @@
 // 	return LoadTexture(filepath);
 // }
 
-// Ref<Graphics::Resources::Texture2D> AssetManager::GetTexture(const Utils::UUID &uuid) {
+// Ref<Graphics::Resources::Texture2D> AssetManager::GetTexture(const Foundation::UUID &uuid) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 // 	if (auto *entry = FindAssetEntry(uuid)) {
 // 		return entry->GetAs<Graphics::Resources::Texture2D>();
@@ -1070,7 +1070,7 @@
 // 	return nullptr;
 // }
 
-// Ref<Graphics::Resources::Texture2D> AssetManager::TryGetTexture(const Utils::UUID &uuid) {
+// Ref<Graphics::Resources::Texture2D> AssetManager::TryGetTexture(const Foundation::UUID &uuid) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 // 	if (auto *entry = FindAssetEntry(uuid)) {
 // 		if (entry->metadata.isLoaded) {
@@ -1091,7 +1091,7 @@
 // 	return nullptr;
 // }
 
-// Ref<Graphics::Resources::Mesh> AssetManager::TryGetMesh(const Utils::UUID &uuid) {
+// Ref<Graphics::Resources::Mesh> AssetManager::TryGetMesh(const Foundation::UUID &uuid) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 // 	if (auto *entry = FindAssetEntry(uuid)) {
 // 		if (entry->metadata.isLoaded) {
@@ -1248,7 +1248,7 @@
 // void AssetManager::RegisterAsset(const std::string &filepath, std::shared_ptr<void> asset, AssetType type) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 
-// 	Utils::UUID uuid = GetOrCreateUUID(filepath);
+// 	Foundation::UUID uuid = GetOrCreateUUID(filepath);
 
 // 	AssetEntry entry;
 // 	entry.uuid = uuid;
@@ -1264,18 +1264,18 @@
 // 	m_AssetRegistry[uuid] = std::move(entry);
 // }
 
-// Utils::UUID AssetManager::GetOrCreateUUID(const std::string &filepath) {
+// Foundation::UUID AssetManager::GetOrCreateUUID(const std::string &filepath) {
 // 	auto it = m_PathToUUID.find(filepath);
 // 	if (it != m_PathToUUID.end()) {
 // 		return it->second;
 // 	}
 
-// 	Utils::UUID uuid = Utils::UUID::FromFilepath(filepath);
+// 	Foundation::UUID uuid = Foundation::UUID::FromFilepath(filepath);
 // 	m_PathToUUID[filepath] = uuid;
 // 	return uuid;
 // }
 
-// AssetEntry *AssetManager::FindAssetEntry(const Utils::UUID &uuid) {
+// AssetEntry *AssetManager::FindAssetEntry(const Foundation::UUID &uuid) {
 // 	auto it = m_AssetRegistry.find(uuid);
 // 	return it != m_AssetRegistry.end() ? &it->second : nullptr;
 // }
@@ -1288,7 +1288,7 @@
 // 	return nullptr;
 // }
 
-// const AssetEntry *AssetManager::FindAssetEntry(const Utils::UUID &uuid) const {
+// const AssetEntry *AssetManager::FindAssetEntry(const Foundation::UUID &uuid) const {
 // 	auto it = m_AssetRegistry.find(uuid);
 // 	return it != m_AssetRegistry.end() ? &it->second : nullptr;
 // }
@@ -1313,7 +1313,7 @@
 
 // // Hot Reloading
 
-// void AssetManager::ReloadAsset(const Utils::UUID &uuid) {
+// void AssetManager::ReloadAsset(const Foundation::UUID &uuid) {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
 
 // 	auto *entry = FindAssetEntry(uuid);
@@ -1355,7 +1355,7 @@
 
 // void AssetManager::CheckForModifiedAssets() {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 	std::vector<Utils::UUID> modifiedAssets;
+// 	std::vector<Foundation::UUID> modifiedAssets;
 
 // 	for (auto &[uuid, entry] : m_AssetRegistry) {
 // 		if (entry.metadata.filepath.starts_with("runtime://") || entry.metadata.filepath.starts_with("procedural://") ||
@@ -1374,9 +1374,9 @@
 
 // // Queries
 
-// std::vector<Utils::UUID> AssetManager::GetAllAssetsOfType(AssetType type) const {
+// std::vector<Foundation::UUID> AssetManager::GetAllAssetsOfType(AssetType type) const {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 	std::vector<Utils::UUID> assets;
+// 	std::vector<Foundation::UUID> assets;
 
 // 	for (const auto &[uuid, entry] : m_AssetRegistry) {
 // 		if (entry.type == type) {
@@ -1423,7 +1423,7 @@
 
 // void AssetManager::ClearUnusedAssets() {
 // 	std::lock_guard<std::mutex> lock(m_RegistryMutex);
-// 	std::vector<Utils::UUID> toRemove;
+// 	std::vector<Foundation::UUID> toRemove;
 
 // 	for (const auto &[uuid, entry] : m_AssetRegistry) {
 // 		if (entry.asset.use_count() <= 1) {

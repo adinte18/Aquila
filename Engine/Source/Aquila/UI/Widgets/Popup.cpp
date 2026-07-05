@@ -3,14 +3,14 @@
 namespace Aquila::UI::Core {
 
 Popup::Popup() : FloatingOverlay(49) {
-	AddClass("popup");
-	SetDismissOnClickAway(true);
+	add_class("popup");
+	set_dismiss_on_click_away(true);
 	FloatingConfig fc;
-	fc.attachTo = FloatingAttachTo::Parent;
-	fc.elementPoint = FloatingAttachPoint::LeftTop;
-	fc.parentPoint = FloatingAttachPoint::LeftBottom;
-	fc.offset = { 0.f, 4.f };
-	fc.zIndex = 100;
-	SetFloating(fc);
+	fc.attach_to = FloatingAttachTo::Parent;
+	fc.element_point = FloatingAttachPoint::LeftTop;
+	fc.parent_point = FloatingAttachPoint::LeftBottom;
+	fc.offset = { 0.F, 4.F };
+	fc.z_index = 100;
+	set_floating(fc);
 }
 } // namespace Aquila::UI::Core

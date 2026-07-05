@@ -7,41 +7,41 @@
 namespace Aquila::RHI {
 
 struct VkSwapChainSupportDetails {
-	VkSurfaceCapabilitiesKHR m_SurfaceCapabilities;
-	std::vector<VkSurfaceFormatKHR> m_Formats;
-	std::vector<VkPresentModeKHR> m_PresentModes;
+	VkSurfaceCapabilitiesKHR m_surface_capabilities;
+	std::vector<VkSurfaceFormatKHR> m_formats;
+	std::vector<VkPresentModeKHR> m_present_modes;
 };
 
 struct BufferAllocation {
 	VkBuffer buffer = VK_NULL_HANDLE;
 	VmaAllocation allocation = VK_NULL_HANDLE;
 	VmaAllocationInfo info = {};
-	void *mappedPtr = nullptr;
+	void *mapped_ptr = nullptr;
 
-	[[nodiscard]] bool IsValid() const { return buffer != VK_NULL_HANDLE; }
-	[[nodiscard]] bool IsMapped() const { return mappedPtr != nullptr; }
+	[[nodiscard]] bool is_valid() const { return buffer != VK_NULL_HANDLE; }
+	[[nodiscard]] bool is_mapped() const { return mapped_ptr != nullptr; }
 };
 
 struct ImageAllocation {
 	VkImage image = VK_NULL_HANDLE;
 	VmaAllocation allocation = nullptr;
 	VmaAllocationInfo info = {};
-	void *mappedPtr = nullptr;
+	void *mapped_ptr = nullptr;
 	VkFormat format = VK_FORMAT_UNDEFINED;
 	VkExtent3D extent = {};
-	uint32_t mipLevels = 1;
-	uint32_t arrayLayers = 1;
+	uint32_t mip_levels = 1;
+	uint32_t array_layers = 1;
 };
 
 struct VkQueueFamilyIndices {
-	std::optional<uint32> m_GraphicsFamily;
-	std::optional<uint32> m_PresentFamily;
-	std::optional<uint32> m_ComputeFamily;
-	std::optional<uint32> m_TransferFamily;
+	std::optional<Uint32> m_graphics_family;
+	std::optional<Uint32> m_present_family;
+	std::optional<Uint32> m_compute_family;
+	std::optional<Uint32> m_transfer_family;
 
-	[[nodiscard]] bool IsComplete() const {
-		return m_GraphicsFamily.has_value() && m_PresentFamily.has_value() && m_ComputeFamily.has_value() &&
-			m_TransferFamily.has_value();
+	[[nodiscard]] bool is_complete() const {
+		return m_graphics_family.has_value() && m_present_family.has_value() && m_compute_family.has_value() &&
+			m_transfer_family.has_value();
 	}
 };
 

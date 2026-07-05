@@ -5,7 +5,7 @@
 
 namespace Aquila::Platform::Filesystem {
 
-std::string VirtualFileSystem::NormalizePath(const std::string &path) {
+std::string VirtualFileSystem::normalize_path(const std::string &path) {
 	if (path.empty()) {
 		return "/";
 	}
@@ -25,19 +25,19 @@ std::string VirtualFileSystem::NormalizePath(const std::string &path) {
 	return normalized;
 }
 
-MountPoint *VirtualFileSystem::FindMountPoint(const std::string &virtualPath, std::string &relativePath) {
-	std::shared_lock<std::shared_mutex> lock(m_MountPointsMutex);
+MountPoint *VirtualFileSystem::find_mount_point(const std::string &virtual_path, std::string &relative_path) {
+	std::shared_lock<std::shared_mutex> lock(m_mount_points_mutex);
 
-	std::string normalizedPath = NormalizePath(virtualPath);
+	std::string normalized_path = normalize_path(virtual_path);
 
-	for (auto &mount : m_MountPoints) {
-		const std::string &mountPath = mount.virtualPath;
+	for (auto &mount : m_mount_points) {
+		const std::string &mount_path = mount.virtual_path;
 
-		if (normalizedPath.starts_with(mountPath)) {
-			if (normalizedPath.length() == mountPath.length()) {
-				relativePath = "/";
-			} else if (normalizedPath[mountPath.length()] == '/') {
-				relativePath = normalizedPath.substr(mountPath.length());
+		if (normalized_path.starts_with(mount_path)) {
+			if (normalized_path.length() == mount_path.length()) {
+				relative_path = "/";
+			} else if (normalized_path[mount_path.length()] == '/') {
+				relative_path = normalized_path.substr(mount_path.length());
 			} else {
 				continue;
 			}
@@ -49,223 +49,223 @@ MountPoint *VirtualFileSystem::FindMountPoint(const std::string &virtualPath, st
 	return nullptr;
 }
 
-bool VirtualFileSystem::Mount(const std::string &virtualPath, Ref<IFileSystem> fileSystem, int priority,
-							  bool readOnly) {
-	if (!fileSystem) {
+bool VirtualFileSystem::mount(const std::string &virtual_path, Ref<IFileSystem> file_system, int priority,
+							  bool read_only) {
+	if (!file_system) {
 		return false;
 	}
 
-	std::string normalizedPath = NormalizePath(virtualPath);
+	std::string normalized_path = normalize_path(virtual_path);
 
-	std::unique_lock<std::shared_mutex> lock(m_MountPointsMutex);
+	std::unique_lock<std::shared_mutex> lock(m_mount_points_mutex);
 
-	for (const auto &mount : m_MountPoints) {
-		if (mount.virtualPath == normalizedPath) {
+	for (const auto &mount : m_mount_points) {
+		if (mount.virtual_path == normalized_path) {
 			return false;
 		}
 	}
 
 	MountPoint mount;
-	mount.virtualPath = normalizedPath;
-	mount.fileSystem = fileSystem;
+	mount.virtual_path = normalized_path;
+	mount.file_system = file_system;
 	mount.priority = priority;
-	mount.readOnly = readOnly;
+	mount.read_only = read_only;
 
-	m_MountPoints.push_back(mount);
+	m_mount_points.push_back(mount);
 
-	std::ranges::sort(m_MountPoints, [](const MountPoint &a, const MountPoint &b) {
+	std::ranges::sort(m_mount_points, [](const MountPoint &a, const MountPoint &b) {
 		if (a.priority != b.priority) {
 			return a.priority > b.priority;
 		}
-		return a.virtualPath.length() > b.virtualPath.length();
+		return a.virtual_path.length() > b.virtual_path.length();
 	});
 	return true;
 }
 
-bool VirtualFileSystem::Unmount(const std::string &virtualPath) {
-	std::string normalizedPath = NormalizePath(virtualPath);
+bool VirtualFileSystem::unmount(const std::string &virtual_path) {
+	std::string normalized_path = normalize_path(virtual_path);
 
-	std::unique_lock<std::shared_mutex> lock(m_MountPointsMutex);
+	std::unique_lock<std::shared_mutex> lock(m_mount_points_mutex);
 
 	auto it = std::ranges::find_if(
-		m_MountPoints, [&normalizedPath](const MountPoint &mount) { return mount.virtualPath == normalizedPath; });
+		m_mount_points, [&normalized_path](const MountPoint &mount) { return mount.virtual_path == normalized_path; });
 
-	if (it != m_MountPoints.end()) {
-		m_MountPoints.erase(it);
+	if (it != m_mount_points.end()) {
+		m_mount_points.erase(it);
 		return true;
 	}
 
 	return false;
 }
 
-Unique<VirtualFile> VirtualFileSystem::OpenFile(const std::string &virtualPath, AccessMode accessMode,
-												OpenMode openMode) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+Unique<VirtualFile> VirtualFileSystem::open_file(const std::string &virtual_path, AccessMode access_mode,
+												OpenMode open_mode) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 	if (mount == nullptr) {
 		return nullptr;
 	}
 
-	bool isWriting =
-		accessMode == AccessMode::Write || accessMode == AccessMode::ReadWrite || HasFlag(openMode, OpenMode::Append);
+	bool is_writing =
+		access_mode == AccessMode::Write || access_mode == AccessMode::ReadWrite || has_flag(open_mode, OpenMode::Append);
 
-	if (isWriting && (mount->readOnly || mount->fileSystem->IsReadOnly())) {
+	if (is_writing && (mount->read_only || mount->file_system->is_read_only())) {
 		return nullptr;
 	}
 
-	return mount->fileSystem->FileOpen(relativePath, accessMode, openMode);
+	return mount->file_system->file_open(relative_path, access_mode, open_mode);
 }
-bool VirtualFileSystem::Exists(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::exists(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return false;
 	}
-	return mount->fileSystem->FileExists(relativePath);
+	return mount->file_system->file_exists(relative_path);
 }
 
-std::vector<std::string> VirtualFileSystem::ListDirectory(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+std::vector<std::string> VirtualFileSystem::list_directory(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return {};
 	}
-	return mount->fileSystem->DirList(relativePath);
+	return mount->file_system->dir_list(relative_path);
 }
 
-bool VirtualFileSystem::IsDirectory(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::is_directory(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return false;
 	}
-	return mount->fileSystem->DirExists(relativePath);
+	return mount->file_system->dir_exists(relative_path);
 }
 
-int64 VirtualFileSystem::GetFileSize(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+Int64 VirtualFileSystem::get_file_size(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return -1;
 	}
-	return mount->fileSystem->FileGetSize(relativePath);
+	return mount->file_system->file_get_size(relative_path);
 }
 
-uint64 VirtualFileSystem::GetLastWriteTime(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+Uint64 VirtualFileSystem::get_last_write_time(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return 0;
 	}
-	return mount->fileSystem->FileGetLastWriteTime(relativePath);
+	return mount->file_system->file_get_last_write_time(relative_path);
 }
 
-bool VirtualFileSystem::CreateDir(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::create_dir(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
-	if ((mount == nullptr) || mount->readOnly || mount->fileSystem->IsReadOnly()) {
+	if ((mount == nullptr) || mount->read_only || mount->file_system->is_read_only()) {
 		return false;
 	}
 
-	return mount->fileSystem->DirCreate(relativePath);
+	return mount->file_system->dir_create(relative_path);
 }
 
-bool VirtualFileSystem::DeleteFile_aq(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::delete_file_aq(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
-	if ((mount == nullptr) || mount->readOnly || mount->fileSystem->IsReadOnly()) {
+	if ((mount == nullptr) || mount->read_only || mount->file_system->is_read_only()) {
 		return false;
 	}
 
-	return mount->fileSystem->FileRemove(relativePath);
+	return mount->file_system->file_remove(relative_path);
 }
 
-bool VirtualFileSystem::DeleteDirectory(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::delete_directory(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
-	if ((mount == nullptr) || mount->readOnly || mount->fileSystem->IsReadOnly()) {
+	if ((mount == nullptr) || mount->read_only || mount->file_system->is_read_only()) {
 		return false;
 	}
 
-	return mount->fileSystem->DirRemove(relativePath);
+	return mount->file_system->dir_remove(relative_path);
 }
 
-bool VirtualFileSystem::RenameFile(const std::string &oldVirtualPath, const std::string &newVirtualPath) {
-	std::string oldRelativePath;
-	MountPoint *oldMount = FindMountPoint(oldVirtualPath, oldRelativePath);
+bool VirtualFileSystem::rename_file(const std::string &old_virtual_path, const std::string &new_virtual_path) {
+	std::string old_relative_path;
+	MountPoint *old_mount = find_mount_point(old_virtual_path, old_relative_path);
 
-	std::string newRelativePath;
-	MountPoint *newMount = FindMountPoint(newVirtualPath, newRelativePath);
+	std::string new_relative_path;
+	MountPoint *new_mount = find_mount_point(new_virtual_path, new_relative_path);
 
 	// Both paths must be on the same mount point
-	if ((oldMount == nullptr) || (newMount == nullptr) || oldMount != newMount) {
+	if ((old_mount == nullptr) || (new_mount == nullptr) || old_mount != new_mount) {
 		return false;
 	}
 
-	if (oldMount->readOnly || oldMount->fileSystem->IsReadOnly()) {
+	if (old_mount->read_only || old_mount->file_system->is_read_only()) {
 		return false;
 	}
 
-	return oldMount->fileSystem->FileMove(oldRelativePath, newRelativePath);
+	return old_mount->file_system->file_move(old_relative_path, new_relative_path);
 }
 
-bool VirtualFileSystem::CopyFileA(const std::string &srcVirtualPath, const std::string &dstVirtualPath) {
-	std::string srcRelativePath;
-	MountPoint *srcMount = FindMountPoint(srcVirtualPath, srcRelativePath);
+bool VirtualFileSystem::copy_file_a(const std::string &src_virtual_path, const std::string &dst_virtual_path) {
+	std::string src_relative_path;
+	MountPoint *src_mount = find_mount_point(src_virtual_path, src_relative_path);
 
-	std::string dstRelativePath;
-	MountPoint *dstMount = FindMountPoint(dstVirtualPath, dstRelativePath);
+	std::string dst_relative_path;
+	MountPoint *dst_mount = find_mount_point(dst_virtual_path, dst_relative_path);
 
-	if ((srcMount == nullptr) || (dstMount == nullptr)) {
+	if ((src_mount == nullptr) || (dst_mount == nullptr)) {
 		return false;
 	}
 
-	if (dstMount->readOnly || dstMount->fileSystem->IsReadOnly()) {
+	if (dst_mount->read_only || dst_mount->file_system->is_read_only()) {
 		return false;
 	}
 
 	// If same mount, use native copy if available
-	if (srcMount == dstMount) {
-		return srcMount->fileSystem->FileCopy(srcRelativePath, dstRelativePath);
+	if (src_mount == dst_mount) {
+		return src_mount->file_system->file_copy(src_relative_path, dst_relative_path);
 	}
 
 	// Otherwise, read from source and write to destination
-	auto srcFile = srcMount->fileSystem->FileOpen(srcRelativePath, AccessMode::Read, OpenMode::Binary);
-	if (!srcFile) {
+	auto src_file = src_mount->file_system->file_open(src_relative_path, AccessMode::Read, OpenMode::Binary);
+	if (!src_file) {
 		return false;
 	}
 
-	std::vector<uint8> buffer(srcFile->Size());
-	if (srcFile->Read(buffer.data(), buffer.size()) != buffer.size()) {
+	std::vector<Uint8> buffer(src_file->size());
+	if (src_file->read(buffer.data(), buffer.size()) != buffer.size()) {
 		return false;
 	}
 
-	auto dstFile =
-		dstMount->fileSystem->FileOpen(dstRelativePath, AccessMode::Read, OpenMode::Binary | OpenMode::Truncate);
-	if (!dstFile) {
+	auto dst_file =
+		dst_mount->file_system->file_open(dst_relative_path, AccessMode::Read, OpenMode::Binary | OpenMode::Truncate);
+	if (!dst_file) {
 		return false;
 	}
 
-	return dstFile->Write(buffer.data(), buffer.size()) == buffer.size();
+	return dst_file->write(buffer.data(), buffer.size()) == buffer.size();
 }
 
-bool VirtualFileSystem::WriteTextFile(const std::string &virtualPath, const std::string &content) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+bool VirtualFileSystem::write_text_file(const std::string &virtual_path, const std::string &content) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
-	if ((mount == nullptr) || mount->readOnly || mount->fileSystem->IsReadOnly()) {
+	if ((mount == nullptr) || mount->read_only || mount->file_system->is_read_only()) {
 		return false;
 	}
 
-	auto file = mount->fileSystem->FileOpen(relativePath, AccessMode::Write, OpenMode::Text);
+	auto file = mount->file_system->file_open(relative_path, AccessMode::Write, OpenMode::Text);
 	if (!file) {
 		return false;
 	}
@@ -274,59 +274,59 @@ bool VirtualFileSystem::WriteTextFile(const std::string &virtualPath, const std:
 		return true;
 	}
 
-	return file->Write(reinterpret_cast<const uint8 *>(content.data()), content.size()) == content.size();
+	return file->write(reinterpret_cast<const Uint8 *>(content.data()), content.size()) == content.size();
 }
 
-std::string VirtualFileSystem::ReadTextFile(const std::string &virtualPath) {
-	std::string relativePath;
-	MountPoint *mount = FindMountPoint(virtualPath, relativePath);
+std::string VirtualFileSystem::read_text_file(const std::string &virtual_path) {
+	std::string relative_path;
+	MountPoint *mount = find_mount_point(virtual_path, relative_path);
 
 	if (mount == nullptr) {
 		return "";
 	}
 
-	auto file = mount->fileSystem->FileOpen(relativePath, AccessMode::Read, OpenMode::Text);
+	auto file = mount->file_system->file_open(relative_path, AccessMode::Read, OpenMode::Text);
 	if (!file) {
 		return "";
 	}
 
-	const int64 size = file->Size();
+	const Int64 size = file->size();
 	if (size <= 0) {
 		return "";
 	}
 
-	std::string result(static_cast<usize>(size), '\0');
-	const usize bytesRead = file->Read(reinterpret_cast<uint8 *>(result.data()), static_cast<usize>(size));
-	result.resize(bytesRead);
+	std::string result(static_cast<Usize>(size), '\0');
+	const Usize bytes_read = file->read(reinterpret_cast<Uint8 *>(result.data()), static_cast<Usize>(size));
+	result.resize(bytes_read);
 	return result;
 }
 
-std::vector<std::string> VirtualFileSystem::GetMountPoints() const {
-	std::shared_lock<std::shared_mutex> lock(m_MountPointsMutex);
+std::vector<std::string> VirtualFileSystem::get_mount_points() const {
+	std::shared_lock<std::shared_mutex> lock(m_mount_points_mutex);
 
 	std::vector<std::string> result;
-	result.reserve(m_MountPoints.size());
-	for (const auto &mount : m_MountPoints) {
-		result.push_back(mount.virtualPath);
+	result.reserve(m_mount_points.size());
+	for (const auto &mount : m_mount_points) {
+		result.push_back(mount.virtual_path);
 	}
 	return result;
 }
 
-bool VirtualFileSystem::IsMounted(const std::string &virtualPath) const {
-	SharedLock lock(m_MountPointsMutex);
+bool VirtualFileSystem::is_mounted(const std::string &virtual_path) const {
+	SharedLock lock(m_mount_points_mutex);
 
-	std::string normalizedPath = const_cast<VirtualFileSystem *>(this)->NormalizePath(virtualPath);
-	for (const auto &mount : m_MountPoints) {
-		if (mount.virtualPath == normalizedPath) {
+	std::string normalized_path = const_cast<VirtualFileSystem *>(this)->normalize_path(virtual_path);
+	for (const auto &mount : m_mount_points) {
+		if (mount.virtual_path == normalized_path) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void VirtualFileSystem::UnmountAll() {
-	MutexLock lock(m_MountPointsMutex);
-	m_MountPoints.clear();
+void VirtualFileSystem::unmount_all() {
+	MutexLock lock(m_mount_points_mutex);
+	m_mount_points.clear();
 }
 
 } // namespace Aquila::Platform::Filesystem

@@ -9,64 +9,64 @@
 
 namespace Aquila::Graphics::RG {
 
-void RenderGraph::Compile(GFX::GfxContext &ctx) {
-	AQUILA_ASSERT(!m_Passes.empty(), "RenderGraph::Compile called with no passes registered");
-	m_Compiled.Reset();
-	m_Compiled = RGCompiler::Compile(m_Passes, m_Registry, ctx);
+void RenderGraph::compile(GFX::GfxContext &ctx) {
+	AQUILA_ASSERT(!m_passes.empty(), "RenderGraph::Compile called with no passes registered");
+	m_compiled.reset();
+	m_compiled = RGCompiler::compile(m_passes, m_registry, ctx);
 }
 
-void RenderGraph::Execute(GFX::GfxCommandList &cmd) {
-	AQUILA_ASSERT(m_Compiled.valid, "RenderGraph::Execute called before Compile()");
+void RenderGraph::execute(GFX::GfxCommandList &cmd) {
+	AQUILA_ASSERT(m_compiled.valid, "RenderGraph::Execute called before Compile()");
 
-	uint32 schedPos = 0;
+	Uint32 sched_pos = 0;
 
-	for (const uint32 pi : m_Compiled.passOrder) {
-		const RGPassData &pass = m_Passes[pi];
-		AQUILA_ASSERT(pass.RenderPassExecute, "A pass has no execute function");
+	for (const Uint32 pi : m_compiled.pass_order) {
+		const RGPassData &pass = m_passes[pi];
+		AQUILA_ASSERT(pass.render_pass_execute, "A pass has no execute function");
 
-		cmd.PushDebugGroup(pass.name.c_str());
+		cmd.push_debug_group(pass.name.c_str());
 
 		// Pre-pass texture barriers
-		const uint32 texBarBegin = m_Compiled.passTexBarStart[schedPos];
-		const uint32 texBarEnd = m_Compiled.passTexBarStart[schedPos + 1];
-		for (uint32 bi = texBarBegin; bi < texBarEnd; ++bi) {
-			const RGTexBarrier &bar = m_Compiled.texBarriers[bi];
-			GFX::GfxTexture &tex = m_Registry.GetTexture(bar.handle);
-			cmd.TransitionTexture(tex, bar.oldState, bar.newState);
+		const Uint32 tex_bar_begin = m_compiled.pass_tex_bar_start[sched_pos];
+		const Uint32 tex_bar_end = m_compiled.pass_tex_bar_start[sched_pos + 1];
+		for (Uint32 bi = tex_bar_begin; bi < tex_bar_end; ++bi) {
+			const RGTexBarrier &bar = m_compiled.tex_barriers[bi];
+			GFX::GfxTexture &tex = m_registry.get_texture(bar.handle);
+			cmd.transition_texture(tex, bar.old_state, bar.new_state);
 		}
 
 		//  Pre-pass buffer barriers
-		const uint32 bufBarBegin = m_Compiled.passBufBarStart[schedPos];
-		const uint32 bufBarEnd = m_Compiled.passBufBarStart[schedPos + 1];
-		for (uint32 bi = bufBarBegin; bi < bufBarEnd; ++bi) {
-			const RGBufBarrier &bar = m_Compiled.bufBarriers[bi];
-			GFX::GfxBuffer &buf = m_Registry.GetBuffer(bar.handle);
-			cmd.TransitionBuffer(buf, bar.oldState, bar.newState);
+		const Uint32 buf_bar_begin = m_compiled.pass_buf_bar_start[sched_pos];
+		const Uint32 buf_bar_end = m_compiled.pass_buf_bar_start[sched_pos + 1];
+		for (Uint32 bi = buf_bar_begin; bi < buf_bar_end; ++bi) {
+			const RGBufBarrier &bar = m_compiled.buf_barriers[bi];
+			GFX::GfxBuffer &buf = m_registry.get_buffer(bar.handle);
+			cmd.transition_buffer(buf, bar.old_state, bar.new_state);
 		}
 
 		// Begin renderpass (graphics passes only)
-		GFX::GfxRenderPass *renderPass = m_Compiled.passRenderPasses[schedPos].get();
-		if (renderPass != nullptr) {
-			renderPass->Begin(cmd);
+		GFX::GfxRenderPass *render_pass = m_compiled.pass_render_passes[sched_pos].get();
+		if (render_pass != nullptr) {
+			render_pass->begin(cmd);
 		}
 
 		// User execute callback
-		pass.RenderPassExecute(cmd, m_Registry);
+		pass.render_pass_execute(cmd, m_registry);
 
 		// End renderpass
-		if (renderPass != nullptr) {
-			renderPass->End(cmd);
+		if (render_pass != nullptr) {
+			render_pass->end(cmd);
 		}
 
-		cmd.PopDebugGroup();
-		++schedPos;
+		cmd.pop_debug_group();
+		++sched_pos;
 	}
 }
 
-void RenderGraph::Reset() {
-	m_Compiled.Reset();
-	m_Passes.clear();
-	m_Registry.Reset();
+void RenderGraph::reset() {
+	m_compiled.reset();
+	m_passes.clear();
+	m_registry.reset();
 }
 
 } // namespace Aquila::Graphics::RG

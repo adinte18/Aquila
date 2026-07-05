@@ -4,100 +4,100 @@
 
 namespace Aquila::UI::Core {
 
-using Aquila::Foundation::Color::GenAlpha;
-using Aquila::Foundation::Color::GenChannelGrad;
-using Aquila::Foundation::Color::GenHue;
-using Aquila::Foundation::Color::GenSV;
-using Aquila::Foundation::Color::HsvToRgb;
-using Aquila::Foundation::Color::RgbToHsv;
+using Aquila::Foundation::Color::gen_alpha;
+using Aquila::Foundation::Color::gen_channel_grad;
+using Aquila::Foundation::Color::gen_hue;
+using Aquila::Foundation::Color::gen_sv;
+using Aquila::Foundation::Color::hsv_to_rgb;
+using Aquila::Foundation::Color::rgb_to_hsv;
 
 class ColorPicker::PickerArea : public View {
   public:
-	GFX::GfxTexture *m_Tex = nullptr;
-	vec2 m_Indicator = {};
-	bool m_Is1D = false;
-	Delegate<void(vec2)> m_OnPick;
+	GFX::GfxTexture *m_tex = nullptr;
+	Vec2 m_indicator = {};
+	bool m_is1_d = false;
+	Delegate<void(Vec2)> m_on_pick;
 
-	PickerArea() { SetInputLeaf(true); }
+	PickerArea() { set_input_leaf(true); }
 
-	void OnMousePress(Platform::MouseButton btn, vec2 pos) override {
-		View::OnMousePress(btn, pos);
+	void on_mouse_press(Platform::MouseButton btn, Vec2 pos) override {
+		View::on_mouse_press(btn, pos);
 		if (btn == Platform::MouseButton::Left) {
-			Pick(pos);
+			pick(pos);
 		}
 	}
-	void OnMouseMove(vec2 pos) override {
-		if (m_IsPressed) {
-			Pick(pos);
+	void on_mouse_move(Vec2 pos) override {
+		if (m_is_pressed) {
+			pick(pos);
 		}
 	}
 
-	void OnDrawSelf(Rendering::DrawList &dl) override {
-		View::OnDrawSelf(dl);
-		const Rect r = { GetAbsolutePosition(), GetLayoutRect().size };
-		const int32 z = 0;
+	void on_draw_self(Rendering::DrawList &dl) override {
+		View::on_draw_self(dl);
+		const Rect r = { get_absolute_position(), get_layout_rect().size };
+		const Int32 z = 0;
 
-		if (m_Tex) {
-			dl.DrawImage(r, m_Tex, vec4(1.f), vec2(0.f), vec2(1.f), z + 1);
+		if (m_tex) {
+			dl.draw_image(r, m_tex, Vec4(1.F), Vec2(0.F), Vec2(1.F), z + 1);
 		}
 
-		if (m_Is1D) {
-			const float ix = r.position.x + m_Indicator.x * r.size.x;
-			const Rect ind = { .position = { ix - 3.f, r.position.y - 2.f }, .size = { 6.f, r.size.y + 4.f } };
-			dl.DrawRect(ind, vec4(1.f), vec4(3.f), 1.5f, vec4(0.1f, 0.1f, 0.1f, 0.9f), z + 2);
+		if (m_is1_d) {
+			const float ix = r.position.x + m_indicator.x * r.size.x;
+			const Rect ind = { .position = { ix - 3.F, r.position.y - 2.F }, .size = { 6.F, r.size.y + 4.F } };
+			dl.draw_rect(ind, Vec4(1.F), Vec4(3.F), 1.5f, Vec4(0.1f, 0.1f, 0.1f, 0.9f), z + 2);
 		} else {
-			const vec2 ic = r.position + m_Indicator * r.size;
-			const float rd = 6.f;
-			const Rect ind = { .position = { ic.x - rd, ic.y - rd }, .size = { rd * 2.f, rd * 2.f } };
-			dl.DrawRect(ind, vec4(0.f, 0.f, 0.f, 0.f), vec4(rd), 2.f, vec4(0.f, 0.f, 0.f, 0.9f), z + 2);
-			const float ri = 4.f;
-			const Rect i2 = { .position = { ic.x - ri, ic.y - ri }, .size = { ri * 2.f, ri * 2.f } };
-			dl.DrawRect(i2, vec4(0.f), vec4(ri), 1.5f, vec4(1.f, 1.f, 1.f, 0.85f), z + 3);
+			const Vec2 ic = r.position + m_indicator * r.size;
+			const float rd = 6.F;
+			const Rect ind = { .position = { ic.x - rd, ic.y - rd }, .size = { rd * 2.F, rd * 2.F } };
+			dl.draw_rect(ind, Vec4(0.F, 0.F, 0.F, 0.F), Vec4(rd), 2.F, Vec4(0.F, 0.F, 0.F, 0.9f), z + 2);
+			const float ri = 4.F;
+			const Rect i2 = { .position = { ic.x - ri, ic.y - ri }, .size = { ri * 2.F, ri * 2.F } };
+			dl.draw_rect(i2, Vec4(0.F), Vec4(ri), 1.5f, Vec4(1.F, 1.F, 1.F, 0.85f), z + 3);
 		}
 	}
 
   private:
-	void Pick(vec2 absPos) {
-		const Rect r = GetAbsoluteRect();
-		vec2 n = (absPos - r.position) / glm::max(r.size, vec2(1.f));
-		n = glm::clamp(n, vec2(0.f), vec2(1.f));
-		if (m_Is1D) {
-			n.y = 0.f;
+	void pick(Vec2 abs_pos) {
+		const Rect r = get_absolute_rect();
+		Vec2 n = (abs_pos - r.position) / glm::max(r.size, Vec2(1.F));
+		n = glm::clamp(n, Vec2(0.F), Vec2(1.F));
+		if (m_is1_d) {
+			n.y = 0.F;
 		}
-		m_Indicator = n;
-		QueueRedraw();
-		if (m_OnPick) {
-			m_OnPick(n);
+		m_indicator = n;
+		queue_redraw();
+		if (m_on_pick) {
+			m_on_pick(n);
 		}
 	}
 };
 
-static Ref<GFX::GfxTexture> MakeTex(GFX::GfxContext &ctx, uint32 w, uint32 h, const std::vector<uint8> &px,
-									const char *name) {
+static Ref<GFX::GfxTexture> make_tex(GFX::GfxContext &ctx, Uint32 w, Uint32 h, const std::vector<Uint8> &px,
+									 const char *name) {
 	RHI::TextureDesc d;
 	d.width = w;
 	d.height = h;
 	d.format = RHI::TextureFormat::RGBA8;
 	d.usage = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
-	d.debugName = name;
-	auto tex = ctx.CreateTexture(d);
-	ctx.UploadTextureData(*tex, px.data(), static_cast<uint64>(px.size()));
+	d.debug_name = name;
+	auto tex = ctx.create_texture(d);
+	ctx.upload_texture_data(*tex, px.data(), static_cast<Uint64>(px.size()));
 	return tex;
 }
 
-std::string ColorPicker::FmtInt(int v) {
+std::string ColorPicker::fmt_int(int v) {
 	return std::to_string(v);
 }
 
-std::string ColorPicker::FmtHex(vec4 c) {
-	auto ch = [](float v) { return static_cast<int>(std::round(std::clamp(v, 0.f, 1.f) * 255.f)); };
+std::string ColorPicker::fmt_hex(Vec4 c) {
+	auto ch = [](float v) { return static_cast<int>(std::round(std::clamp(v, 0.F, 1.F) * 255.F)); };
 	std::ostringstream ss;
 	ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2) << ch(c.r) << std::setw(2) << ch(c.g)
 	   << std::setw(2) << ch(c.b) << std::setw(2) << ch(c.a);
 	return ss.str();
 }
 
-bool ColorPicker::ParseHex(const std::string &s, vec4 &out) {
+bool ColorPicker::parse_hex(const std::string &s, Vec4 &out) {
 	std::string h = s;
 	if (!h.empty() && h[0] == '#') {
 		h = h.substr(1);
@@ -109,470 +109,469 @@ bool ColorPicker::ParseHex(const std::string &s, vec4 &out) {
 		return false;
 	}
 	try {
-		const uint32 v = static_cast<uint32>(std::stoul(h, nullptr, 16));
-		out.r = ((v >> 24) & 0xFF) / 255.f;
-		out.g = ((v >> 16) & 0xFF) / 255.f;
-		out.b = ((v >> 8) & 0xFF) / 255.f;
-		out.a = ((v >> 0) & 0xFF) / 255.f;
+		const Uint32 v = static_cast<Uint32>(std::stoul(h, nullptr, 16));
+		out.r = ((v >> 24) & 0xFF) / 255.F;
+		out.g = ((v >> 16) & 0xFF) / 255.F;
+		out.b = ((v >> 8) & 0xFF) / 255.F;
+		out.a = ((v >> 0) & 0xFF) / 255.F;
 		return true;
 	} catch (...) {
 		return false;
 	}
 }
 
-ColorPicker::ColorPicker(GFX::GfxContext &ctx, vec4 color) : m_Ctx(ctx), m_Color(color) {
-	const vec3 hsv = RgbToHsv(color.r, color.g, color.b);
-	m_H = hsv.x;
-	m_S = hsv.y;
-	m_V = hsv.z;
+ColorPicker::ColorPicker(GFX::GfxContext &ctx, Vec4 color) : m_ctx(ctx), m_color(color) {
+	const Vec3 hsv = rgb_to_hsv(color.r, color.g, color.b);
+	m_h = hsv.x;
+	m_s = hsv.y;
+	m_v = hsv.z;
 
-	Init();
+	init();
 }
 
-void ColorPicker::SetColor(vec4 color) {
-	m_Color = color;
-	const vec3 hsv = RgbToHsv(color.r, color.g, color.b);
-	m_H = hsv.x;
-	m_S = hsv.y;
-	m_V = hsv.z;
-	RebuildSVTexture();
-	RebuildAlphaTexture();
-	SyncAll();
+void ColorPicker::set_color(Vec4 color) {
+	m_color = color;
+	const Vec3 hsv = rgb_to_hsv(color.r, color.g, color.b);
+	m_h = hsv.x;
+	m_s = hsv.y;
+	m_v = hsv.z;
+	rebuild_sv_texture();
+	rebuild_alpha_texture();
+	sync_all();
 }
 
-
-void ColorPicker::OnMousePress(Platform::MouseButton btn, vec2 pos) {
-	View::OnMousePress(btn, pos);
+void ColorPicker::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
+	View::on_mouse_press(btn, pos);
 }
 
-void ColorPicker::OnDrawSelf(Rendering::DrawList &dl) {
-	View::OnDrawSelf(dl);
+void ColorPicker::on_draw_self(Rendering::DrawList &dl) {
+	View::on_draw_self(dl);
 }
 
-void ColorPicker::RebuildSVTexture() {
-	auto px = GenSV(m_H, kTexW, kSVTexH);
-	if (!m_SVTex) {
-		m_SVTex = MakeTex(m_Ctx, kTexW, kSVTexH, px, "ColorPicker_SV");
+void ColorPicker::rebuild_sv_texture() {
+	auto px = gen_sv(m_h, K_TEX_W, K_SV_TEX_H);
+	if (!m_sv_tex) {
+		m_sv_tex = make_tex(m_ctx, K_TEX_W, K_SV_TEX_H, px, "ColorPicker_SV");
 	} else {
-		m_Ctx.UploadTextureData(*m_SVTex, px.data(), static_cast<uint64>(px.size()));
+		m_ctx.upload_texture_data(*m_sv_tex, px.data(), static_cast<Uint64>(px.size()));
 	}
-	if (m_SVArea) {
-		m_SVArea->m_Tex = m_SVTex.get();
-		m_SVArea->QueueRedraw();
+	if (m_sv_area) {
+		m_sv_area->m_tex = m_sv_tex.get();
+		m_sv_area->queue_redraw();
 	}
 }
 
-void ColorPicker::RebuildAlphaTexture() {
-	auto px = GenAlpha({ m_Color.r, m_Color.g, m_Color.b }, kTexW, kBarTexH);
-	if (!m_AlphaTex) {
-		m_AlphaTex = MakeTex(m_Ctx, kTexW, kBarTexH, px, "ColorPicker_Alpha");
+void ColorPicker::rebuild_alpha_texture() {
+	auto px = gen_alpha({ m_color.r, m_color.g, m_color.b }, K_TEX_W, K_BAR_TEX_H);
+	if (!m_alpha_tex) {
+		m_alpha_tex = make_tex(m_ctx, K_TEX_W, K_BAR_TEX_H, px, "ColorPicker_Alpha");
 	} else {
-		m_Ctx.UploadTextureData(*m_AlphaTex, px.data(), static_cast<uint64>(px.size()));
+		m_ctx.upload_texture_data(*m_alpha_tex, px.data(), static_cast<Uint64>(px.size()));
 	}
-	if (m_AlphaBar) {
-		m_AlphaBar->m_Tex = m_AlphaTex.get();
-		m_AlphaBar->QueueRedraw();
+	if (m_alpha_bar) {
+		m_alpha_bar->m_tex = m_alpha_tex.get();
+		m_alpha_bar->queue_redraw();
 	}
 }
 
-void ColorPicker::RebuildChannelTextures() {
-	const bool isHSV = (m_Mode == Mode::HSV);
+void ColorPicker::rebuild_channel_textures() {
+	const bool is_hsv = (m_mode == Mode::HSV);
 	static const char *names[4] = { "ColorPicker_Ch0", "ColorPicker_Ch1", "ColorPicker_Ch2", "ColorPicker_Ch3" };
 	for (int i = 0; i < 4; ++i) {
-		auto px = GenChannelGrad(m_Color, m_H, m_S, m_V, i, isHSV, kTexW, kBarTexH);
-		if (!m_ChTex[i]) {
-			m_ChTex[i] = MakeTex(m_Ctx, kTexW, kBarTexH, px, names[i]);
+		auto px = gen_channel_grad(m_color, m_h, m_s, m_v, i, is_hsv, K_TEX_W, K_BAR_TEX_H);
+		if (!m_ch_tex[i]) {
+			m_ch_tex[i] = make_tex(m_ctx, K_TEX_W, K_BAR_TEX_H, px, names[i]);
 		} else {
-			m_Ctx.UploadTextureData(*m_ChTex[i], px.data(), static_cast<uint64>(px.size()));
+			m_ctx.upload_texture_data(*m_ch_tex[i], px.data(), static_cast<Uint64>(px.size()));
 		}
-		if (m_Ch[i].slider) {
-			m_Ch[i].slider->SetTrackTexture(m_ChTex[i].get());
+		if (m_ch[i].slider) {
+			m_ch[i].slider->set_track_texture(m_ch_tex[i].get());
 		}
 	}
 }
 
-void ColorPicker::SyncChannelDisplays() {
-	if (!m_Ch[0].slider) {
+void ColorPicker::sync_channel_displays() {
+	if (!m_ch[0].slider) {
 		return;
 	}
 
 	float vals[4] = {};
-	if (m_Mode == Mode::RGB) {
-		vals[0] = m_Color.r * 255.f;
-		vals[1] = m_Color.g * 255.f;
-		vals[2] = m_Color.b * 255.f;
-		vals[3] = m_Color.a * 255.f;
+	if (m_mode == Mode::RGB) {
+		vals[0] = m_color.r * 255.F;
+		vals[1] = m_color.g * 255.F;
+		vals[2] = m_color.b * 255.F;
+		vals[3] = m_color.a * 255.F;
 		for (int i = 0; i < 4; ++i) {
-			m_Ch[i].slider->SetValueWithoutNotify(vals[i]);
-			m_Ch[i].input->SetText(FmtInt(static_cast<int>(std::round(vals[i]))));
+			m_ch[i].slider->set_value_without_notify(vals[i]);
+			m_ch[i].input->set_text(fmt_int(static_cast<int>(std::round(vals[i]))));
 		}
-	} else if (m_Mode == Mode::HSV) {
-		vals[0] = m_H * 360.f;
-		vals[1] = m_S * 100.f;
-		vals[2] = m_V * 100.f;
-		vals[3] = m_Color.a * 255.f;
+	} else if (m_mode == Mode::HSV) {
+		vals[0] = m_h * 360.F;
+		vals[1] = m_s * 100.F;
+		vals[2] = m_v * 100.F;
+		vals[3] = m_color.a * 255.F;
 		for (int i = 0; i < 4; ++i) {
-			m_Ch[i].slider->SetValueWithoutNotify(vals[i]);
-			m_Ch[i].input->SetText(FmtInt(static_cast<int>(std::round(vals[i]))));
+			m_ch[i].slider->set_value_without_notify(vals[i]);
+			m_ch[i].input->set_text(fmt_int(static_cast<int>(std::round(vals[i]))));
 		}
 	} else { // HEX
-		m_Ch[3].slider->SetValueWithoutNotify(m_Color.a * 255.f);
-		m_Ch[3].input->SetText(FmtInt(static_cast<int>(std::round(m_Color.a * 255.f))));
+		m_ch[3].slider->set_value_without_notify(m_color.a * 255.F);
+		m_ch[3].input->set_text(fmt_int(static_cast<int>(std::round(m_color.a * 255.F))));
 	}
 }
 
-void ColorPicker::SyncHexDisplay() {
-	if (m_HexInput) {
-		m_HexInput->SetText(FmtHex(m_Color));
+void ColorPicker::sync_hex_display() {
+	if (m_hex_input) {
+		m_hex_input->set_text(fmt_hex(m_color));
 	}
 }
 
-void ColorPicker::SyncAll() {
-	if (m_SVArea) {
-		m_SVArea->m_Indicator = { m_S, 1.f - m_V };
-		m_SVArea->QueueRedraw();
+void ColorPicker::sync_all() {
+	if (m_sv_area) {
+		m_sv_area->m_indicator = { m_s, 1.F - m_v };
+		m_sv_area->queue_redraw();
 	}
-	if (m_HueBar) {
-		m_HueBar->m_Indicator = { m_H, 0.f };
-		m_HueBar->QueueRedraw();
+	if (m_hue_bar) {
+		m_hue_bar->m_indicator = { m_h, 0.F };
+		m_hue_bar->queue_redraw();
 	}
-	if (m_AlphaBar) {
-		m_AlphaBar->m_Indicator = { m_Color.a, 0.f };
-		m_AlphaBar->QueueRedraw();
+	if (m_alpha_bar) {
+		m_alpha_bar->m_indicator = { m_color.a, 0.F };
+		m_alpha_bar->queue_redraw();
 	}
-	if (m_Preview) {
+	if (m_preview) {
 		StyleProperties p;
-		p.backgroundColor = m_Color;
-		m_Preview->MergeStyle(p);
+		p.background_color = m_color;
+		m_preview->merge_style(p);
 	}
-	if (m_Swatch) {
+	if (m_swatch) {
 		StyleProperties p;
-		p.backgroundColor = m_Color;
-		m_Swatch->MergeStyle(p);
+		p.background_color = m_color;
+		m_swatch->merge_style(p);
 	}
-	RebuildChannelTextures();
-	SyncChannelDisplays();
-	SyncHexDisplay();
+	rebuild_channel_textures();
+	sync_channel_displays();
+	sync_hex_display();
 }
 
-void ColorPicker::ApplyChannelValue(int idx, float rawValue) {
-	if (m_Mode == Mode::RGB) {
-		const float f = rawValue / 255.f;
+void ColorPicker::apply_channel_value(int idx, float raw_value) {
+	if (m_mode == Mode::RGB) {
+		const float f = raw_value / 255.F;
 		switch (idx) {
 		case 0:
-			m_Color.r = f;
+			m_color.r = f;
 			break;
 		case 1:
-			m_Color.g = f;
+			m_color.g = f;
 			break;
 		case 2:
-			m_Color.b = f;
+			m_color.b = f;
 			break;
 		case 3:
-			m_Color.a = f;
+			m_color.a = f;
 			break;
 		}
 		if (idx < 3) {
-			const vec3 hsv = RgbToHsv(m_Color.r, m_Color.g, m_Color.b);
-			m_H = hsv.x;
-			m_S = hsv.y;
-			m_V = hsv.z;
-			RebuildSVTexture();
+			const Vec3 hsv = rgb_to_hsv(m_color.r, m_color.g, m_color.b);
+			m_h = hsv.x;
+			m_s = hsv.y;
+			m_v = hsv.z;
+			rebuild_sv_texture();
 		}
-		RebuildAlphaTexture();
-	} else if (m_Mode == Mode::HSV) {
+		rebuild_alpha_texture();
+	} else if (m_mode == Mode::HSV) {
 		switch (idx) {
 		case 0:
-			m_H = rawValue / 360.f;
+			m_h = raw_value / 360.F;
 			break;
 		case 1:
-			m_S = rawValue / 100.f;
+			m_s = raw_value / 100.F;
 			break;
 		case 2:
-			m_V = rawValue / 100.f;
+			m_v = raw_value / 100.F;
 			break;
 		case 3:
-			m_Color.a = rawValue / 255.f;
+			m_color.a = raw_value / 255.F;
 			break;
 		}
-		const vec3 rgb = HsvToRgb(m_H, m_S, m_V);
-		m_Color.r = rgb.r;
-		m_Color.g = rgb.g;
-		m_Color.b = rgb.b;
+		const Vec3 rgb = hsv_to_rgb(m_h, m_s, m_v);
+		m_color.r = rgb.r;
+		m_color.g = rgb.g;
+		m_color.b = rgb.b;
 		if (idx == 0) {
-			RebuildSVTexture();
+			rebuild_sv_texture();
 		}
-		RebuildAlphaTexture();
+		rebuild_alpha_texture();
 	} else {
-		m_Color.a = rawValue / 255.f;
+		m_color.a = raw_value / 255.F;
 	}
 
-	SyncAll();
-	onChanged(m_Color);
+	sync_all();
+	on_changed(m_color);
 }
 
-void ColorPicker::TogglePopup() {
-	if (!m_Popup) {
+void ColorPicker::toggle_popup() {
+	if (!m_popup) {
 		return;
 	}
-	if (!m_Popup->IsOpen()) {
-		const Rect swatchRect = m_Swatch->GetAbsoluteRect();
-		FloatingConfig fc = m_Popup->GetFloating();
-		if (swatchRect.position.x > m_Popup->GetParent()->GetLayoutRect().Width() * 0.5f) {
-			fc.elementPoint = FloatingAttachPoint::RightTop;
-			fc.parentPoint = FloatingAttachPoint::RightBottom;
+	if (!m_popup->is_open()) {
+		const Rect swatch_rect = m_swatch->get_absolute_rect();
+		FloatingConfig fc = m_popup->get_floating();
+		if (swatch_rect.position.x > m_popup->get_parent()->get_layout_rect().width() * 0.5f) {
+			fc.element_point = FloatingAttachPoint::RightTop;
+			fc.parent_point = FloatingAttachPoint::RightBottom;
 		} else {
-			fc.elementPoint = FloatingAttachPoint::LeftTop;
-			fc.parentPoint = FloatingAttachPoint::LeftBottom;
+			fc.element_point = FloatingAttachPoint::LeftTop;
+			fc.parent_point = FloatingAttachPoint::LeftBottom;
 		}
-		m_Popup->SetFloating(fc);
+		m_popup->set_floating(fc);
 	}
-	m_Popup->Toggle();
+	m_popup->toggle();
 }
-void ColorPicker::SetMode(Mode mode) {
-	m_Mode = mode;
+void ColorPicker::set_mode(Mode mode) {
+	m_mode = mode;
 
-	m_RGBBtn->RemoveClass("cp-mode-active");
-	m_HSVBtn->RemoveClass("cp-mode-active");
-	m_HEXBtn->RemoveClass("cp-mode-active");
+	m_rgb_btn->remove_class("cp-mode-active");
+	m_hsv_btn->remove_class("cp-mode-active");
+	m_hex_btn->remove_class("cp-mode-active");
 	switch (mode) {
 	case Mode::RGB:
-		m_RGBBtn->AddClass("cp-mode-active");
+		m_rgb_btn->add_class("cp-mode-active");
 		break;
 	case Mode::HSV:
-		m_HSVBtn->AddClass("cp-mode-active");
+		m_hsv_btn->add_class("cp-mode-active");
 		break;
 	case Mode::HEX:
-		m_HEXBtn->AddClass("cp-mode-active");
+		m_hex_btn->add_class("cp-mode-active");
 		break;
 	}
 
-	static const char *rgbLbls[4] = { "R", "G", "B", "A" };
-	static const char *hsvLbls[4] = { "H", "S", "V", "A" };
+	static const char *rgb_lbls[4] = { "R", "G", "B", "A" };
+	static const char *hsv_lbls[4] = { "H", "S", "V", "A" };
 
-	const bool isHex = (mode == Mode::HEX);
-	const bool isHSV = (mode == Mode::HSV);
+	const bool is_hex = (mode == Mode::HEX);
+	const bool is_hsv = (mode == Mode::HSV);
 
-	m_HexRow->SetHidden(!isHex);
+	m_hex_row->set_hidden(!is_hex);
 
 	for (int i = 0; i < 3; ++i) {
-		m_Ch[i].row->SetHidden(isHex);
+		m_ch[i].row->set_hidden(is_hex);
 	}
 
-	if (!isHex) {
-		const char **lbls = isHSV ? hsvLbls : rgbLbls;
+	if (!is_hex) {
+		const char **lbls = is_hsv ? hsv_lbls : rgb_lbls;
 		for (int i = 0; i < 4; ++i) {
-			m_Ch[i].label->SetText(lbls[i]);
+			m_ch[i].label->set_text(lbls[i]);
 		}
 
-		if (isHSV) {
-			m_Ch[0].slider->SetRange(0.f, 360.f);
-			m_Ch[1].slider->SetRange(0.f, 100.f);
-			m_Ch[2].slider->SetRange(0.f, 100.f);
-			m_Ch[3].slider->SetRange(0.f, 255.f);
+		if (is_hsv) {
+			m_ch[0].slider->set_range(0.F, 360.F);
+			m_ch[1].slider->set_range(0.F, 100.F);
+			m_ch[2].slider->set_range(0.F, 100.F);
+			m_ch[3].slider->set_range(0.F, 255.F);
 		} else {
 			for (int i = 0; i < 4; ++i) {
-				m_Ch[i].slider->SetRange(0.f, 255.f);
+				m_ch[i].slider->set_range(0.F, 255.F);
 			}
 		}
 	} else {
-		m_Ch[3].label->SetText("A");
-		m_Ch[3].slider->SetRange(0.f, 255.f);
+		m_ch[3].label->set_text("A");
+		m_ch[3].slider->set_range(0.F, 255.F);
 	}
 
-	RebuildChannelTextures();
-	SyncChannelDisplays();
-	SyncHexDisplay();
+	rebuild_channel_textures();
+	sync_channel_displays();
+	sync_hex_display();
 }
 
-void ColorPicker::Init() {
-	AddClass("color-picker");
+void ColorPicker::init() {
+	add_class("color-picker");
 
 	{
-		auto btn = CreateUnique<Button>();
-		btn->AddClass("cp-swatch");
-		btn->onClick.Connect([this] { TogglePopup(); });
-		m_Swatch = AddChild(std::move(btn));
+		auto btn = create_unique<Button>();
+		btn->add_class("cp-swatch");
+		btn->on_click.connect([this] { toggle_popup(); });
+		m_swatch = add_child(std::move(btn));
 	}
 
-	m_HueTex = MakeTex(m_Ctx, kTexW, kBarTexH, GenHue(kTexW, kBarTexH), "ColorPicker_Hue");
-	RebuildSVTexture();
-	RebuildAlphaTexture();
+	m_hue_tex = make_tex(m_ctx, K_TEX_W, K_BAR_TEX_H, gen_hue(K_TEX_W, K_BAR_TEX_H), "ColorPicker_Hue");
+	rebuild_sv_texture();
+	rebuild_alpha_texture();
 
 	{
 		FloatingConfig fc;
-		fc.attachTo = FloatingAttachTo::Parent;
-		fc.elementPoint = FloatingAttachPoint::LeftTop;
-		fc.parentPoint = FloatingAttachPoint::LeftBottom;
-		fc.offset = { 0.f, 4.f };
-		fc.zIndex = 60;
+		fc.attach_to = FloatingAttachTo::Parent;
+		fc.element_point = FloatingAttachPoint::LeftTop;
+		fc.parent_point = FloatingAttachPoint::LeftBottom;
+		fc.offset = { 0.F, 4.F };
+		fc.z_index = 60;
 
-		auto popup = CreateUnique<Popup>();
-		popup->AddClass("cp-popup");
-		popup->SetFloating(fc);
-		m_Popup = static_cast<Popup *>(AddChild(std::move(popup)));
+		auto popup = create_unique<Popup>();
+		popup->add_class("cp-popup");
+		popup->set_floating(fc);
+		m_popup = static_cast<Popup *>(add_child(std::move(popup)));
 	}
 
 	{
-		auto sv = CreateUnique<PickerArea>();
-		sv->AddClass("cp-sv-area");
-		sv->m_Tex = m_SVTex.get();
-		sv->m_Is1D = false;
-		sv->m_Indicator = { m_S, 1.f - m_V };
-		sv->m_OnPick = [this](vec2 n) {
-			m_S = n.x;
-			m_V = 1.f - n.y;
-			const vec3 rgb = HsvToRgb(m_H, m_S, m_V);
-			m_Color.r = rgb.r;
-			m_Color.g = rgb.g;
-			m_Color.b = rgb.b;
-			RebuildAlphaTexture();
-			SyncAll();
-			onChanged(m_Color);
+		auto sv = create_unique<PickerArea>();
+		sv->add_class("cp-sv-area");
+		sv->m_tex = m_sv_tex.get();
+		sv->m_is1_d = false;
+		sv->m_indicator = { m_s, 1.F - m_v };
+		sv->m_on_pick = [this](Vec2 n) {
+			m_s = n.x;
+			m_v = 1.F - n.y;
+			const Vec3 rgb = hsv_to_rgb(m_h, m_s, m_v);
+			m_color.r = rgb.r;
+			m_color.g = rgb.g;
+			m_color.b = rgb.b;
+			rebuild_alpha_texture();
+			sync_all();
+			on_changed(m_color);
 		};
-		m_SVArea = static_cast<PickerArea *>(m_Popup->AddChild(std::move(sv)));
+		m_sv_area = static_cast<PickerArea *>(m_popup->add_child(std::move(sv)));
 	}
 
 	{
-		auto row = CreateUnique<View>();
-		row->AddClass("cp-hue-row");
-		View *rowRaw = m_Popup->AddChild(std::move(row));
+		auto row = create_unique<View>();
+		row->add_class("cp-hue-row");
+		View *row_raw = m_popup->add_child(std::move(row));
 
 		{
-			auto hue = CreateUnique<PickerArea>();
-			hue->AddClass("cp-hue-bar");
-			hue->m_Tex = m_HueTex.get();
-			hue->m_Is1D = true;
-			hue->m_Indicator = { m_H, 0.f };
-			hue->m_OnPick = [this](vec2 n) {
-				const bool changed = std::abs(n.x - m_H) > 1e-4f;
-				m_H = n.x;
-				const vec3 rgb = HsvToRgb(m_H, m_S, m_V);
-				m_Color.r = rgb.r;
-				m_Color.g = rgb.g;
-				m_Color.b = rgb.b;
+			auto hue = create_unique<PickerArea>();
+			hue->add_class("cp-hue-bar");
+			hue->m_tex = m_hue_tex.get();
+			hue->m_is1_d = true;
+			hue->m_indicator = { m_h, 0.F };
+			hue->m_on_pick = [this](Vec2 n) {
+				const bool changed = std::abs(n.x - m_h) > 1e-4f;
+				m_h = n.x;
+				const Vec3 rgb = hsv_to_rgb(m_h, m_s, m_v);
+				m_color.r = rgb.r;
+				m_color.g = rgb.g;
+				m_color.b = rgb.b;
 				if (changed) {
-					RebuildSVTexture();
+					rebuild_sv_texture();
 				}
-				RebuildAlphaTexture();
-				SyncAll();
-				onChanged(m_Color);
+				rebuild_alpha_texture();
+				sync_all();
+				on_changed(m_color);
 			};
-			m_HueBar = static_cast<PickerArea *>(rowRaw->AddChild(std::move(hue)));
+			m_hue_bar = static_cast<PickerArea *>(row_raw->add_child(std::move(hue)));
 		}
 
 		{
-			auto prev = CreateUnique<View>();
-			prev->AddClass("cp-preview");
-			m_Preview = rowRaw->AddChild(std::move(prev));
+			auto prev = create_unique<View>();
+			prev->add_class("cp-preview");
+			m_preview = row_raw->add_child(std::move(prev));
 		}
 	}
 
 	{
-		auto alpha = CreateUnique<PickerArea>();
-		alpha->AddClass("cp-alpha-bar");
-		alpha->m_Tex = m_AlphaTex.get();
-		alpha->m_Is1D = true;
-		alpha->m_Indicator = { m_Color.a, 0.f };
-		alpha->m_OnPick = [this](vec2 n) {
-			m_Color.a = n.x;
-			SyncAll();
-			onChanged(m_Color);
+		auto alpha = create_unique<PickerArea>();
+		alpha->add_class("cp-alpha-bar");
+		alpha->m_tex = m_alpha_tex.get();
+		alpha->m_is1_d = true;
+		alpha->m_indicator = { m_color.a, 0.F };
+		alpha->m_on_pick = [this](Vec2 n) {
+			m_color.a = n.x;
+			sync_all();
+			on_changed(m_color);
 		};
-		m_AlphaBar = static_cast<PickerArea *>(m_Popup->AddChild(std::move(alpha)));
+		m_alpha_bar = static_cast<PickerArea *>(m_popup->add_child(std::move(alpha)));
 	}
 
 	{
-		auto row = CreateUnique<View>();
-		row->AddClass("cp-mode-row");
-		View *rowRaw = m_Popup->AddChild(std::move(row));
+		auto row = create_unique<View>();
+		row->add_class("cp-mode-row");
+		View *row_raw = m_popup->add_child(std::move(row));
 
-		auto makeBtn = [&](const char *text) -> Button * {
-			auto btn = CreateUnique<Button>(text);
-			btn->AddClass("cp-mode-btn");
-			return static_cast<Button *>(rowRaw->AddChild(std::move(btn)));
+		auto make_btn = [&](const char *text) -> Button * {
+			auto btn = create_unique<Button>(text);
+			btn->add_class("cp-mode-btn");
+			return static_cast<Button *>(row_raw->add_child(std::move(btn)));
 		};
-		m_RGBBtn = makeBtn("RGB");
-		m_HSVBtn = makeBtn("HSV");
-		m_HEXBtn = makeBtn("HEX");
-		m_RGBBtn->onClick.Connect([this] { SetMode(Mode::RGB); });
-		m_HSVBtn->onClick.Connect([this] { SetMode(Mode::HSV); });
-		m_HEXBtn->onClick.Connect([this] { SetMode(Mode::HEX); });
+		m_rgb_btn = make_btn("RGB");
+		m_hsv_btn = make_btn("HSV");
+		m_hex_btn = make_btn("HEX");
+		m_rgb_btn->on_click.connect([this] { set_mode(Mode::RGB); });
+		m_hsv_btn->on_click.connect([this] { set_mode(Mode::HSV); });
+		m_hex_btn->on_click.connect([this] { set_mode(Mode::HEX); });
 	}
 
 	const char *labels[4] = { "R", "G", "B", "A" };
 	for (int i = 0; i < 4; ++i) {
-		auto row = CreateUnique<View>();
-		row->AddClass("cp-ch-row");
-		m_Ch[i].row = m_Popup->AddChild(std::move(row));
+		auto row = create_unique<View>();
+		row->add_class("cp-ch-row");
+		m_ch[i].row = m_popup->add_child(std::move(row));
 
 		{
-			auto lbl = CreateUnique<Label>(labels[i]);
-			lbl->AddClass("cp-ch-lbl");
-			m_Ch[i].label = static_cast<Label *>(m_Ch[i].row->AddChild(std::move(lbl)));
+			auto lbl = create_unique<Label>(labels[i]);
+			lbl->add_class("cp-ch-lbl");
+			m_ch[i].label = static_cast<Label *>(m_ch[i].row->add_child(std::move(lbl)));
 		}
 		{
-			auto sl = CreateUnique<Slider>();
-			sl->SetRange(0.f, 255.f);
-			sl->SetStep(1.f);
-			sl->AddClass("cp-ch-slider");
-			m_Ch[i].slider = static_cast<Slider *>(m_Ch[i].row->AddChild(std::move(sl)));
+			auto sl = create_unique<Slider>();
+			sl->set_range(0.F, 255.F);
+			sl->set_step(1.F);
+			sl->add_class("cp-ch-slider");
+			m_ch[i].slider = static_cast<Slider *>(m_ch[i].row->add_child(std::move(sl)));
 		}
 		{
-			auto ti = CreateUnique<TextInput>();
-			ti->AddClass("cp-ch-input");
-			m_Ch[i].input = static_cast<TextInput *>(m_Ch[i].row->AddChild(std::move(ti)));
+			auto ti = create_unique<TextInput>();
+			ti->add_class("cp-ch-input");
+			m_ch[i].input = static_cast<TextInput *>(m_ch[i].row->add_child(std::move(ti)));
 		}
 
 		const int idx = i;
-		m_Ch[i].slider->onChanged.Connect([this, idx](float val) {
-			m_Ch[idx].input->SetText(FmtInt(static_cast<int>(std::round(val))));
-			ApplyChannelValue(idx, val);
+		m_ch[i].slider->on_changed.connect([this, idx](float val) {
+			m_ch[idx].input->set_text(fmt_int(static_cast<int>(std::round(val))));
+			apply_channel_value(idx, val);
 		});
-		m_Ch[i].input->onSubmit.Connect([this, idx](const std::string &s) {
+		m_ch[i].input->on_submit.connect([this, idx](const std::string &s) {
 			try {
 				const float val = static_cast<float>(std::stoi(s));
-				m_Ch[idx].slider->SetValueWithoutNotify(val);
-				ApplyChannelValue(idx, val);
+				m_ch[idx].slider->set_value_without_notify(val);
+				apply_channel_value(idx, val);
 			} catch (...) {
 			}
 		});
 	}
 
 	{
-		auto row = CreateUnique<View>();
-		row->AddClass("cp-hex-row");
-		m_HexRow = m_Popup->AddChild(std::move(row));
+		auto row = create_unique<View>();
+		row->add_class("cp-hex-row");
+		m_hex_row = m_popup->add_child(std::move(row));
 
 		{
-			auto lbl = CreateUnique<Label>("#");
-			lbl->AddClass("cp-hex-lbl");
-			m_HexRow->AddChild(std::move(lbl));
+			auto lbl = create_unique<Label>("#");
+			lbl->add_class("cp-hex-lbl");
+			m_hex_row->add_child(std::move(lbl));
 		}
 		{
-			auto ti = CreateUnique<TextInput>();
-			ti->AddClass("cp-hex-input");
-			ti->onSubmit.Connect([this](const std::string &s) {
-				vec4 c;
-				if (ParseHex(s, c)) {
-					m_Color = c;
-					const vec3 hsv = RgbToHsv(c.r, c.g, c.b);
-					m_H = hsv.x;
-					m_S = hsv.y;
-					m_V = hsv.z;
-					RebuildSVTexture();
-					RebuildAlphaTexture();
-					SyncAll();
-					onChanged(m_Color);
+			auto ti = create_unique<TextInput>();
+			ti->add_class("cp-hex-input");
+			ti->on_submit.connect([this](const std::string &s) {
+				Vec4 c;
+				if (parse_hex(s, c)) {
+					m_color = c;
+					const Vec3 hsv = rgb_to_hsv(c.r, c.g, c.b);
+					m_h = hsv.x;
+					m_s = hsv.y;
+					m_v = hsv.z;
+					rebuild_sv_texture();
+					rebuild_alpha_texture();
+					sync_all();
+					on_changed(m_color);
 				}
 			});
-			m_HexInput = static_cast<TextInput *>(m_HexRow->AddChild(std::move(ti)));
+			m_hex_input = static_cast<TextInput *>(m_hex_row->add_child(std::move(ti)));
 		}
 	}
 
-	m_RGBBtn->AddClass("cp-mode-active");
-	RebuildChannelTextures();
-	SyncAll();
+	m_rgb_btn->add_class("cp-mode-active");
+	rebuild_channel_textures();
+	sync_all();
 }
 
 } // namespace Aquila::UI::Core

@@ -7,24 +7,24 @@ namespace Aquila::UI::Core {
 
 class LayoutEngine {
   public:
-	LayoutEngine(uint32 width, uint32 height);
+	LayoutEngine(Uint32 width, Uint32 height);
 
-	void SetDimensions(uint32 width, uint32 height);
+	void set_dimensions(Uint32 width, Uint32 height);
 
-	void RunLayout(View *root, vec2 mousePos, bool mouseDown, vec2 scrollDelta, float deltaTime);
+	void run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 scroll_delta, float delta_time);
 
 	// Adjusts the scroll offset of target's nearest scrolling ancestor so target is visible.
 	// Must be called after RunLayout so rects and Clay scroll state are current.
-	void ScrollIntoView(View *target);
+	void scroll_into_view(View *target);
 
   private:
-	void LayoutPass(View *node);
-	void UpdateRects(View *node, vec2 parentAbsPos = {});
+	void layout_pass(View *node);
+	void update_rects(View *node, Vec2 parent_abs_pos = {});
 
-	void *m_ClayCtx = nullptr;
-	std::vector<uint8> m_ClayMemory;
-	uint32 m_Width;
-	uint32 m_Height;
+	void *m_clay_ctx = nullptr;
+	std::vector<Uint8> m_clay_memory;
+	Uint32 m_width;
+	Uint32 m_height;
 };
 
 } // namespace Aquila::UI::Core

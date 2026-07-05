@@ -6,16 +6,16 @@ namespace Aquila::UI::Core {
 
 class FontRegistry {
   public:
-	static void Register(const std::string &name, Text::FontAtlas *atlas) { GetMap()[name] = atlas; }
+	static void Register(const std::string &name, Text::FontAtlas *atlas) { get_map()[name] = atlas; }
 
-	static Text::FontAtlas *Resolve(const std::string &name) {
-		const auto &map = GetMap();
+	static Text::FontAtlas *resolve(const std::string &name) {
+		const auto &map = get_map();
 		const auto it = map.find(name);
 		return it != map.end() ? it->second : nullptr;
 	}
 
   private:
-	static std::unordered_map<std::string, Text::FontAtlas *> &GetMap() {
+	static std::unordered_map<std::string, Text::FontAtlas *> &get_map() {
 		static std::unordered_map<std::string, Text::FontAtlas *> map;
 		return map;
 	}

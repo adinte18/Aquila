@@ -5,7 +5,7 @@ namespace Aquila::Platform {
 static PlatformSpec s_PlatformInfo = {};
 static bool s_Initialized = false;
 
-bool Initialize() {
+bool initialize() {
 	if (s_Initialized) {
 		return true;
 	}
@@ -14,17 +14,17 @@ bool Initialize() {
 #ifdef AQUILA_PLATFORM_WINDOWS
 	s_PlatformInfo.name = "Windows";
 
-	SYSTEM_INFO sysInfo;
-	GetSystemInfo(&sysInfo);
-	s_PlatformInfo.cpuCores = static_cast<int>(sysInfo.dwNumberOfProcessors);
+	SYSTEM_INFO sys_info;
+	GetSystemInfo(&sys_info);
+	s_PlatformInfo.cpu_cores = static_cast<int>(sys_info.dwNumberOfProcessors);
 
-	MEMORYSTATUSEX memInfo;
-	memInfo.dwLength = sizeof(MEMORYSTATUSEX);
-	GlobalMemoryStatusEx(&memInfo);
-	s_PlatformInfo.totalMemory = static_cast<std::size_t>(memInfo.ullTotalPhys);
+	MEMORYSTATUSEX mem_info;
+	mem_info.dwLength = sizeof(MEMORYSTATUSEX);
+	GlobalMemoryStatusEx(&mem_info);
+	s_PlatformInfo.total_memory = static_cast<std::size_t>(mem_info.ullTotalPhys);
 
 #ifdef AQUILA_PLATFORM_64BIT
-	s_PlatformInfo.is64Bit = true;
+	s_PlatformInfo.is64_bit = true;
 	s_PlatformInfo.version = "64-bit";
 #else
 	s_PlatformInfo.is64Bit = false;
@@ -65,14 +65,14 @@ bool Initialize() {
 	return true;
 }
 
-void Shutdown() {
+void shutdown() {
 	if (!s_Initialized) {
 		return;
 	}
 	s_Initialized = false;
 }
 
-const PlatformSpec &GetPlatformInfo() {
+const PlatformSpec &get_platform_info() {
 	return s_PlatformInfo;
 }
 

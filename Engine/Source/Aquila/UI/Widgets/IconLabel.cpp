@@ -5,57 +5,57 @@
 namespace Aquila::UI::Core {
 
 IconLabel::IconLabel() {
-	m_ShouldSkipHitTest = true;
+	m_should_skip_hit_test = true;
 
-	m_Icon = dynamic_cast<Image *>(AddChild(CreateUnique<Image>()));
-	m_Icon->AddClass("icon");
-	m_Label = dynamic_cast<Label *>(AddChild(CreateUnique<Label>(std::string())));
+	m_icon = dynamic_cast<Image *>(add_child(create_unique<Image>()));
+	m_icon->add_class("icon");
+	m_label = dynamic_cast<Label *>(add_child(create_unique<Label>(std::string())));
 
-	UpdateIconVisibility();
+	update_icon_visibility();
 }
 
 IconLabel::IconLabel(std::string text, Text::FontAtlas *font) : IconLabel() {
-	m_Label->SetText(std::move(text));
-	m_Label->SetFont(font);
+	m_label->set_text(std::move(text));
+	m_label->set_font(font);
 }
 
-void IconLabel::SetText(std::string text) {
-	m_Label->SetText(std::move(text));
+void IconLabel::set_text(std::string text) {
+	m_label->set_text(std::move(text));
 }
 
-void IconLabel::SetFont(Text::FontAtlas *font) {
-	m_Label->SetFont(font);
+void IconLabel::set_font(Text::FontAtlas *font) {
+	m_label->set_font(font);
 }
 
-void IconLabel::SetIconTexture(GFX::GfxTexture *texture) {
-	m_Icon->SetTexture(texture);
-	UpdateIconVisibility();
+void IconLabel::set_icon_texture(GFX::GfxTexture *texture) {
+	m_icon->set_texture(texture);
+	update_icon_visibility();
 }
 
-void IconLabel::SetIconTint(vec4 tint) {
-	m_Icon->SetTint(tint);
+void IconLabel::set_icon_tint(Vec4 tint) {
+	m_icon->set_tint(tint);
 }
 
-void IconLabel::OnStyleResolved() {
-	View::OnStyleResolved();
-	if (Text::FontAtlas *font = GetResolvedFont()) {
-		m_Label->SetFont(font);
+void IconLabel::on_style_resolved() {
+	View::on_style_resolved();
+	if (Text::FontAtlas *font = get_resolved_font()) {
+		m_label->set_font(font);
 	}
 }
 
-void IconLabel::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void IconLabel::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
-		m_Icon->ApplyXmlAttribute(name, value, loaderCtx);
-		UpdateIconVisibility();
+		m_icon->apply_xml_attribute(name, value, loader_ctx);
+		update_icon_visibility();
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
-void IconLabel::UpdateIconVisibility() {
+void IconLabel::update_icon_visibility() {
 	StyleProperties sp;
-	sp.display = (m_Icon->GetTexture() != nullptr) ? Display::Flex : Display::None;
-	m_Icon->MergeStyle(sp);
+	sp.display = (m_icon->get_texture() != nullptr) ? Display::Flex : Display::None;
+	m_icon->merge_style(sp);
 }
 
 } // namespace Aquila::UI::Core

@@ -7,62 +7,62 @@
 namespace Aquila::UI::Core {
 
 Image::Image() {
-	m_ShouldSkipHitTest = true;
+	m_should_skip_hit_test = true;
 }
 
-Image::Image(GFX::GfxTexture *texture, vec4 tint) : m_Texture(texture), m_Tint(tint) {
-	m_ShouldSkipHitTest = true;
+Image::Image(GFX::GfxTexture *texture, Vec4 tint) : m_texture(texture), m_tint(tint) {
+	m_should_skip_hit_test = true;
 }
 
-void Image::SetTexture(GFX::GfxTexture *texture) {
-	if (texture == m_Texture) {
+void Image::set_texture(GFX::GfxTexture *texture) {
+	if (texture == m_texture) {
 		return;
 	}
-	m_Texture = texture;
-	InvalidateLayout();
+	m_texture = texture;
+	invalidate_layout();
 }
 
-void Image::SetTint(vec4 tint) {
-	if (tint == m_Tint) {
+void Image::set_tint(Vec4 tint) {
+	if (tint == m_tint) {
 		return;
 	}
-	m_Tint = tint;
-	QueueRedraw();
+	m_tint = tint;
+	queue_redraw();
 }
 
-void Image::SetUVRegion(vec2 uvMin, vec2 uvMax) {
-	if (uvMin == m_UVMin && uvMax == m_UVMax) {
+void Image::set_uv_region(Vec2 uv_min, Vec2 uv_max) {
+	if (uv_min == m_uv_min && uv_max == m_uv_max) {
 		return;
 	}
-	m_UVMin = uvMin;
-	m_UVMax = uvMax;
-	InvalidateLayout();
+	m_uv_min = uv_min;
+	m_uv_max = uv_max;
+	invalidate_layout();
 }
 
-void Image::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList);
+void Image::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list);
 
-	if (m_Texture == nullptr) {
+	if (m_texture == nullptr) {
 		return;
 	}
 
-	const Rect worldRect = GetAbsoluteRect();
-	const vec4 tint = m_Tint * GetDisplayStyle().color;
-	drawList.DrawImage(worldRect, m_Texture, tint, m_UVMin, m_UVMax, 2);
+	const Rect world_rect = get_absolute_rect();
+	const Vec4 tint = m_tint * get_display_style().color;
+	draw_list.draw_image(world_rect, m_texture, tint, m_uv_min, m_uv_max, 2);
 }
 
-void Image::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void Image::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "tint") {
-		if (auto c = UI::ParserHelper::ParseColor(value)) {
-			SetTint(*c);
+		if (auto c = UI::ParserHelper::parse_color(value)) {
+			set_tint(*c);
 		}
 		return;
 	}
 	if (name == "src") {
-		auto *loader = static_cast<Core::LayoutLoader *>(loaderCtx);
+		auto *loader = static_cast<Core::LayoutLoader *>(loader_ctx);
 		if (loader) {
-			if (GFX::GfxTexture *tex = loader->ResolveTexture(std::string(value))) {
-				SetTexture(tex);
+			if (GFX::GfxTexture *tex = loader->resolve_texture(std::string(value))) {
+				set_texture(tex);
 			} else {
 				AQUILA_LOG_WARNING("Image: could not load texture '{}'", value);
 			}
@@ -70,37 +70,37 @@ void Image::ApplyXmlAttribute(std::string_view name, std::string_view value, voi
 		return;
 	}
 	if (name == "bank") {
-		m_IconBank = std::string(value);
+		m_icon_bank = std::string(value);
 		return;
 	}
 	if (name == "icon") {
-		auto *loader = static_cast<Core::LayoutLoader *>(loaderCtx);
+		auto *loader = static_cast<Core::LayoutLoader *>(loader_ctx);
 		if (loader == nullptr) {
 			return;
 		}
-		const std::string &bankName = m_IconBank.empty() ? std::string("default") : m_IconBank;
-		TextureIconBank *bank = loader->ResolveTextureIconBank(m_IconBank);
+		const std::string &bank_name = m_icon_bank.empty() ? std::string("default") : m_icon_bank;
+		TextureIconBank *bank = loader->resolve_texture_icon_bank(m_icon_bank);
 		if (bank == nullptr) {
-			AQUILA_LOG_WARNING("Image: no TextureIconBank registered as '{}'", bankName);
+			AQUILA_LOG_WARNING("Image: no TextureIconBank registered as '{}'", bank_name);
 			return;
 		}
-		if (const IconEntry *entry = bank->GetIcon(std::string(value))) {
-			SetTexture(entry->texture);
-			SetUVRegion(entry->uvMin, entry->uvMax);
+		if (const IconEntry *entry = bank->get_icon(std::string(value))) {
+			set_texture(entry->texture);
+			set_uv_region(entry->uv_min, entry->uv_max);
 		} else {
-			AQUILA_LOG_WARNING("Image: icon '{}' not found in bank '{}'", value, bankName);
+			AQUILA_LOG_WARNING("Image: icon '{}' not found in bank '{}'", value, bank_name);
 		}
 		return;
 	}
 	if (name == "uv") {
-		float u0 = 0.f, v0 = 0.f, u1 = 1.f, v1 = 1.f;
+		float u0 = 0.F, v0 = 0.F, u1 = 1.F, v1 = 1.F;
 		std::istringstream ss{ std::string(value) };
 		if (ss >> u0 >> v0 >> u1 >> v1) {
-			SetUVRegion({ u0, v0 }, { u1, v1 });
+			set_uv_region({ u0, v0 }, { u1, v1 });
 		}
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
 } // namespace Aquila::UI::Core

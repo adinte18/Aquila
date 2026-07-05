@@ -3,30 +3,30 @@
 namespace Aquila::UI::Core {
 
 Tooltip::Tooltip() : FloatingOverlay(48) {
-	AddClass("tooltip");
-	SetDismissOnClickAway(false);
+	add_class("tooltip");
+	set_dismiss_on_click_away(false);
 
-	auto label = CreateUnique<Label>("");
-	label->AddClass("tooltip-label");
-	m_Label = static_cast<Label *>(AddChild(std::move(label)));
+	auto label = create_unique<Label>("");
+	label->add_class("tooltip-label");
+	m_label = static_cast<Label *>(add_child(std::move(label)));
 }
 
-void Tooltip::ShowAt(vec2 canvasPos, std::string text) {
-	m_Label->SetText(std::move(text));
+void Tooltip::show_at(Vec2 canvas_pos, std::string text) {
+	m_label->set_text(std::move(text));
 
 	FloatingConfig fc;
-	fc.attachTo = FloatingAttachTo::Root;
-	fc.elementPoint = FloatingAttachPoint::LeftTop;
-	fc.parentPoint = FloatingAttachPoint::LeftTop;
-	fc.offset = canvasPos;
-	fc.zIndex = 100;
-	SetFloating(fc);
+	fc.attach_to = FloatingAttachTo::Root;
+	fc.element_point = FloatingAttachPoint::LeftTop;
+	fc.parent_point = FloatingAttachPoint::LeftTop;
+	fc.offset = canvas_pos;
+	fc.z_index = 100;
+	set_floating(fc);
 
-	Open();
+	open();
 }
 
-void Tooltip::Hide() {
-	Close();
+void Tooltip::hide() {
+	close();
 }
 
 } // namespace Aquila::UI::Core

@@ -608,7 +608,22 @@ AssetCard:hover {
     border-color: var(--accent);
     border-width: 2px;
     border-radius: 3px;
-    display: none;
+}
+
+.dock-zone-indicator {
+    width: 44px;
+    height: 44px;
+    background-color: var(--bg-surface);
+    border-color: var(--accent-muted);
+    border-width: 1px;
+    border-radius: 4px;
+    opacity: 0.85;
+}
+
+.dock-zone-indicator-active {
+    background-color: var(--accent);
+    border-color: var(--accent);
+    opacity: 1;
 }
 
 #viewport {

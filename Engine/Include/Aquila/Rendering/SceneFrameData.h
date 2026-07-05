@@ -17,40 +17,40 @@ namespace Aquila::Rendering {
 
 class SceneFrameData : public Foundation::Singleton<SceneFrameData> {
   public:
-	SceneFrameData(GFX::GfxContext &ctx, uint32 width, uint32 height);
+	SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height);
 
-	void Update(SceneManagement::Scene &scene, float deltaTime, uint32 frameSlot);
+	void update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot);
 
-	void OnResize(uint32 width, uint32 height);
+	void on_resize(Uint32 width, Uint32 height);
 
-	[[nodiscard]] GFX::GfxDescriptorSet &GetDescriptorSet(uint32 frameSlot) const;
-	[[nodiscard]] GFX::GfxDescriptorSetLayout &GetLayout() const { return *m_Layout; }
+	[[nodiscard]] GFX::GfxDescriptorSet &get_descriptor_set(Uint32 frame_slot) const;
+	[[nodiscard]] GFX::GfxDescriptorSetLayout &get_layout() const { return *m_layout; }
 
-	[[nodiscard]] GFX::GfxBuffer &GetLightIndexListBuffer() const { return *m_LightIndexListBuffer; }
-	[[nodiscard]] GFX::GfxBuffer &GetClusterLightInfoBuffer() const { return *m_ClusterLightInfoBuffer; }
+	[[nodiscard]] GFX::GfxBuffer &get_light_index_list_buffer() const { return *m_light_index_list_buffer; }
+	[[nodiscard]] GFX::GfxBuffer &get_cluster_light_info_buffer() const { return *m_cluster_light_info_buffer; }
 
   private:
-	GFX::GfxContext &m_Ctx;
-	uint32 m_Width = 0;
-	uint32 m_Height = 0;
-	uint32 m_FrameIndex = 0;
-	float m_Time = 0.f;
+	GFX::GfxContext &m_ctx;
+	Uint32 m_width = 0;
+	Uint32 m_height = 0;
+	Uint32 m_frame_index = 0;
+	float m_time = 0.F;
 
-	Ref<GFX::GfxDescriptorSetLayout> m_Layout;
+	Ref<GFX::GfxDescriptorSetLayout> m_layout;
 
-	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_FrameBuffers;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_frame_buffers;
 
-	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_LightBuffers;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_light_buffers;
 
-	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_EnvBuffers;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_env_buffers;
 
-	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_MaterialBuffers;
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_material_buffers;
 
-	Ref<GFX::GfxBuffer> m_LightIndexListBuffer;
+	Ref<GFX::GfxBuffer> m_light_index_list_buffer;
 
-	Ref<GFX::GfxBuffer> m_ClusterLightInfoBuffer;
+	Ref<GFX::GfxBuffer> m_cluster_light_info_buffer;
 
-	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_Sets;
+	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_sets;
 };
 
 } // namespace Aquila::Rendering

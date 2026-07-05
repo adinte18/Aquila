@@ -17,21 +17,21 @@ class VulkanDescriptorSet final : public IRHIDescriptorSet {
 	~VulkanDescriptorSet() override;
 	AQUILA_NONCOPYABLE(VulkanDescriptorSet);
 
-	void SetBuffer(uint32 binding, IRHIBuffer &buffer, uint64 offset = 0, uint64 range = 0) override;
-	void SetTexture(uint32 binding, IRHITexture &texture) override;
-	void Flush() override;
+	void set_buffer(Uint32 binding, IRHIBuffer &buffer, Uint64 offset = 0, Uint64 range = 0) override;
+	void set_texture(Uint32 binding, IRHITexture &texture) override;
+	void flush() override;
 
-	[[nodiscard]] VkDescriptorSet GetDescriptorSet() const { return m_Set; }
+	[[nodiscard]] VkDescriptorSet get_descriptor_set() const { return m_set; }
 
   private:
-	VulkanDevice &m_Device;
-	VkDescriptorSet m_Set;
-	VulkanDescriptorSetLayout &m_Layout;
-	VulkanDescriptorPool &m_Pool;
+	VulkanDevice &m_device;
+	VkDescriptorSet m_set;
+	VulkanDescriptorSetLayout &m_layout;
+	VulkanDescriptorPool &m_pool;
 
-	std::vector<VkWriteDescriptorSet> m_PendingWrites;
-	std::vector<VkDescriptorBufferInfo> m_BufferInfos;
-	std::vector<VkDescriptorImageInfo> m_ImageInfos;
+	std::vector<VkWriteDescriptorSet> m_pending_writes;
+	std::vector<VkDescriptorBufferInfo> m_buffer_infos;
+	std::vector<VkDescriptorImageInfo> m_image_infos;
 };
 
 } // namespace Aquila::RHI

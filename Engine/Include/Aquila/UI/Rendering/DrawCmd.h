@@ -17,57 +17,58 @@ namespace Aquila::UI::Rendering {
 
 struct RectCmd {
 	Rect rect;
-	vec4 color = vec4(1.f);
-	vec4 radius = vec4(0.f);
-	float borderWidth = 0.f;
-	vec4 borderColor = vec4(0.f);
-	float rotation = 0.f;
-	int32 zOrder = 0;
+	Vec4 color = Vec4(1.F);
+	Vec4 radius = Vec4(0.F);
+	float border_width = 0.F;
+	Vec4 border_color = Vec4(0.F);
+	BorderStyle border_style = BorderStyle::Solid;
+	float rotation = 0.F;
+	Int32 z_order = 0;
 };
 
 struct ShadowCmd {
 	Rect rect; // the widget rect the shadow is cast from
-	vec4 color = vec4(0.f);
-	vec4 radius = vec4(0.f);
-	vec2 offset = { 0.f, 0.f };
-	vec2 originalHalfSize = { 0.f, 0.f }; // widget half-size + spread, drives the SDF
-	float blur = 0.f;
-	int32 zOrder = 0;
+	Vec4 color = Vec4(0.F);
+	Vec4 radius = Vec4(0.F);
+	Vec2 offset = { 0.F, 0.F };
+	Vec2 original_half_size = { 0.F, 0.F }; // widget half-size + spread, drives the SDF
+	float blur = 0.F;
+	Int32 z_order = 0;
 };
 
 struct ImageCmd {
 	Rect rect;
 	GFX::GfxTexture *texture = nullptr;
-	vec4 tint = vec4(0.f);
-	vec2 uvMin = { 0.f, 0.f };
-	vec2 uvMax = { 1.f, 1.f };
-	int32 zOrder = 0;
+	Vec4 tint = Vec4(0.F);
+	Vec2 uv_min = { 0.F, 0.F };
+	Vec2 uv_max = { 1.F, 1.F };
+	Int32 z_order = 0;
 };
 
 struct TextCmd {
 	Rect rect; // layout bounds for alignment
-	vec4 color = vec4(1.f);
+	Vec4 color = Vec4(1.F);
 	std::string text;
 	Text::FontAtlas *font = nullptr;
-	float fontSize = 0.f;
+	float font_size = 0.F;
 	TextAlign align = TextAlign::Left;
-	int32 zOrder = 0;
+	Int32 z_order = 0;
 };
 
 struct ClipPushCmd {
 	Rect rect;
-	int32 zOrder = 0;
+	Int32 z_order = 0;
 };
 
 struct ClipPopCmd {
 	Rect rect; // rect to restore to; empty means the full canvas
-	int32 zOrder = 0;
+	Int32 z_order = 0;
 };
 
 using DrawCmd = std::variant<RectCmd, ShadowCmd, ImageCmd, TextCmd, ClipPushCmd, ClipPopCmd>;
 
-[[nodiscard]] inline int32 DrawCmdZOrder(const DrawCmd &cmd) {
-	return std::visit([](const auto &c) { return c.zOrder; }, cmd);
+[[nodiscard]] inline Int32 draw_cmd_z_order(const DrawCmd &cmd) {
+	return std::visit([](const auto &c) { return c.z_order; }, cmd);
 }
 
 } // namespace Aquila::UI::Rendering

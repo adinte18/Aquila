@@ -3,7 +3,7 @@
 
 namespace Aquila::UI::ParserHelper {
 
-std::string_view TrimSV(std::string_view s) {
+std::string_view trim_sv(std::string_view s) {
 	while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
 		s.remove_prefix(1);
 	}
@@ -13,11 +13,11 @@ std::string_view TrimSV(std::string_view s) {
 	return s;
 }
 
-std::string Trim(std::string_view s) {
-	return std::string(TrimSV(s));
+std::string trim(std::string_view s) {
+	return std::string(trim_sv(s));
 }
 
-std::string ToLower(std::string_view s) {
+std::string to_lower(std::string_view s) {
 	std::string out(s);
 	for (char &c : out) {
 		c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
@@ -25,12 +25,12 @@ std::string ToLower(std::string_view s) {
 	return out;
 }
 
-std::vector<std::string> Split(std::string_view s, char delim) {
+std::vector<std::string> split(std::string_view s, char delim) {
 	std::vector<std::string> result;
 	while (!s.empty()) {
 		size_t pos = s.find(delim);
 		std::string_view tok = (pos == std::string_view::npos) ? s : s.substr(0, pos);
-		std::string t = Trim(tok);
+		std::string t = trim(tok);
 		if (!t.empty()) {
 			result.push_back(std::move(t));
 		}
@@ -42,7 +42,7 @@ std::vector<std::string> Split(std::string_view s, char delim) {
 	return result;
 }
 
-std::vector<std::string> SplitWS(std::string_view s) {
+std::vector<std::string> split_ws(std::string_view s) {
 	std::vector<std::string> result;
 	size_t i = 0;
 	while (i < s.size()) {
@@ -60,7 +60,7 @@ std::vector<std::string> SplitWS(std::string_view s) {
 	return result;
 }
 
-std::string StripComments(std::string_view src) {
+std::string strip_comments(std::string_view src) {
 	std::string out;
 	out.reserve(src.size());
 	size_t i = 0;
@@ -85,25 +85,25 @@ std::string StripComments(std::string_view src) {
 	return out;
 }
 
-float ParseFloat(std::string_view s) {
-	s = TrimSV(s);
-	float v = 0.f;
+float parse_float(std::string_view s) {
+	s = trim_sv(s);
+	float v = 0.F;
 	std::from_chars(s.data(), s.data() + s.size(), v);
 	return v;
 }
 
-float ParseDurationMs(std::string_view s) {
-	s = TrimSV(s);
+float parse_duration_ms(std::string_view s) {
+	s = trim_sv(s);
 	if (s.ends_with("ms")) {
-		return ParseFloat(s.substr(0, s.size() - 2));
+		return parse_float(s.substr(0, s.size() - 2));
 	}
 	if (s.ends_with('s')) {
-		return ParseFloat(s.substr(0, s.size() - 1)) * 1000.f;
+		return parse_float(s.substr(0, s.size() - 1)) * 1000.F;
 	}
-	return ParseFloat(s);
+	return parse_float(s);
 }
 
-std::optional<TransitionEasing> ParseEasing(std::string_view s) {
+std::optional<TransitionEasing> parse_easing(std::string_view s) {
 	if (s == "linear") {
 		return TransitionEasing::Linear;
 	}
@@ -122,96 +122,96 @@ std::optional<TransitionEasing> ParseEasing(std::string_view s) {
 	return std::nullopt;
 }
 
-Option<StyleLength> ParseLength(std::string_view raw) {
-	std::string s = ToLower(Trim(raw));
+Option<StyleLength> parse_length(std::string_view raw) {
+	std::string s = to_lower(trim(raw));
 	if (s == "auto") {
 		return StyleLength::Auto();
 	}
 	if (s == "grow" || s == "1fr") {
-		return StyleLength::Grow();
+		return StyleLength::grow();
 	}
 	if (s.ends_with("px")) {
-		return StyleLength::Pixel(ParseFloat(std::string_view(s).substr(0, s.size() - 2)));
+		return StyleLength::pixel(parse_float(std::string_view(s).substr(0, s.size() - 2)));
 	}
 	if (s.ends_with("%")) {
-		return StyleLength::Percent(ParseFloat(std::string_view(s).substr(0, s.size() - 1)));
+		return StyleLength::percent(parse_float(std::string_view(s).substr(0, s.size() - 1)));
 	}
 	if (!s.empty() && (std::isdigit(static_cast<unsigned char>(s[0])) || s[0] == '-' || s[0] == '.')) {
-		return StyleLength::Pixel(ParseFloat(s));
+		return StyleLength::pixel(parse_float(s));
 	}
 	return std::nullopt;
 }
 
-Option<vec4> ParseColor(std::string_view raw) {
-	std::string s = ToLower(Trim(raw));
+Option<Vec4> parse_color(std::string_view raw) {
+	std::string s = to_lower(trim(raw));
 
 	if (s.starts_with('#')) {
 		auto hex = std::string_view(s).substr(1);
 		auto byte = [&](size_t off) -> float {
 			uint8_t v = 0;
 			std::from_chars(hex.data() + off, hex.data() + off + 2, v, 16);
-			return v / 255.f;
+			return v / 255.F;
 		};
 		if (hex.size() == 6) {
-			return vec4(byte(0), byte(2), byte(4), 1.f);
+			return Vec4(byte(0), byte(2), byte(4), 1.F);
 		}
 		if (hex.size() == 8) {
-			return vec4(byte(0), byte(2), byte(4), byte(6));
+			return Vec4(byte(0), byte(2), byte(4), byte(6));
 		}
 		return std::nullopt;
 	}
 
-	bool hasAlpha = s.starts_with("rgba(");
-	if (hasAlpha || s.starts_with("rgb(")) {
+	bool has_alpha = s.starts_with("rgba(");
+	if (has_alpha || s.starts_with("rgb(")) {
 		size_t open = s.find('(');
 		size_t close = s.rfind(')');
 		if (open == std::string::npos || close == std::string::npos) {
 			return std::nullopt;
 		}
-		auto parts = Split(std::string_view(s).substr(open + 1, close - open - 1), ',');
+		auto parts = split(std::string_view(s).substr(open + 1, close - open - 1), ',');
 		if (parts.size() < 3) {
 			return std::nullopt;
 		}
-		float r = ParseFloat(parts[0]);
-		float g = ParseFloat(parts[1]);
-		float b = ParseFloat(parts[2]);
-		float a = (hasAlpha && parts.size() >= 4) ? ParseFloat(parts[3]) : 1.f;
-		if (r > 1.f || g > 1.f || b > 1.f) {
-			r /= 255.f;
-			g /= 255.f;
-			b /= 255.f;
+		float r = parse_float(parts[0]);
+		float g = parse_float(parts[1]);
+		float b = parse_float(parts[2]);
+		float a = (has_alpha && parts.size() >= 4) ? parse_float(parts[3]) : 1.F;
+		if (r > 1.F || g > 1.F || b > 1.F) {
+			r /= 255.F;
+			g /= 255.F;
+			b /= 255.F;
 		}
-		return vec4(r, g, b, a);
+		return Vec4(r, g, b, a);
 	}
 
 	return std::nullopt;
 }
 
-Option<StyleEdges> ParseEdges(std::string_view s) {
-	auto parts = SplitWS(s);
+Option<StyleEdges> parse_edges(std::string_view s) {
+	auto parts = split_ws(s);
 	if (parts.empty()) {
 		return std::nullopt;
 	}
 
-	auto l0 = ParseLength(parts[0]);
+	auto l0 = parse_length(parts[0]);
 	if (!l0) {
 		return std::nullopt;
 	}
 	if (parts.size() == 1) {
-		return StyleEdges::All(*l0);
+		return StyleEdges::all(*l0);
 	}
 
-	auto l1 = ParseLength(parts[1]);
+	auto l1 = parse_length(parts[1]);
 	if (!l1) {
 		return std::nullopt;
 	}
 	if (parts.size() == 2) {
-		return StyleEdges::Axes(*l0, *l1);
+		return StyleEdges::axes(*l0, *l1);
 	}
 
 	if (parts.size() >= 4) {
-		auto l2 = ParseLength(parts[2]);
-		auto l3 = ParseLength(parts[3]);
+		auto l2 = parse_length(parts[2]);
+		auto l3 = parse_length(parts[3]);
 		if (!l2 || !l3) {
 			return std::nullopt;
 		}
@@ -221,29 +221,29 @@ Option<StyleEdges> ParseEdges(std::string_view s) {
 	return std::nullopt;
 }
 
-Option<vec4> ParseRadius(std::string_view s) {
-	auto parts = SplitWS(s);
+Option<Vec4> parse_radius(std::string_view s) {
+	auto parts = split_ws(s);
 	if (parts.empty()) {
 		return std::nullopt;
 	}
 
-	auto px = [](Option<StyleLength> l) -> float { return (l && l->unit == LengthUnit::Pixel) ? l->value : 0.f; };
+	auto px = [](Option<StyleLength> l) -> float { return (l && l->unit == LengthUnit::Pixel) ? l->value : 0.F; };
 
 	if (parts.size() == 1) {
-		float v = px(ParseLength(parts[0]));
-		return vec4(v);
+		float v = px(parse_length(parts[0]));
+		return Vec4(v);
 	}
 	if (parts.size() >= 4) {
-		return vec4(px(ParseLength(parts[0])), px(ParseLength(parts[1])), px(ParseLength(parts[2])),
-					px(ParseLength(parts[3])));
+		return Vec4(px(parse_length(parts[0])), px(parse_length(parts[1])), px(parse_length(parts[2])),
+					px(parse_length(parts[3])));
 	}
 	return std::nullopt;
 }
 
-Option<BoxShadow> ParseOneShadow(std::string_view raw) {
+Option<BoxShadow> parse_one_shadow(std::string_view raw) {
 	std::vector<std::string> tokens;
 	size_t i = 0;
-	std::string s = Trim(raw);
+	std::string s = trim(raw);
 	while (i < s.size()) {
 		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) {
 			++i;
@@ -274,18 +274,18 @@ Option<BoxShadow> ParseOneShadow(std::string_view raw) {
 			out.inset = true;
 			continue;
 		}
-		if (auto c = ParseColor(tok)) {
+		if (auto c = parse_color(tok)) {
 			out.color = *c;
 			continue;
 		}
 		lengths.push_back(tok);
 	}
 	auto px = [](std::string_view v) -> float {
-		std::string t = Trim(v);
+		std::string t = trim(v);
 		if (t.ends_with("px")) {
 			t = t.substr(0, t.size() - 2);
 		}
-		float f = 0.f;
+		float f = 0.F;
 		std::from_chars(t.data(), t.data() + t.size(), f);
 		return f;
 	};
@@ -295,7 +295,7 @@ Option<BoxShadow> ParseOneShadow(std::string_view raw) {
 	out.offset.x = px(lengths[0]);
 	out.offset.y = px(lengths[1]);
 	if (lengths.size() >= 3) {
-		out.blur = std::max(0.f, px(lengths[2]));
+		out.blur = std::max(0.F, px(lengths[2]));
 	}
 	if (lengths.size() >= 4) {
 		out.spread = px(lengths[3]);
@@ -303,10 +303,10 @@ Option<BoxShadow> ParseOneShadow(std::string_view raw) {
 	return out;
 }
 
-void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::string_view valueRaw) {
-	std::string prop = ToLower(Trim(propRaw));
-	std::string value = Trim(valueRaw);
-	std::string valueLower = ToLower(value);
+void apply_declaration(StyleProperties &props, std::string_view prop_raw, std::string_view value_raw) {
+	std::string prop = to_lower(trim(prop_raw));
+	std::string value = trim(value_raw);
+	std::string value_lower = to_lower(value);
 
 	// CSS custom properties (--name) are handled by the variable extraction pass;
 	// silently ignore them here so no spurious warnings are emitted.
@@ -315,196 +315,204 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 	}
 
 	if (prop == "background-color" || prop == "background") {
-		if (auto color = ParseColor(value)) {
-			props.backgroundColor = *color;
+		if (auto color = parse_color(value)) {
+			props.background_color = *color;
 		}
 	} else if (prop == "border-color") {
-		if (auto color = ParseColor(value)) {
-			props.borderColor = *color;
+		if (auto color = parse_color(value)) {
+			props.border_color = *color;
 		}
 	} else if (prop == "color") {
-		if (auto color = ParseColor(value)) {
+		if (auto color = parse_color(value)) {
 			props.color = *color;
 		}
 	} else if (prop == "accent-color") {
-		if (auto color = ParseColor(value)) {
-			props.accentColor = *color;
+		if (auto color = parse_color(value)) {
+			props.accent_color = *color;
 		}
 	} else if (prop == "selection-color") {
-		if (auto color = ParseColor(value)) {
-			props.selectionColor = *color;
+		if (auto color = parse_color(value)) {
+			props.selection_color = *color;
 		}
 	} else if (prop == "placeholder-color") {
-		if (auto color = ParseColor(value)) {
-			props.placeholderColor = *color;
+		if (auto color = parse_color(value)) {
+			props.placeholder_color = *color;
 		}
 
 		// ── border ──
 	} else if (prop == "border-width") {
-		props.borderWidth = ParseFloat(value);
+		props.border_width = parse_float(value);
 	} else if (prop == "border-radius") {
-		if (auto radius = ParseRadius(value)) {
-			props.borderRadius = *radius;
+		if (auto radius = parse_radius(value)) {
+			props.border_radius = *radius;
+		}
+	} else if (prop == "border-style") {
+		if (value_lower == "solid") {
+			props.border_style = BorderStyle::Solid;
+		} else if (value_lower == "dashed") {
+			props.border_style = BorderStyle::Dashed;
+		} else if (value_lower == "dotted") {
+			props.border_style = BorderStyle::Dotted;
 		}
 
 		// ── opacity / display / overflow ──
 	} else if (prop == "opacity") {
-		props.opacity = ParseFloat(value);
+		props.opacity = parse_float(value);
 	} else if (prop == "display") {
-		if (valueLower == "flex") {
+		if (value_lower == "flex") {
 			props.display = Display::Flex;
-		} else if (valueLower == "none") {
+		} else if (value_lower == "none") {
 			props.display = Display::None;
 		}
 	} else if (prop == "overflow") {
-		if (valueLower == "visible") {
+		if (value_lower == "visible") {
 			props.overflow = Overflow::Visible;
-		} else if (valueLower == "hidden") {
+		} else if (value_lower == "hidden") {
 			props.overflow = Overflow::Hidden;
-		} else if (valueLower == "scroll") {
+		} else if (value_lower == "scroll") {
 			props.overflow = Overflow::Scroll;
 		}
 
 		// ── sizing ──
 	} else if (prop == "width") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.width = *l;
 		}
 	} else if (prop == "height") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.height = *l;
 		}
 	} else if (prop == "min-width") {
-		if (auto l = ParseLength(value)) {
-			props.minWidth = *l;
+		if (auto l = parse_length(value)) {
+			props.min_width = *l;
 		}
 	} else if (prop == "max-width") {
-		if (auto l = ParseLength(value)) {
-			props.maxWidth = *l;
+		if (auto l = parse_length(value)) {
+			props.max_width = *l;
 		}
 	} else if (prop == "min-height") {
-		if (auto l = ParseLength(value)) {
-			props.minHeight = *l;
+		if (auto l = parse_length(value)) {
+			props.min_height = *l;
 		}
 	} else if (prop == "max-height") {
-		if (auto l = ParseLength(value)) {
-			props.maxHeight = *l;
+		if (auto l = parse_length(value)) {
+			props.max_height = *l;
 		}
 	} else if (prop == "min") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.min = *l;
 		}
 	} else if (prop == "max") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.max = *l;
 		}
 
 		// ── box model ──
 	} else if (prop == "gap") {
-		if (auto l = ParseLength(value)) {
-			props.gap = l->unit == LengthUnit::Pixel ? l->value : 0.f;
+		if (auto l = parse_length(value)) {
+			props.gap = l->unit == LengthUnit::Pixel ? l->value : 0.F;
 		}
 	} else if (prop == "aspect-ratio") {
 		const size_t slash = value.find('/');
 		if (slash != std::string_view::npos) {
-			const float w = ParseFloat(value.substr(0, slash));
-			const float h = ParseFloat(value.substr(slash + 1));
-			props.aspectRatio = (h != 0.f) ? (w / h) : 0.f;
+			const float w = parse_float(value.substr(0, slash));
+			const float h = parse_float(value.substr(slash + 1));
+			props.aspect_ratio = (h != 0.F) ? (w / h) : 0.F;
 		} else {
-			props.aspectRatio = ParseFloat(value);
+			props.aspect_ratio = parse_float(value);
 		}
 	} else if (prop == "padding") {
-		if (auto e = ParseEdges(value)) {
+		if (auto e = parse_edges(value)) {
 			props.padding = *e;
 		}
 	} else if (prop == "padding-left") {
-		if (auto l = ParseLength(value)) {
-			props.paddingLeft = *l;
+		if (auto l = parse_length(value)) {
+			props.padding_left = *l;
 		}
 	} else if (prop == "padding-right") {
-		if (auto l = ParseLength(value)) {
-			props.paddingRight = *l;
+		if (auto l = parse_length(value)) {
+			props.padding_right = *l;
 		}
 	} else if (prop == "padding-top") {
-		if (auto l = ParseLength(value)) {
-			props.paddingTop = *l;
+		if (auto l = parse_length(value)) {
+			props.padding_top = *l;
 		}
 	} else if (prop == "padding-bottom") {
-		if (auto l = ParseLength(value)) {
-			props.paddingBottom = *l;
+		if (auto l = parse_length(value)) {
+			props.padding_bottom = *l;
 		}
 
 		// ── flex ──
 	} else if (prop == "flex-direction") {
-		if (valueLower == "row") {
-			props.flexDirection = FlexDirection::Row;
-		} else if (valueLower == "column") {
-			props.flexDirection = FlexDirection::Column;
-		} else if (valueLower == "row-reverse") {
-			props.flexDirection = FlexDirection::RowReverse;
-		} else if (valueLower == "column-reverse") {
-			props.flexDirection = FlexDirection::ColumnReverse;
+		if (value_lower == "row") {
+			props.flex_direction = FlexDirection::Row;
+		} else if (value_lower == "column") {
+			props.flex_direction = FlexDirection::Column;
+		} else if (value_lower == "row-reverse") {
+			props.flex_direction = FlexDirection::RowReverse;
+		} else if (value_lower == "column-reverse") {
+			props.flex_direction = FlexDirection::ColumnReverse;
 		}
 	} else if (prop == "justify-content") {
-		if (valueLower == "start" || valueLower == "flex-start") {
-			props.justifyContent = JustifyContent::Start;
-		} else if (valueLower == "end" || valueLower == "flex-end") {
-			props.justifyContent = JustifyContent::End;
-		} else if (valueLower == "center") {
-			props.justifyContent = JustifyContent::Center;
+		if (value_lower == "start" || value_lower == "flex-start") {
+			props.justify_content = JustifyContent::Start;
+		} else if (value_lower == "end" || value_lower == "flex-end") {
+			props.justify_content = JustifyContent::End;
+		} else if (value_lower == "center") {
+			props.justify_content = JustifyContent::Center;
 		} else {
-			AQUILA_LOG_WARNING("JustifyContent : {} is unsupported", valueLower);
+			AQUILA_LOG_WARNING("JustifyContent : {} is unsupported", value_lower);
 		}
 	} else if (prop == "align-items") {
-		if (valueLower == "start" || valueLower == "flex-start") {
-			props.alignItems = AlignItems::Start;
-		} else if (valueLower == "end" || valueLower == "flex-end") {
-			props.alignItems = AlignItems::End;
-		} else if (valueLower == "center") {
-			props.alignItems = AlignItems::Center;
-		} else if (valueLower == "stretch") {
-			props.alignItems = AlignItems::Stretch;
+		if (value_lower == "start" || value_lower == "flex-start") {
+			props.align_items = AlignItems::Start;
+		} else if (value_lower == "end" || value_lower == "flex-end") {
+			props.align_items = AlignItems::End;
+		} else if (value_lower == "center") {
+			props.align_items = AlignItems::Center;
+		} else if (value_lower == "stretch") {
+			props.align_items = AlignItems::Stretch;
 		}
 	} else if (prop == "flex-grow") {
-		props.flexGrow = ParseFloat(value);
+		props.flex_grow = parse_float(value);
 	} else if (prop == "flex-wrap") {
-		if (valueLower == "nowrap" || valueLower == "no-wrap") {
-			props.flexWrap = FlexWrap::NoWrap;
-		} else if (valueLower == "wrap") {
-			props.flexWrap = FlexWrap::Wrap;
+		if (value_lower == "nowrap" || value_lower == "no-wrap") {
+			props.flex_wrap = FlexWrap::NoWrap;
+		} else if (value_lower == "wrap") {
+			props.flex_wrap = FlexWrap::Wrap;
 		}
 
 	} else if (prop == "position") {
-		if (valueLower == "static") {
+		if (value_lower == "static") {
 			props.position = Position::Static;
-		} else if (valueLower == "relative") {
+		} else if (value_lower == "relative") {
 			props.position = Position::Relative;
-		} else if (valueLower == "absolute") {
+		} else if (value_lower == "absolute") {
 			props.position = Position::Absolute;
 		}
 	} else if (prop == "top") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.top = *l;
 		}
 	} else if (prop == "right") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.right = *l;
 		}
 	} else if (prop == "bottom") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.bottom = *l;
 		}
 	} else if (prop == "left") {
-		if (auto l = ParseLength(value)) {
+		if (auto l = parse_length(value)) {
 			props.left = *l;
 		}
 	} else if (prop == "z-index") {
-		props.zIndex = static_cast<int32>(ParseFloat(value));
+		props.z_index = static_cast<Int32>(parse_float(value));
 
 	} else if (prop == "font-family") {
-		props.fontFamily = std::string(value);
+		props.font_family = std::string(value);
 	} else if (prop == "font-size") {
-		static const std::unordered_map<std::string_view, FontSize> kFontSizeNames = {
+		static const std::unordered_map<std::string_view, FontSize> k_font_size_names = {
 			{ "Tiny", FontSize::Tiny },			  { "XSmall", FontSize::XSmall },
 			{ "Small", FontSize::Small },		  { "Body", FontSize::Body },
 			{ "BodyLarge", FontSize::BodyLarge }, { "Subtitle", FontSize::Subtitle },
@@ -512,31 +520,31 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 			{ "Title", FontSize::Title },		  { "TitleLarge", FontSize::TitleLarge },
 			{ "Display", FontSize::Display },	  { "DisplayLarge", FontSize::DisplayLarge },
 		};
-		if (auto it = kFontSizeNames.find(value); it != kFontSizeNames.end()) {
-			props.fontSize = FontSizeToPixels(it->second);
+		if (auto it = k_font_size_names.find(value); it != k_font_size_names.end()) {
+			props.font_size = font_size_to_pixels(it->second);
 		} else {
-			props.fontSize = ParseFloat(value);
+			props.font_size = parse_float(value);
 		}
 
 		// ── transitions ──
 	} else if (prop == "transition-duration") {
-		props.transitionDuration = ParseDurationMs(value);
+		props.transition_duration = parse_duration_ms(value);
 	} else if (prop == "transition-easing" || prop == "transition-timing-function") {
-		if (auto easing = ParseEasing(value)) {
-			props.transitionEasing = easing;
+		if (auto easing = parse_easing(value)) {
+			props.transition_easing = easing;
 		}
 	} else if (prop == "text-align") {
-		if (valueLower == "left") {
-			props.textAlign = TextAlign::Left;
-		} else if (valueLower == "center") {
-			props.textAlign = TextAlign::Center;
-		} else if (valueLower == "right") {
-			props.textAlign = TextAlign::Right;
+		if (value_lower == "left") {
+			props.text_align = TextAlign::Left;
+		} else if (value_lower == "center") {
+			props.text_align = TextAlign::Center;
+		} else if (value_lower == "right") {
+			props.text_align = TextAlign::Right;
 		}
 
 	} else if (prop == "box-shadow") {
-		if (valueLower == "none") {
-			props.boxShadows = std::vector<BoxShadow>{};
+		if (value_lower == "none") {
+			props.box_shadows = std::vector<BoxShadow>{};
 		} else {
 			std::vector<BoxShadow> shadows;
 			std::string layer;
@@ -549,7 +557,7 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 					--depth;
 					layer += c;
 				} else if (c == ',' && depth == 0) {
-					if (auto sh = ParseOneShadow(layer)) {
+					if (auto sh = parse_one_shadow(layer)) {
 						shadows.push_back(*sh);
 					}
 					layer.clear();
@@ -558,27 +566,27 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 				}
 			}
 			if (!layer.empty()) {
-				if (auto sh = ParseOneShadow(layer)) {
+				if (auto sh = parse_one_shadow(layer)) {
 					shadows.push_back(*sh);
 				}
 			}
 			if (!shadows.empty()) {
-				props.boxShadows = std::move(shadows);
+				props.box_shadows = std::move(shadows);
 			}
 		}
 
 	} else if (prop == "transition") {
-		for (std::string_view token : Split(value, ' ')) {
-			token = TrimSV(token);
+		for (std::string_view token : split(value, ' ')) {
+			token = trim_sv(token);
 			if (token.empty() || token == "all") {
 				continue;
 			}
-			if (auto easing = ParseEasing(token)) {
-				props.transitionEasing = easing;
+			if (auto easing = parse_easing(token)) {
+				props.transition_easing = easing;
 			} else {
 				if (token.ends_with("ms") || token.ends_with('s') ||
 					std::isdigit(static_cast<unsigned char>(token.front()))) {
-					props.transitionDuration = ParseDurationMs(token);
+					props.transition_duration = parse_duration_ms(token);
 				}
 			}
 		}
@@ -588,28 +596,28 @@ void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::str
 	}
 }
 
-void ParseBlock(std::string_view selectorList, std::string_view body, StyleSheet &sheet) {
+void parse_block(std::string_view selector_list, std::string_view body, StyleSheet &sheet) {
 	StyleProperties props;
 
-	for (const auto &decl : Split(body, ';')) {
+	for (const auto &decl : split(body, ';')) {
 		size_t colon = decl.find(':');
 		if (colon == std::string::npos) {
 			continue;
 		}
-		ApplyDeclaration(props, std::string_view(decl).substr(0, colon), std::string_view(decl).substr(colon + 1));
+		apply_declaration(props, std::string_view(decl).substr(0, colon), std::string_view(decl).substr(colon + 1));
 	}
 
-	for (const auto &sel : Split(selectorList, ',')) {
-		std::string s = Trim(sel);
+	for (const auto &sel : split(selector_list, ',')) {
+		std::string s = trim(sel);
 		if (s.empty()) {
 			continue;
 		}
 
-		std::string pseudoClass;
-		size_t pseudoPos = s.find(':');
-		if (pseudoPos != std::string::npos) {
-			pseudoClass = ToLower(s.substr(pseudoPos + 1));
-			s = s.substr(0, pseudoPos);
+		std::string pseudo_class;
+		size_t pseudo_pos = s.find(':');
+		if (pseudo_pos != std::string::npos) {
+			pseudo_class = to_lower(s.substr(pseudo_pos + 1));
+			s = s.substr(0, pseudo_pos);
 		}
 
 		StyleRule::SelectorType type;
@@ -625,7 +633,7 @@ void ParseBlock(std::string_view selectorList, std::string_view body, StyleSheet
 			name = s;
 		}
 
-		sheet.AddRule(type, std::move(name), std::move(pseudoClass), props);
+		sheet.add_rule(type, std::move(name), std::move(pseudo_class), props);
 	}
 }
 

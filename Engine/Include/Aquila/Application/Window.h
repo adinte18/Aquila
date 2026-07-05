@@ -19,49 +19,49 @@ class Window {
   public:
 	using EventCallbackFn = std::function<void(Events::Event &)>;
 
-	Window(uint32 width, uint32 height, const std::string &title, bool maximized = true);
+	Window(Uint32 width, Uint32 height, const std::string &title, bool maximized = true);
 	~Window();
 
-	void PollEvents();
-	void WaitEvents();
-	bool ShouldClose() const;
-	void FlushPendingEvents();
+	void poll_events();
+	void wait_events();
+	bool should_close() const;
+	void flush_pending_events();
 
-	uint32 GetWidth() const { return m_Data.Width; }
-	uint32 GetHeight() const { return m_Data.Height; }
-	void SetTitle(const std::string &text) const;
+	Uint32 get_width() const { return m_data.width; }
+	Uint32 get_height() const { return m_data.height; }
+	void set_title(const std::string &text) const;
 
-	void SetEventCallback(const EventCallbackFn &callback) { m_Data.EventCallback = callback; }
+	void set_event_callback(const EventCallbackFn &callback) { m_data.event_callback = callback; }
 
 	// Called from inside the Win32 modal resize loop (WM_PAINT/refresh).
 	// Hook this to render a frame during live resize so the window doesn't go black.
-	void SetRefreshCallback(std::function<void()> callback) { m_Data.RefreshCallback = std::move(callback); }
+	void set_refresh_callback(std::function<void()> callback) { m_data.refresh_callback = std::move(callback); }
 
-	bool IsWindowResized() const { return m_Data.Resized; }
-	void ResetResizedFlag() { m_Data.Resized = false; }
+	bool is_window_resized() const { return m_data.resized; }
+	void reset_resized_flag() { m_data.resized = false; }
 
-	GLFWwindow *GetNativeWindow() const { return m_Window; }
-	void CreateWindowSurface(VkInstance instance, VkSurfaceKHR *surface) const;
+	GLFWwindow *get_native_window() const { return m_window; }
+	void create_window_surface(VkInstance instance, VkSurfaceKHR *surface) const;
 
   private:
-	void Initialize();
-	void Shutdown() const;
-	void SetupCallbacks();
-	GLFWwindow *m_Window;
+	void initialize();
+	void shutdown() const;
+	void setup_callbacks();
+	GLFWwindow *m_window;
 
 	struct WindowData {
-		Window *Owner = nullptr;
-		std::string Title;
-		uint32 Width, Height;
-		bool Resized = false;
-		EventCallbackFn EventCallback;
-		std::function<void()> RefreshCallback;
-		f64 LastMouseX = 0.f, LastMouseY = 0.f;
-		bool HasPendingMouseMove = false;
+		Window *owner = nullptr;
+		std::string title;
+		Uint32 width, height;
+		bool resized = false;
+		EventCallbackFn event_callback;
+		std::function<void()> refresh_callback;
+		F64 last_mouse_x = 0.F, last_mouse_y = 0.F;
+		bool has_pending_mouse_move = false;
 	};
 
-	WindowData m_Data;
-	bool m_StartMaximized = true;
+	WindowData m_data;
+	bool m_start_maximized = true;
 };
 
 } // namespace Aquila::Application

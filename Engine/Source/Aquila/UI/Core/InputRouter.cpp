@@ -9,162 +9,162 @@ namespace Aquila::UI::Core {
 
 using namespace Application::Events;
 
-void InputRouter::SetFocus(View *view) {
-	if (m_FocusedView == view) {
+void InputRouter::set_focus(View *view) {
+	if (m_focused_view == view) {
 		return;
 	}
-	if (m_FocusedView) {
-		m_FocusedView->OnFocusLost();
+	if (m_focused_view) {
+		m_focused_view->on_focus_lost();
 	}
-	m_FocusedView = view;
-	if (m_FocusedView) {
-		m_FocusedView->OnFocusGained();
-	}
-}
-
-void InputRouter::OnViewRemoved(View *view) {
-	if (m_HoveredView == view) {
-		m_HoveredView = nullptr;
-	}
-	if (m_FocusedView == view) {
-		m_FocusedView = nullptr;
-	}
-	if (m_DragTarget == view) {
-		m_DragTarget = nullptr;
-	}
-	if (m_DragSourceCandidate == view) {
-		m_DragSourceCandidate = nullptr;
-		m_DragState.payload.reset();
-		m_DragState.isDragging = false;
+	m_focused_view = view;
+	if (m_focused_view) {
+		m_focused_view->on_focus_gained();
 	}
 }
 
-void InputRouter::OnEvent(Application::Events::Event &e) {
+void InputRouter::on_view_removed(View *view) {
+	if (m_hovered_view == view) {
+		m_hovered_view = nullptr;
+	}
+	if (m_focused_view == view) {
+		m_focused_view = nullptr;
+	}
+	if (m_drag_target == view) {
+		m_drag_target = nullptr;
+	}
+	if (m_drag_source_candidate == view) {
+		m_drag_source_candidate = nullptr;
+		m_drag_state.payload.reset();
+		m_drag_state.is_dragging = false;
+	}
+}
+
+void InputRouter::on_event(Application::Events::Event &e) {
 	EventDispatcher dispatcher(e);
 
-	dispatcher.Dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
-		m_MousePos = { e.GetX(), e.GetY() };
+	dispatcher.dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
+		m_mouse_pos = { e.get_x(), e.get_y() };
 
-		if (Platform::Input::IsMouseButtonPressed(MouseButton::Left) && !m_DragState.isDragging) {
-			vec2 delta = m_MousePos - m_DragStartPos;
-			if (Math::Length(delta) > 5.f && m_HoveredView) {
-				m_DragSourceCandidate = m_HoveredView->GetFirstDraggableParent();
-				if (m_DragSourceCandidate != nullptr) {
-					m_DragState.isDragging = true;
-					m_DragSourceCandidate->OnDragStart(m_DragState);
-					m_DragTarget = m_HoveredView->GetFirstParentThatAcceptsDrop();
-					if (m_DragTarget) {
-						m_DragTarget->OnDragEnter(m_DragState);
+		if (Platform::Input::is_mouse_button_pressed(MouseButton::Left) && !m_drag_state.is_dragging) {
+			Vec2 delta = m_mouse_pos - m_drag_start_pos;
+			if (Math::length(delta) > 5.F && m_hovered_view) {
+				m_drag_source_candidate = m_hovered_view->get_first_draggable_parent();
+				if (m_drag_source_candidate != nullptr) {
+					m_drag_state.is_dragging = true;
+					m_drag_source_candidate->on_drag_start(m_drag_state);
+					m_drag_target = m_hovered_view->get_first_parent_that_accepts_drop();
+					if (m_drag_target) {
+						m_drag_target->on_drag_enter(m_drag_state);
 					}
-					m_Canvas.MarkDirty();
+					m_canvas.mark_dirty();
 				}
 			}
 		}
 
-		View *hit = m_Compositor.HitTest(m_MousePos);
-		if (hit != m_HoveredView) {
-			if (m_HoveredView) {
-				m_HoveredView->OnMouseLeave();
+		View *hit = m_compositor.hit_test(m_mouse_pos);
+		if (hit != m_hovered_view) {
+			if (m_hovered_view) {
+				m_hovered_view->on_mouse_leave();
 			}
-			m_HoveredView = hit;
-			if (m_HoveredView) {
-				m_HoveredView->OnMouseEnter();
+			m_hovered_view = hit;
+			if (m_hovered_view) {
+				m_hovered_view->on_mouse_enter();
 			}
 
-			if (m_DragState.isDragging) {
-				View *newTarget = m_HoveredView ? m_HoveredView->GetFirstParentThatAcceptsDrop() : nullptr;
-				if (newTarget != m_DragTarget) {
-					if (m_DragTarget) {
-						m_DragTarget->OnDragLeave(m_DragState);
+			if (m_drag_state.is_dragging) {
+				View *new_target = m_hovered_view ? m_hovered_view->get_first_parent_that_accepts_drop() : nullptr;
+				if (new_target != m_drag_target) {
+					if (m_drag_target) {
+						m_drag_target->on_drag_leave(m_drag_state);
 					}
-					m_DragTarget = newTarget;
-					if (m_DragTarget) {
-						m_DragTarget->OnDragEnter(m_DragState);
+					m_drag_target = new_target;
+					if (m_drag_target) {
+						m_drag_target->on_drag_enter(m_drag_state);
 					}
 				}
 			}
 
-			m_Canvas.MarkDirty();
+			m_canvas.mark_dirty();
 		}
-		if (m_FocusedView && m_FocusedView->IsPressed()) {
-			m_FocusedView->OnMouseMove(m_MousePos);
+		if (m_focused_view && m_focused_view->is_pressed()) {
+			m_focused_view->on_mouse_move(m_mouse_pos);
 		}
 		return false;
 	});
 
-	dispatcher.Dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent &e) {
-		if (e.GetMouseButton() == MouseButton::Left) {
-			m_MouseDown = true;
+	dispatcher.dispatch<MouseButtonPressedEvent>([this](MouseButtonPressedEvent &e) {
+		if (e.get_mouse_button() == MouseButton::Left) {
+			m_mouse_down = true;
 		}
-		m_Canvas.DismissPopupsOutside(m_HoveredView);
-		if (!m_HoveredView) {
+		m_canvas.dismiss_popups_outside(m_hovered_view);
+		if (!m_hovered_view) {
 			return false;
 		}
-		SetFocus(m_HoveredView);
-		m_FocusedView->OnMousePress(e.GetMouseButton(), m_MousePos);
+		set_focus(m_hovered_view);
+		m_focused_view->on_mouse_press(e.get_mouse_button(), m_mouse_pos);
 
-		m_DragStartPos = Platform::Input::GetMousePosition();
+		m_drag_start_pos = Platform::Input::get_mouse_position();
 
 		return false;
 	});
 
-	dispatcher.Dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent &e) {
-		if (e.GetMouseButton() == MouseButton::Left) {
-			m_MouseDown = false;
+	dispatcher.dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent &e) {
+		if (e.get_mouse_button() == MouseButton::Left) {
+			m_mouse_down = false;
 		}
 
-		if (m_DragState.isDragging) {
-			if (m_HoveredView) {
-				View *dropCandidate = m_HoveredView->GetFirstParentThatAcceptsDrop();
+		if (m_drag_state.is_dragging) {
+			if (m_hovered_view) {
+				View *drop_candidate = m_hovered_view->get_first_parent_that_accepts_drop();
 
-				if (dropCandidate) {
-					dropCandidate->OnDrop(m_DragState);
+				if (drop_candidate) {
+					drop_candidate->on_drop(m_drag_state);
 				}
 			}
 
-			if (m_DragTarget) {
-				m_DragTarget->OnDragLeave(m_DragState);
-				m_DragTarget = nullptr;
+			if (m_drag_target) {
+				m_drag_target->on_drag_leave(m_drag_state);
+				m_drag_target = nullptr;
 			}
-			m_DragState.payload.reset();
-			m_DragState.isDragging = false;
-			m_DragSourceCandidate = nullptr;
+			m_drag_state.payload.reset();
+			m_drag_state.is_dragging = false;
+			m_drag_source_candidate = nullptr;
 		}
 
-		if (m_HoveredView) {
-			m_HoveredView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
+		if (m_hovered_view) {
+			m_hovered_view->on_mouse_release(e.get_mouse_button(), m_mouse_pos);
 		}
-		if (m_FocusedView && m_FocusedView != m_HoveredView) {
-			m_FocusedView->OnMouseRelease(e.GetMouseButton(), m_MousePos);
+		if (m_focused_view && m_focused_view != m_hovered_view) {
+			m_focused_view->on_mouse_release(e.get_mouse_button(), m_mouse_pos);
 		}
 		return false;
 	});
 
-	dispatcher.Dispatch<MouseScrolledEvent>([this](MouseScrolledEvent &e) {
-		m_ScrollDelta += vec2(e.GetXOffset(), e.GetYOffset());
-		m_Canvas.RequestLayout();
-		return m_HoveredView != nullptr && !m_HoveredView->GetPassThroughScroll();
+	dispatcher.dispatch<MouseScrolledEvent>([this](MouseScrolledEvent &e) {
+		m_scroll_delta += Vec2(e.get_x_offset(), e.get_y_offset());
+		m_canvas.request_layout();
+		return m_hovered_view != nullptr && !m_hovered_view->get_pass_through_scroll();
 	});
 
-	dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent &e) {
-		if (m_FocusedView) {
-			m_FocusedView->OnKeyPress(e.GetKeyCode(), e.GetMods());
+	dispatcher.dispatch<KeyPressedEvent>([this](KeyPressedEvent &e) {
+		if (m_focused_view) {
+			m_focused_view->on_key_press(e.get_key_code(), e.get_mods());
 			return true; // consumed — prevents the engine layer from also acting on this key
 		}
 		return false;
 	});
 
-	dispatcher.Dispatch<KeyReleasedEvent>([this](KeyReleasedEvent &e) {
-		if (m_FocusedView) {
-			m_FocusedView->OnKeyRelease(e.GetKeyCode());
+	dispatcher.dispatch<KeyReleasedEvent>([this](KeyReleasedEvent &e) {
+		if (m_focused_view) {
+			m_focused_view->on_key_release(e.get_key_code());
 			return true;
 		}
 		return false;
 	});
 
-	dispatcher.Dispatch<KeyTypedEvent>([this](KeyTypedEvent &e) {
-		if (m_FocusedView) {
-			m_FocusedView->OnCharInput(static_cast<uint32>(e.GetKeyCode()));
+	dispatcher.dispatch<KeyTypedEvent>([this](KeyTypedEvent &e) {
+		if (m_focused_view) {
+			m_focused_view->on_char_input(static_cast<Uint32>(e.get_key_code()));
 			return true;
 		}
 		return false;

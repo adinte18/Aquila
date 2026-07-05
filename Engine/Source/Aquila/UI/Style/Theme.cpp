@@ -5,58 +5,58 @@
 
 namespace Aquila::UI {
 
-void Theme::Set(std::string_view typeName, StyleProperties props) {
-	m_Styles[{ std::string(typeName), "" }] = std::move(props);
+void Theme::set(std::string_view type_name, StyleProperties props) {
+	m_styles[{ std::string(type_name), "" }] = std::move(props);
 }
 
-void Theme::Set(std::string_view typeName, std::string_view pseudoClass, StyleProperties props) {
-	m_Styles[{ std::string(typeName), std::string(pseudoClass) }] = std::move(props);
+void Theme::set(std::string_view type_name, std::string_view pseudo_class, StyleProperties props) {
+	m_styles[{ std::string(type_name), std::string(pseudo_class) }] = std::move(props);
 }
 
-void Theme::SetColor(std::string_view name, vec4 color) {
-	m_Colors[std::string(name)] = color;
+void Theme::set_color(std::string_view name, Vec4 color) {
+	m_colors[std::string(name)] = color;
 }
 
-void Theme::SetConstant(std::string_view name, float value) {
-	m_Constants[std::string(name)] = value;
+void Theme::set_constant(std::string_view name, float value) {
+	m_constants[std::string(name)] = value;
 }
 
-Option<vec4> Theme::GetColor(std::string_view name) const {
-	const auto it = m_Colors.find(std::string(name));
-	return it != m_Colors.end() ? Option<vec4>(it->second) : std::nullopt;
+Option<Vec4> Theme::get_color(std::string_view name) const {
+	const auto it = m_colors.find(std::string(name));
+	return it != m_colors.end() ? Option<Vec4>(it->second) : std::nullopt;
 }
 
-Option<float> Theme::GetConstant(std::string_view name) const {
-	const auto it = m_Constants.find(std::string(name));
-	return it != m_Constants.end() ? Option<float>(it->second) : std::nullopt;
+Option<float> Theme::get_constant(std::string_view name) const {
+	const auto it = m_constants.find(std::string(name));
+	return it != m_constants.end() ? Option<float>(it->second) : std::nullopt;
 }
 
-const StyleProperties *Theme::Get(std::string_view typeName, std::string_view pseudoClass) const {
-	const auto it = m_Styles.find({ std::string(typeName), std::string(pseudoClass) });
-	return it != m_Styles.end() ? &it->second : nullptr;
+const StyleProperties *Theme::get(std::string_view type_name, std::string_view pseudo_class) const {
+	const auto it = m_styles.find({ std::string(type_name), std::string(pseudo_class) });
+	return it != m_styles.end() ? &it->second : nullptr;
 }
 
-void Theme::ApplyToStyleSheet(StyleSheet &sheet) const {
-	for (const auto &[key, props] : m_Styles) {
+void Theme::apply_to_style_sheet(StyleSheet &sheet) const {
+	for (const auto &[key, props] : m_styles) {
 		const StyleRule::SelectorType type = StyleRule::SelectorType::Type;
-		sheet.AddRule(type, key.typeName, key.pseudoClass, props);
+		sheet.add_rule(type, key.type_name, key.pseudo_class, props);
 	}
 }
 
-static std::string FmtFloat(float v) {
+static std::string fmt_float(float v) {
 	char buf[32];
 	std::snprintf(buf, sizeof(buf), "%.4g", v);
 	return buf;
 }
 
-static std::string FmtColor(const vec4 &c) {
+static std::string fmt_color(const Vec4 &c) {
 	char buf[64];
-	std::snprintf(buf, sizeof(buf), "rgba(%.3f, %.3f, %.3f, %.3f)", std::clamp(c.r, 0.f, 1.f),
-				  std::clamp(c.g, 0.f, 1.f), std::clamp(c.b, 0.f, 1.f), std::clamp(c.a, 0.f, 1.f));
+	std::snprintf(buf, sizeof(buf), "rgba(%.3f, %.3f, %.3f, %.3f)", std::clamp(c.r, 0.F, 1.F),
+				  std::clamp(c.g, 0.F, 1.F), std::clamp(c.b, 0.F, 1.F), std::clamp(c.a, 0.F, 1.F));
 	return buf;
 }
 
-static std::string FmtLength(const StyleLength &l) {
+static std::string fmt_length(const StyleLength &l) {
 	char buf[32];
 	switch (l.unit) {
 	case LengthUnit::Auto:
@@ -72,17 +72,17 @@ static std::string FmtLength(const StyleLength &l) {
 	}
 }
 
-static std::string FmtEdges(const StyleEdges &e) {
+static std::string fmt_edges(const StyleEdges &e) {
 	if (e.top == e.right && e.right == e.bottom && e.bottom == e.left) {
-		return FmtLength(e.top);
+		return fmt_length(e.top);
 	}
 	if (e.top == e.bottom && e.left == e.right) {
-		return FmtLength(e.top) + " " + FmtLength(e.right);
+		return fmt_length(e.top) + " " + fmt_length(e.right);
 	}
-	return FmtLength(e.top) + " " + FmtLength(e.right) + " " + FmtLength(e.bottom) + " " + FmtLength(e.left);
+	return fmt_length(e.top) + " " + fmt_length(e.right) + " " + fmt_length(e.bottom) + " " + fmt_length(e.left);
 }
 
-static void Decl(std::string &out, std::string_view prop, std::string_view value) {
+static void decl(std::string &out, std::string_view prop, std::string_view value) {
 	out += "    ";
 	out += prop;
 	out += ": ";
@@ -90,35 +90,35 @@ static void Decl(std::string &out, std::string_view prop, std::string_view value
 	out += ";\n";
 }
 
-static void AppendDeclarations(std::string &out, const StyleProperties &p) {
-	if (p.backgroundColor) {
-		Decl(out, "background-color", FmtColor(*p.backgroundColor));
+static void append_declarations(std::string &out, const StyleProperties &p) {
+	if (p.background_color) {
+		decl(out, "background-color", fmt_color(*p.background_color));
 	}
-	if (p.borderColor) {
-		Decl(out, "border-color", FmtColor(*p.borderColor));
+	if (p.border_color) {
+		decl(out, "border-color", fmt_color(*p.border_color));
 	}
 	if (p.color) {
-		Decl(out, "color", FmtColor(*p.color));
+		decl(out, "color", fmt_color(*p.color));
 	}
-	if (p.borderWidth) {
-		Decl(out, "border-width", FmtFloat(*p.borderWidth) + "px");
+	if (p.border_width) {
+		decl(out, "border-width", fmt_float(*p.border_width) + "px");
 	}
-	if (p.borderRadius) {
-		const vec4 &r = *p.borderRadius;
+	if (p.border_radius) {
+		const Vec4 &r = *p.border_radius;
 		std::string v;
 		if (r.x == r.y && r.y == r.z && r.z == r.w) {
-			v = FmtFloat(r.x) + "px";
+			v = fmt_float(r.x) + "px";
 		} else {
-			v = FmtFloat(r.x) + "px " + FmtFloat(r.y) + "px " + FmtFloat(r.z) + "px " + FmtFloat(r.w) + "px";
+			v = fmt_float(r.x) + "px " + fmt_float(r.y) + "px " + fmt_float(r.z) + "px " + fmt_float(r.w) + "px";
 		}
-		Decl(out, "border-radius", v);
+		decl(out, "border-radius", v);
 	}
 	if (p.opacity) {
-		Decl(out, "opacity", FmtFloat(*p.opacity));
+		decl(out, "opacity", fmt_float(*p.opacity));
 	}
 
 	if (p.display) {
-		Decl(out, "display", *p.display == Display::Flex ? "flex" : "none");
+		decl(out, "display", *p.display == Display::Flex ? "flex" : "none");
 	}
 	if (p.overflow) {
 		const char *v = "visible";
@@ -127,44 +127,44 @@ static void AppendDeclarations(std::string &out, const StyleProperties &p) {
 		} else if (*p.overflow == Overflow::Scroll) {
 			v = "scroll";
 		}
-		Decl(out, "overflow", v);
+		decl(out, "overflow", v);
 	}
 
 	if (p.width) {
-		Decl(out, "width", FmtLength(*p.width));
+		decl(out, "width", fmt_length(*p.width));
 	}
 	if (p.height) {
-		Decl(out, "height", FmtLength(*p.height));
+		decl(out, "height", fmt_length(*p.height));
 	}
 	if (p.min) {
-		Decl(out, "min", FmtLength(*p.min));
+		decl(out, "min", fmt_length(*p.min));
 	}
 	if (p.max) {
-		Decl(out, "max", FmtLength(*p.max));
+		decl(out, "max", fmt_length(*p.max));
 	}
-	if (p.minWidth) {
-		Decl(out, "min-width", FmtLength(*p.minWidth));
+	if (p.min_width) {
+		decl(out, "min-width", fmt_length(*p.min_width));
 	}
-	if (p.maxWidth) {
-		Decl(out, "max-width", FmtLength(*p.maxWidth));
+	if (p.max_width) {
+		decl(out, "max-width", fmt_length(*p.max_width));
 	}
-	if (p.minHeight) {
-		Decl(out, "min-height", FmtLength(*p.minHeight));
+	if (p.min_height) {
+		decl(out, "min-height", fmt_length(*p.min_height));
 	}
-	if (p.maxHeight) {
-		Decl(out, "max-height", FmtLength(*p.maxHeight));
+	if (p.max_height) {
+		decl(out, "max-height", fmt_length(*p.max_height));
 	}
 
 	if (p.padding) {
-		Decl(out, "padding", FmtEdges(*p.padding));
+		decl(out, "padding", fmt_edges(*p.padding));
 	}
 	if (p.gap) {
-		Decl(out, "gap", FmtFloat(*p.gap) + "px");
+		decl(out, "gap", fmt_float(*p.gap) + "px");
 	}
 
-	if (p.flexDirection) {
+	if (p.flex_direction) {
 		const char *v = "row";
-		switch (*p.flexDirection) {
+		switch (*p.flex_direction) {
 		case FlexDirection::Column:
 			v = "column";
 			break;
@@ -177,20 +177,20 @@ static void AppendDeclarations(std::string &out, const StyleProperties &p) {
 		default:
 			break;
 		}
-		Decl(out, "flex-direction", v);
+		decl(out, "flex-direction", v);
 	}
-	if (p.justifyContent) {
+	if (p.justify_content) {
 		const char *v = "start";
-		if (*p.justifyContent == JustifyContent::Center) {
+		if (*p.justify_content == JustifyContent::Center) {
 			v = "center";
-		} else if (*p.justifyContent == JustifyContent::End) {
+		} else if (*p.justify_content == JustifyContent::End) {
 			v = "end";
 		}
-		Decl(out, "justify-content", v);
+		decl(out, "justify-content", v);
 	}
-	if (p.alignItems) {
+	if (p.align_items) {
 		const char *v = "start";
-		switch (*p.alignItems) {
+		switch (*p.align_items) {
 		case AlignItems::End:
 			v = "end";
 			break;
@@ -203,13 +203,13 @@ static void AppendDeclarations(std::string &out, const StyleProperties &p) {
 		default:
 			break;
 		}
-		Decl(out, "align-items", v);
+		decl(out, "align-items", v);
 	}
-	if (p.flexGrow) {
-		Decl(out, "flex-grow", FmtFloat(*p.flexGrow));
+	if (p.flex_grow) {
+		decl(out, "flex-grow", fmt_float(*p.flex_grow));
 	}
-	if (p.flexWrap) {
-		Decl(out, "flex-wrap", *p.flexWrap == FlexWrap::Wrap ? "wrap" : "nowrap");
+	if (p.flex_wrap) {
+		decl(out, "flex-wrap", *p.flex_wrap == FlexWrap::Wrap ? "wrap" : "nowrap");
 	}
 
 	if (p.position) {
@@ -219,48 +219,48 @@ static void AppendDeclarations(std::string &out, const StyleProperties &p) {
 		} else if (*p.position == Position::Absolute) {
 			v = "absolute";
 		}
-		Decl(out, "position", v);
+		decl(out, "position", v);
 	}
 	if (p.top) {
-		Decl(out, "top", FmtLength(*p.top));
+		decl(out, "top", fmt_length(*p.top));
 	}
 	if (p.right) {
-		Decl(out, "right", FmtLength(*p.right));
+		decl(out, "right", fmt_length(*p.right));
 	}
 	if (p.bottom) {
-		Decl(out, "bottom", FmtLength(*p.bottom));
+		decl(out, "bottom", fmt_length(*p.bottom));
 	}
 	if (p.left) {
-		Decl(out, "left", FmtLength(*p.left));
+		decl(out, "left", fmt_length(*p.left));
 	}
-	if (p.zIndex) {
-		Decl(out, "z-index", std::to_string(*p.zIndex));
+	if (p.z_index) {
+		decl(out, "z-index", std::to_string(*p.z_index));
 	}
 
-	if (p.fontFamily) {
-		Decl(out, "font-family", *p.fontFamily);
+	if (p.font_family) {
+		decl(out, "font-family", *p.font_family);
 	}
-	if (p.fontSize) {
-		Decl(out, "font-size", FmtFloat(*p.fontSize));
+	if (p.font_size) {
+		decl(out, "font-size", fmt_float(*p.font_size));
 	}
-	if (p.textAlign) {
+	if (p.text_align) {
 		const char *v = "left";
-		if (*p.textAlign == TextAlign::Center) {
+		if (*p.text_align == TextAlign::Center) {
 			v = "center";
-		} else if (*p.textAlign == TextAlign::Right) {
+		} else if (*p.text_align == TextAlign::Right) {
 			v = "right";
 		}
-		Decl(out, "text-align", v);
+		decl(out, "text-align", v);
 	}
 
-	if (p.transitionDuration) {
+	if (p.transition_duration) {
 		char buf[32];
-		std::snprintf(buf, sizeof(buf), "%.4gms", *p.transitionDuration);
-		Decl(out, "transition-duration", buf);
+		std::snprintf(buf, sizeof(buf), "%.4gms", *p.transition_duration);
+		decl(out, "transition-duration", buf);
 	}
-	if (p.transitionEasing) {
+	if (p.transition_easing) {
 		const char *v = "linear";
-		switch (*p.transitionEasing) {
+		switch (*p.transition_easing) {
 		case TransitionEasing::Ease:
 			v = "ease";
 			break;
@@ -276,47 +276,47 @@ static void AppendDeclarations(std::string &out, const StyleProperties &p) {
 		default:
 			break;
 		}
-		Decl(out, "transition-easing", v);
+		decl(out, "transition-easing", v);
 	}
 
-	if (p.boxShadows && !p.boxShadows->empty()) {
+	if (p.box_shadows && !p.box_shadows->empty()) {
 		std::string value;
-		for (size_t i = 0; i < p.boxShadows->size(); ++i) {
+		for (size_t i = 0; i < p.box_shadows->size(); ++i) {
 			if (i > 0) {
 				value += ", ";
 			}
-			const BoxShadow &sh = (*p.boxShadows)[i];
+			const BoxShadow &sh = (*p.box_shadows)[i];
 			if (sh.inset) {
 				value += "inset ";
 			}
-			value += FmtFloat(sh.offset.x) + "px ";
-			value += FmtFloat(sh.offset.y) + "px ";
-			value += FmtFloat(sh.blur) + "px ";
-			value += FmtFloat(sh.spread) + "px ";
-			value += FmtColor(sh.color);
+			value += fmt_float(sh.offset.x) + "px ";
+			value += fmt_float(sh.offset.y) + "px ";
+			value += fmt_float(sh.blur) + "px ";
+			value += fmt_float(sh.spread) + "px ";
+			value += fmt_color(sh.color);
 		}
-		Decl(out, "box-shadow", value);
+		decl(out, "box-shadow", value);
 	}
 }
 
-std::string Theme::ToAqStyle() const {
+std::string Theme::to_aq_style() const {
 	std::string out;
 	out += "/* Generated from Theme — load via StyleParser::LoadString() or LoadFile() */\n";
 
-	if (!m_Colors.empty()) {
+	if (!m_colors.empty()) {
 		out += "\n/* @palette — reference only, not loaded by the parser */\n";
-		std::vector<std::pair<std::string, vec4>> colors(m_Colors.begin(), m_Colors.end());
-		std::ranges::sort(colors, {}, &std::pair<std::string, vec4>::first);
+		std::vector<std::pair<std::string, Vec4>> colors(m_colors.begin(), m_colors.end());
+		std::ranges::sort(colors, {}, &std::pair<std::string, Vec4>::first);
 		for (const auto &[name, color] : colors) {
 			char buf[128];
-			std::snprintf(buf, sizeof(buf), "/* @color %-24s %s */\n", (name + ":").c_str(), FmtColor(color).c_str());
+			std::snprintf(buf, sizeof(buf), "/* @color %-24s %s */\n", (name + ":").c_str(), fmt_color(color).c_str());
 			out += buf;
 		}
 	}
 
-	if (!m_Constants.empty()) {
+	if (!m_constants.empty()) {
 		out += "\n/* @constants — reference only, not loaded by the parser */\n";
-		std::vector<std::pair<std::string, float>> constants(m_Constants.begin(), m_Constants.end());
+		std::vector<std::pair<std::string, float>> constants(m_constants.begin(), m_constants.end());
 		std::ranges::sort(constants, {}, &std::pair<std::string, float>::first);
 		for (const auto &[name, value] : constants) {
 			char buf[64];
@@ -325,37 +325,37 @@ std::string Theme::ToAqStyle() const {
 		}
 	}
 
-	using Entry = const decltype(m_Styles)::value_type *;
+	using Entry = const decltype(m_styles)::value_type *;
 	std::vector<Entry> entries;
-	entries.reserve(m_Styles.size());
-	for (const auto &kv : m_Styles) {
+	entries.reserve(m_styles.size());
+	for (const auto &kv : m_styles) {
 		entries.push_back(&kv);
 	}
 	std::ranges::sort(entries, [](Entry a, Entry b) {
-		if (a->first.typeName != b->first.typeName) {
-			return a->first.typeName < b->first.typeName;
+		if (a->first.type_name != b->first.type_name) {
+			return a->first.type_name < b->first.type_name;
 		}
-		return a->first.pseudoClass < b->first.pseudoClass;
+		return a->first.pseudo_class < b->first.pseudo_class;
 	});
 
 	for (const auto *entry : entries) {
 		const auto &[key, props] = *entry;
 		out += "\n";
-		out += key.typeName;
-		if (!key.pseudoClass.empty()) {
+		out += key.type_name;
+		if (!key.pseudo_class.empty()) {
 			out += ":";
-			out += key.pseudoClass;
+			out += key.pseudo_class;
 		}
 		out += " {\n";
-		AppendDeclarations(out, props);
+		append_declarations(out, props);
 		out += "}\n";
 	}
 
 	return out;
 }
 
-bool Theme::SaveToFile(const std::string &path) const {
-	return Platform::Filesystem::VirtualFileSystem::Get()->WriteTextFile(path, ToAqStyle());
+bool Theme::save_to_file(const std::string &path) const {
+	return Platform::Filesystem::VirtualFileSystem::get()->write_text_file(path, to_aq_style());
 }
 
 } // namespace Aquila::UI

@@ -3,48 +3,48 @@
 namespace Aquila::UI::Core {
 
 Collapsible::Collapsible(std::string title) {
-	auto header = CreateUnique<Button>();
-	header->SetText(std::move(title));
-	header->AddClass("collapsible-header");
-	header->onClick.Connect([this] {
-		SetExpanded(!m_Expanded);
-		onToggled(m_Expanded);
+	auto header = create_unique<Button>();
+	header->set_text(std::move(title));
+	header->add_class("collapsible-header");
+	header->on_click.connect([this] {
+		set_expanded(!m_expanded);
+		on_toggled(m_expanded);
 	});
-	m_Header = static_cast<Button *>(AddChild(std::move(header)));
+	m_header = static_cast<Button *>(add_child(std::move(header)));
 
-	auto content = CreateUnique<View>();
-	content->AddClass("collapsible-content");
-	m_Content = AddChild(std::move(content));
-	ApplyState(); // apply initial collapsed/expanded display state
+	auto content = create_unique<View>();
+	content->add_class("collapsible-content");
+	m_content = add_child(std::move(content));
+	apply_state(); // apply initial collapsed/expanded display state
 }
 
-void Collapsible::SetTitle(std::string title) {
-	m_Header->SetText(std::move(title));
+void Collapsible::set_title(std::string title) {
+	m_header->set_text(std::move(title));
 }
 
-void Collapsible::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void Collapsible::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
-		m_Header->ApplyXmlAttribute(name, value, loaderCtx);
+		m_header->apply_xml_attribute(name, value, loader_ctx);
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
-void Collapsible::SetExpanded(bool expanded) {
-	if (expanded == m_Expanded) {
+void Collapsible::set_expanded(bool expanded) {
+	if (expanded == m_expanded) {
 		return;
 	}
-	m_Expanded = expanded;
-	ApplyState();
+	m_expanded = expanded;
+	apply_state();
 }
 
 
-View *Collapsible::AddContent(Unique<View> child) {
-	return m_Content->AddChild(std::move(child));
+View *Collapsible::add_content(Unique<View> child) {
+	return m_content->add_child(std::move(child));
 }
 
-void Collapsible::ApplyState() {
-	m_Content->SetHidden(!m_Expanded);
+void Collapsible::apply_state() {
+	m_content->set_hidden(!m_expanded);
 }
 
 } // namespace Aquila::UI::Core

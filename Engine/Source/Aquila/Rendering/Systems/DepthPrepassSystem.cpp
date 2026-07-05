@@ -19,95 +19,95 @@ using namespace Graphics;
 using Aquila::SharedConstants::SHADERS_DIR;
 
 struct DepthPushConstants {
-	mat4 model;
+	Mat4 model;
 };
 
-void DepthPrepassSystem::OnInit(GFX::GfxContext &ctx) {
-	RenderingSystemBase::OnInit(ctx);
+void DepthPrepassSystem::on_init(GFX::GfxContext &ctx) {
+	RenderingSystemBase::on_init(ctx);
 
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
-	if (!RHI::VulkanShaderCompiler::CompileFile(SHADERS_DIR + "DepthOnly.slang", stages, err)) {
+	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "DepthOnly.slang", stages, err)) {
 		AQUILA_LOG_ERROR("DepthPrepassSystem: shader compile failed: {}", err);
 		return;
 	}
 
-	RHI::GraphicsPipelineDesc pipelineDescriptor{};
+	RHI::GraphicsPipelineDesc pipeline_descriptor{};
 	for (auto &stage : stages) {
-		RHI::ShaderStageDesc shaderDescriptor{ .spirv = stage.spirv, .entryPoint = stage.entryPointName };
+		RHI::ShaderStageDesc shader_descriptor{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
 		if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			shaderDescriptor.stage = RHI::ShaderStageFlags::Vertex;
-			pipelineDescriptor.vertexShader = shaderDescriptor;
+			shader_descriptor.stage = RHI::ShaderStageFlags::Vertex;
+			pipeline_descriptor.vertex_shader = shader_descriptor;
 		} else {
-			shaderDescriptor.stage = RHI::ShaderStageFlags::Fragment;
-			pipelineDescriptor.fragmentShader = shaderDescriptor;
+			shader_descriptor.stage = RHI::ShaderStageFlags::Fragment;
+			pipeline_descriptor.fragment_shader = shader_descriptor;
 		}
 	}
 
-	pipelineDescriptor.colorFormats = {}; // depth-only
-	pipelineDescriptor.depthFormat = RHI::TextureFormat::Depth32;
-	pipelineDescriptor.topology = RHI::PrimitiveTopology::TriangleList;
-	pipelineDescriptor.raster.cullMode = RHI::CullMode::Back;
-	pipelineDescriptor.raster.frontFace = RHI::FrontFace::Clockwise;
-	pipelineDescriptor.depthStencil.depthTest = true;
-	pipelineDescriptor.depthStencil.depthWrite = true;
-	pipelineDescriptor.setLayouts = { &SceneFrameData::Get()->GetLayout().GetRHI() };
-	pipelineDescriptor.pushConstants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
-	m_Pipeline = ctx.CreateGraphicsPipeline(pipelineDescriptor);
+	pipeline_descriptor.color_formats = {}; // depth-only
+	pipeline_descriptor.depth_format = RHI::TextureFormat::Depth32;
+	pipeline_descriptor.topology = RHI::PrimitiveTopology::TriangleList;
+	pipeline_descriptor.raster.cull_mode = RHI::CullMode::Back;
+	pipeline_descriptor.raster.front_face = RHI::FrontFace::Clockwise;
+	pipeline_descriptor.depth_stencil.depth_test = true;
+	pipeline_descriptor.depth_stencil.depth_write = true;
+	pipeline_descriptor.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi() };
+	pipeline_descriptor.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
+	m_pipeline = ctx.create_graphics_pipeline(pipeline_descriptor);
 }
 
-void DepthPrepassSystem::AddPasses(RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_Pipeline) {
+void DepthPrepassSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
+	if (!m_pipeline) {
 		return;
 	}
 
-	auto &registry = ctx.scene->GetRegistry();
+	auto &registry = ctx.scene->get_registry();
 	auto view = registry.view<TransformComponent, MeshComponent>();
 
 	struct DrawCall {
-		Ref<GFX::GfxMesh> gpuMesh;
-		mat4 model;
+		Ref<GFX::GfxMesh> gpu_mesh;
+		Mat4 model;
 	};
 
-	std::vector<DrawCall> drawCalls;
-	drawCalls.reserve(view.size_hint());
+	std::vector<DrawCall> draw_calls;
+	draw_calls.reserve(view.size_hint());
 
 	for (auto entity : view) {
 		auto &transform = view.get<TransformComponent>(entity);
 		auto &mesh = view.get<MeshComponent>(entity);
-		if (!mesh.IsValid()) {
+		if (!mesh.is_valid()) {
 			continue;
 		}
 
-		drawCalls.push_back({
-			.gpuMesh = GetOrUploadMesh(mesh.data),
-			.model = transform.GetWorldMatrix(),
+		draw_calls.push_back({
+			.gpu_mesh = get_or_upload_mesh(mesh.data),
+			.model = transform.get_world_matrix(),
 		});
 	}
 
-	auto *frameData = ctx.frameData;
-	const uint32 frameSlot = ctx.frameSlot;
+	auto *frame_data = ctx.frame_data;
+	const Uint32 frame_slot = ctx.frame_slot;
 
-	graph.AddPass(
+	graph.add_pass(
 		"DepthPrepass",
 		[&ctx](RG::RGPassBuilder &builder) {
-			ctx.hDepth =
-				builder.SetDepthAttachment(ctx.hDepth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
-										   RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
-										   /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
+			ctx.h_depth =
+				builder.set_depth_attachment(ctx.h_depth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
+											 RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
+											 /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
-		[this, drawCalls = std::move(drawCalls), frameData, frameSlot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
-			if (drawCalls.empty()) {
+		[this, draw_calls = std::move(draw_calls), frame_data, frame_slot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+			if (draw_calls.empty()) {
 				return;
 			}
-			cmd.BindPipeline(*m_Pipeline);
-			cmd.BindDescriptorSet(0, frameData->GetDescriptorSet(frameSlot));
-			for (const auto &drawCall : drawCalls) {
-				DepthPushConstants pushConstants{ .model = drawCall.model };
-				cmd.PushConstants(pushConstants, RHI::ShaderStageFlags::Vertex);
-				cmd.BindVertexBuffer(drawCall.gpuMesh->GetVertexBuffer());
-				cmd.BindIndexBuffer(drawCall.gpuMesh->GetIndexBuffer());
-				cmd.DrawIndexed(drawCall.gpuMesh->GetIndexCount());
+			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
+			for (const auto &draw_call : draw_calls) {
+				DepthPushConstants push_constants{ .model = draw_call.model };
+				cmd.push_constants(push_constants, RHI::ShaderStageFlags::Vertex);
+				cmd.bind_vertex_buffer(draw_call.gpu_mesh->get_vertex_buffer());
+				cmd.bind_index_buffer(draw_call.gpu_mesh->get_index_buffer());
+				cmd.draw_indexed(draw_call.gpu_mesh->get_index_count());
 			}
 		});
 }

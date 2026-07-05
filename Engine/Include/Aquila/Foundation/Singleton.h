@@ -1,25 +1,24 @@
 #ifndef SINGLETON_H
 #define SINGLETON_H
 
-#include "Aquila/Foundation/Log.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Defines.h"
-#include <typeinfo>
+#include <string>
 
 namespace Aquila::Foundation {
 template <class T> class Singleton {
   public:
-	template <typename... Args> static void Init(Args &&...args) {
+	template <typename... Args> static void init(Args &&...args) {
 		AQUILA_ASSERT(!s_Instance, (std::string(typeid(T).name()) + ": Singleton already initialized").c_str());
 		s_Instance = new T(std::forward<Args>(args)...);
 	}
 
-	static T *Get() {
+	static T *get() {
 		AQUILA_ASSERT(s_Instance, (std::string(typeid(T).name()) + ": Singleton not initialized").c_str());
 		return s_Instance;
 	}
 
-	static void Shutdown() {
+	static void shutdown() {
 		AQUILA_ASSERT(s_Instance, (std::string(typeid(T).name()) + ": Singleton not initialized").c_str());
 		delete s_Instance;
 		s_Instance = nullptr;
@@ -27,7 +26,7 @@ template <class T> class Singleton {
 
   protected:
 	Singleton() = default;
-	~Singleton() {};
+	~Singleton() = default;
 
   private:
 	static inline T *s_Instance = nullptr;

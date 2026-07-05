@@ -21,28 +21,28 @@ namespace Aquila::Graphics {
 struct MaterialCreateInfo {
 	MaterialType type = MaterialType::PBR;
 
-	std::vector<RHI::TextureFormat> colorFormats = { RHI::TextureFormat::RGBA16F };
-	RHI::TextureFormat depthFormat = RHI::TextureFormat::Depth32;
+	std::vector<RHI::TextureFormat> color_formats = { RHI::TextureFormat::RGBA16F };
+	RHI::TextureFormat depth_format = RHI::TextureFormat::Depth32;
 
-	RHI::CullMode cullMode = RHI::CullMode::Back;
-	RHI::FrontFace frontFace = RHI::FrontFace::Clockwise;
+	RHI::CullMode cull_mode = RHI::CullMode::Back;
+	RHI::FrontFace front_face = RHI::FrontFace::Clockwise;
 
-	bool depthTest = true;
-	bool depthWrite = true;
+	bool depth_test = true;
+	bool depth_write = true;
 
-	bool blendEnabled = false;
+	bool blend_enabled = false;
 
-	uint32 pushConstantSize = 256;
+	Uint32 push_constant_size = 256;
 };
 
 class MaterialFactory : public Foundation::Singleton<MaterialFactory> {
   public:
-	Ref<Material> Create(GFX::GfxContext &ctx, const std::string &shaderPath, MaterialCreateInfo info);
+	Ref<Material> create(GFX::GfxContext &ctx, const std::string &shader_path, MaterialCreateInfo info);
 
-	void Tick(GFX::GfxContext &ctx);
+	void tick(GFX::GfxContext &ctx);
 
-	void EnableHotReload(bool enable) { m_Watcher.Enable(enable); }
-	[[nodiscard]] bool IsHotReloadEnabled() const { return m_Watcher.IsEnabled(); }
+	void enable_hot_reload(bool enable) { m_watcher.enable(enable); }
+	[[nodiscard]] bool is_hot_reload_enabled() const { return m_watcher.is_enabled(); }
 
   private:
 	struct Entry {
@@ -51,13 +51,13 @@ class MaterialFactory : public Foundation::Singleton<MaterialFactory> {
 		std::vector<WeakRef<Material>> instances;
 	};
 
-	std::unordered_map<std::string, Entry> m_Entries;
-	Shader::ShaderWatcher m_Watcher;
+	std::unordered_map<std::string, Entry> m_entries;
+	Shader::ShaderWatcher m_watcher;
 
-	static Ref<GFX::GfxPipeline> BuildPipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
+	static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
 											   const MaterialCreateInfo &info);
 
-	void RebuildEntry(GFX::GfxContext &ctx, Entry &entry, const std::string &shaderPath);
+	void rebuild_entry(GFX::GfxContext &ctx, Entry &entry, const std::string &shader_path);
 };
 
 } // namespace Aquila::Graphics

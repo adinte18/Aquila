@@ -16,54 +16,54 @@ struct VulkanPipelineConfig {
 	VulkanPipelineConfig() = default;
 	AQUILA_NONCOPYABLE(VulkanPipelineConfig);
 
-	std::vector<VkVertexInputBindingDescription> bindingDescriptions{};
-	std::vector<VkVertexInputAttributeDescription> attributeDescriptions{};
-	VkPipelineViewportStateCreateInfo viewportInfo{};
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{};
-	VkPipelineRasterizationStateCreateInfo rasterizationInfo{};
-	VkPipelineMultisampleStateCreateInfo multisampleInfo{};
-	std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments{};
-	VkPipelineColorBlendStateCreateInfo colorBlendInfo{};
-	VkPipelineDepthStencilStateCreateInfo depthStencilInfo{};
-	std::vector<VkDynamicState> dynamicStateEnables{};
-	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
-	VkPipelineLayout pipelineLayout = VK_NULL_HANDLE;
-	std::optional<VertexBindingDesc> customVertexLayout;
-	const void *pNext = nullptr;
-	VkRenderPass renderPass = VK_NULL_HANDLE;
-	std::vector<VkFormat> colorFormats;
-	VkFormat depthFormat = VK_FORMAT_UNDEFINED;
-	VkFormat stencilFormat = VK_FORMAT_UNDEFINED;
+	std::vector<VkVertexInputBindingDescription> binding_descriptions{};
+	std::vector<VkVertexInputAttributeDescription> attribute_descriptions{};
+	VkPipelineViewportStateCreateInfo viewport_info{};
+	VkPipelineInputAssemblyStateCreateInfo input_assembly_info{};
+	VkPipelineRasterizationStateCreateInfo rasterization_info{};
+	VkPipelineMultisampleStateCreateInfo multisample_info{};
+	std::vector<VkPipelineColorBlendAttachmentState> color_blend_attachments{};
+	VkPipelineColorBlendStateCreateInfo color_blend_info{};
+	VkPipelineDepthStencilStateCreateInfo depth_stencil_info{};
+	std::vector<VkDynamicState> dynamic_state_enables{};
+	VkPipelineDynamicStateCreateInfo dynamic_state_create_info{};
+	VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+	std::optional<VertexBindingDesc> custom_vertex_layout;
+	const void *p_next = nullptr;
+	VkRenderPass render_pass = VK_NULL_HANDLE;
+	std::vector<VkFormat> color_formats;
+	VkFormat depth_format = VK_FORMAT_UNDEFINED;
+	VkFormat stencil_format = VK_FORMAT_UNDEFINED;
 };
 
 class VulkanPipeline final : public IRHIPipeline {
   public:
 	VulkanPipeline(VulkanDevice &device, const std::vector<VkPipelineShaderStageCreateInfo> &stages,
-				   const VulkanPipelineConfig &configInfo);
+				   const VulkanPipelineConfig &config_info);
 	~VulkanPipeline() override;
 
 	AQUILA_NONCOPYABLE(VulkanPipeline);
 
 	// IRHIPipeline
-	void Bind(IRHICommandList &cmd) override;
-	[[nodiscard]] PipelineBindPoint GetBindPoint() const override { return PipelineBindPoint::Graphics; }
+	void bind(IRHICommandList &cmd) override;
+	[[nodiscard]] PipelineBindPoint get_bind_point() const override { return PipelineBindPoint::Graphics; }
 
 	// Vulkan-specific
 	void Bind(VulkanCommandList &cmd) const;
-	[[nodiscard]] VkPipeline GetPipeline() const { return m_GraphicsPipeline; }
-	[[nodiscard]] VkPipelineLayout GetLayout() const { return m_Layout; }
+	[[nodiscard]] VkPipeline get_pipeline() const { return m_graphics_pipeline; }
+	[[nodiscard]] VkPipelineLayout get_layout() const { return m_layout; }
 
-	static void DefaultPipelineConfig(VulkanPipelineConfig &configInfo);
+	static void default_pipeline_config(VulkanPipelineConfig &config_info);
 
   private:
-	void CreatePipelineFromStages(const std::vector<VkPipelineShaderStageCreateInfo> &stages,
-								  const VulkanPipelineConfig &configInfo);
-	void CreatePipelineCache();
+	void create_pipeline_from_stages(const std::vector<VkPipelineShaderStageCreateInfo> &stages,
+								  const VulkanPipelineConfig &config_info);
+	void create_pipeline_cache();
 
-	VulkanDevice &m_Device;
-	VkPipeline m_GraphicsPipeline = VK_NULL_HANDLE;
-	VkPipelineLayout m_Layout = VK_NULL_HANDLE;
-	VkPipelineCache m_PipelineCache = VK_NULL_HANDLE;
+	VulkanDevice &m_device;
+	VkPipeline m_graphics_pipeline = VK_NULL_HANDLE;
+	VkPipelineLayout m_layout = VK_NULL_HANDLE;
+	VkPipelineCache m_pipeline_cache = VK_NULL_HANDLE;
 };
 
 } // namespace Aquila::RHI

@@ -17,9 +17,9 @@
 #include <vector>
 
 struct ApplicationSpec {
-	std::string Name = "Aquila";
-	uint32 Width = 1920;
-	uint32 Height = 1080;
+	std::string name = "Aquila";
+	Uint32 width = 1920;
+	Uint32 height = 1080;
 };
 
 namespace Aquila::Graphics {
@@ -32,14 +32,14 @@ struct RenderWindow {
 	Unique<Window> window;
 	Ref<GFX::GfxSwapchain> swapchain;
 
-	Ref<GFX::GfxTexture> msaaColor;
-	Ref<GFX::GfxRenderPass> renderPass;
-	bool needsResize = false;
+	Ref<GFX::GfxTexture> msaa_color;
+	Ref<GFX::GfxRenderPass> render_pass;
+	bool needs_resize = false;
 
-	Delegate<void(f32)> onUpdate;
-	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> onRender;
-	Delegate<void(Events::Event &)> onEvent;
-	Delegate<void()> onClose;
+	Delegate<void(F32)> on_update;
+	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> on_render;
+	Delegate<void(Events::Event &)> on_event;
+	Delegate<void()> on_close;
 };
 
 class Application {
@@ -50,54 +50,54 @@ class Application {
 	AQUILA_NONCOPYABLE(Application);
 	AQUILA_NONMOVEABLE(Application);
 
-	void Run();
-	void Close();
+	void run();
+	void close();
 
-	Window &GetWindow() { return *m_Window; }
+	Window &get_window() { return *m_window; }
 
   protected:
-	virtual void OnInit() {}
-	virtual void OnShutdown() {}
-	virtual void OnPreRender(f32 deltaTime) {}
-	virtual void OnEvent(Events::Event &event) {}
-	virtual void OnResize(uint32 width, uint32 height) {}
+	virtual void on_init() {}
+	virtual void on_shutdown() {}
+	virtual void on_pre_render(F32 delta_time) {}
+	virtual void on_event(Events::Event &event) {}
+	virtual void on_resize(Uint32 width, Uint32 height) {}
 
-	GFX::GfxContext &GetContext() { return *m_Ctx; }
-	GFX::GfxTexture &GetRenderOutput() { return m_RenderPipeline->GetOutput(); }
-	SceneManagement::Scene &GetScene() { return *m_Scene; }
-	Rendering::RenderPipeline &GetRenderPipeline() { return *m_RenderPipeline; }
-	Rendering::Renderer &GetRenderer() { return *m_Renderer; }
-	Rendering::Renderer2D &GetRenderer2D() { return *m_Renderer2D; }
+	GFX::GfxContext &get_context() { return *m_ctx; }
+	GFX::GfxTexture &get_render_output() { return m_render_pipeline->get_output(); }
+	SceneManagement::Scene &get_scene() { return *m_scene; }
+	Rendering::RenderPipeline &get_render_pipeline() { return *m_render_pipeline; }
+	Rendering::Renderer &get_renderer() { return *m_renderer; }
+	Rendering::Renderer2D &get_renderer2_d() { return *m_renderer2_d; }
 
-	RenderWindow &CreateSecondaryWindow(uint32 width, uint32 height, const std::string &title);
+	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
 
   private:
-	void RouteWindowEvent(Events::Event &event);
-	void InternalUpdate(f32 deltaTime);
-	void InternalOnMainWindowEvent(Events::Event &event);
-	void InternalOnSecondaryWindowEvent(RenderWindow &rw, Events::Event &event);
-	void HandleResize();
-	void InitRendering(uint32 width, uint32 height);
+	void route_window_event(Events::Event &event);
+	void internal_update(F32 delta_time);
+	void internal_on_main_window_event(Events::Event &event);
+	void internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event);
+	void handle_resize();
+	void init_rendering(Uint32 width, Uint32 height);
 
-	void RenderSecondaryWindows();
-	void RenderOneSecondaryWindow(RenderWindow &rw);
-	void EnsureWindowTargets(RenderWindow &rw, uint32 width, uint32 height);
+	void render_secondary_windows();
+	void render_one_secondary_window(RenderWindow &rw);
+	void ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height);
 
-	ApplicationSpec m_Spec;
-	Unique<Window> m_Window;
-	Unique<Foundation::Stopwatch> m_Timer;
-	bool m_Running = true;
-	bool m_PendingResize = false;
+	ApplicationSpec m_spec;
+	Unique<Window> m_window;
+	Unique<Foundation::Stopwatch> m_timer;
+	bool m_running = true;
+	bool m_pending_resize = false;
 
-	Unique<GFX::GfxContext> m_Ctx;
-	Ref<GFX::GfxSwapchain> m_Swapchain;
-	Unique<SceneManagement::Scene> m_Scene;
-	Unique<Rendering::RenderPipeline> m_RenderPipeline;
-	Rendering::Renderer *m_Renderer = nullptr;
-	Rendering::Renderer2D *m_Renderer2D = nullptr;
+	Unique<GFX::GfxContext> m_ctx;
+	Ref<GFX::GfxSwapchain> m_swapchain;
+	Unique<SceneManagement::Scene> m_scene;
+	Unique<Rendering::RenderPipeline> m_render_pipeline;
+	Rendering::Renderer *m_renderer = nullptr;
+	Rendering::Renderer2D *m_renderer2_d = nullptr;
 
-	Unique<Graphics::QuadBatcher> m_SecondaryBatcher;
-	std::vector<Unique<RenderWindow>> m_SecondaryWindows;
+	Unique<Graphics::QuadBatcher> m_secondary_batcher;
+	std::vector<Unique<RenderWindow>> m_secondary_windows;
 };
 
 } // namespace Aquila::Application

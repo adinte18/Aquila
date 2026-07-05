@@ -11,8 +11,8 @@ class VulkanDevice;
 
 class VulkanCommandList final : public IRHICommandList {
   public:
-	VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, CommandListType type, const std::string &name);
-	VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, VkCommandBuffer existingCmd,
+	VulkanCommandList(VulkanDevice &device, VkCommandPool command_pool, CommandListType type, const std::string &name);
+	VulkanCommandList(VulkanDevice &device, VkCommandPool command_pool, VkCommandBuffer existing_cmd,
 					  CommandListType type, const std::string &name);
 	~VulkanCommandList() override;
 
@@ -20,62 +20,62 @@ class VulkanCommandList final : public IRHICommandList {
 	AQUILA_NONMOVEABLE(VulkanCommandList);
 
 	// IRHICommandList — lifecycle
-	void Begin() override;
-	void Reset() override;
-	void End() override;
+	void begin() override;
+	void reset() override;
+	void end() override;
 
-	[[nodiscard]] bool IsRecording() const override { return m_IsRecording; }
-	[[nodiscard]] CommandListType GetType() const override { return m_Type; }
-	[[nodiscard]] const std::string &GetName() const override { return m_Name; }
-
-	// IRHICommandList
-	void TransitionTexture(IRHITexture &texture, ResourceState oldState, ResourceState newState) override;
-	void TransitionBuffer(IRHIBuffer &buffer, ResourceState oldState, ResourceState newState) override;
+	[[nodiscard]] bool is_recording() const override { return m_is_recording; }
+	[[nodiscard]] CommandListType get_type() const override { return m_type; }
+	[[nodiscard]] const std::string &get_name() const override { return m_name; }
 
 	// IRHICommandList
-	void BindPipeline(IRHIPipeline &pipeline) override;
-	void SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) override;
-	void SetScissor(int32 x, int32 y, uint32 width, uint32 height) override;
+	void transition_texture(IRHITexture &texture, ResourceState old_state, ResourceState new_state) override;
+	void transition_buffer(IRHIBuffer &buffer, ResourceState old_state, ResourceState new_state) override;
 
 	// IRHICommandList
-	void BindDescriptorSet(uint32 set, IRHIDescriptorSet &descriptorSet) override;
-	void PushConstants(const void *data, uint32 size, ShaderStageFlags stages, uint32 offset) override;
-	void BindVertexBuffer(IRHIBuffer &buffer, uint32 binding, uint64 offset) override;
-	void BindIndexBuffer(IRHIBuffer &buffer, IndexFormat format, uint64 offset) override;
+	void bind_pipeline(IRHIPipeline &pipeline) override;
+	void set_viewport(float x, float y, float width, float height, float min_depth, float max_depth) override;
+	void set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height) override;
 
 	// IRHICommandList
-	void Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance) override;
-	void DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset,
-					 uint32 firstInstance) override;
-	void DrawIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
-	void DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) override;
-
-	void CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height, uint32 dstArrayLayer = 0,
-							 uint32 dstMipLevel = 0) override;
-
-	void FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) override;
-
-	void Dispatch(uint32 x, uint32 y, uint32 z) override;
+	void bind_descriptor_set(Uint32 set, IRHIDescriptorSet &descriptor_set) override;
+	void push_constants(const void *data, Uint32 size, ShaderStageFlags stages, Uint32 offset) override;
+	void bind_vertex_buffer(IRHIBuffer &buffer, Uint32 binding, Uint64 offset) override;
+	void bind_index_buffer(IRHIBuffer &buffer, IndexFormat format, Uint64 offset) override;
 
 	// IRHICommandList
-	void PushDebugGroup(const char *name) override;
-	void PopDebugGroup() override;
+	void draw(Uint32 vertex_count, Uint32 instance_count, Uint32 first_vertex, Uint32 first_instance) override;
+	void draw_indexed(Uint32 index_count, Uint32 instance_count, Uint32 first_index, Int32 vertex_offset,
+					 Uint32 first_instance) override;
+	void draw_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) override;
+	void draw_indexed_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) override;
+
+	void copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height, Uint32 dst_array_layer = 0,
+							 Uint32 dst_mip_level = 0) override;
+
+	void fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) override;
+
+	void dispatch(Uint32 x, Uint32 y, Uint32 z) override;
+
+	// IRHICommandList
+	void push_debug_group(const char *name) override;
+	void pop_debug_group() override;
 
 	// Vulkan-specific accessors for internal use (RenderPass, Device, etc.)
-	[[nodiscard]] VkCommandBuffer GetHandle() const { return m_CommandBuffer; }
-	[[nodiscard]] VkCommandPool GetPool() const { return m_CommandPool; }
+	[[nodiscard]] VkCommandBuffer get_handle() const { return m_command_buffer; }
+	[[nodiscard]] VkCommandPool get_pool() const { return m_command_pool; }
 
   private:
-	VkCommandBuffer m_CommandBuffer = VK_NULL_HANDLE;
-	VkCommandPool m_CommandPool = VK_NULL_HANDLE;
-	CommandListType m_Type;
-	std::string m_Name;
-	bool m_IsRecording = false;
-	VulkanDevice &m_Device;
+	VkCommandBuffer m_command_buffer = VK_NULL_HANDLE;
+	VkCommandPool m_command_pool = VK_NULL_HANDLE;
+	CommandListType m_type;
+	std::string m_name;
+	bool m_is_recording = false;
+	VulkanDevice &m_device;
 
 	// Captured by BindPipeline; required for BindDescriptorSet, PushConstants, and Dispatch.
-	VkPipelineLayout m_BoundPipelineLayout = VK_NULL_HANDLE;
-	VkPipelineBindPoint m_BoundBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	VkPipelineLayout m_bound_pipeline_layout = VK_NULL_HANDLE;
+	VkPipelineBindPoint m_bound_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
 };
 
 } // namespace Aquila::RHI

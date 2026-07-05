@@ -6,111 +6,111 @@
 
 namespace Aquila::Foundation {
 
-void Profiler::BeginFrame() {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	m_FrameStart = Now();
-	m_CurrentDepth = 0;
-	m_CurrentFrameEntries.clear();
-	m_FrameNumber++;
+void Profiler::begin_frame() {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	m_frame_start = now();
+	m_current_depth = 0;
+	m_current_frame_entries.clear();
+	m_frame_number++;
 }
 
-void Profiler::EndFrame() {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::end_frame() {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-	m_FrameDuration = ElapsedMilliseconds(m_FrameStart, Now());
+	m_frame_duration = elapsed_milliseconds(m_frame_start, now());
 
 	// Sort by startTime so parents appear before their children throughout the rest of EndFrame,
 	// PrintLastFrame, and the stored frame history.
-	std::sort(m_CurrentFrameEntries.begin(), m_CurrentFrameEntries.end(),
-			  [](const ProfilerEntry &a, const ProfilerEntry &b) { return a.startTime < b.startTime; });
-	m_FrameCount++;
-	m_FPS = 1000.0 / m_FrameDuration;
+	std::sort(m_current_frame_entries.begin(), m_current_frame_entries.end(),
+			  [](const ProfilerEntry &a, const ProfilerEntry &b) { return a.start_time < b.start_time; });
+	m_frame_count++;
+	m_fps = 1000.0 / m_frame_duration;
 
-	m_FrameTimeHistory[m_FrameTimeHistoryIndex] = static_cast<f32>(m_FrameDuration);
-	m_FrameTimeHistoryIndex = (m_FrameTimeHistoryIndex + 1) % m_FrameTimeHistory.size();
+	m_frame_time_history[m_frame_time_history_index] = static_cast<F32>(m_frame_duration);
+	m_frame_time_history_index = (m_frame_time_history_index + 1) % m_frame_time_history.size();
 
-	f64 cpuTime = 0.0;
-	for (const auto &entry : m_CurrentFrameEntries) {
+	F64 cpu_time = 0.0;
+	for (const auto &entry : m_current_frame_entries) {
 		if (entry.depth == 0) {
-			cpuTime += entry.duration;
+			cpu_time += entry.duration;
 		}
 	}
 
-	FrameStats frameStats;
-	frameStats.frameDuration = m_FrameDuration;
-	frameStats.cpuTime = cpuTime;
-	frameStats.frameNumber = m_FrameNumber;
-	frameStats.timestamp = Now();
+	FrameStats frame_stats;
+	frame_stats.frame_duration = m_frame_duration;
+	frame_stats.cpu_time = cpu_time;
+	frame_stats.frame_number = m_frame_number;
+	frame_stats.timestamp = now();
 
-	m_FrameStatsHistory.push_back(frameStats);
-	if (m_FrameStatsHistory.size() > m_MaxHistoryFrames) {
-		m_FrameStatsHistory.erase(m_FrameStatsHistory.begin());
+	m_frame_stats_history.push_back(frame_stats);
+	if (m_frame_stats_history.size() > M_MAX_HISTORY_FRAMES) {
+		m_frame_stats_history.erase(m_frame_stats_history.begin());
 	}
 
-	for (auto &entry : m_CurrentFrameEntries) {
-		auto &stats = m_Stats[entry.name];
+	for (auto &entry : m_current_frame_entries) {
+		auto &stats = m_stats[entry.name];
 		stats.name = entry.name;
-		stats.totalDuration += entry.duration;
-		stats.minDuration = std::min(stats.minDuration, entry.duration);
-		stats.maxDuration = std::max(stats.maxDuration, entry.duration);
-		stats.frameCount++;
-		stats.avgDuration = stats.totalDuration / stats.frameCount;
-		stats.callCount += entry.callCount;
+		stats.total_duration += entry.duration;
+		stats.min_duration = std::min(stats.min_duration, entry.duration);
+		stats.max_duration = std::max(stats.max_duration, entry.duration);
+		stats.frame_count++;
+		stats.avg_duration = stats.total_duration / stats.frame_count;
+		stats.call_count += entry.call_count;
 		stats.depth = entry.depth;
 		stats.color = entry.color;
-		stats.threadId = entry.threadId;
+		stats.thread_id = entry.thread_id;
 
-		stats.recentDurations[stats.historyIndex] = static_cast<f32>(entry.duration);
-		stats.historyIndex = (stats.historyIndex + 1) % stats.recentDurations.size();
+		stats.recent_durations[stats.history_index] = static_cast<F32>(entry.duration);
+		stats.history_index = (stats.history_index + 1) % stats.recent_durations.size();
 	}
 
-	m_FrameHistory.push_back(m_CurrentFrameEntries);
-	if (m_FrameHistory.size() > m_MaxHistoryFrames) {
-		m_FrameHistory.erase(m_FrameHistory.begin());
+	m_frame_history.push_back(m_current_frame_entries);
+	if (m_frame_history.size() > M_MAX_HISTORY_FRAMES) {
+		m_frame_history.erase(m_frame_history.begin());
 	}
 
-	DetectBottlenecks();
+	detect_bottlenecks();
 }
 
-void Profiler::BeginSection(const std::string &name) {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::begin_section(const std::string &name) {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
 	ProfilerEntry entry;
 	entry.name = name;
-	entry.startTime = ElapsedMilliseconds(m_FrameStart, Now());
-	entry.depth = m_CurrentDepth;
-	entry.callCount = 1;
-	entry.threadId = std::this_thread::get_id();
-	entry.color = HashString(name);
+	entry.start_time = elapsed_milliseconds(m_frame_start, now());
+	entry.depth = m_current_depth;
+	entry.call_count = 1;
+	entry.thread_id = std::this_thread::get_id();
+	entry.color = hash_string(name);
 
-	m_SectionStack.push_back(entry);
-	m_CurrentDepth++;
+	m_section_stack.push_back(entry);
+	m_current_depth++;
 }
 
-void Profiler::EndSection() {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::end_section() {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-	if (m_SectionStack.empty()) {
+	if (m_section_stack.empty()) {
 		return;
 	}
 
-	auto entry = m_SectionStack.back();
-	m_SectionStack.pop_back();
-	m_CurrentDepth--;
+	auto entry = m_section_stack.back();
+	m_section_stack.pop_back();
+	m_current_depth--;
 
-	entry.duration = ElapsedMilliseconds(m_FrameStart, Now()) - entry.startTime;
-	m_CurrentFrameEntries.push_back(entry);
+	entry.duration = elapsed_milliseconds(m_frame_start, now()) - entry.start_time;
+	m_current_frame_entries.push_back(entry);
 }
 
-void Profiler::PrintFrameSummary() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::print_frame_summary() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
 	AQUILA_LOG_INFO("=== Frame Profiler Summary ===");
-	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_FrameDuration, m_FPS);
-	AQUILA_LOG_INFO("Total frames: {}", m_FrameCount);
+	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_frame_duration, m_fps);
+	AQUILA_LOG_INFO("Total frames: {}", m_frame_count);
 	AQUILA_LOG_INFO("");
 
-	if (m_FrameHistory.empty()) {
+	if (m_frame_history.empty()) {
 		return;
 	}
 
@@ -119,144 +119,144 @@ void Profiler::PrintFrameSummary() const {
 
 	// Walk the last frame in startTime order (sorted in EndFrame) so the tree prints correctly.
 	// Look up aggregated stats by name for the avg/min/max columns.
-	for (const auto &frameEntry : m_FrameHistory.back()) {
-		auto it = m_Stats.find(frameEntry.name);
-		if (it == m_Stats.end()) {
+	for (const auto &frame_entry : m_frame_history.back()) {
+		auto it = m_stats.find(frame_entry.name);
+		if (it == m_stats.end()) {
 			continue;
 		}
 		const ProfilerEntry &stats = it->second;
-		std::string label(frameEntry.depth * 2, ' ');
-		label += frameEntry.name;
-		f64 percentage = m_FrameDuration > 0.0 ? (stats.avgDuration / m_FrameDuration) * 100.0 : 0.0;
-		AQUILA_LOG_INFO("{:<50} {:>10.3f} {:>10.3f} {:>10.3f} {:>8.1f}%", label, stats.avgDuration, stats.minDuration,
-						stats.maxDuration, percentage);
+		std::string label(frame_entry.depth * 2, ' ');
+		label += frame_entry.name;
+		F64 percentage = m_frame_duration > 0.0 ? (stats.avg_duration / m_frame_duration) * 100.0 : 0.0;
+		AQUILA_LOG_INFO("{:<50} {:>10.3f} {:>10.3f} {:>10.3f} {:>8.1f}%", label, stats.avg_duration, stats.min_duration,
+						stats.max_duration, percentage);
 	}
 	AQUILA_LOG_INFO("");
 
-	if (!m_Bottlenecks.empty()) {
+	if (!m_bottlenecks.empty()) {
 		AQUILA_LOG_WARNING("=== Detected Bottlenecks ===");
-		for (const auto &bottleneck : m_Bottlenecks) {
+		for (const auto &bottleneck : m_bottlenecks) {
 			AQUILA_LOG_WARNING("  - {} ({:.1f}% of frame time)", bottleneck,
-							   (m_Stats.at(bottleneck).avgDuration / m_FrameDuration) * 100.0);
+							   (m_stats.at(bottleneck).avg_duration / m_frame_duration) * 100.0);
 		}
 		AQUILA_LOG_INFO("");
 	}
 }
 
-void Profiler::PrintLastFrame() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::print_last_frame() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-	if (m_CurrentFrameEntries.empty()) {
+	if (m_current_frame_entries.empty()) {
 		return;
 	}
 
 	AQUILA_LOG_INFO("=== Last Frame Breakdown ===");
-	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_FrameDuration, m_FPS);
+	AQUILA_LOG_INFO("Frame time: {:.3f} ms ({:.1f} FPS)", m_frame_duration, m_fps);
 	AQUILA_LOG_INFO("");
 
-	for (const auto &entry : m_CurrentFrameEntries) {
+	for (const auto &entry : m_current_frame_entries) {
 		std::string indent(entry.depth * 2, ' ');
-		f64 percentage = (entry.duration / m_FrameDuration) * 100.0;
+		F64 percentage = (entry.duration / m_frame_duration) * 100.0;
 		AQUILA_LOG_INFO("{}{:<35} {:>8.3f} ms ({:>5.1f}%)", indent, entry.name, entry.duration, percentage);
 	}
 	AQUILA_LOG_INFO("");
 }
 
-void Profiler::Reset() {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
+void Profiler::reset() {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
 
-	m_Stats.clear();
-	m_FrameHistory.clear();
-	m_FrameStatsHistory.clear();
-	m_CurrentFrameEntries.clear();
-	m_SectionStack.clear();
-	m_Bottlenecks.clear();
-	m_FrameCount = 0;
-	m_FrameNumber = 0;
-	m_FrameTimeHistoryIndex = 0;
-	m_FrameTimeHistory.fill(0.0f);
-}
-
-f64 Profiler::GetFrameDuration() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	return m_FrameDuration;
-}
-f64 Profiler::GetFPS() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	return m_FPS;
-}
-uint32 Profiler::GetFrameCount() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	return m_FrameCount;
-}
-uint32 Profiler::GetFrameNumber() const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	return m_FrameNumber;
-}
-bool Profiler::IsEnabled() const {
-	return m_Enabled;
-}
-void Profiler::SetEnabled(bool enabled) {
-	m_Enabled = enabled;
+	m_stats.clear();
+	m_frame_history.clear();
+	m_frame_stats_history.clear();
+	m_current_frame_entries.clear();
+	m_section_stack.clear();
+	m_bottlenecks.clear();
+	m_frame_count = 0;
+	m_frame_number = 0;
+	m_frame_time_history_index = 0;
+	m_frame_time_history.fill(0.0f);
 }
 
-const std::vector<ProfilerEntry> &Profiler::GetCurrentFrameEntries() const {
-	return m_CurrentFrameEntries;
+F64 Profiler::get_frame_duration() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	return m_frame_duration;
 }
-const std::unordered_map<std::string, ProfilerEntry> &Profiler::GetStats() const {
-	return m_Stats;
+F64 Profiler::get_fps() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	return m_fps;
 }
-const std::vector<std::vector<ProfilerEntry>> &Profiler::GetFrameHistory() const {
-	return m_FrameHistory;
+Uint32 Profiler::get_frame_count() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	return m_frame_count;
 }
-const std::vector<FrameStats> &Profiler::GetFrameStatsHistory() const {
-	return m_FrameStatsHistory;
+Uint32 Profiler::get_frame_number() const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	return m_frame_number;
 }
-const std::array<f32, 120> &Profiler::GetFrameTimeHistory() const {
-	return m_FrameTimeHistory;
+bool Profiler::is_enabled() const {
+	return m_enabled;
 }
-const std::vector<std::string> &Profiler::GetBottlenecks() const {
-	return m_Bottlenecks;
+void Profiler::set_enabled(bool enabled) {
+	m_enabled = enabled;
 }
 
-bool Profiler::GetSectionStats(const std::string &name, ProfilerEntry &out) const {
-	std::lock_guard<std::recursive_mutex> lock(m_Mutex);
-	auto it = m_Stats.find(name);
-	if (it != m_Stats.end()) {
+const std::vector<ProfilerEntry> &Profiler::get_current_frame_entries() const {
+	return m_current_frame_entries;
+}
+const std::unordered_map<std::string, ProfilerEntry> &Profiler::get_stats() const {
+	return m_stats;
+}
+const std::vector<std::vector<ProfilerEntry>> &Profiler::get_frame_history() const {
+	return m_frame_history;
+}
+const std::vector<FrameStats> &Profiler::get_frame_stats_history() const {
+	return m_frame_stats_history;
+}
+const std::array<F32, 120> &Profiler::get_frame_time_history() const {
+	return m_frame_time_history;
+}
+const std::vector<std::string> &Profiler::get_bottlenecks() const {
+	return m_bottlenecks;
+}
+
+bool Profiler::get_section_stats(const std::string &name, ProfilerEntry &out) const {
+	std::lock_guard<std::recursive_mutex> lock(m_mutex);
+	auto it = m_stats.find(name);
+	if (it != m_stats.end()) {
 		out = it->second;
 		return true;
 	}
 	return false;
 }
 
-uint32 Profiler::HashString(const std::string &str) const {
-	uint32 hash = 0x811c9dc5;
+Uint32 Profiler::hash_string(const std::string &str) const {
+	Uint32 hash = 0x811c9dc5;
 	for (char c : str) {
-		hash ^= static_cast<uint32>(c);
+		hash ^= static_cast<Uint32>(c);
 		hash *= 0x01000193;
 	}
 	return hash;
 }
 
-void Profiler::DetectBottlenecks() {
-	m_Bottlenecks.clear();
-	constexpr f64 BOTTLENECK_THRESHOLD = 0.20;
-	for (const auto &[name, entry] : m_Stats) {
-		if (entry.avgDuration / m_FrameDuration > BOTTLENECK_THRESHOLD) {
-			m_Bottlenecks.push_back(name);
+void Profiler::detect_bottlenecks() {
+	m_bottlenecks.clear();
+	constexpr F64 bottleneck_threshold = 0.20;
+	for (const auto &[name, entry] : m_stats) {
+		if (entry.avg_duration / m_frame_duration > bottleneck_threshold) {
+			m_bottlenecks.push_back(name);
 		}
 	}
 }
 
-ProfileSection::ProfileSection(const std::string &name) : m_Name(name) {
-	if (Profiler::Get()->IsEnabled()) {
-		Profiler::Get()->BeginSection(m_Name);
+ProfileSection::ProfileSection(const std::string &name) : m_name(name) {
+	if (Profiler::get()->is_enabled()) {
+		Profiler::get()->begin_section(m_name);
 	}
 }
 
 ProfileSection::~ProfileSection() {
-	if (Profiler::Get()->IsEnabled()) {
-		Profiler::Get()->EndSection();
+	if (Profiler::get()->is_enabled()) {
+		Profiler::get()->end_section();
 	}
 }
 

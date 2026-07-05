@@ -12,22 +12,22 @@ class GfxBuffer {
 	~GfxBuffer() = default;
 	AQUILA_NONCOPYABLE(GfxBuffer);
 
-	void Write(const void *data, uint64 size = 0, uint64 offset = 0);
-	void *Map();
-	void Unmap();
-	void Flush(uint64 size = 0, uint64 offset = 0);
+	void write(const void *data, Uint64 size = 0, Uint64 offset = 0);
+	void *map();
+	void unmap();
+	void flush(Uint64 size = 0, Uint64 offset = 0);
 
-	void DestroyImmediate();
+	void destroy_immediate();
 
-	[[nodiscard]] uint64 GetSize() const;
-	[[nodiscard]] uint32 GetInstanceCount() const;
-	[[nodiscard]] bool IsMapped() const;
-	[[nodiscard]] RHI::IRHIBuffer &GetRHI() { return *m_Buffer; }
+	[[nodiscard]] Uint64 get_size() const;
+	[[nodiscard]] Uint32 get_instance_count() const;
+	[[nodiscard]] bool is_mapped() const;
+	[[nodiscard]] RHI::IRHIBuffer &get_rhi() { return *m_buffer; }
 
   private:
 	friend class GfxContext;
 	explicit GfxBuffer(Unique<RHI::IRHIBuffer> buffer);
-	Unique<RHI::IRHIBuffer> m_Buffer;
+	Unique<RHI::IRHIBuffer> m_buffer;
 };
 
 } // namespace Aquila::GFX

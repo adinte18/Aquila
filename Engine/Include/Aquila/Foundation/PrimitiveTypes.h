@@ -4,22 +4,22 @@
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/Math/MathTypes.h"
 
-using uint8 = std::uint8_t;
-using uint16 = std::uint16_t;
-using uint32 = std::uint32_t;
-using uint64 = std::uint64_t;
-using int8 = std::int8_t;
-using int16 = std::int16_t;
-using int32 = std::int32_t;
-using int64 = std::int64_t;
-using f32 = float;
-using f64 = double;
-using byte = std::byte;
+using Uint8 = std::uint8_t;
+using Uint16 = std::uint16_t;
+using Uint32 = std::uint32_t;
+using Uint64 = std::uint64_t;
+using Int8 = std::int8_t;
+using Int16 = std::int16_t;
+using Int32 = std::int32_t;
+using Int64 = std::int64_t;
+using F32 = float;
+using F64 = double;
+using Byte = std::byte;
 
-using usize = std::size_t;
-using isize = std::ptrdiff_t;
-using uptr = std::uintptr_t;
-using iptr = std::intptr_t;
+using Usize = std::size_t;
+using Isize = std::ptrdiff_t;
+using Uptr = std::uintptr_t;
+using Iptr = std::intptr_t;
 
 using Mutex = std::shared_mutex;
 using MutexLock = std::unique_lock<Mutex>; // exclusive write lock
@@ -30,8 +30,6 @@ template <typename T> using Unique = std::unique_ptr<T>;
 template <typename T> using WeakRef = std::weak_ptr<T>;
 template <typename T> using Delegate = std::function<T>;
 
-#include "Aquila/Foundation/Signal.h"
-
 template <typename T> using Option = std::optional<T>;
 template <typename... Ts> using Variant = std::variant<Ts...>;
 template <typename Ok, typename Err> using Result = std::variant<Ok, Err>;
@@ -41,16 +39,16 @@ template <typename... Visitors> struct Overloaded : Visitors... {
 };
 template <typename... Visitors> Overloaded(Visitors...) -> Overloaded<Visitors...>;
 
-template <typename T, typename... Args> constexpr Ref<T> CreateRef(Args &&...args) {
+template <typename T, typename... Args> constexpr Ref<T> create_ref(Args &&...args) {
 	return std::make_shared<T>(std::forward<Args>(args)...);
 }
 
-template <typename T, typename... Args> constexpr Unique<T> CreateUnique(Args &&...args) {
+template <typename T, typename... Args> constexpr Unique<T> create_unique(Args &&...args) {
 	return std::make_unique<T>(std::forward<Args>(args)...);
 }
 
-enum class AccessMode : uint8 { Read = 0, Write = 1, ReadWrite = 2 };
-enum class OpenMode : uint8 {
+enum class AccessMode : Uint8 { Read = 0, Write = 1, ReadWrite = 2 };
+enum class OpenMode : Uint8 {
 	Text = 0, // default, text mode
 	Binary = BIT(1), // "b" no newline translation
 	Append = BIT(2), // "a" writes go to end
@@ -59,17 +57,17 @@ enum class OpenMode : uint8 {
 };
 
 AQUILA_FORCE_INLINE OpenMode operator|(OpenMode a, OpenMode b) {
-	return static_cast<OpenMode>(static_cast<uint8>(a) | static_cast<uint8>(b));
+	return static_cast<OpenMode>(static_cast<Uint8>(a) | static_cast<Uint8>(b));
 }
 
 AQUILA_FORCE_INLINE OpenMode operator&(OpenMode a, OpenMode b) {
-	return static_cast<OpenMode>(static_cast<uint8>(a) & static_cast<uint8>(b));
+	return static_cast<OpenMode>(static_cast<Uint8>(a) & static_cast<Uint8>(b));
 }
 
-AQUILA_FORCE_INLINE bool HasFlag(OpenMode mode, OpenMode flag) {
-	return (static_cast<uint8>(mode) & static_cast<uint8>(flag)) != 0;
+AQUILA_FORCE_INLINE bool has_flag(OpenMode mode, OpenMode flag) {
+	return (static_cast<Uint8>(mode) & static_cast<Uint8>(flag)) != 0;
 }
 
-enum class Priority : uint8 { VeryHigh = BIT(1), High = BIT(2), Medium = BIT(3), Low = BIT(4) };
+enum class Priority : Uint8 { VeryHigh = BIT(1), High = BIT(2), Medium = BIT(3), Low = BIT(4) };
 
 #endif

@@ -15,13 +15,13 @@ class GfxDescriptorSetLayout {
 	~GfxDescriptorSetLayout() = default;
 	AQUILA_NONCOPYABLE(GfxDescriptorSetLayout);
 
-	[[nodiscard]] uint32 GetBindingCount() const;
-	[[nodiscard]] RHI::IRHIDescriptorSetLayout &GetRHI() { return *m_Layout; }
+	[[nodiscard]] Uint32 get_binding_count() const;
+	[[nodiscard]] RHI::IRHIDescriptorSetLayout &get_rhi() { return *m_layout; }
 
   private:
 	friend class GfxContext;
 	explicit GfxDescriptorSetLayout(Unique<RHI::IRHIDescriptorSetLayout> layout);
-	Unique<RHI::IRHIDescriptorSetLayout> m_Layout;
+	Unique<RHI::IRHIDescriptorSetLayout> m_layout;
 };
 
 class GfxDescriptorSet {
@@ -29,16 +29,16 @@ class GfxDescriptorSet {
 	~GfxDescriptorSet() = default;
 	AQUILA_NONCOPYABLE(GfxDescriptorSet);
 
-	GfxDescriptorSet &SetBuffer(uint32 binding, GfxBuffer &buffer, uint64 offset = 0, uint64 range = 0);
-	GfxDescriptorSet &SetTexture(uint32 binding, GfxTexture &texture);
-	void Flush();
+	GfxDescriptorSet &set_buffer(Uint32 binding, GfxBuffer &buffer, Uint64 offset = 0, Uint64 range = 0);
+	GfxDescriptorSet &set_texture(Uint32 binding, GfxTexture &texture);
+	void flush();
 
-	[[nodiscard]] RHI::IRHIDescriptorSet &GetRHI() { return *m_Set; }
+	[[nodiscard]] RHI::IRHIDescriptorSet &get_rhi() { return *m_set; }
 
   private:
 	friend class GfxContext;
 	explicit GfxDescriptorSet(Unique<RHI::IRHIDescriptorSet> set);
-	Unique<RHI::IRHIDescriptorSet> m_Set;
+	Unique<RHI::IRHIDescriptorSet> m_set;
 };
 
 } // namespace Aquila::GFX

@@ -5,31 +5,31 @@
 namespace Aquila::SceneManagement {
 
 // by design both are set on entity creation
-const Utils::UUID &Entity::GetUUID() const {
-	return GetComponent<Components::MetadataComponent>().GetId();
+const Foundation::UUID &Entity::get_uuid() const {
+	return get_component<Components::MetadataComponent>().get_id();
 }
 
-const std::string &Entity::GetName() const {
-	return GetComponent<Components::MetadataComponent>().GetName();
+const std::string &Entity::get_name() const {
+	return get_component<Components::MetadataComponent>().get_name();
 }
 
-bool Entity::IsNull() const {
-	return m_EntityHandle == entt::null || m_Scene == nullptr;
+bool Entity::is_null() const {
+	return m_entity_handle == entt::null || m_scene == nullptr;
 }
 
-void Entity::Kill() const {
-	AQUILA_ASSERT(m_Scene, "There should be an active scene");
-	if (IsValid()) {
-		m_Scene->GetRegistry().destroy(m_EntityHandle);
+void Entity::kill() const {
+	AQUILA_ASSERT(m_scene, "There should be an active scene");
+	if (is_valid()) {
+		m_scene->get_registry().destroy(m_entity_handle);
 	} else {
 	}
 }
 
-bool Entity::IsValid() const {
-	if (m_Scene == nullptr || m_EntityHandle == entt::null) {
+bool Entity::is_valid() const {
+	if (m_scene == nullptr || m_entity_handle == entt::null) {
 		return false;
 	}
-	return m_Scene->GetRegistry().valid(m_EntityHandle);
+	return m_scene->get_registry().valid(m_entity_handle);
 }
 
 } // namespace Aquila::SceneManagement

@@ -3,38 +3,38 @@
 namespace Aquila::UI::Core {
 
 AssetCard::AssetCard() {
-	m_IsDraggable = true;
-	AddClass("asset-card");
+	m_is_draggable = true;
+	add_class("asset-card");
 
-	auto thumbnail = CreateUnique<Image>();
-	thumbnail->AddClass("asset-card-thumbnail");
-	m_Thumbnail = static_cast<Image *>(AddChild(std::move(thumbnail)));
+	auto thumbnail = create_unique<Image>();
+	thumbnail->add_class("asset-card-thumbnail");
+	m_thumbnail = static_cast<Image *>(add_child(std::move(thumbnail)));
 
-	auto typeLabel = CreateUnique<Label>("");
-	typeLabel->AddClass("asset-card-type");
-	m_TypeLabel = static_cast<Label *>(AddChild(std::move(typeLabel)));
+	auto type_label = create_unique<Label>("");
+	type_label->add_class("asset-card-type");
+	m_type_label = static_cast<Label *>(add_child(std::move(type_label)));
 
-	auto nameLabel = CreateUnique<Label>("");
-	nameLabel->AddClass("asset-card-name");
-	m_NameLabel = static_cast<Label *>(AddChild(std::move(nameLabel)));
+	auto name_label = create_unique<Label>("");
+	name_label->add_class("asset-card-name");
+	m_name_label = static_cast<Label *>(add_child(std::move(name_label)));
 }
 
-void AssetCard::SetAsset(AssetPayload payload) {
-	m_Payload = std::move(payload);
+void AssetCard::set_asset(AssetPayload payload) {
+	m_payload = std::move(payload);
 
-	std::string displayName = m_Payload.displayName.empty() ? m_Payload.assetPath : m_Payload.displayName;
-	m_NameLabel->SetText(displayName);
-	m_TypeLabel->SetText(m_Payload.assetType);
+	std::string display_name = m_payload.display_name.empty() ? m_payload.asset_path : m_payload.display_name;
+	m_name_label->set_text(display_name);
+	m_type_label->set_text(m_payload.asset_type);
 }
 
-void AssetCard::SetThumbnail(GFX::GfxTexture *texture) {
-	m_Thumbnail->SetTexture(texture);
+void AssetCard::set_thumbnail(GFX::GfxTexture *texture) {
+	m_thumbnail->set_texture(texture);
 
-	m_Thumbnail->SetHidden(texture == nullptr);
+	m_thumbnail->set_hidden(texture == nullptr);
 }
 
-void AssetCard::OnDragStart(DragState &state) {
-	state.payload = m_Payload;
+void AssetCard::on_drag_start(DragState &state) {
+	state.payload = m_payload;
 }
 
 } // namespace Aquila::UI::Core

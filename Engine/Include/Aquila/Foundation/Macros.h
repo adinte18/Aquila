@@ -3,18 +3,18 @@
 
 #include "Aquila/Foundation/Log.h"
 
-#define AQUILA_LOG_TRACE(...) Aquila::Foundation::LogTrace(__VA_ARGS__)
-#define AQUILA_LOG_DEBUG(...) Aquila::Foundation::LogDebug(__VA_ARGS__)
-#define AQUILA_LOG_INFO(...) Aquila::Foundation::LogInfo(__VA_ARGS__)
-#define AQUILA_LOG_WARNING(...) Aquila::Foundation::LogWarning(__VA_ARGS__)
-#define AQUILA_LOG_ERROR(...) Aquila::Foundation::LogError(__VA_ARGS__)
-#define AQUILA_LOG_CRITICAL(...) Aquila::Foundation::LogCritical(__VA_ARGS__)
+#define AQUILA_LOG_TRACE(...) Aquila::Foundation::log_trace(__VA_ARGS__)
+#define AQUILA_LOG_DEBUG(...) Aquila::Foundation::log_debug(__VA_ARGS__)
+#define AQUILA_LOG_INFO(...) Aquila::Foundation::log_info(__VA_ARGS__)
+#define AQUILA_LOG_WARNING(...) Aquila::Foundation::log_warning(__VA_ARGS__)
+#define AQUILA_LOG_ERROR(...) Aquila::Foundation::log_error(__VA_ARGS__)
+#define AQUILA_LOG_CRITICAL(...) Aquila::Foundation::log_critical(__VA_ARGS__)
 
-#if defined(AQUILA_DEBUG)
+#ifdef AQUILA_DEBUG
 #define AQUILA_ASSERT(condition, message)                                              \
 	do {                                                                               \
 		if (AQUILA_UNLIKELY(!(condition))) {                                           \
-			Aquila::Foundation::AssertFailed(#condition, message, __FILE__, __LINE__); \
+			Aquila::Foundation::assert_failed(#condition, message, __FILE__, __LINE__); \
 		}                                                                              \
 	} while (0)
 
@@ -22,7 +22,7 @@
 #define AQUILA_ASSERT(condition, message)                                              \
 	do {                                                                               \
 		if (!(condition)) {                                                            \
-			Aquila::Foundation::AssertFailed(#condition, message, __FILE__, __LINE__); \
+			Aquila::Foundation::assert_failed(#condition, message, __FILE__, __LINE__); \
 		}                                                                              \
 	} while (false)
 #endif
@@ -31,9 +31,9 @@
 	do {                                                                                                          \
 		VkResult result = (call);                                                                                 \
 		if (AQUILA_UNLIKELY(result != VK_SUCCESS)) {                                                              \
-			Aquila::Foundation::LogError(std::string("[VULKAN] Call failed: ") + #call + " | File: " + __FILE__ + \
+			Aquila::Foundation::log_error(std::string("[VULKAN] Call failed: ") + #call + " | File: " + __FILE__ + \
 										 " | Line: " + std::to_string(__LINE__));                                 \
-			Aquila::Foundation::AssertFailed(#call, "Vulkan call failed", __FILE__, __LINE__);                    \
+			Aquila::Foundation::assert_failed(#call, "Vulkan call failed", __FILE__, __LINE__);                    \
 		}                                                                                                         \
 	} while (0)
 

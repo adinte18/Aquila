@@ -14,70 +14,70 @@ class SceneManager {
 	SceneManager() = default;
 	~SceneManager() = default;
 
-	Scene *GetActiveScene() const;
-	Scene *GetScene(const Utils::UUID &handle) const;
-	Scene *GetSceneByName(const std::string &name) const;
-	bool HasScene() const;
-	bool HasScene(const Utils::UUID &handle) const;
+	Scene *get_active_scene() const;
+	Scene *get_scene(const Foundation::UUID &handle) const;
+	Scene *get_scene_by_name(const std::string &name) const;
+	bool has_scene() const;
+	bool has_scene(const Foundation::UUID &handle) const;
 
 	// Scene Creation & Loading
-	Scene *CreateScene(const std::string &name);
-	Scene *LoadScene(const std::string &filepath, Assets::AssetManager &assetManager);
-	Scene *LoadSceneAsync(const std::string &filepath, Assets::AssetManager &assetManager,
-						  const Delegate<void(Scene *)> &onLoaded = nullptr);
+	Scene *create_scene(const std::string &name);
+	Scene *load_scene(const std::string &filepath, Assets::AssetManager &asset_manager);
+	Scene *load_scene_async(const std::string &filepath, Assets::AssetManager &asset_manager,
+							const Delegate<void(Scene *)> &on_loaded = nullptr);
 
 	// Scene Management
-	void EnqueueScene(Unique<Scene> scene, const Delegate<void(Scene *)> &onActivated = nullptr);
-	void ChangeScene(const Utils::UUID &handle);
-	void RemoveScene(const Utils::UUID &handle);
-	void UnloadScene(const Utils::UUID &handle);
-	void UnloadAllScenesExceptActive();
+	void enqueue_scene(Unique<Scene> scene, const Delegate<void(Scene *)> &on_activated = nullptr);
+	void change_scene(const Foundation::UUID &handle);
+	void remove_scene(const Foundation::UUID &handle);
+	void unload_scene(const Foundation::UUID &handle);
+	void unload_all_scenes_except_active();
 
 	// Scene Operations
-	bool SaveScene(const Utils::UUID &handle, const std::string &filepath);
-	bool SaveActiveScene(const std::string &filepath);
-	Scene *DuplicateScene(const Utils::UUID &handle, Assets::AssetManager &assetManager,
-						  const std::string &newName = "");
+	bool save_scene(const Foundation::UUID &handle, const std::string &filepath);
+	bool save_active_scene(const std::string &filepath);
+	Scene *duplicate_scene(const Foundation::UUID &handle, Assets::AssetManager &asset_manager,
+						   const std::string &new_name = "");
 
 	// Scene Change Requests
-	void RequestSceneChange(const Utils::UUID &handle);
-	void RequestSceneChange(); // Uses last enqueued scene
-	bool HasPendingSceneChange() const;
-	void ProcessSceneChange();
+	void request_scene_change(const Foundation::UUID &handle);
+	void request_scene_change(); // Uses last enqueued scene
+	bool has_pending_scene_change() const;
+	void process_scene_change();
 
-	void ActivateScene(const Utils::UUID &handle);
-	void ActivateScene(Scene *scene);
+	void activate_scene(const Foundation::UUID &handle);
+	void activate_scene(Scene *scene);
 
 	// Loading without activation
-	Scene *LoadSceneInBackground(const std::string &filepath, Assets::AssetManager &assetManager);
+	Scene *load_scene_in_background(const std::string &filepath, Assets::AssetManager &asset_manager);
 
 	// Query inactive scenes
-	std::vector<Scene *> GetInactiveScenes() const;
-	bool IsSceneActive(const Utils::UUID &handle) const;
+	std::vector<Scene *> get_inactive_scenes() const;
+	bool is_scene_active(const Foundation::UUID &handle) const;
 
 	// Utilities
-	std::vector<Scene *> GetAllScenes() const;
-	std::vector<std::string> GetAllSceneNames() const;
-	size_t GetSceneCount() const { return m_Scenes.size(); }
+	std::vector<Scene *> get_all_scenes() const;
+	std::vector<std::string> get_all_scene_names() const;
+	size_t get_scene_count() const { return m_scenes.size(); }
 
 	// Callbacks
-	void SetOnSceneActivated(const Delegate<void(Scene *)> &callback) { m_OnSceneActivated = callback; }
-	void SetOnSceneUnloaded(const Delegate<void(Scene *)> &callback) { m_OnSceneUnloaded = callback; }
+	void set_on_scene_activated(const Delegate<void(Scene *)> &callback) { m_on_scene_activated = callback; }
+	void set_on_scene_unloaded(const Delegate<void(Scene *)> &callback) { m_on_scene_unloaded = callback; }
 
   private:
-	std::unordered_map<Utils::UUID, Unique<Scene>> m_Scenes;
-	Scene *m_ActiveScene = nullptr;
+	std::unordered_map<Foundation::UUID, Unique<Scene>> m_scenes;
+	Scene *m_active_scene = nullptr;
 	// Scene change handling
-	Utils::UUID m_PendingSceneChangeHandle = Utils::UUID::Null();
-	bool m_HasPendingSceneChange = false;
+	Foundation::UUID m_pending_scene_change_handle = Foundation::UUID::null();
+	bool m_has_pending_scene_change = false;
 
 	// Callbacks
-	Delegate<void(Scene *)> m_OnSceneActivated;
-	Delegate<void(Scene *)> m_OnSceneUnloaded;
+	Delegate<void(Scene *)> m_on_scene_activated;
+	Delegate<void(Scene *)> m_on_scene_unloaded;
 
 	// Helper methods
-	std::string ExtractSceneName(const std::string &filepath);
-	bool ValidateSceneFile(const std::string &filepath);
+	std::string extract_scene_name(const std::string &filepath);
+	bool validate_scene_file(const std::string &filepath);
 };
 
 } // namespace Aquila::SceneManagement

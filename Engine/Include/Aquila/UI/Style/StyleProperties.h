@@ -6,46 +6,47 @@
 namespace Aquila::UI {
 
 struct StyleProperties {
-	Option<vec4> backgroundColor;
-	Option<vec4> borderColor;
-	Option<f32> borderWidth;
-	Option<vec4> borderRadius;
-	Option<f32> opacity;
+	Option<Vec4> background_color;
+	Option<Vec4> border_color;
+	Option<F32> border_width;
+	Option<Vec4> border_radius;
+	Option<BorderStyle> border_style;
+	Option<F32> opacity;
 	Option<Overflow> overflow;
 	Option<Display> display;
 
 	Option<StyleLength> width, height;
 	Option<StyleLength> min, max;
-	Option<StyleLength> minWidth, maxWidth;
-	Option<StyleLength> minHeight, maxHeight;
+	Option<StyleLength> min_width, max_width;
+	Option<StyleLength> min_height, max_height;
 	Option<StyleEdges> padding;
-	Option<StyleLength> paddingLeft, paddingRight, paddingTop, paddingBottom;
-	Option<f32> gap;
+	Option<StyleLength> padding_left, padding_right, padding_top, padding_bottom;
+	Option<F32> gap;
 
-	Option<f32> aspectRatio;
+	Option<F32> aspect_ratio;
 
-	Option<FlexDirection> flexDirection;
-	Option<JustifyContent> justifyContent;
-	Option<AlignItems> alignItems;
-	Option<f32> flexGrow;
-	Option<FlexWrap> flexWrap;
+	Option<FlexDirection> flex_direction;
+	Option<JustifyContent> justify_content;
+	Option<AlignItems> align_items;
+	Option<F32> flex_grow;
+	Option<FlexWrap> flex_wrap;
 
 	Option<Position> position;
 	Option<StyleLength> top, right, bottom, left;
-	Option<int32> zIndex;
+	Option<Int32> z_index;
 
-	Option<vec4> color;
-	Option<vec4> accentColor;
-	Option<vec4> selectionColor;
-	Option<vec4> placeholderColor;
-	Option<f32> fontSize;
-	Option<std::string> fontFamily;
-	Option<TextAlign> textAlign;
+	Option<Vec4> color;
+	Option<Vec4> accent_color;
+	Option<Vec4> selection_color;
+	Option<Vec4> placeholder_color;
+	Option<F32> font_size;
+	Option<std::string> font_family;
+	Option<TextAlign> text_align;
 
-	Option<std::vector<BoxShadow>> boxShadows;
+	Option<std::vector<BoxShadow>> box_shadows;
 
-	Option<f32> transitionDuration; // milliseconds
-	Option<TransitionEasing> transitionEasing;
+	Option<F32> transition_duration; // milliseconds
+	Option<TransitionEasing> transition_easing;
 };
 
 } // namespace Aquila::UI

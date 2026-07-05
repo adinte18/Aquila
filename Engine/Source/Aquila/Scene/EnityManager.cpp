@@ -9,38 +9,38 @@ namespace Aquila::SceneManagement {
 
 EntityManager::~EntityManager() = default;
 
-entt::registry &EntityManager::GetRegistry() {
-	AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
-	return m_Registry;
+entt::registry &EntityManager::get_registry() {
+	AQUILA_ASSERT(m_scene, "Scene should not be nullptr");
+	return m_registry;
 }
 
-void EntityManager::QueueForKill(Entity entity) {
-	if (!entity.IsValid()) {
+void EntityManager::queue_for_kill(Entity entity) {
+	if (!entity.is_valid()) {
 		return;
 	}
-	m_DeletionQueue.emplace_back(entity.GetHandle());
+	m_deletion_queue.emplace_back(entity.get_handle());
 }
 
-void EntityManager::FlushDeletionQueue() {
-	for (auto &entityHandle : m_DeletionQueue) {
-		Entity entity{ entityHandle, m_Scene };
-		if (!entity.IsValid()) {
+void EntityManager::flush_deletion_queue() {
+	for (auto &entity_handle : m_deletion_queue) {
+		Entity entity{ entity_handle, m_scene };
+		if (!entity.is_valid()) {
 			continue;
 		}
 
-		RemoveAllChildren(entity);
+		remove_all_children(entity);
 
-		entity.Kill();
+		entity.kill();
 	}
 
-	m_DeletionQueue.clear();
+	m_deletion_queue.clear();
 }
 
-bool EntityManager::IsRegistryEmpty() {
-	return m_Registry.storage<entt::entity>().empty();
+bool EntityManager::is_registry_empty() {
+	return m_registry.storage<entt::entity>().empty();
 }
 
-std::string EntityManager::GetDefaultName(EntityPreset preset) {
+std::string EntityManager::get_default_name(EntityPreset preset) {
 	switch (preset) {
 	case EntityPreset::Empty:
 		return "Empty Entity";
@@ -67,63 +67,63 @@ std::string EntityManager::GetDefaultName(EntityPreset preset) {
 	}
 }
 
-Entity EntityManager::CreateEntity(const std::string &name) {
-	AQUILA_ASSERT(m_Scene, "Scene should not be nullptr");
+Entity EntityManager::create_entity(const std::string &name) {
+	AQUILA_ASSERT(m_scene, "Scene should not be nullptr");
 
-	Entity entity{ m_Registry.create(), m_Scene };
+	Entity entity{ m_registry.create(), m_scene };
 
-	std::string uniqueName = GenerateUniqueName(name);
+	std::string unique_name = generate_unique_name(name);
 
-	entity.AddComponent<Components::MetadataComponent>(Utils::UUID::Generate(), uniqueName, true);
-	entity.AddComponent<Components::SceneNodeComponent>();
-	entity.AddComponent<Components::TransformComponent>();
+	entity.add_component<Components::MetadataComponent>(Foundation::UUID::generate(), unique_name, true);
+	entity.add_component<Components::SceneNodeComponent>();
+	entity.add_component<Components::TransformComponent>();
 
 	return entity;
 }
 
-void EntityManager::DestroyEntity(Entity entity) {
-	if (!entity.IsValid()) {
+void EntityManager::destroy_entity(Entity entity) {
+	if (!entity.is_valid()) {
 		return;
 	}
 
-	RemoveAllChildren(entity);
+	remove_all_children(entity);
 
-	entity.Kill();
+	entity.kill();
 }
 
-bool EntityManager::IsValid(Entity entity) const {
-	return entity.IsValid();
+bool EntityManager::is_valid(Entity entity) const {
+	return entity.is_valid();
 }
 
-std::string EntityManager::GenerateUniqueName(const std::string &baseName) {
-	auto entities = GetAllWith<Components::MetadataComponent>();
+std::string EntityManager::generate_unique_name(const std::string &base_name) {
+	auto entities = get_all_with<Components::MetadataComponent>();
 
-	std::unordered_set<std::string> existingNames;
+	std::unordered_set<std::string> existing_names;
 	for (auto entity : entities) {
-		auto &metadata = entity.GetComponent<Components::MetadataComponent>();
-		existingNames.insert(metadata.GetName());
+		auto &metadata = entity.get_component<Components::MetadataComponent>();
+		existing_names.insert(metadata.get_name());
 	}
 
-	if (existingNames.find(baseName) == existingNames.end()) {
-		return baseName;
+	if (existing_names.find(base_name) == existing_names.end()) {
+		return base_name;
 	}
 
 	int counter = 1;
-	std::string candidateName;
+	std::string candidate_name;
 	do {
-		candidateName = baseName + " (" + std::to_string(counter) + ")";
+		candidate_name = base_name + " (" + std::to_string(counter) + ")";
 		counter++;
-	} while (existingNames.find(candidateName) != existingNames.end());
+	} while (existing_names.find(candidate_name) != existing_names.end());
 
-	return candidateName;
+	return candidate_name;
 }
 
-bool EntityManager::Exists(const Utils::UUID &uuid) {
-	auto entities = GetAllWith<Components::MetadataComponent>();
+bool EntityManager::exists(const Foundation::UUID &uuid) {
+	auto entities = get_all_with<Components::MetadataComponent>();
 
 	for (auto entity : entities) {
-		auto &metadata = entity.GetComponent<Components::MetadataComponent>();
-		if (metadata.GetId() == uuid) {
+		auto &metadata = entity.get_component<Components::MetadataComponent>();
+		if (metadata.get_id() == uuid) {
 			return true;
 		}
 	}
@@ -131,12 +131,12 @@ bool EntityManager::Exists(const Utils::UUID &uuid) {
 	return false;
 }
 
-std::optional<Entity> EntityManager::FindEntityByUUID(const Utils::UUID &uuid) {
-	auto entities = GetAllWith<Components::MetadataComponent>();
+std::optional<Entity> EntityManager::find_entity_by_uuid(const Foundation::UUID &uuid) {
+	auto entities = get_all_with<Components::MetadataComponent>();
 
 	for (auto entity : entities) {
-		auto &metadata = entity.GetComponent<Components::MetadataComponent>();
-		if (metadata.GetId() == uuid) {
+		auto &metadata = entity.get_component<Components::MetadataComponent>();
+		if (metadata.get_id() == uuid) {
 			return entity;
 		}
 	}
@@ -144,12 +144,12 @@ std::optional<Entity> EntityManager::FindEntityByUUID(const Utils::UUID &uuid) {
 	return std::nullopt;
 }
 
-std::optional<Entity> EntityManager::FindEntityByName(const std::string &name) {
-	auto entities = GetAllWith<Components::MetadataComponent>();
+std::optional<Entity> EntityManager::find_entity_by_name(const std::string &name) {
+	auto entities = get_all_with<Components::MetadataComponent>();
 
 	for (auto entity : entities) {
-		auto &metadata = entity.GetComponent<Components::MetadataComponent>();
-		if (metadata.GetName() == name) {
+		auto &metadata = entity.get_component<Components::MetadataComponent>();
+		if (metadata.get_name() == name) {
 			return entity;
 		}
 	}
@@ -157,14 +157,14 @@ std::optional<Entity> EntityManager::FindEntityByName(const std::string &name) {
 	return std::nullopt;
 }
 
-void EntityManager::Clear() {
-	m_DeletionQueue.clear();
+void EntityManager::clear() {
+	m_deletion_queue.clear();
 
-	for (auto [entity] : m_Registry.storage<entt::entity>().each()) {
-		m_Registry.destroy(entity);
+	for (auto [entity] : m_registry.storage<entt::entity>().each()) {
+		m_registry.destroy(entity);
 	}
 
-	m_Registry.clear();
+	m_registry.clear();
 }
 
 /**
@@ -175,10 +175,10 @@ void EntityManager::Clear() {
  * construction, update, and destruction of SceneNodeComponents in the entt
  * registry.
  */
-void EntityManager::ConstructSceneGraph() {
+void EntityManager::construct_scene_graph() {
 	// Connect callbacks to SceneNodeComponent events
-	m_Registry.on_construct<Components::SceneNodeComponent>().connect<&EntityManager::OnSceneNodeConstruct>(*this);
-	m_Registry.on_destroy<Components::SceneNodeComponent>().connect<&EntityManager::OnSceneNodeDestroy>(*this);
+	m_registry.on_construct<Components::SceneNodeComponent>().connect<&EntityManager::on_scene_node_construct>(*this);
+	m_registry.on_destroy<Components::SceneNodeComponent>().connect<&EntityManager::on_scene_node_destroy>(*this);
 }
 
 /**
@@ -192,41 +192,41 @@ void EntityManager::ConstructSceneGraph() {
  * @param registry The entt registry containing the scene graph.
  * @param entityHandle The entity being constructed.
  */
-void EntityManager::OnSceneNodeConstruct(entt::registry &registry, entt::entity entityHandle) {
-	Entity entity(entityHandle, m_Scene);
+void EntityManager::on_scene_node_construct(entt::registry &registry, entt::entity entity_handle) {
+	Entity entity(entity_handle, m_scene);
 
-	auto &node = entity.GetOrEmplace<Components::SceneNodeComponent>();
-	node.Ent = entity;
+	auto &node = entity.get_or_emplace<Components::SceneNodeComponent>();
+	node.ent = entity;
 
-	if (!node.Parent.IsNull()) {
-		auto &parentNode = m_Registry.get_or_emplace<Components::SceneNodeComponent>(node.Parent.GetHandle());
+	if (!node.parent.is_null()) {
+		auto &parent_node = m_registry.get_or_emplace<Components::SceneNodeComponent>(node.parent.get_handle());
 
-		auto &siblings = parentNode.Children;
+		auto &siblings = parent_node.children;
 		if (std::find(siblings.begin(), siblings.end(), entity) == siblings.end()) {
 			siblings.push_back(entity);
 		}
 	}
 }
 
-void EntityManager::OnSceneNodeDestroy(entt::registry &registry, entt::entity entityHandle) {
-	Entity entity(entityHandle, m_Scene);
+void EntityManager::on_scene_node_destroy(entt::registry &registry, entt::entity entity_handle) {
+	Entity entity(entity_handle, m_scene);
 
-	auto *node = entity.TryGetComponent<Components::SceneNodeComponent>();
+	auto *node = entity.try_get_component<Components::SceneNodeComponent>();
 	if (!node) {
 		return;
 	}
 
-	for (auto child : node->Children) {
-		if (child.IsValid()) {
-			QueueForKill(child);
+	for (auto child : node->children) {
+		if (child.is_valid()) {
+			queue_for_kill(child);
 		}
 	}
-	node->Children.clear();
+	node->children.clear();
 
-	if (!node->Parent.IsNull()) {
-		auto *parentNode = node->Parent.TryGetComponent<Components::SceneNodeComponent>();
-		if (parentNode) {
-			auto &siblings = parentNode->Children;
+	if (!node->parent.is_null()) {
+		auto *parent_node = node->parent.try_get_component<Components::SceneNodeComponent>();
+		if (parent_node) {
+			auto &siblings = parent_node->children;
 			if (!siblings.empty()) {
 				siblings.erase(std::remove(siblings.begin(), siblings.end(), entity), siblings.end());
 			}
@@ -240,21 +240,21 @@ void EntityManager::OnSceneNodeDestroy(entt::registry &registry, entt::entity en
  * @param parent The parent entity to which the child will be added.
  * @param child The child entity to be added.
  */
-void EntityManager::AddChild(Entity parent, Entity child) {
-	if (!parent.IsValid() || !child.IsValid()) {
+void EntityManager::add_child(Entity parent, Entity child) {
+	if (!parent.is_valid() || !child.is_valid()) {
 		return;
 	}
 
-	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
-	auto *childNode = child.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !childNode) {
+	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
+	auto *child_node = child.try_get_component<Components::SceneNodeComponent>();
+	if (!parent_node || !child_node) {
 		return;
 	}
 
-	childNode->Parent = parentNode->Ent;
+	child_node->parent = parent_node->ent;
 
-	if (std::find(parentNode->Children.begin(), parentNode->Children.end(), child) == parentNode->Children.end()) {
-		parentNode->Children.push_back(child);
+	if (std::find(parent_node->children.begin(), parent_node->children.end(), child) == parent_node->children.end()) {
+		parent_node->children.push_back(child);
 	}
 }
 
@@ -264,57 +264,57 @@ void EntityManager::AddChild(Entity parent, Entity child) {
  * @param parent The parent entity to which the node will be attached.
  * @param node The node entity to be attached.
  */
-void EntityManager::AttachTo(Entity parent, Entity node) {
-	if (!parent.IsValid() || !node.IsValid()) {
+void EntityManager::attach_to(Entity parent, Entity node) {
+	if (!parent.is_valid() || !node.is_valid()) {
 		return;
 	}
 
-	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
-	auto *nodeToAttach = node.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !nodeToAttach) {
+	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
+	auto *node_to_attach = node.try_get_component<Components::SceneNodeComponent>();
+	if (!parent_node || !node_to_attach) {
 		return;
 	}
 
-	auto *nodeTransform = node.TryGetComponent<Components::TransformComponent>();
-	auto *parentTransform = parent.TryGetComponent<Components::TransformComponent>();
-	if (!nodeTransform || !parentTransform) {
+	auto *node_transform = node.try_get_component<Components::TransformComponent>();
+	auto *parent_transform = parent.try_get_component<Components::TransformComponent>();
+	if (!node_transform || !parent_transform) {
 		return;
 	}
 
 	// Store the current world transform before reparenting
-	vec3 worldPos = nodeTransform->GetWorldPosition();
-	glm::quat worldRot = nodeTransform->GetWorldRotation();
-	vec3 worldScale = nodeTransform->GetWorldScale();
+	Vec3 world_pos = node_transform->get_world_position();
+	glm::quat world_rot = node_transform->get_world_rotation();
+	Vec3 world_scale = node_transform->get_world_scale();
 
 	// if has parent -> detach from parent
-	if (nodeToAttach->Parent.GetHandle() != entt::null) {
-		RemoveChild(nodeToAttach->Parent, nodeToAttach->Ent);
+	if (node_to_attach->parent.get_handle() != entt::null) {
+		remove_child(node_to_attach->parent, node_to_attach->ent);
 	}
 
 	// reattach to another parent
-	nodeToAttach->Parent = parentNode->Ent;
-	parentNode->Children.push_back(nodeToAttach->Ent);
+	node_to_attach->parent = parent_node->ent;
+	parent_node->children.push_back(node_to_attach->ent);
 
 	// Convert world transform to local space relative to new parent
-	mat4 parentWorld = parentTransform->GetWorldMatrixLazy();
-	mat4 parentInverse = inverse(parentWorld);
+	Mat4 parent_world = parent_transform->get_world_matrix_lazy();
+	Mat4 parent_inverse = inverse(parent_world);
 
 	// Calculate local position
-	vec4 localPos4 = parentInverse * vec4(worldPos, 1.0f);
-	vec3 localPos = vec3(localPos4);
+	Vec4 local_pos4 = parent_inverse * Vec4(world_pos, 1.0f);
+	Vec3 local_pos = Vec3(local_pos4);
 
 	// Calculate local rotation
-	glm::quat parentWorldRot = parentTransform->GetWorldRotation();
-	glm::quat localRot = inverse(parentWorldRot) * worldRot;
+	glm::quat parent_world_rot = parent_transform->get_world_rotation();
+	glm::quat local_rot = inverse(parent_world_rot) * world_rot;
 
 	// Calculate local scale
-	vec3 parentWorldScale = parentTransform->GetWorldScale();
-	vec3 localScale = worldScale / parentWorldScale;
+	Vec3 parent_world_scale = parent_transform->get_world_scale();
+	Vec3 local_scale = world_scale / parent_world_scale;
 
 	// Apply the new local transform
-	nodeTransform->SetLocalPosition(localPos);
-	nodeTransform->SetLocalRotation(localRot);
-	nodeTransform->SetLocalScale(localScale);
+	node_transform->set_local_position(local_pos);
+	node_transform->set_local_rotation(local_rot);
+	node_transform->set_local_scale(local_scale);
 }
 
 /**
@@ -327,17 +327,17 @@ void EntityManager::AttachTo(Entity parent, Entity node) {
  * @return true if entityToCheck is a descendant of potentialParent, false
  * otherwise.
  */
-bool EntityManager::IsDescendant(Entity potentialParent, Entity entityToCheck) {
-	auto *node = potentialParent.TryGetComponent<Components::SceneNodeComponent>();
+bool EntityManager::is_descendant(Entity potential_parent, Entity entity_to_check) {
+	auto *node = potential_parent.try_get_component<Components::SceneNodeComponent>();
 	if (!node) {
 		return false;
 	}
 
-	for (const auto &child : node->Children) {
-		if (child == entityToCheck) {
+	for (const auto &child : node->children) {
+		if (child == entity_to_check) {
 			return true;
 		}
-		if (IsDescendant(child, entityToCheck)) {
+		if (is_descendant(child, entity_to_check)) {
 			return true;
 		}
 	}
@@ -350,21 +350,21 @@ bool EntityManager::IsDescendant(Entity potentialParent, Entity entityToCheck) {
  * @param parent The parent entity from which the child will be removed.
  * @param child The child entity to be removed.
  */
-void EntityManager::RemoveChild(Entity parent, Entity child) {
-	if (!parent.IsValid() || !child.IsValid()) {
+void EntityManager::remove_child(Entity parent, Entity child) {
+	if (!parent.is_valid() || !child.is_valid()) {
 		return;
 	}
 
-	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
-	auto *childNode = child.TryGetComponent<Components::SceneNodeComponent>();
-	if (!parentNode || !childNode) {
+	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
+	auto *child_node = child.try_get_component<Components::SceneNodeComponent>();
+	if (!parent_node || !child_node) {
 		return;
 	}
 
-	auto &siblings = parentNode->Children;
+	auto &siblings = parent_node->children;
 	siblings.erase(std::remove(siblings.begin(), siblings.end(), child), siblings.end());
 
-	childNode->Parent = Entity::Null();
+	child_node->parent = Entity::null();
 }
 
 /**
@@ -372,27 +372,27 @@ void EntityManager::RemoveChild(Entity parent, Entity child) {
  *
  * @param parent The parent entity whose children will be removed.
  */
-void EntityManager::RemoveAllChildren(Entity parent) {
-	if (!parent.IsValid()) {
+void EntityManager::remove_all_children(Entity parent) {
+	if (!parent.is_valid()) {
 		return;
 	}
 
-	auto *parentNode = parent.TryGetComponent<Components::SceneNodeComponent>();
-	if (parentNode == nullptr) {
+	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
+	if (parent_node == nullptr) {
 		return;
 	}
 
-	auto childrenCopy = parentNode->Children;
+	auto children_copy = parent_node->children;
 
-	for (auto &child : childrenCopy) {
-		RemoveAllChildren(child);
+	for (auto &child : children_copy) {
+		remove_all_children(child);
 
-		if (child.IsValid()) {
-			QueueForKill(child);
+		if (child.is_valid()) {
+			queue_for_kill(child);
 		}
 	}
 
-	parentNode->Children.clear();
+	parent_node->children.clear();
 }
 
 } // namespace Aquila::SceneManagement

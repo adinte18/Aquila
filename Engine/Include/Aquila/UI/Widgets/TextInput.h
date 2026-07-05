@@ -12,39 +12,38 @@ class TextInput : public Control {
 	TextInput();
 	explicit TextInput(std::string placeholder);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "TextInput"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "TextInput"; }
 
-	void SetText(const std::string &text);
-	void SetFont(Text::FontAtlas *font) override;
-	void SetPlaceholder(std::string text);
-	Signal<void(const std::string &)> onChanged;
-	Signal<void(const std::string &)> onSubmit;
+	void set_text(const std::string &text);
+	void set_font(Text::FontAtlas *font) override;
+	void set_placeholder(std::string text);
+	Signal<void(const std::string &)> on_changed;
+	Signal<void(const std::string &)> on_submit;
 
-	[[nodiscard]] const std::string &GetText() const { return m_State.text; }
-	[[nodiscard]] vec2 GetIntrinsicSize() const override;
+	[[nodiscard]] const std::string &get_text() const { return m_state.text; }
+	[[nodiscard]] Vec2 get_intrinsic_size() const override;
 
-	void OnMousePress(Platform::MouseButton btn, vec2 pos) override;
-	void OnMouseMove(vec2 pos) override;
-	void OnKeyPress(Platform::KeyCode key, int mods = 0) override;
-	void OnCharInput(uint32 codepoint) override;
-	void OnFocusGained() override;
-	void OnFocusLost() override;
-	void OnUpdate(f32 deltaTime) override;
-	void OnDrawSelf(Rendering::DrawList &drawList) override;
+	void on_mouse_press(Platform::MouseButton btn, Vec2 pos) override;
+	void on_mouse_move(Vec2 pos) override;
+	void on_key_press(Platform::KeyCode key, int mods = 0) override;
+	void on_char_input(Uint32 codepoint) override;
+	void on_focus_gained() override;
+	void on_focus_lost() override;
+	void on_update(F32 delta_time) override;
+	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   protected:
-	[[nodiscard]] Text::FontAtlas *ResolveFont() const;
+	[[nodiscard]] Text::FontAtlas *resolve_font() const;
 	// Adjusts m_ScrollOffsetX so the cursor stays within the visible text area.
-	void ClampScrollOffset(Text::FontAtlas *font, float scale, float visibleWidth);
-	void ResetBlink();
+	void clamp_scroll_offset(Text::FontAtlas *font, float scale, float visible_width);
+	void reset_blink();
 
-	TextInputState m_State;
-	std::string m_Placeholder;
-	Text::FontAtlas *m_Font = nullptr;
-	float m_ScrollOffsetX = 0.f; // horizontal scroll offset in pixels
-	float m_BlinkTimer = 0.f;
-	bool m_CaretVisible = true;
-
+	TextInputState m_state;
+	std::string m_placeholder;
+	Text::FontAtlas *m_font = nullptr;
+	float m_scroll_offset_x = 0.F; // horizontal scroll offset in pixels
+	float m_blink_timer = 0.F;
+	bool m_caret_visible = true;
 };
 
 } // namespace Aquila::UI::Core

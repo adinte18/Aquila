@@ -9,151 +9,151 @@ namespace Aquila::SceneManagement::Components {
 using namespace glm;
 
 struct CameraComponent {
-	f32 fov = 80.0f;
-	f32 nearPlane = 0.1f;
-	f32 farPlane = 100.f;
-	f32 aspectRatio = 1.778f;
-	bool isOrthographic = false;
+	F32 fov = 80.0f;
+	F32 near_plane = 0.1f;
+	F32 far_plane = 100.F;
+	F32 aspect_ratio = 1.778f;
+	bool is_orthographic = false;
 
-	f32 orthoLeft = -1.0f;
-	f32 orthoRight = 1.0f;
-	f32 orthoTop = 1.0f;
-	f32 orthoBottom = -1.0f;
+	F32 ortho_left = -1.0f;
+	F32 ortho_right = 1.0f;
+	F32 ortho_top = 1.0f;
+	F32 ortho_bottom = -1.0f;
 
 	bool primary = false;
 
-	mat4 GetViewMatrix(const vec3 &position, const quat &rotation) const {
-		vec3 forward = rotation * vec3(0.0f, 0.0f, 1.0f);
-		vec3 up = rotation * vec3(0.0f, -1.0f, 0.0f);
+	Mat4 get_view_matrix(const Vec3 &position, const quat &rotation) const {
+		Vec3 forward = rotation * Vec3(0.0f, 0.0f, 1.0f);
+		Vec3 up = rotation * Vec3(0.0f, -1.0f, 0.0f);
 
-		return GetViewMatrixFromDirection(position, forward, up);
+		return get_view_matrix_from_direction(position, forward, up);
 	}
 
-	mat4 GetViewMatrix(const vec3 &position, const vec3 &target, const vec3 &up = vec3(0, -1, 0)) const {
-		const vec3 direction = glm::normalize(target - position);
-		return GetViewMatrixFromDirection(position, direction, up);
+	Mat4 get_view_matrix(const Vec3 &position, const Vec3 &target, const Vec3 &up = Vec3(0, -1, 0)) const {
+		const Vec3 direction = glm::normalize(target - position);
+		return get_view_matrix_from_direction(position, direction, up);
 	}
 
-	f32 GetNearPlane() const { return nearPlane; }
+	F32 get_near_plane() const { return near_plane; }
 
-	f32 GetFarPlane() const { return farPlane; }
+	F32 get_far_plane() const { return far_plane; }
 
-	mat4 GetViewMatrixFromDirection(const vec3 &position, const vec3 &direction,
-									const vec3 &up = vec3(0, -1, 0)) const {
-		const vec3 w{ glm::normalize(direction) };
-		const vec3 u{ glm::normalize(glm::cross(w, up)) };
-		const vec3 v{ glm::cross(w, u) };
+	Mat4 get_view_matrix_from_direction(const Vec3 &position, const Vec3 &direction,
+										const Vec3 &up = Vec3(0, -1, 0)) const {
+		const Vec3 w{ glm::normalize(direction) };
+		const Vec3 u{ glm::normalize(glm::cross(w, up)) };
+		const Vec3 v{ glm::cross(w, u) };
 
-		mat4 viewMatrix = mat4{ 1.0f };
-		viewMatrix[0][0] = u.x;
-		viewMatrix[1][0] = u.y;
-		viewMatrix[2][0] = u.z;
-		viewMatrix[0][1] = v.x;
-		viewMatrix[1][1] = v.y;
-		viewMatrix[2][1] = v.z;
-		viewMatrix[0][2] = w.x;
-		viewMatrix[1][2] = w.y;
-		viewMatrix[2][2] = w.z;
-		viewMatrix[3][0] = -glm::dot(u, position);
-		viewMatrix[3][1] = -glm::dot(v, position);
-		viewMatrix[3][2] = -glm::dot(w, position);
+		Mat4 view_matrix = Mat4{ 1.0f };
+		view_matrix[0][0] = u.x;
+		view_matrix[1][0] = u.y;
+		view_matrix[2][0] = u.z;
+		view_matrix[0][1] = v.x;
+		view_matrix[1][1] = v.y;
+		view_matrix[2][1] = v.z;
+		view_matrix[0][2] = w.x;
+		view_matrix[1][2] = w.y;
+		view_matrix[2][2] = w.z;
+		view_matrix[3][0] = -glm::dot(u, position);
+		view_matrix[3][1] = -glm::dot(v, position);
+		view_matrix[3][2] = -glm::dot(w, position);
 
-		return viewMatrix;
+		return view_matrix;
 	}
 
-	mat4 GetInverseViewMatrix(const vec3 &position, const quat &rotation) const {
-		vec3 forward = rotation * vec3(0.0f, 0.0f, 1.0f);
-		vec3 up = rotation * vec3(0.0f, -1.0f, 0.0f);
-		vec3 right = glm::cross(forward, up);
+	Mat4 get_inverse_view_matrix(const Vec3 &position, const quat &rotation) const {
+		Vec3 forward = rotation * Vec3(0.0f, 0.0f, 1.0f);
+		Vec3 up = rotation * Vec3(0.0f, -1.0f, 0.0f);
+		Vec3 right = glm::cross(forward, up);
 
-		mat4 inverseViewMatrix = mat4{ 1.0f };
-		inverseViewMatrix[0][0] = right.x;
-		inverseViewMatrix[0][1] = right.y;
-		inverseViewMatrix[0][2] = right.z;
-		inverseViewMatrix[1][0] = up.x;
-		inverseViewMatrix[1][1] = up.y;
-		inverseViewMatrix[1][2] = up.z;
-		inverseViewMatrix[2][0] = forward.x;
-		inverseViewMatrix[2][1] = forward.y;
-		inverseViewMatrix[2][2] = forward.z;
-		inverseViewMatrix[3][0] = position.x;
-		inverseViewMatrix[3][1] = position.y;
-		inverseViewMatrix[3][2] = position.z;
+		Mat4 inverse_view_matrix = Mat4{ 1.0f };
+		inverse_view_matrix[0][0] = right.x;
+		inverse_view_matrix[0][1] = right.y;
+		inverse_view_matrix[0][2] = right.z;
+		inverse_view_matrix[1][0] = up.x;
+		inverse_view_matrix[1][1] = up.y;
+		inverse_view_matrix[1][2] = up.z;
+		inverse_view_matrix[2][0] = forward.x;
+		inverse_view_matrix[2][1] = forward.y;
+		inverse_view_matrix[2][2] = forward.z;
+		inverse_view_matrix[3][0] = position.x;
+		inverse_view_matrix[3][1] = position.y;
+		inverse_view_matrix[3][2] = position.z;
 
-		return inverseViewMatrix;
+		return inverse_view_matrix;
 	}
 
-	mat4 GetViewMatrixFromQuaternion(const vec3 &position, const quat &rotation) const {
-		mat4 rotationMatrix = mat4_cast(conjugate(rotation));
-		mat4 translationMatrix = mat4(1.0f);
-		translationMatrix[3] = vec4(-position, 1.0f);
-		return rotationMatrix * translationMatrix;
+	Mat4 get_view_matrix_from_quaternion(const Vec3 &position, const quat &rotation) const {
+		Mat4 rotation_matrix = mat4_cast(conjugate(rotation));
+		Mat4 translation_matrix = Mat4(1.0f);
+		translation_matrix[3] = Vec4(-position, 1.0f);
+		return rotation_matrix * translation_matrix;
 	}
 
-	mat4 GetProjectionMatrix() const {
-		if (isOrthographic) {
-			mat4 projMatrix = mat4{ 1.0f };
-			projMatrix[0][0] = 2.0f / (orthoRight - orthoLeft);
-			projMatrix[1][1] = 2.0f / (orthoTop - orthoBottom);
-			projMatrix[2][2] = 1.0f / (farPlane - nearPlane);
-			projMatrix[3][0] = -(orthoRight + orthoLeft) / (orthoRight - orthoLeft);
-			projMatrix[3][1] = -(orthoTop + orthoBottom) / (orthoTop - orthoBottom);
-			projMatrix[3][2] = -nearPlane / (farPlane - nearPlane);
-			return projMatrix;
+	Mat4 get_projection_matrix() const {
+		if (is_orthographic) {
+			Mat4 proj_matrix = Mat4{ 1.0f };
+			proj_matrix[0][0] = 2.0f / (ortho_right - ortho_left);
+			proj_matrix[1][1] = 2.0f / (ortho_top - ortho_bottom);
+			proj_matrix[2][2] = 1.0f / (far_plane - near_plane);
+			proj_matrix[3][0] = -(ortho_right + ortho_left) / (ortho_right - ortho_left);
+			proj_matrix[3][1] = -(ortho_top + ortho_bottom) / (ortho_top - ortho_bottom);
+			proj_matrix[3][2] = -near_plane / (far_plane - near_plane);
+			return proj_matrix;
 		} else {
-			const f32 tanHalfFovy = tan(glm::radians(fov) / 2.0f);
-			mat4 projMatrix = mat4{ 0.0f };
-			projMatrix[0][0] = 1.0f / (aspectRatio * tanHalfFovy);
-			projMatrix[1][1] = 1.0f / (tanHalfFovy);
-			projMatrix[2][2] = farPlane / (farPlane - nearPlane);
-			projMatrix[2][3] = 1.0f;
-			projMatrix[3][2] = -(farPlane * nearPlane) / (farPlane - nearPlane);
+			const F32 tan_half_fovy = tan(glm::radians(fov) / 2.0f);
+			Mat4 proj_matrix = Mat4{ 0.0f };
+			proj_matrix[0][0] = 1.0f / (aspect_ratio * tan_half_fovy);
+			proj_matrix[1][1] = 1.0f / (tan_half_fovy);
+			proj_matrix[2][2] = far_plane / (far_plane - near_plane);
+			proj_matrix[2][3] = 1.0f;
+			proj_matrix[3][2] = -(far_plane * near_plane) / (far_plane - near_plane);
 
-			projMatrix[1][1] *= -1.0f;
+			proj_matrix[1][1] *= -1.0f;
 
-			return projMatrix;
+			return proj_matrix;
 		}
 	}
 
-	mat4 GetViewProjectionMatrix(const vec3 &position, const quat &rotation) const {
-		return GetProjectionMatrix() * GetViewMatrix(position, rotation);
+	Mat4 get_view_projection_matrix(const Vec3 &position, const quat &rotation) const {
+		return get_projection_matrix() * get_view_matrix(position, rotation);
 	}
 
-	mat4 GetViewProjectionMatrix(const vec3 &position, const vec3 &target, const vec3 &up = vec3(0, -1, 0)) const {
-		return GetProjectionMatrix() * GetViewMatrix(position, target, up);
+	Mat4 get_view_projection_matrix(const Vec3 &position, const Vec3 &target, const Vec3 &up = Vec3(0, -1, 0)) const {
+		return get_projection_matrix() * get_view_matrix(position, target, up);
 	}
 
-	void GetFrustumCorners(const vec3 &position, const quat &rotation, vec3 corners[8]) const {
-		mat4 invVP = inverse(GetViewProjectionMatrix(position, rotation));
+	void get_frustum_corners(const Vec3 &position, const quat &rotation, Vec3 corners[8]) const {
+		Mat4 inv_vp = inverse(get_view_projection_matrix(position, rotation));
 
-		vec4 frustumCorners[8] = { { -1, -1, -1, 1 }, { 1, -1, -1, 1 }, { 1, 1, -1, 1 }, { -1, 1, -1, 1 },
-								   { -1, -1, 1, 1 },  { 1, -1, 1, 1 },	{ 1, 1, 1, 1 },	 { -1, 1, 1, 1 } };
+		Vec4 frustum_corners[8] = { { -1, -1, -1, 1 }, { 1, -1, -1, 1 }, { 1, 1, -1, 1 }, { -1, 1, -1, 1 },
+									{ -1, -1, 1, 1 },  { 1, -1, 1, 1 },	 { 1, 1, 1, 1 },  { -1, 1, 1, 1 } };
 
 		for (int i = 0; i < 8; ++i) {
-			vec4 worldPos = invVP * frustumCorners[i];
-			corners[i] = vec3(worldPos) / worldPos.w;
+			Vec4 world_pos = inv_vp * frustum_corners[i];
+			corners[i] = Vec3(world_pos) / world_pos.w;
 		}
 	}
 
-	vec3 GetForwardDirection(const quat &rotation) const { return rotation * vec3(0.0f, 0.0f, 1.0f); }
+	Vec3 get_forward_direction(const quat &rotation) const { return rotation * Vec3(0.0f, 0.0f, 1.0f); }
 
-	vec3 GetRightDirection(const quat &rotation) const { return rotation * vec3(1.0f, 0.0f, 0.0f); }
+	Vec3 get_right_direction(const quat &rotation) const { return rotation * Vec3(1.0f, 0.0f, 0.0f); }
 
-	vec3 GetUpDirection(const quat &rotation) const { return rotation * vec3(0.0f, -1.0f, 0.0f); }
+	Vec3 get_up_direction(const quat &rotation) const { return rotation * Vec3(0.0f, -1.0f, 0.0f); }
 
-	void OnResize(f32 width, f32 height) { aspectRatio = width / height; }
+	void on_resize(F32 width, F32 height) { aspect_ratio = width / height; }
 
-	void SetFOV(f32 newFov) { fov = glm::clamp(newFov, 1.0f, 179.0f); }
+	void set_fov(F32 new_fov) { fov = glm::clamp(new_fov, 1.0f, 179.0f); }
 
-	void Zoom(f32 offset) { SetFOV(fov - offset); }
+	void zoom(F32 offset) { set_fov(fov - offset); }
 
-	vec3 QuaternionToEuler(const quat &q) const {
-		vec3 euler = eulerAngles(q);
-		return vec3(degrees(euler.x), degrees(euler.y), degrees(euler.z));
+	Vec3 quaternion_to_euler(const quat &q) const {
+		Vec3 euler = eulerAngles(q);
+		return Vec3(degrees(euler.x), degrees(euler.y), degrees(euler.z));
 	}
 
-	quat EulerToQuaternion(const vec3 &euler) const {
-		return quat(vec3(radians(euler.x), radians(euler.y), radians(euler.z)));
+	quat euler_to_quaternion(const Vec3 &euler) const {
+		return quat(Vec3(radians(euler.x), radians(euler.y), radians(euler.z)));
 	}
 };
 

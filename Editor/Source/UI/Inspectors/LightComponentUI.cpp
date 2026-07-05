@@ -15,35 +15,35 @@ using namespace Aquila;
 using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 
-LightComponentUI::LightComponentUI(GFX::GfxContext &context) : m_Context(context) {}
+LightComponentUI::LightComponentUI(GFX::GfxContext &context) : m_context(context) {}
 
-bool LightComponentUI::Matches(Entity entity) const {
-	return entity.HasComponent<LightComponent>();
+bool LightComponentUI::matches(Entity entity) const {
+	return entity.has_component<LightComponent>();
 }
 
-void LightComponentUI::Build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
+void LightComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
 	using UI::Core::DragFloat;
-	m_Color = grid->AddRow<UI::Core::ColorPicker>("Color", m_Context, vec4(1.f));
-	m_Intensity = grid->AddRow<DragFloat>("Intensity", DragFloat::Config{ .min = 0.f, .max = 100.f, .speed = 0.5f });
-	m_Range = grid->AddRow<DragFloat>("Range", DragFloat::Config{ .min = 0.f, .max = 200.f, .speed = 0.5f });
-	m_Active = grid->AddRow<UI::Core::Toggle>("Active", false);
-	grid->AddRow<UI::Core::Checkbox>("Shadows", false);
+	m_color = grid->add_row<UI::Core::ColorPicker>("Color", m_context, Vec4(1.F));
+	m_intensity = grid->add_row<DragFloat>("Intensity", DragFloat::Config{ .min = 0.F, .max = 100.F, .speed = 0.5f });
+	m_range = grid->add_row<DragFloat>("Range", DragFloat::Config{ .min = 0.F, .max = 200.F, .speed = 0.5f });
+	m_active = grid->add_row<UI::Core::Toggle>("Active", false);
+	grid->add_row<UI::Core::Checkbox>("Shadows", false);
 }
 
-void LightComponentUI::Show(Entity entity) {
-	auto &light = entity.GetComponent<LightComponent>();
+void LightComponentUI::show(Entity entity) {
+	auto &light = entity.get_component<LightComponent>();
 	ComponentBinder<LightComponent> bind(entity);
 
-	m_Color->SetValue(vec4(light.GetColor(), 1.f));
-	m_Color->onChanged.Set([entity](vec4 c) mutable { entity.GetComponent<LightComponent>().SetColor(vec3(c)); });
+	m_color->set_value(Vec4(light.get_color(), 1.F));
+	m_color->on_changed.set([entity](Vec4 c) mutable { entity.get_component<LightComponent>().set_color(Vec3(c)); });
 
-	bind.Bind(m_Intensity, &LightComponent::GetIntensity, &LightComponent::SetIntensity);
-	bind.Bind(m_Active, &LightComponent::IsActive, &LightComponent::SetActive);
+	bind.bind(m_intensity, &LightComponent::get_intensity, &LightComponent::set_intensity);
+	bind.bind(m_active, &LightComponent::is_active, &LightComponent::set_active);
 
-	const bool isPoint = light.GetType() == LightComponent::Type::Point;
-	m_Range->GetParent()->SetHidden(!isPoint);
-	if (isPoint) {
-		bind.Bind(m_Range, &LightComponent::GetRange, &LightComponent::SetRange);
+	const bool is_point = light.get_type() == LightComponent::Type::Point;
+	m_range->get_parent()->set_hidden(!is_point);
+	if (is_point) {
+		bind.bind(m_range, &LightComponent::get_range, &LightComponent::set_range);
 	}
 }
 

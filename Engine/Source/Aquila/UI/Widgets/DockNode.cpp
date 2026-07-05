@@ -10,322 +10,323 @@
 
 namespace Aquila::UI::Core {
 
-View *DockNode::MakeZoneIndicator(FloatingAttachPoint elemPt, FloatingAttachPoint parentPt, vec2 offset,
-								  const char *cls) {
-	auto zone = CreateUnique<View>();
-	zone->AddClass("dock-zone-indicator");
-	zone->AddClass(cls);
+View *DockNode::make_zone_indicator(FloatingAttachPoint elem_pt, FloatingAttachPoint parent_pt, Vec2 offset,
+									const char *cls) {
+	auto zone = create_unique<View>();
+	zone->add_class("dock-zone-indicator");
+	zone->add_class(cls);
 
 	FloatingConfig cfg;
-	cfg.attachTo = FloatingAttachTo::Parent;
-	cfg.elementPoint = elemPt;
-	cfg.parentPoint = parentPt;
+	cfg.attach_to = FloatingAttachTo::Parent;
+	cfg.element_point = elem_pt;
+	cfg.parent_point = parent_pt;
 	cfg.offset = offset;
-	cfg.zIndex = 50;
-	zone->SetFloating(cfg);
-	zone->SetHidden(true);
+	cfg.z_index = 50;
+	zone->set_floating(cfg);
+	zone->set_hidden(true);
 
-	return AddChild(std::move(zone));
+	return add_child(std::move(zone));
 }
 
-DockNode::DockNode(DockDragContext *dragCtx) : m_DragCtx(dragCtx) {
-	AddClass("dock-node");
+DockNode::DockNode(DockDragContext *drag_ctx) : m_drag_ctx(drag_ctx) {
+	add_class("dock-node");
 
-	auto tabBar = CreateUnique<View>();
-	tabBar->AddClass("dock-tab-bar");
-	m_TabBar = AddChild(std::move(tabBar));
+	auto tab_bar = create_unique<View>();
+	tab_bar->add_class("dock-tab-bar");
+	m_tab_bar = add_child(std::move(tab_bar));
 
-	auto panelArea = CreateUnique<View>();
-	panelArea->AddClass("dock-panel-area");
-	m_PanelArea = AddChild(std::move(panelArea));
+	auto panel_area = create_unique<View>();
+	panel_area->add_class("dock-panel-area");
+	m_panel_area = add_child(std::move(panel_area));
 
 	using AP = FloatingAttachPoint;
-	constexpr float kStep = 52.f;
-	m_ZoneCenter = MakeZoneIndicator(AP::Center, AP::Center, { 0.f, 0.f }, "dock-zone-center-ind");
-	m_ZoneLeft = MakeZoneIndicator(AP::Center, AP::Center, { -kStep, 0.f }, "dock-zone-left-ind");
-	m_ZoneRight = MakeZoneIndicator(AP::Center, AP::Center, { kStep, 0.f }, "dock-zone-right-ind");
-	m_ZoneTop = MakeZoneIndicator(AP::Center, AP::Center, { 0.f, -kStep }, "dock-zone-top-ind");
-	m_ZoneBottom = MakeZoneIndicator(AP::Center, AP::Center, { 0.f, kStep }, "dock-zone-bottom-ind");
+	constexpr float k_step = 52.F;
+	m_zone_center = make_zone_indicator(AP::Center, AP::Center, { 0.F, 0.F }, "dock-zone-center-ind");
+	m_zone_left = make_zone_indicator(AP::Center, AP::Center, { -k_step, 0.F }, "dock-zone-left-ind");
+	m_zone_right = make_zone_indicator(AP::Center, AP::Center, { k_step, 0.F }, "dock-zone-right-ind");
+	m_zone_top = make_zone_indicator(AP::Center, AP::Center, { 0.F, -k_step }, "dock-zone-top-ind");
+	m_zone_bottom = make_zone_indicator(AP::Center, AP::Center, { 0.F, k_step }, "dock-zone-bottom-ind");
 }
 
-std::pair<DockNode *, DockNode *> DockNode::Split(SplitDirection dir, bool anchorFirst) {
-	for (View *z : { m_ZoneCenter, m_ZoneLeft, m_ZoneRight, m_ZoneTop, m_ZoneBottom }) {
+std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool anchor_first) {
+	for (View *z : { m_zone_center, m_zone_left, m_zone_right, m_zone_top, m_zone_bottom }) {
 		if (z) {
-			RemoveChild(z);
+			remove_child(z);
 		}
 	}
-	m_ZoneCenter = m_ZoneLeft = m_ZoneRight = m_ZoneTop = m_ZoneBottom = nullptr;
+	m_zone_center = m_zone_left = m_zone_right = m_zone_top = m_zone_bottom = nullptr;
 
-	if (m_TabBar) {
-		RemoveChild(m_TabBar);
-		m_TabBar = nullptr;
+	if (m_tab_bar) {
+		remove_child(m_tab_bar);
+		m_tab_bar = nullptr;
 	}
-	if (m_PanelArea) {
-		RemoveChild(m_PanelArea);
-		m_PanelArea = nullptr;
+	if (m_panel_area) {
+		remove_child(m_panel_area);
+		m_panel_area = nullptr;
 	}
-	m_IsLeaf = false;
+	m_is_leaf = false;
 
 	StyleProperties sp;
-	sp.flexDirection = (dir == SplitDirection::Horizontal) ? FlexDirection::Row : FlexDirection::Column;
-	MergeStyle(sp);
+	sp.flex_direction = (dir == SplitDirection::Horizontal) ? FlexDirection::Row : FlexDirection::Column;
+	merge_style(sp);
 
-	const bool isH = (dir == SplitDirection::Horizontal);
+	const bool is_h = (dir == SplitDirection::Horizontal);
 
-	auto first = CreateUnique<DockNode>(m_DragCtx);
+	auto first = create_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties fp;
 
-		if (isH) {
-			fp.height = StyleLength::Percent(100.f);
+		if (is_h) {
+			fp.height = StyleLength::percent(100.F);
 		} else {
-			fp.width = StyleLength::Percent(100.f);
+			fp.width = StyleLength::percent(100.F);
 		}
-		first->MergeStyle(fp);
+		first->merge_style(fp);
 	}
 
-	auto splitter = CreateUnique<DockSplitter>(dir);
-	splitter->SetResizeBefore(anchorFirst);
+	auto splitter = create_unique<DockSplitter>(dir);
+	splitter->set_resize_before(anchor_first);
 
-	auto second = CreateUnique<DockNode>(m_DragCtx);
+	auto second = create_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties sp2;
-		sp2.flexGrow = 1.f;
-		if (isH) {
-			sp2.height = StyleLength::Percent(100.f);
+		sp2.flex_grow = 1.F;
+		if (is_h) {
+			sp2.height = StyleLength::percent(100.F);
 		} else {
-			sp2.width = StyleLength::Percent(100.f);
+			sp2.width = StyleLength::percent(100.F);
 		}
-		second->MergeStyle(sp2);
+		second->merge_style(sp2);
 	}
 
-	DockNode *firstRaw = static_cast<DockNode *>(AddChild(std::move(first)));
-	DockSplitter *splitRaw = static_cast<DockSplitter *>(AddChild(std::move(splitter)));
-	DockNode *secondRaw = static_cast<DockNode *>(AddChild(std::move(second)));
+	DockNode *first_raw = static_cast<DockNode *>(add_child(std::move(first)));
+	DockSplitter *split_raw = static_cast<DockSplitter *>(add_child(std::move(splitter)));
+	DockNode *second_raw = static_cast<DockNode *>(add_child(std::move(second)));
 
-	splitRaw->SetSiblings(firstRaw, secondRaw);
+	split_raw->set_siblings(first_raw, second_raw);
 
-	return { firstRaw, secondRaw };
+	return { first_raw, second_raw };
 }
 
-DockNode *DockNode::AppendLeaf(SplitDirection dir) {
-	DockNode *prevLast = nullptr;
-	for (auto &child : GetChildren()) {
+DockNode *DockNode::append_leaf(SplitDirection dir) {
+	DockNode *prev_last = nullptr;
+	for (auto &child : get_children()) {
 		if (auto *dn = dynamic_cast<DockNode *>(child.get())) {
-			prevLast = dn;
+			prev_last = dn;
 		}
 	}
-	if (!prevLast) {
+	if (!prev_last) {
 		return nullptr;
 	}
 
-	const bool isH = (dir == SplitDirection::Horizontal);
+	const bool is_h = (dir == SplitDirection::Horizontal);
 
-	auto splitter = CreateUnique<DockSplitter>(dir);
-	splitter->SetResizeBefore(false);
+	auto splitter = create_unique<DockSplitter>(dir);
+	splitter->set_resize_before(false);
 
-	auto leaf = CreateUnique<DockNode>(m_DragCtx);
+	auto leaf = create_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties lp;
-		lp.flexGrow = 0.f;
-		if (isH) {
-			lp.height = StyleLength::Percent(100.f);
+		lp.flex_grow = 0.F;
+		if (is_h) {
+			lp.height = StyleLength::percent(100.F);
 		} else {
-			lp.width = StyleLength::Percent(100.f);
+			lp.width = StyleLength::percent(100.F);
 		}
-		leaf->MergeStyle(lp);
+		leaf->merge_style(lp);
 	}
 
-	DockSplitter *splitRaw = static_cast<DockSplitter *>(AddChild(std::move(splitter)));
-	DockNode *leafRaw = static_cast<DockNode *>(AddChild(std::move(leaf)));
+	DockSplitter *split_raw = static_cast<DockSplitter *>(add_child(std::move(splitter)));
+	DockNode *leaf_raw = static_cast<DockNode *>(add_child(std::move(leaf)));
 
-	splitRaw->SetSiblings(prevLast, leafRaw);
+	split_raw->set_siblings(prev_last, leaf_raw);
 
-	return leafRaw;
+	return leaf_raw;
 }
 
-void DockNode::AppendTab(DockPanel *panel, std::string title) {
-	auto wrapper = CreateUnique<View>();
-	wrapper->AddClass("dock-tab-wrapper");
-	View *wrapperRaw = m_TabBar->AddChild(std::move(wrapper));
+void DockNode::append_tab(DockPanel *panel, std::string title) {
+	auto wrapper = create_unique<View>();
+	wrapper->add_class("dock-tab-wrapper");
+	View *wrapper_raw = m_tab_bar->add_child(std::move(wrapper));
 
-	auto btn = CreateUnique<DockTabButton>();
-	btn->SetText(title);
-	if (panel != nullptr && panel->GetTabIcon() != nullptr) {
-		btn->SetIcon(panel->GetTabIcon());
+	auto btn = create_unique<DockTabButton>();
+	btn->set_text(title);
+	if (panel != nullptr && panel->get_tab_icon() != nullptr) {
+		btn->set_icon(panel->get_tab_icon());
 	}
-	btn->AddClass("dock-tab-btn");
-	DockTabButton *btnRaw = static_cast<DockTabButton *>(wrapperRaw->AddChild(std::move(btn)));
+	btn->add_class("dock-tab-btn");
+	DockTabButton *btn_raw = static_cast<DockTabButton *>(wrapper_raw->add_child(std::move(btn)));
 
-	auto closeBtn = CreateUnique<DockCloseButton>();
-	closeBtn->SetText("x");
-	closeBtn->AddClass("dock-tab-close-btn");
-	closeBtn->SetCloseInfo(this, panel);
-	wrapperRaw->AddChild(std::move(closeBtn));
+	auto close_btn = create_unique<DockCloseButton>();
+	close_btn->set_text("x");
+	close_btn->add_class("dock-tab-close-btn");
+	close_btn->set_close_info(this, panel);
+	wrapper_raw->add_child(std::move(close_btn));
 
-	btnRaw->SetDragInfo(m_DragCtx, panel, this);
-	btnRaw->onClick.Connect([this, panel] { SetActivePanelByPtr(panel); });
+	btn_raw->set_drag_info(m_drag_ctx, panel, this);
+	btn_raw->on_click.connect([this, panel] { set_active_panel_by_ptr(panel); });
 
-	m_Tabs.push_back({ wrapperRaw, btnRaw, panel, std::move(title) });
+	m_tabs.push_back({ wrapper_raw, btn_raw, panel, std::move(title) });
 }
 
-DockPanel *DockNode::AddPanel(std::string title, GFX::GfxTexture *tabIcon) {
-	auto panel = CreateUnique<DockPanel>(title);
-	DockPanel *panelRaw = static_cast<DockPanel *>(m_PanelArea->AddChild(std::move(panel)));
-	panelRaw->SetTabIcon(tabIcon);
+DockPanel *DockNode::add_panel(std::string title, GFX::GfxTexture *tab_icon) {
+	auto panel = create_unique<DockPanel>(title);
+	DockPanel *panel_raw = static_cast<DockPanel *>(m_panel_area->add_child(std::move(panel)));
+	panel_raw->set_tab_icon(tab_icon);
 
-	AppendTab(panelRaw, std::move(title));
+	append_tab(panel_raw, std::move(title));
 
-	if (m_ActivePanel < 0) {
-		SetActivePanel(0);
+	if (m_active_panel < 0) {
+		set_active_panel(0);
 	}
 
-	RemoveClass("dock-node-empty");
+	remove_class("dock-node-empty");
 
-	return panelRaw;
+	return panel_raw;
 }
 
-void DockNode::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void DockNode::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "split") {
 		if (value == "horizontal" || value == "row") {
-			m_DeclaredSplit = SplitDirection::Horizontal;
+			m_declared_split = SplitDirection::Horizontal;
 		} else if (value == "vertical" || value == "column") {
-			m_DeclaredSplit = SplitDirection::Vertical;
+			m_declared_split = SplitDirection::Vertical;
 		}
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
-void DockNode::SetActivePanel(int index) {
-	if (index < 0 || index >= static_cast<int>(m_Tabs.size())) {
+void DockNode::set_active_panel(int index) {
+	if (index < 0 || index >= static_cast<int>(m_tabs.size())) {
 		return;
 	}
-	m_ActivePanel = index;
-	ApplyActivePanel();
+	m_active_panel = index;
+	apply_active_panel();
 }
 
-void DockNode::SetActivePanelByPtr(DockPanel *panel) {
-	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {
-		if (m_Tabs[i].panel == panel) {
-			SetActivePanel(i);
+void DockNode::set_active_panel_by_ptr(DockPanel *panel) {
+	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {
+		if (m_tabs[i].panel == panel) {
+			set_active_panel(i);
 			return;
 		}
 	}
 }
 
-void DockNode::ApplyActivePanel() {
-	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {
-		const bool active = (i == m_ActivePanel);
-		m_Tabs[i].panel->SetHidden(!active);
+void DockNode::apply_active_panel() {
+	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {
+		const bool active = (i == m_active_panel);
+		m_tabs[i].panel->set_hidden(!active);
 		if (active) {
-			m_Tabs[i].wrapper->AddClass("dock-tab-active");
-			m_Tabs[i].button->AddClass("dock-tab-btn-active");
+			m_tabs[i].wrapper->add_class("dock-tab-active");
+			m_tabs[i].button->add_class("dock-tab-btn-active");
 		} else {
-			m_Tabs[i].wrapper->RemoveClass("dock-tab-active");
-			m_Tabs[i].button->RemoveClass("dock-tab-btn-active");
+			m_tabs[i].wrapper->remove_class("dock-tab-active");
+			m_tabs[i].button->remove_class("dock-tab-btn-active");
 		}
 	}
 }
 
-DockPanel *DockNode::GetActivePanelPtr() const {
-	if (m_ActivePanel < 0 || m_ActivePanel >= static_cast<int>(m_Tabs.size())) {
+DockPanel *DockNode::get_active_panel_ptr() const {
+	if (m_active_panel < 0 || m_active_panel >= static_cast<int>(m_tabs.size())) {
 		return nullptr;
 	}
 
-	return m_Tabs[m_ActivePanel].panel;
+	return m_tabs[m_active_panel].panel;
 }
 
-Unique<View> DockNode::DetachPanel(DockPanel *panel) {
-	auto it = std::find_if(m_Tabs.begin(), m_Tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
-	if (it == m_Tabs.end()) {
+Unique<View> DockNode::detach_panel(DockPanel *panel) {
+	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
+	if (it == m_tabs.end()) {
 		return nullptr;
 	}
 
-	m_TabBar->RemoveChild(it->wrapper);
-	auto owned = m_PanelArea->DetachChild(panel);
-	m_Tabs.erase(it);
+	m_tab_bar->remove_child(it->wrapper);
+	auto owned = m_panel_area->detach_child(panel);
+	m_tabs.erase(it);
 
-	if (m_Tabs.empty()) {
-		m_ActivePanel = -1;
-		AddClass("dock-node-empty");
+	if (m_tabs.empty()) {
+		m_active_panel = -1;
+		add_class("dock-node-empty");
 	} else {
-		m_ActivePanel = std::clamp(m_ActivePanel, 0, static_cast<int>(m_Tabs.size()) - 1);
-		ApplyActivePanel();
+		m_active_panel = std::clamp(m_active_panel, 0, static_cast<int>(m_tabs.size()) - 1);
+		apply_active_panel();
 	}
 
 	return owned;
 }
 
-void DockNode::ClosePanel(DockPanel *panel) {
-	auto owned = DetachPanel(panel);
+void DockNode::close_panel(DockPanel *panel) {
+	auto owned = detach_panel(panel);
 	// `owned` destroyed at end of scope — panel is gone.
 
-	if (m_Tabs.empty() && m_DragCtx && m_DragCtx->onNodeEmptied) {
-		m_DragCtx->onNodeEmptied(this);
+	if (m_tabs.empty() && m_drag_ctx && m_drag_ctx->on_node_emptied) {
+		m_drag_ctx->on_node_emptied(this);
 	}
 }
 
-void DockNode::ReorderPanel(DockPanel *panel, vec2 cursorPos) {
-	auto it = std::find_if(m_Tabs.begin(), m_Tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
-	if (it == m_Tabs.end()) {
+void DockNode::reorder_panel(DockPanel *panel, Vec2 cursor_pos) {
+	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
+	if (it == m_tabs.end()) {
 		return;
 	}
 
-	int targetIndex = static_cast<int>(m_Tabs.size()) - 1;
-	for (int i = 0; i < static_cast<int>(m_Tabs.size()); ++i) {
-		const Rect r = m_Tabs[i].wrapper->GetAbsoluteRect();
-		if (cursorPos.x <= r.position.x + r.size.x * 0.5f) {
-			targetIndex = i;
+	int target_index = static_cast<int>(m_tabs.size()) - 1;
+	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {
+		const Rect r = m_tabs[i].wrapper->get_absolute_rect();
+		if (cursor_pos.x <= r.position.x + r.size.x * 0.5f) {
+			target_index = i;
 			break;
 		}
 	}
 
-	int sourceIndex = static_cast<int>(std::distance(m_Tabs.begin(), it));
-	if (sourceIndex == targetIndex) {
+	int source_index = static_cast<int>(std::distance(m_tabs.begin(), it));
+	if (source_index == target_index) {
 		return;
 	}
 
-	if (sourceIndex < targetIndex) {
-		std::rotate(m_Tabs.begin() + sourceIndex, m_Tabs.begin() + sourceIndex + 1, m_Tabs.begin() + targetIndex + 1);
+	if (source_index < target_index) {
+		std::rotate(m_tabs.begin() + source_index, m_tabs.begin() + source_index + 1,
+					m_tabs.begin() + target_index + 1);
 	} else {
-		std::rotate(m_Tabs.begin() + targetIndex, m_Tabs.begin() + sourceIndex, m_Tabs.begin() + sourceIndex + 1);
+		std::rotate(m_tabs.begin() + target_index, m_tabs.begin() + source_index, m_tabs.begin() + source_index + 1);
 	}
 
-	if (m_ActivePanel == sourceIndex) {
-		m_ActivePanel = targetIndex;
-	} else if (sourceIndex < targetIndex) {
-		if (m_ActivePanel > sourceIndex && m_ActivePanel <= targetIndex) {
-			m_ActivePanel--;
+	if (m_active_panel == source_index) {
+		m_active_panel = target_index;
+	} else if (source_index < target_index) {
+		if (m_active_panel > source_index && m_active_panel <= target_index) {
+			m_active_panel--;
 		}
 	} else {
-		if (m_ActivePanel >= targetIndex && m_ActivePanel < sourceIndex) {
-			m_ActivePanel++;
+		if (m_active_panel >= target_index && m_active_panel < source_index) {
+			m_active_panel++;
 		}
 	}
 
 	std::vector<Unique<View>> wrappers;
-	wrappers.reserve(m_Tabs.size());
-	for (auto &t : m_Tabs) {
-		wrappers.push_back(m_TabBar->DetachChild(t.wrapper));
+	wrappers.reserve(m_tabs.size());
+	for (auto &t : m_tabs) {
+		wrappers.push_back(m_tab_bar->detach_child(t.wrapper));
 	}
-	for (size_t i = 0; i < m_Tabs.size(); ++i) {
-		m_Tabs[i].wrapper = m_TabBar->AddChild(std::move(wrappers[i]));
+	for (size_t i = 0; i < m_tabs.size(); ++i) {
+		m_tabs[i].wrapper = m_tab_bar->add_child(std::move(wrappers[i]));
 	}
 
-	ApplyActivePanel();
+	apply_active_panel();
 }
 
-void DockNode::AcceptPanel(Unique<View> panelView, std::string title, DropZone zone) {
+void DockNode::accept_panel(Unique<View> panel_view, std::string title, DropZone zone) {
 	if (zone == DropZone::None) {
 		return;
 	}
 
 	if (zone == DropZone::Center) {
-		DockPanel *panelRaw = static_cast<DockPanel *>(m_PanelArea->AddChild(std::move(panelView)));
-		AppendTab(panelRaw, std::move(title));
-		SetActivePanel(static_cast<int>(m_Tabs.size()) - 1);
-		RemoveClass("dock-node-empty");
+		DockPanel *panel_raw = static_cast<DockPanel *>(m_panel_area->add_child(std::move(panel_view)));
+		append_tab(panel_raw, std::move(title));
+		set_active_panel(static_cast<int>(m_tabs.size()) - 1);
+		remove_class("dock-node-empty");
 		return;
 	}
 
@@ -334,37 +335,37 @@ void DockNode::AcceptPanel(Unique<View> panelView, std::string title, DropZone z
 		std::string title;
 	};
 	std::vector<Saved> existing;
-	existing.reserve(m_Tabs.size());
+	existing.reserve(m_tabs.size());
 
-	for (auto &tab : m_Tabs) {
-		m_TabBar->RemoveChild(tab.wrapper);
-		existing.push_back({ m_PanelArea->DetachChild(tab.panel), tab.title });
+	for (auto &tab : m_tabs) {
+		m_tab_bar->remove_child(tab.wrapper);
+		existing.push_back({ m_panel_area->detach_child(tab.panel), tab.title });
 	}
-	m_Tabs.clear();
-	m_ActivePanel = -1;
+	m_tabs.clear();
+	m_active_panel = -1;
 
-	const SplitDirection splitDir =
+	const SplitDirection split_dir =
 		(zone == DropZone::Left || zone == DropZone::Right) ? SplitDirection::Horizontal : SplitDirection::Vertical;
-	const bool newFirst = (zone == DropZone::Left || zone == DropZone::Top);
+	const bool new_first = (zone == DropZone::Left || zone == DropZone::Top);
 
-	auto [firstNode, secondNode] = Split(splitDir);
+	auto [firstNode, secondNode] = split(split_dir);
 
-	DockNode *newNode = newFirst ? firstNode : secondNode;
-	DockNode *keepNode = newFirst ? secondNode : firstNode;
+	DockNode *new_node = new_first ? firstNode : secondNode;
+	DockNode *keep_node = new_first ? secondNode : firstNode;
 
-	newNode->AcceptPanel(std::move(panelView), std::move(title), DropZone::Center);
+	new_node->accept_panel(std::move(panel_view), std::move(title), DropZone::Center);
 	for (auto &saved : existing) {
-		keepNode->AcceptPanel(std::move(saved.view), std::move(saved.title), DropZone::Center);
+		keep_node->accept_panel(std::move(saved.view), std::move(saved.title), DropZone::Center);
 	}
 }
 
-DockNode *DockNode::HitTestNode(vec2 absPos) {
-	if (m_IsLeaf) {
-		return GetAbsoluteRect().Contains(absPos) ? this : nullptr;
+DockNode *DockNode::hit_test_node(Vec2 abs_pos) {
+	if (m_is_leaf) {
+		return get_absolute_rect().contains(abs_pos) ? this : nullptr;
 	}
-	for (auto &child : GetChildren()) {
+	for (auto &child : get_children()) {
 		if (auto *dn = dynamic_cast<DockNode *>(child.get())) {
-			if (auto *hit = dn->HitTestNode(absPos)) {
+			if (auto *hit = dn->hit_test_node(abs_pos)) {
 				return hit;
 			}
 		}
@@ -372,91 +373,91 @@ DockNode *DockNode::HitTestNode(vec2 absPos) {
 	return nullptr;
 }
 
-void DockNode::ShowDropZones(bool show) {
-	if (!m_IsLeaf) {
+void DockNode::show_drop_zones(bool show) {
+	if (!m_is_leaf) {
 		return;
 	}
-	for (View *z : { m_ZoneCenter, m_ZoneLeft, m_ZoneRight, m_ZoneTop, m_ZoneBottom }) {
-		if (z) {
-			z->SetHidden(!show);
+	for (View *z : { m_zone_center, m_zone_left, m_zone_right, m_zone_top, m_zone_bottom }) {
+		if (z != nullptr) {
+			z->set_hidden(!show);
 		}
 	}
 	if (show) {
-		AddClass("dock-drop-target");
+		add_class("dock-drop-target");
 	} else {
-		RemoveClass("dock-drop-target");
+		remove_class("dock-drop-target");
 	}
 }
 
-void DockNode::HighlightDropZone(DropZone zone) {
-	for (View *z : { m_ZoneCenter, m_ZoneLeft, m_ZoneRight, m_ZoneTop, m_ZoneBottom }) {
-		if (z) {
-			z->RemoveClass("dock-zone-indicator-active");
+void DockNode::highlight_drop_zone(DropZone zone) {
+	for (View *z : { m_zone_center, m_zone_left, m_zone_right, m_zone_top, m_zone_bottom }) {
+		if (z != nullptr) {
+			z->remove_class("dock-zone-indicator-active");
 		}
 	}
 	View *active = nullptr;
 	switch (zone) {
 	case DropZone::Center:
-		active = m_ZoneCenter;
+		active = m_zone_center;
 		break;
 	case DropZone::Left:
-		active = m_ZoneLeft;
+		active = m_zone_left;
 		break;
 	case DropZone::Right:
-		active = m_ZoneRight;
+		active = m_zone_right;
 		break;
 	case DropZone::Top:
-		active = m_ZoneTop;
+		active = m_zone_top;
 		break;
 	case DropZone::Bottom:
-		active = m_ZoneBottom;
+		active = m_zone_bottom;
 		break;
 	default:
 		break;
 	}
-	if (active) {
-		active->AddClass("dock-zone-indicator-active");
+	if (active != nullptr) {
+		active->add_class("dock-zone-indicator-active");
 	}
 }
 
-DropZone DockNode::HitTestDropZone(vec2 absPos) const {
+DropZone DockNode::hit_test_drop_zone(Vec2 abs_pos) const {
 	// Precise: explicit indicator boxes take priority.
-	if (m_ZoneCenter && m_ZoneCenter->GetAbsoluteRect().Contains(absPos)) {
+	if (m_zone_center && m_zone_center->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Center;
 	}
-	if (m_ZoneLeft && m_ZoneLeft->GetAbsoluteRect().Contains(absPos)) {
+	if (m_zone_left && m_zone_left->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Left;
 	}
-	if (m_ZoneRight && m_ZoneRight->GetAbsoluteRect().Contains(absPos)) {
+	if (m_zone_right && m_zone_right->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Right;
 	}
-	if (m_ZoneTop && m_ZoneTop->GetAbsoluteRect().Contains(absPos)) {
+	if (m_zone_top && m_zone_top->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Top;
 	}
-	if (m_ZoneBottom && m_ZoneBottom->GetAbsoluteRect().Contains(absPos)) {
+	if (m_zone_bottom && m_zone_bottom->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Bottom;
 	}
 
 	// explicit center indicator above — the neutral interior returns None so a release there tears
-	const Rect r = GetAbsoluteRect();
-	if (!r.Contains(absPos)) {
+	const Rect r = get_absolute_rect();
+	if (!r.contains(abs_pos)) {
 		return DropZone::None;
 	}
 
-	const float relX = (absPos.x - r.position.x) / r.size.x;
-	const float relY = (absPos.y - r.position.y) / r.size.y;
-	constexpr float kEdge = 0.25f;
+	const float rel_x = (abs_pos.x - r.position.x) / r.size.x;
+	const float rel_y = (abs_pos.y - r.position.y) / r.size.y;
+	constexpr float k_edge = 0.25f;
 
-	if (relX < kEdge) {
+	if (rel_x < k_edge) {
 		return DropZone::Left;
 	}
-	if (relX > 1.f - kEdge) {
+	if (rel_x > 1.F - k_edge) {
 		return DropZone::Right;
 	}
-	if (relY < kEdge) {
+	if (rel_y < k_edge) {
 		return DropZone::Top;
 	}
-	if (relY > 1.f - kEdge) {
+	if (rel_y > 1.F - k_edge) {
 		return DropZone::Bottom;
 	}
 	return DropZone::None;

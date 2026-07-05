@@ -4,68 +4,68 @@
 namespace Aquila::UI::Core {
 
 FloatingOverlay::FloatingOverlay(int16_t /*backdropZTier*/) {
-	SetHidden(true);
+	set_hidden(true);
 }
 
-void FloatingOverlay::Open() {
-	if (m_Open) {
+void FloatingOverlay::open() {
+	if (m_open) {
 		return;
 	}
-	m_Open = true;
-	ApplyDisplayState();
-	if (m_DismissOnClickAway) {
-		if (Canvas *canvas = GetCanvas()) {
-			canvas->RegisterPopup(this, [this] { Close(); });
+	m_open = true;
+	apply_display_state();
+	if (m_dismiss_on_click_away) {
+		if (Canvas *canvas = get_canvas()) {
+			canvas->register_popup(this, [this] { close(); });
 		}
 	}
 }
 
-void FloatingOverlay::Close() {
-	if (!m_Open) {
+void FloatingOverlay::close() {
+	if (!m_open) {
 		return;
 	}
-	m_Open = false;
-	ApplyDisplayState();
-	if (Canvas *canvas = GetCanvas()) {
-		canvas->UnregisterPopup(this);
+	m_open = false;
+	apply_display_state();
+	if (Canvas *canvas = get_canvas()) {
+		canvas->unregister_popup(this);
 	}
 }
 
-void FloatingOverlay::Toggle() {
-	m_Open ? Close() : Open();
+void FloatingOverlay::toggle() {
+	m_open ? close() : open();
 }
 
-void FloatingOverlay::SetDismissOnClickAway(bool v) {
-	m_DismissOnClickAway = v;
-	if (!m_Open) {
+void FloatingOverlay::set_dismiss_on_click_away(bool v) {
+	m_dismiss_on_click_away = v;
+	if (!m_open) {
 		return;
 	}
-	if (Canvas *canvas = GetCanvas()) {
+	if (Canvas *canvas = get_canvas()) {
 		if (v) {
-			canvas->RegisterPopup(this, [this] { Close(); });
+			canvas->register_popup(this, [this] { close(); });
 		} else {
-			canvas->UnregisterPopup(this);
+			canvas->unregister_popup(this);
 		}
 	}
 }
 
-void FloatingOverlay::ApplyDisplayState() {
-	SetHidden(!m_Open);
+void FloatingOverlay::apply_display_state() {
+	set_hidden(!m_open);
 }
 
-View *FloatingOverlay::HitTestAbsolute(vec2 canvasPos) {
-	if (GetComputedStyle().display == Display::None) {
+View *FloatingOverlay::hit_test_absolute(Vec2 canvas_pos) {
+	if (get_computed_style().display == Display::None) {
 		return nullptr;
 	}
 
-	for (int i = static_cast<int>(GetChildren().size()) - 1; i >= 0; --i) {
-		if (View *hit = GetChildren()[i]->HitTestAbsolute(canvasPos)) {
+	for (int i = static_cast<int>(get_children().size()) - 1; i >= 0; --i) {
+		if (View *hit = get_children()[i]->hit_test_absolute(canvas_pos)) {
 			return hit;
 		}
 	}
 
-	const Rect r = GetAbsoluteRect();
-	if (r.Contains(canvasPos)) {
+	const Rect r = get_absolute_rect();
+	if (r.contains(canvas_pos)) {
 		return this;
 	}
 	return nullptr;

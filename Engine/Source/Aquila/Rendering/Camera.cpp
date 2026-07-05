@@ -2,252 +2,252 @@
 
 namespace Aquila::Rendering {
 
-void Camera::SpeedUp() {
-	if (!m_IsSpedUp) {
-		m_MovementSpeed *= 5.0f;
-		m_IsSpedUp = true;
+void Camera::speed_up() {
+	if (!m_is_sped_up) {
+		m_movement_speed *= 5.0f;
+		m_is_sped_up = true;
 	}
 }
 
-void Camera::ResetSpeed() {
-	if (m_IsSpedUp) {
-		m_MovementSpeed /= 5.0f;
-		m_IsSpedUp = false;
+void Camera::reset_speed() {
+	if (m_is_sped_up) {
+		m_movement_speed /= 5.0f;
+		m_is_sped_up = false;
 	}
 }
 
-void Camera::MoveForward(f32 delta) {
-	mat4 viewMatrix = GetInverseView();
-	vec3 forward = Math::Normalize(vec3(viewMatrix[2]));
-	vec3 moveDir = forward;
+void Camera::move_forward(F32 delta) {
+	Mat4 view_matrix = get_inverse_view();
+	Vec3 forward = Math::normalize(Vec3(view_matrix[2]));
+	Vec3 move_dir = forward;
 
-	if (Math::Dot(moveDir, moveDir) > Math::EPSILON) {
-		m_Position += m_MovementSpeed * delta * Math::Normalize(moveDir);
+	if (Math::dot(move_dir, move_dir) > Math::EPSILON) {
+		m_position += m_movement_speed * delta * Math::normalize(move_dir);
 
-		if (m_CameraType == CameraType::Free) {
-			m_OrbitTarget = m_Position + forward * m_OrbitRadius;
+		if (m_camera_type == CameraType::Free) {
+			m_orbit_target = m_position + forward * m_orbit_radius;
 		}
 	}
 }
 
-void Camera::MoveBackward(f32 delta) {
-	mat4 viewMatrix = GetInverseView();
-	vec3 forward = Math::Normalize(vec3(viewMatrix[2]));
-	vec3 moveDir = -forward;
+void Camera::move_backward(F32 delta) {
+	Mat4 view_matrix = get_inverse_view();
+	Vec3 forward = Math::normalize(Vec3(view_matrix[2]));
+	Vec3 move_dir = -forward;
 
-	if (Math::Dot(moveDir, moveDir) > Math::EPSILON) {
-		m_Position += m_MovementSpeed * delta * Math::Normalize(moveDir);
+	if (Math::dot(move_dir, move_dir) > Math::EPSILON) {
+		m_position += m_movement_speed * delta * Math::normalize(move_dir);
 
-		if (m_CameraType == CameraType::Free) {
-			m_OrbitTarget = m_Position + forward * m_OrbitRadius;
+		if (m_camera_type == CameraType::Free) {
+			m_orbit_target = m_position + forward * m_orbit_radius;
 		}
 	}
 }
 
-void Camera::MoveRight(f32 delta) {
-	mat4 viewMatrix = GetInverseView();
-	vec3 right = Math::Normalize(vec3(viewMatrix[0]));
-	m_Position += right * m_MovementSpeed * delta;
+void Camera::move_right(F32 delta) {
+	Mat4 view_matrix = get_inverse_view();
+	Vec3 right = Math::normalize(Vec3(view_matrix[0]));
+	m_position += right * m_movement_speed * delta;
 
-	if (m_CameraType == CameraType::Free) {
-		vec3 forward = Math::Normalize(vec3(viewMatrix[2]));
-		m_OrbitTarget = m_Position + forward * m_OrbitRadius;
+	if (m_camera_type == CameraType::Free) {
+		Vec3 forward = Math::normalize(Vec3(view_matrix[2]));
+		m_orbit_target = m_position + forward * m_orbit_radius;
 	}
 }
 
-void Camera::MoveLeft(f32 delta) {
-	mat4 viewMatrix = GetInverseView();
-	vec3 right = Math::Normalize(vec3(viewMatrix[0]));
-	m_Position -= right * m_MovementSpeed * delta;
+void Camera::move_left(F32 delta) {
+	Mat4 view_matrix = get_inverse_view();
+	Vec3 right = Math::normalize(Vec3(view_matrix[0]));
+	m_position -= right * m_movement_speed * delta;
 
-	if (m_CameraType == CameraType::Free) {
-		vec3 forward = Math::Normalize(vec3(viewMatrix[2]));
-		m_OrbitTarget = m_Position + forward * m_OrbitRadius;
+	if (m_camera_type == CameraType::Free) {
+		Vec3 forward = Math::normalize(Vec3(view_matrix[2]));
+		m_orbit_target = m_position + forward * m_orbit_radius;
 	}
 }
 
-void Camera::Rotate(const double yaw, const double pitch) {
-	m_Rotation.x += pitch;
-	m_Rotation.y += yaw;
-	m_Rotation.x = Math::Clamp(m_Rotation.x, -89.0f, 89.0f);
+void Camera::rotate(const double yaw, const double pitch) {
+	m_rotation.x += pitch;
+	m_rotation.y += yaw;
+	m_rotation.x = Math::clamp(m_rotation.x, -89.0f, 89.0f);
 
-	SetViewYXZ(m_Position, m_Rotation);
+	set_view_yxz(m_position, m_rotation);
 
-	if (m_CameraType == CameraType::Free) {
-		UpdateFreeModeLookDirection();
+	if (m_camera_type == CameraType::Free) {
+		update_free_mode_look_direction();
 	}
 }
 
-void Camera::UpdateFreeModeLookDirection() {
-	const f32 c1 = std::cos(m_Rotation.y);
-	const f32 s1 = std::sin(m_Rotation.y);
-	const f32 c2 = std::cos(m_Rotation.x);
-	const f32 s2 = std::sin(m_Rotation.x);
+void Camera::update_free_mode_look_direction() {
+	const F32 c1 = std::cos(m_rotation.y);
+	const F32 s1 = std::sin(m_rotation.y);
+	const F32 c2 = std::cos(m_rotation.x);
+	const F32 s2 = std::sin(m_rotation.x);
 
-	vec3 forward = Math::Normalize(vec3(c2 * s1, -s2, c1 * c2));
-	m_OrbitTarget = m_Position + forward * m_OrbitRadius;
+	Vec3 forward = Math::normalize(Vec3(c2 * s1, -s2, c1 * c2));
+	m_orbit_target = m_position + forward * m_orbit_radius;
 }
 
-void Camera::Zoom(const f32 offset, const f32 aspectRatio) {
-	m_Fov -= offset;
-	m_Fov = Math::Clamp(m_Fov, 1.0f, 90.0f);
-	SetPerspectiveProjection(Math::Radians(m_Fov), aspectRatio, m_Near, m_Far);
+void Camera::zoom(const F32 offset, const F32 aspect_ratio) {
+	m_fov -= offset;
+	m_fov = Math::clamp(m_fov, 1.0f, 90.0f);
+	set_perspective_projection(Math::radians(m_fov), aspect_ratio, m_near, m_far);
 }
 
-void Camera::OnResize(const f32 width, const f32 height) {
-	SetPerspectiveProjection(m_Fov, width / height, m_Near, m_Far);
+void Camera::on_resize(const F32 width, const F32 height) {
+	set_perspective_projection(m_fov, width / height, m_near, m_far);
 }
 
-void Camera::SetOrthographicProjection(f32 left, f32 right, f32 top, f32 bottom, f32 nearPlane, f32 farPlane) {
-	m_ProjectionMatrix = Math::OrthoVulkan(left, right, bottom, top, nearPlane, farPlane);
+void Camera::set_orthographic_projection(F32 left, F32 right, F32 top, F32 bottom, F32 near_plane, F32 far_plane) {
+	m_projection_matrix = Math::ortho_vulkan(left, right, bottom, top, near_plane, far_plane);
 }
 
-void Camera::SetPerspectiveProjection(f32 FOV_y, f32 aspect, f32 nearPlane, f32 farPlane) {
+void Camera::set_perspective_projection(F32 fov_y, F32 aspect, F32 near_plane, F32 far_plane) {
 	AQUILA_ASSERT(std::abs(aspect - Math::EPSILON) > 0.0f, "Aspect ratio must not be zero");
 
-	this->m_AspectRatio = aspect;
-	this->m_Fov = FOV_y;
-	this->m_Near = nearPlane;
-	this->m_Far = farPlane;
-	m_ProjectionMatrix = Math::PerspectiveVulkan(Math::Radians(m_Fov), aspect, nearPlane, farPlane);
+	this->m_aspect_ratio = aspect;
+	this->m_fov = fov_y;
+	this->m_near = near_plane;
+	this->m_far = far_plane;
+	m_projection_matrix = Math::perspective_vulkan(Math::radians(m_fov), aspect, near_plane, far_plane);
 }
 
-void Camera::SetViewDirection(vec3 position, vec3 direction, vec3 up) {
-	m_ViewMatrix = Math::LookInDirection(position, direction, up);
+void Camera::set_view_direction(Vec3 position, Vec3 direction, Vec3 up) {
+	m_view_matrix = Math::look_in_direction(position, direction, up);
 
-	const vec3 w = Math::Normalize(direction);
-	const vec3 u = Math::Normalize(Math::Cross(w, up));
-	const vec3 v = Math::Cross(w, u);
+	const Vec3 w = Math::normalize(direction);
+	const Vec3 u = Math::normalize(Math::cross(w, up));
+	const Vec3 v = Math::cross(w, u);
 
-	m_InverseViewMatrix = mat4{ 1.f };
-	m_InverseViewMatrix[0][0] = u.x;
-	m_InverseViewMatrix[0][1] = u.y;
-	m_InverseViewMatrix[0][2] = u.z;
-	m_InverseViewMatrix[1][0] = v.x;
-	m_InverseViewMatrix[1][1] = v.y;
-	m_InverseViewMatrix[1][2] = v.z;
-	m_InverseViewMatrix[2][0] = w.x;
-	m_InverseViewMatrix[2][1] = w.y;
-	m_InverseViewMatrix[2][2] = w.z;
-	m_InverseViewMatrix[3][0] = position.x;
-	m_InverseViewMatrix[3][1] = position.y;
-	m_InverseViewMatrix[3][2] = position.z;
+	m_inverse_view_matrix = Mat4{ 1.F };
+	m_inverse_view_matrix[0][0] = u.x;
+	m_inverse_view_matrix[0][1] = u.y;
+	m_inverse_view_matrix[0][2] = u.z;
+	m_inverse_view_matrix[1][0] = v.x;
+	m_inverse_view_matrix[1][1] = v.y;
+	m_inverse_view_matrix[1][2] = v.z;
+	m_inverse_view_matrix[2][0] = w.x;
+	m_inverse_view_matrix[2][1] = w.y;
+	m_inverse_view_matrix[2][2] = w.z;
+	m_inverse_view_matrix[3][0] = position.x;
+	m_inverse_view_matrix[3][1] = position.y;
+	m_inverse_view_matrix[3][2] = position.z;
 }
 
-void Camera::SetViewTarget(vec3 position, vec3 target, vec3 up) {
-	m_ViewMatrix = Math::LookAt(position, target, up);
+void Camera::set_view_target(Vec3 position, Vec3 target, Vec3 up) {
+	m_view_matrix = Math::look_at(position, target, up);
 
-	const vec3 w = Math::Normalize(target - position);
-	const vec3 u = Math::Normalize(Math::Cross(w, up));
-	const vec3 v = Math::Cross(w, u);
+	const Vec3 w = Math::normalize(target - position);
+	const Vec3 u = Math::normalize(Math::cross(w, up));
+	const Vec3 v = Math::cross(w, u);
 
-	m_InverseViewMatrix = mat4{ 1.f };
-	m_InverseViewMatrix[0][0] = u.x;
-	m_InverseViewMatrix[0][1] = u.y;
-	m_InverseViewMatrix[0][2] = u.z;
-	m_InverseViewMatrix[1][0] = v.x;
-	m_InverseViewMatrix[1][1] = v.y;
-	m_InverseViewMatrix[1][2] = v.z;
-	m_InverseViewMatrix[2][0] = w.x;
-	m_InverseViewMatrix[2][1] = w.y;
-	m_InverseViewMatrix[2][2] = w.z;
-	m_InverseViewMatrix[3][0] = position.x;
-	m_InverseViewMatrix[3][1] = position.y;
-	m_InverseViewMatrix[3][2] = position.z;
+	m_inverse_view_matrix = Mat4{ 1.F };
+	m_inverse_view_matrix[0][0] = u.x;
+	m_inverse_view_matrix[0][1] = u.y;
+	m_inverse_view_matrix[0][2] = u.z;
+	m_inverse_view_matrix[1][0] = v.x;
+	m_inverse_view_matrix[1][1] = v.y;
+	m_inverse_view_matrix[1][2] = v.z;
+	m_inverse_view_matrix[2][0] = w.x;
+	m_inverse_view_matrix[2][1] = w.y;
+	m_inverse_view_matrix[2][2] = w.z;
+	m_inverse_view_matrix[3][0] = position.x;
+	m_inverse_view_matrix[3][1] = position.y;
+	m_inverse_view_matrix[3][2] = position.z;
 }
 
-void Camera::SetViewYXZ(vec3 position, vec3 rotation) {
-	m_ViewMatrix = Math::ViewFromEuler(position, rotation);
+void Camera::set_view_yxz(Vec3 position, Vec3 rotation) {
+	m_view_matrix = Math::view_from_euler(position, rotation);
 
-	const f32 c3 = std::cos(rotation.z);
-	const f32 s3 = std::sin(rotation.z);
-	const f32 c2 = std::cos(rotation.x);
-	const f32 s2 = std::sin(rotation.x);
-	const f32 c1 = std::cos(rotation.y);
-	const f32 s1 = std::sin(rotation.y);
-	const vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1) };
-	const vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3) };
-	const vec3 w{ (c2 * s1), (-s2), (c1 * c2) };
+	const F32 c3 = std::cos(rotation.z);
+	const F32 s3 = std::sin(rotation.z);
+	const F32 c2 = std::cos(rotation.x);
+	const F32 s2 = std::sin(rotation.x);
+	const F32 c1 = std::cos(rotation.y);
+	const F32 s1 = std::sin(rotation.y);
+	const Vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1) };
+	const Vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3) };
+	const Vec3 w{ (c2 * s1), (-s2), (c1 * c2) };
 
-	m_InverseViewMatrix = mat4{ 1.f };
-	m_InverseViewMatrix[0][0] = u.x;
-	m_InverseViewMatrix[0][1] = u.y;
-	m_InverseViewMatrix[0][2] = u.z;
-	m_InverseViewMatrix[1][0] = v.x;
-	m_InverseViewMatrix[1][1] = v.y;
-	m_InverseViewMatrix[1][2] = v.z;
-	m_InverseViewMatrix[2][0] = w.x;
-	m_InverseViewMatrix[2][1] = w.y;
-	m_InverseViewMatrix[2][2] = w.z;
-	m_InverseViewMatrix[3][0] = position.x;
-	m_InverseViewMatrix[3][1] = position.y;
-	m_InverseViewMatrix[3][2] = position.z;
+	m_inverse_view_matrix = Mat4{ 1.F };
+	m_inverse_view_matrix[0][0] = u.x;
+	m_inverse_view_matrix[0][1] = u.y;
+	m_inverse_view_matrix[0][2] = u.z;
+	m_inverse_view_matrix[1][0] = v.x;
+	m_inverse_view_matrix[1][1] = v.y;
+	m_inverse_view_matrix[1][2] = v.z;
+	m_inverse_view_matrix[2][0] = w.x;
+	m_inverse_view_matrix[2][1] = w.y;
+	m_inverse_view_matrix[2][2] = w.z;
+	m_inverse_view_matrix[3][0] = position.x;
+	m_inverse_view_matrix[3][1] = position.y;
+	m_inverse_view_matrix[3][2] = position.z;
 }
 
-void Camera::SetOrbitTarget(const vec3 &target) {
-	m_OrbitTarget = target;
-	vec3 offset = m_Position - m_OrbitTarget;
+void Camera::set_orbit_target(const Vec3 &target) {
+	m_orbit_target = target;
+	Vec3 offset = m_position - m_orbit_target;
 
-	m_OrbitRadius = Math::Length(offset);
-	if (m_OrbitRadius < 0.1f) {
-		m_OrbitRadius = 5.0f;
+	m_orbit_radius = Math::length(offset);
+	if (m_orbit_radius < 0.1f) {
+		m_orbit_radius = 5.0f;
 	}
 
-	m_OrbitPitch = std::asin(offset.y / m_OrbitRadius);
-	m_OrbitYaw = std::atan2(offset.x, offset.z);
+	m_orbit_pitch = std::asin(offset.y / m_orbit_radius);
+	m_orbit_yaw = std::atan2(offset.x, offset.z);
 
-	UpdateOrbitPosition();
+	update_orbit_position();
 }
 
-void Camera::OrbitRotate(const f32 deltaYaw, const f32 deltaPitch) {
-	m_OrbitYaw += deltaYaw;
-	m_OrbitPitch += deltaPitch;
-	m_OrbitPitch = std::clamp(m_OrbitPitch, -Math::HALF_PI + 0.01f, Math::HALF_PI - 0.01f);
-	UpdateOrbitPosition();
+void Camera::orbit_rotate(const F32 delta_yaw, const F32 delta_pitch) {
+	m_orbit_yaw += delta_yaw;
+	m_orbit_pitch += delta_pitch;
+	m_orbit_pitch = std::clamp(m_orbit_pitch, -Math::HALF_PI + 0.01f, Math::HALF_PI - 0.01f);
+	update_orbit_position();
 }
 
-void Camera::OrbitZoom(const f32 deltaRadius) {
-	m_OrbitRadius = std::max(m_OrbitRadius + deltaRadius, 0.1f);
-	UpdateOrbitPosition();
+void Camera::orbit_zoom(const F32 delta_radius) {
+	m_orbit_radius = std::max(m_orbit_radius + delta_radius, 0.1f);
+	update_orbit_position();
 }
 
-void Camera::UpdateOrbitPosition() {
-	m_Position.x = m_OrbitTarget.x + m_OrbitRadius * std::cos(m_OrbitPitch) * std::sin(m_OrbitYaw);
-	m_Position.y = m_OrbitTarget.y + m_OrbitRadius * std::sin(m_OrbitPitch);
-	m_Position.z = m_OrbitTarget.z + m_OrbitRadius * std::cos(m_OrbitPitch) * std::cos(m_OrbitYaw);
+void Camera::update_orbit_position() {
+	m_position.x = m_orbit_target.x + m_orbit_radius * std::cos(m_orbit_pitch) * std::sin(m_orbit_yaw);
+	m_position.y = m_orbit_target.y + m_orbit_radius * std::sin(m_orbit_pitch);
+	m_position.z = m_orbit_target.z + m_orbit_radius * std::cos(m_orbit_pitch) * std::cos(m_orbit_yaw);
 
-	RecalculateView();
+	recalculate_view();
 }
 
-void Camera::RecalculateView() {
-	SetViewTarget(m_Position, m_OrbitTarget, vec3(0, -1, 0));
-	m_Direction = Math::Normalize(m_OrbitTarget - m_Position);
+void Camera::recalculate_view() {
+	set_view_target(m_position, m_orbit_target, Vec3(0, -1, 0));
+	m_direction = Math::normalize(m_orbit_target - m_position);
 
-	vec3 forward = m_Direction;
-	m_Rotation.x = std::asin(-forward.y);
-	m_Rotation.y = std::atan2(forward.x, forward.z);
-	m_Rotation.z = 0.0f;
+	Vec3 forward = m_direction;
+	m_rotation.x = std::asin(-forward.y);
+	m_rotation.y = std::atan2(forward.x, forward.z);
+	m_rotation.z = 0.0f;
 }
 
-void Camera::SwitchToType(const CameraType newType, const vec3 targetPos) {
-	if (m_CameraType != newType) {
-		CameraType oldType = m_CameraType;
-		m_CameraType = newType;
+void Camera::switch_to_type(const CameraType new_type, const Vec3 target_pos) {
+	if (m_camera_type != new_type) {
+		CameraType old_type = m_camera_type;
+		m_camera_type = new_type;
 
-		AQUILA_LOG_DEBUG("Camera Type: {}", (int)GetType());
+		AQUILA_LOG_DEBUG("Camera Type: {}", (int)get_type());
 
-		if (m_CameraType == CameraType::Orbit) {
-			if (oldType == CameraType::Free) {
-				mat4 viewMatrix = GetInverseView();
-				vec3 forward = Math::Normalize(vec3(viewMatrix[2]));
-				vec3 newTarget = m_Position + forward * m_OrbitRadius;
-				SetOrbitTarget(newTarget);
+		if (m_camera_type == CameraType::Orbit) {
+			if (old_type == CameraType::Free) {
+				Mat4 view_matrix = get_inverse_view();
+				Vec3 forward = Math::normalize(Vec3(view_matrix[2]));
+				Vec3 new_target = m_position + forward * m_orbit_radius;
+				set_orbit_target(new_target);
 			} else {
-				SetOrbitTarget(targetPos);
+				set_orbit_target(target_pos);
 			}
-			UpdateOrbitPosition();
-		} else if (m_CameraType == CameraType::Free) {
-			UpdateFreeModeLookDirection();
+			update_orbit_position();
+		} else if (m_camera_type == CameraType::Free) {
+			update_free_mode_look_direction();
 		}
 	}
 }

@@ -8,22 +8,22 @@ class Button;
 
 class FloatingOverlay : public View {
   public:
-	void Open();
-	void Close();
-	void Toggle();
-	[[nodiscard]] bool IsOpen() const { return m_Open; }
+	void open();
+	void close();
+	void toggle();
+	[[nodiscard]] bool is_open() const { return m_open; }
 
-	void SetDismissOnClickAway(bool v);
+	void set_dismiss_on_click_away(bool v);
 
-	View *HitTestAbsolute(vec2 canvasPos) override;
+	View *hit_test_absolute(Vec2 canvas_pos) override;
 
   protected:
-	explicit FloatingOverlay(int16_t backdropZTier = 49);
+	explicit FloatingOverlay(int16_t backdrop_z_tier = 49);
 
-	void ApplyDisplayState();
+	void apply_display_state();
 
-	bool m_Open = false;
-	bool m_DismissOnClickAway = true;
+	bool m_open = false;
+	bool m_dismiss_on_click_away = true;
 };
 
 } // namespace Aquila::UI::Core

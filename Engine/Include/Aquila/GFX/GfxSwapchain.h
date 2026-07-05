@@ -12,21 +12,21 @@ class GfxSwapchain {
 	~GfxSwapchain() = default;
 	AQUILA_NONCOPYABLE(GfxSwapchain);
 
-	bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame = true);
+	bool acquire_next_image(Uint32 &out_image_index, bool drive_device_frame = true);
 
-	[[nodiscard]] uint32 GetWidth() const;
-	[[nodiscard]] uint32 GetHeight() const;
-	[[nodiscard]] RHI::TextureFormat GetFormat() const;
-	[[nodiscard]] uint32 GetImageCount() const;
-	[[nodiscard]] bool NeedsResize() const;
-	void Resize(uint32 width, uint32 height);
-	[[nodiscard]] uint32 GetCurrentFrameSlot() const;
-	[[nodiscard]] RHI::IRHISwapchain &GetRHI() { return *m_Swapchain; }
+	[[nodiscard]] Uint32 get_width() const;
+	[[nodiscard]] Uint32 get_height() const;
+	[[nodiscard]] RHI::TextureFormat get_format() const;
+	[[nodiscard]] Uint32 get_image_count() const;
+	[[nodiscard]] bool needs_resize() const;
+	void resize(Uint32 width, Uint32 height);
+	[[nodiscard]] Uint32 get_current_frame_slot() const;
+	[[nodiscard]] RHI::IRHISwapchain &get_rhi() { return *m_swapchain; }
 
   private:
 	friend class GfxContext;
 	explicit GfxSwapchain(Unique<RHI::IRHISwapchain> swapchain);
-	Unique<RHI::IRHISwapchain> m_Swapchain;
+	Unique<RHI::IRHISwapchain> m_swapchain;
 };
 
 } // namespace Aquila::GFX

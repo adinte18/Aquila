@@ -3,65 +3,65 @@
 namespace Aquila::UI::Core {
 
 LabeledDragFloat::LabeledDragFloat(const char *label) {
-	AddClass("labeled-drag");
+	add_class("labeled-drag");
 
-	auto lbl = CreateUnique<Label>(label);
-	lbl->AddClass("vec-label");
-	m_Label = static_cast<Label *>(AddChild(std::move(lbl)));
+	auto lbl = create_unique<Label>(label);
+	lbl->add_class("vec-label");
+	m_label = static_cast<Label *>(add_child(std::move(lbl)));
 
-	auto drag = CreateUnique<DragFloat>();
-	drag->AddClass("vec-drag");
-	m_Drag = static_cast<DragFloat *>(AddChild(std::move(drag)));
+	auto drag = create_unique<DragFloat>();
+	drag->add_class("vec-drag");
+	m_drag = static_cast<DragFloat *>(add_child(std::move(drag)));
 }
 
 Vec2Field::Vec2Field() {
-	AddClass("vec2-field");
+	add_class("vec2-field");
 
-	auto xf = CreateUnique<LabeledDragFloat>("X");
-	auto yf = CreateUnique<LabeledDragFloat>("Y");
+	auto xf = create_unique<LabeledDragFloat>("X");
+	auto yf = create_unique<LabeledDragFloat>("Y");
 
-	RegisterComponent(0, xf->GetDrag());
-	RegisterComponent(1, yf->GetDrag());
+	register_component(0, xf->get_drag());
+	register_component(1, yf->get_drag());
 
-	AddChild(std::move(xf));
-	AddChild(std::move(yf));
+	add_child(std::move(xf));
+	add_child(std::move(yf));
 }
 
 Vec3Field::Vec3Field() {
-	auto makeDrag = [](const char *prefix, const char *axisClass) {
-		auto drag = CreateUnique<DragFloat>();
-		drag->SetPrefix(prefix);
-		drag->AddClass("vec-drag");
-		drag->AddClass(axisClass);
+	auto make_drag = [](const char *prefix, const char *axis_class) {
+		auto drag = create_unique<DragFloat>();
+		drag->set_prefix(prefix);
+		drag->add_class("vec-drag");
+		drag->add_class(axis_class);
 		return drag;
 	};
 
-	auto xDrag = makeDrag("X ", "vec-drag-x");
-	auto yDrag = makeDrag("Y ", "vec-drag-y");
-	auto zDrag = makeDrag("Z ", "vec-drag-z");
+	auto x_drag = make_drag("X ", "vec-drag-x");
+	auto y_drag = make_drag("Y ", "vec-drag-y");
+	auto z_drag = make_drag("Z ", "vec-drag-z");
 
-	RegisterComponent(0, static_cast<DragFloat *>(AddChild(std::move(xDrag))));
-	RegisterComponent(1, static_cast<DragFloat *>(AddChild(std::move(yDrag))));
-	RegisterComponent(2, static_cast<DragFloat *>(AddChild(std::move(zDrag))));
+	register_component(0, static_cast<DragFloat *>(add_child(std::move(x_drag))));
+	register_component(1, static_cast<DragFloat *>(add_child(std::move(y_drag))));
+	register_component(2, static_cast<DragFloat *>(add_child(std::move(z_drag))));
 }
 
 Vec4Field::Vec4Field() {
-	AddClass("vec4-field");
+	add_class("vec4-field");
 
-	auto xf = CreateUnique<LabeledDragFloat>("X");
-	auto yf = CreateUnique<LabeledDragFloat>("Y");
-	auto zf = CreateUnique<LabeledDragFloat>("Z");
-	auto wf = CreateUnique<LabeledDragFloat>("W");
+	auto xf = create_unique<LabeledDragFloat>("X");
+	auto yf = create_unique<LabeledDragFloat>("Y");
+	auto zf = create_unique<LabeledDragFloat>("Z");
+	auto wf = create_unique<LabeledDragFloat>("W");
 
-	RegisterComponent(0, xf->GetDrag());
-	RegisterComponent(1, yf->GetDrag());
-	RegisterComponent(2, zf->GetDrag());
-	RegisterComponent(3, wf->GetDrag());
+	register_component(0, xf->get_drag());
+	register_component(1, yf->get_drag());
+	register_component(2, zf->get_drag());
+	register_component(3, wf->get_drag());
 
-	AddChild(std::move(xf));
-	AddChild(std::move(yf));
-	AddChild(std::move(zf));
-	AddChild(std::move(wf));
+	add_child(std::move(xf));
+	add_child(std::move(yf));
+	add_child(std::move(zf));
+	add_child(std::move(wf));
 }
 
 } // namespace Aquila::UI::Core

@@ -2,13 +2,29 @@
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include <functional>
+#include <string>
+#include <future>
+#include <chrono>
+#include <mutex>
+#include <utility>
+#include <atomic>
+#include <cstddef>
+#include <queue>
+#include <algorithm>
+#include <thread>
+#include <processthreadsapi.h>
+#include <winbase.h>
+#include <type_traits>
+#include <exception>
+#include <vector>
 
 namespace Aquila::Foundation {
 
 struct Job {
 	std::function<void()> task;
 	Priority priority = Priority::Medium;
-	std::string debugName;
+	std::string debug_name;
 
 	bool operator<(const Job &other) const { return priority < other.priority; }
 };
@@ -16,139 +32,139 @@ struct Job {
 template <typename T> class JobHandle {
   public:
 	JobHandle() = default;
-	explicit JobHandle(std::shared_future<T> future) : m_Future(std::move(future)) {}
+	explicit JobHandle(std::shared_future<T> future) : m_future(std::move(future)) {}
 
-	[[nodiscard]] bool IsComplete() const {
-		return m_Future.valid() && m_Future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+	[[nodiscard]] bool is_complete() const {
+		return m_future.valid() && m_future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
 	}
 
-	void Wait() const {
-		if (m_Future.valid()) {
-			m_Future.wait();
+	void wait() const {
+		if (m_future.valid()) {
+			m_future.wait();
 		}
 	}
 
-	T Get() { return m_Future.get(); }
+	T get() { return m_future.get(); }
 
-	const std::shared_future<T> &GetFuture() const { return m_Future; }
+	const std::shared_future<T> &get_future() const { return m_future; }
 
   private:
-	std::shared_future<T> m_Future;
+	std::shared_future<T> m_future;
 };
 
 class JobQueue {
   public:
-	void Push(Job &&job) {
-		std::lock_guard<std::mutex> lock(m_Mutex);
-		m_Jobs.push(std::move(job));
-		m_Condition.notify_one();
+	void push(Job &&job) {
+		std::scoped_lock const lock(m_mutex);
+		m_jobs.push(std::move(job));
+		m_condition.notify_one();
 	}
 
-	bool TryPop(Job &job) {
-		std::unique_lock<std::mutex> lock(m_Mutex);
-		if (m_Jobs.empty()) {
+	bool try_pop(Job &job) {
+		std::unique_lock<std::mutex> const lock(m_mutex);
+		if (m_jobs.empty()) {
 			return false;
 		}
-		job = std::move(const_cast<Job &>(m_Jobs.top()));
-		m_Jobs.pop();
+		job = std::move(const_cast<Job &>(m_jobs.top()));
+		m_jobs.pop();
 		return true;
 	}
 
-	bool WaitAndPop(Job &job, std::atomic<bool> &shouldRun) {
-		std::unique_lock<std::mutex> lock(m_Mutex);
+	bool wait_and_pop(Job &job, std::atomic<bool> &should_run) {
+		std::unique_lock<std::mutex> lock(m_mutex);
 
-		m_Condition.wait(
-			lock, [this, &shouldRun]() { return !m_Jobs.empty() || !shouldRun.load(std::memory_order_acquire); });
+		m_condition.wait(
+			lock, [this, &should_run]() { return !m_jobs.empty() || !should_run.load(std::memory_order_acquire); });
 
-		if (!shouldRun.load(std::memory_order_acquire) && m_Jobs.empty()) {
+		if (!should_run.load(std::memory_order_acquire) && m_jobs.empty()) {
 			return false;
 		}
 
-		if (!m_Jobs.empty()) {
-			job = std::move(const_cast<Job &>(m_Jobs.top()));
-			m_Jobs.pop();
+		if (!m_jobs.empty()) {
+			job = std::move(const_cast<Job &>(m_jobs.top()));
+			m_jobs.pop();
 			return true;
 		}
 
 		return false;
 	}
 
-	void NotifyAll() { m_Condition.notify_all(); }
+	void notify_all() { m_condition.notify_all(); }
 
-	size_t Size() const {
-		std::lock_guard<std::mutex> lock(m_Mutex);
-		return m_Jobs.size();
+	size_t size() const {
+		std::scoped_lock const lock(m_mutex);
+		return m_jobs.size();
 	}
 
-	bool Empty() const {
-		std::lock_guard<std::mutex> lock(m_Mutex);
-		return m_Jobs.empty();
+	bool empty() const {
+		std::scoped_lock const lock(m_mutex);
+		return m_jobs.empty();
 	}
 
   private:
-	mutable std::mutex m_Mutex;
-	std::condition_variable m_Condition;
-	std::priority_queue<Job> m_Jobs;
+	mutable std::mutex m_mutex;
+	std::condition_variable m_condition;
+	std::priority_queue<Job> m_jobs;
 };
 
 class JobSystem {
   public:
-	static JobSystem &Get() {
+	static JobSystem &get() {
 		static JobSystem instance;
 		return instance;
 	}
 
-	~JobSystem() { Shutdown(); }
+	~JobSystem() { shutdown(); }
 
-	void Initialize(uint32 threadCount = 0) {
-		if (m_Initialized.load(std::memory_order_acquire)) {
+	void initialize(Uint32 thread_count = 0) {
+		if (m_initialized.load(std::memory_order_acquire)) {
 			AQUILA_LOG_WARNING("JobSystem already initialized");
 			return;
 		}
 
-		if (threadCount == 0) {
-			threadCount = std::max(1U, std::thread::hardware_concurrency() - 1);
+		if (thread_count == 0) {
+			thread_count = std::max(1U, std::thread::hardware_concurrency() - 1);
 		}
 
-		m_ThreadCount = threadCount;
-		m_Running.store(true, std::memory_order_release);
+		m_thread_count = thread_count;
+		m_running.store(true, std::memory_order_release);
 
-		for (uint32 i = 0; i < threadCount; ++i) {
-			m_Workers.emplace_back([this, i]() {
+		for (Uint32 i = 0; i < thread_count; ++i) {
+			m_workers.emplace_back([this, i]() {
 #ifdef _WIN32
 				SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_BELOW_NORMAL);
 #else
 				nice(5);
 #endif
-				WorkerThread(i);
+				worker_thread(i);
 			});
 		}
 
-		m_Initialized.store(true, std::memory_order_release);
-		AQUILA_LOG_INFO("JobSystem initialized with {} worker threads", threadCount);
+		m_initialized.store(true, std::memory_order_release);
+		AQUILA_LOG_INFO("JobSystem initialized with {} worker threads", thread_count);
 	}
 
-	void Shutdown() {
-		if (!m_Initialized.load(std::memory_order_acquire)) {
+	void shutdown() {
+		if (!m_initialized.load(std::memory_order_acquire)) {
 			return;
 		}
 
-		m_Running.store(false, std::memory_order_seq_cst);
-		m_JobQueue.NotifyAll();
+		m_running.store(false, std::memory_order_seq_cst);
+		m_job_queue.notify_all();
 
-		for (auto &worker : m_Workers) {
+		for (auto &worker : m_workers) {
 			if (worker.joinable()) {
 				worker.join();
 			}
 		}
 
-		m_Workers.clear();
-		m_Initialized.store(false, std::memory_order_release);
+		m_workers.clear();
+		m_initialized.store(false, std::memory_order_release);
 		AQUILA_LOG_INFO("JobSystem shut down");
 	}
 
 	template <typename Func, typename... Args>
-	auto Schedule(Priority priority, const std::string &debugName, Func &&func, Args &&...args)
+	auto schedule(Priority priority, const std::string &debug_name, Func &&func, Args &&...args)
 		-> JobHandle<std::invoke_result_t<Func, Args...>> {
 		using ReturnType = std::invoke_result_t<Func, Args...>;
 
@@ -159,65 +175,65 @@ class JobSystem {
 
 		Job job;
 		job.priority = priority;
-		job.debugName = debugName;
+		job.debug_name = debug_name;
 		job.task = [task]() { (*task)(); };
 
-		m_JobQueue.Push(std::move(job));
-		m_ActiveJobCount.fetch_add(1, std::memory_order_relaxed);
+		m_job_queue.push(std::move(job));
+		m_active_job_count.fetch_add(1, std::memory_order_relaxed);
 
 		return JobHandle<ReturnType>(future);
 	}
 
 	template <typename Func, typename... Args>
-	auto ScheduleNormal(const std::string &debugName, Func &&func, Args &&...args) {
-		return Schedule(Priority::Medium, debugName, std::forward<Func>(func), std::forward<Args>(args)...);
+	auto schedule_normal(const std::string &debug_name, Func &&func, Args &&...args) {
+		return Schedule(Priority::Medium, debug_name, std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
 	template <typename Func, typename... Args>
-	auto ScheduleHigh(const std::string &debugName, Func &&func, Args &&...args) {
-		return Schedule(Priority::High, debugName, std::forward<Func>(func), std::forward<Args>(args)...);
+	auto schedule_high(const std::string &debug_name, Func &&func, Args &&...args) {
+		return Schedule(Priority::High, debug_name, std::forward<Func>(func), std::forward<Args>(args)...);
 	}
 
-	void WaitForAll() {
-		while (m_ActiveJobCount.load(std::memory_order_relaxed) > 0 || !m_JobQueue.Empty()) {
+	void wait_for_all() {
+		while (m_active_job_count.load(std::memory_order_relaxed) > 0 || !m_job_queue.empty()) {
 			std::this_thread::yield();
 		}
 	}
 
-	size_t GetPendingJobCount() const { return m_JobQueue.Size(); }
-	size_t GetActiveJobCount() const { return m_ActiveJobCount.load(std::memory_order_relaxed); }
-	uint32 GetThreadCount() const { return m_ThreadCount; }
+	size_t get_pending_job_count() const { return m_job_queue.size(); }
+	size_t get_active_job_count() const { return m_active_job_count.load(std::memory_order_relaxed); }
+	Uint32 get_thread_count() const { return m_thread_count; }
 
   private:
 	JobSystem() = default;
 	JobSystem(const JobSystem &) = delete;
 	JobSystem &operator=(const JobSystem &) = delete;
 
-	void WorkerThread(uint32 threadId) {
+	void worker_thread(Uint32 thread_id) {
 		while (true) {
 			Job job;
 
-			if (!m_JobQueue.WaitAndPop(job, m_Running)) {
+			if (!m_job_queue.wait_and_pop(job, m_running)) {
 				break;
 			}
 
 			try {
 				job.task();
 			} catch (const std::exception &e) {
-				AQUILA_LOG_ERROR("Job '{}' failed on thread {}: {}", job.debugName, threadId, e.what());
+				AQUILA_LOG_ERROR("Job '{}' failed on thread {}: {}", job.debug_name, thread_id, e.what());
 			}
 
-			m_ActiveJobCount.fetch_sub(1, std::memory_order_relaxed);
+			m_active_job_count.fetch_sub(1, std::memory_order_relaxed);
 		}
 	}
 
-	std::atomic<bool> m_Initialized{ false };
-	std::atomic<bool> m_Running{ false };
-	uint32 m_ThreadCount = 0;
+	std::atomic<bool> m_initialized{ false };
+	std::atomic<bool> m_running{ false };
+	Uint32 m_thread_count = 0;
 
-	JobQueue m_JobQueue;
-	std::vector<std::thread> m_Workers;
-	std::atomic<size_t> m_ActiveJobCount{ 0 };
+	JobQueue m_job_queue;
+	std::vector<std::thread> m_workers;
+	std::atomic<size_t> m_active_job_count{ 0 };
 };
 
 } // namespace Aquila::Foundation

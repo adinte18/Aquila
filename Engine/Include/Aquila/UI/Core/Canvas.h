@@ -16,68 +16,68 @@ class Canvas {
 	friend class InputRouter; // calls MarkDirty()/RequestLayout() on input
 
   public:
-	Canvas(uint32 width, uint32 height);
+	Canvas(Uint32 width, Uint32 height);
 
-	void OnEvent(Application::Events::Event &event);
-	void Update(float deltaTime);
-	void Compute();
-	void SubmitToQuadBatcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
-	void Resize(uint32 width, uint32 height);
+	void on_event(Application::Events::Event &event);
+	void update(float delta_time);
+	void compute();
+	void submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void resize(Uint32 width, Uint32 height);
 
-	StyleSheet &GetStyleSheet();
-	View *GetRoot();
-	View *HitTest(vec2 pos);
-	void ScrollIntoView(View *target);
-	uint32 GetWidth() const { return m_Width; }
-	uint32 GetHeight() const { return m_Height; }
-	void NotifyStyleDirty(View *view);
-	void NotifyAnimationStarted(View *view);
-	void NotifyDrawDirty(View *view);
-	void NotifyLayoutDirty(View *view);
-	void NotifyFocusRequest(View *view);
-	void NotifyViewRemoved(View *view);
-	void ReloadStyles();
-	void MarkSubtreeDirty(View *node);
+	StyleSheet &get_style_sheet();
+	View *get_root();
+	View *hit_test(Vec2 pos);
+	void scroll_into_view(View *target);
+	Uint32 get_width() const { return m_width; }
+	Uint32 get_height() const { return m_height; }
+	void notify_style_dirty(View *view);
+	void notify_animation_started(View *view);
+	void notify_draw_dirty(View *view);
+	void notify_layout_dirty(View *view);
+	void notify_focus_request(View *view);
+	void notify_view_removed(View *view);
+	void reload_styles();
+	void mark_subtree_dirty(View *node);
 
-	void RegisterPopup(View *popup, Delegate<void()> onDismiss);
-	void UnregisterPopup(View *popup);
+	void register_popup(View *popup, Delegate<void()> on_dismiss);
+	void unregister_popup(View *popup);
 
-	void RegisterTick(View *view);
-	void UnregisterTick(View *view);
+	void register_tick(View *view);
+	void unregister_tick(View *view);
 
-	bool IsDrawListDirty() const { return m_DrawListDirty; }
-	void ClearDrawListDirty() { m_DrawListDirty = false; }
+	bool is_draw_list_dirty() const { return m_draw_list_dirty; }
+	void clear_draw_list_dirty() { m_draw_list_dirty = false; }
 
   private:
-	void MarkNodeDrawDirty(View *node);
-	void DismissPopupsOutside(View *hit);
+	void mark_node_draw_dirty(View *node);
+	void dismiss_popups_outside(View *hit);
 
 	struct OpenPopup {
 		View *root;
-		Delegate<void()> onDismiss;
+		Delegate<void()> on_dismiss;
 	};
-	std::vector<OpenPopup> m_OpenPopups;
-	std::vector<View *> m_Ticking;
-	View *m_ScrollTarget = nullptr;
+	std::vector<OpenPopup> m_open_popups;
+	std::vector<View *> m_ticking;
+	View *m_scroll_target = nullptr;
 
-	Unique<View> m_Root;
-	StyleEngine m_StyleEngine;
-	LayoutEngine m_LayoutEngine;
-	DrawCompositor m_DrawCompositor;
-	InputRouter m_InputRouter;
-	uint32 m_Width, m_Height;
+	Unique<View> m_root;
+	StyleEngine m_style_engine;
+	LayoutEngine m_layout_engine;
+	DrawCompositor m_draw_compositor;
+	InputRouter m_input_router;
+	Uint32 m_width, m_height;
 
-	float m_DeltaTime = 0.f;
+	float m_delta_time = 0.F;
 
-	std::vector<View *> m_ActiveAnims;
+	std::vector<View *> m_active_anims;
 
-	bool m_LayoutDirty = true;
-	bool m_Dirty = true;
-	bool m_DrawListDirty = true; // true when draw list was rebuilt this frame
+	bool m_layout_dirty = true;
+	bool m_dirty = true;
+	bool m_draw_list_dirty = true; // true when draw list was rebuilt this frame
 
-	void MarkDirty();
-	void RequestLayout(); // mark layout dirty + request a frame (used by input/scroll)
-	void StylePass();
-	void AnimationPass(f32 dt);
+	void mark_dirty();
+	void request_layout(); // mark layout dirty + request a frame (used by input/scroll)
+	void style_pass();
+	void animation_pass(F32 dt);
 };
 } // namespace Aquila::UI::Core

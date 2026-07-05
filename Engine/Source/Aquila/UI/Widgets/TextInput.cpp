@@ -6,230 +6,230 @@
 
 namespace Aquila::UI::Core {
 
-static void InitTextInput(TextInput *self) {
-	self->SetInputLeaf(true);
-	self->AddClass("text-input");
+static void init_text_input(TextInput *self) {
+	self->set_input_leaf(true);
+	self->add_class("text-input");
 }
 
 TextInput::TextInput() {
-	InitTextInput(this);
+	init_text_input(this);
 }
 
-TextInput::TextInput(std::string placeholder) : m_Placeholder(std::move(placeholder)) {
-	InitTextInput(this);
+TextInput::TextInput(std::string placeholder) : m_placeholder(std::move(placeholder)) {
+	init_text_input(this);
 }
 
-void TextInput::SetText(const std::string &text) {
-	m_State.SetText(text);
-	QueueRedraw();
+void TextInput::set_text(const std::string &text) {
+	m_state.set_text(text);
+	queue_redraw();
 }
 
-void TextInput::SetFont(Text::FontAtlas *font) {
-	m_Font = font;
-	QueueRedraw();
+void TextInput::set_font(Text::FontAtlas *font) {
+	m_font = font;
+	queue_redraw();
 }
 
-void TextInput::SetPlaceholder(std::string text) {
-	m_Placeholder = std::move(text);
-	QueueRedraw();
+void TextInput::set_placeholder(std::string text) {
+	m_placeholder = std::move(text);
+	queue_redraw();
 }
 
-Text::FontAtlas *TextInput::ResolveFont() const {
-	if (Text::FontAtlas *css = GetResolvedFont()) {
+Text::FontAtlas *TextInput::resolve_font() const {
+	if (Text::FontAtlas *css = get_resolved_font()) {
 		return css;
 	}
-	return m_Font;
+	return m_font;
 }
 
-void TextInput::ClampScrollOffset(Text::FontAtlas *font, float scale, float visibleWidth) {
-	const float cursorX = m_State.MeasureToPos(*font, scale, m_State.cursor);
-	if (cursorX - m_ScrollOffsetX < 0.f) {
-		m_ScrollOffsetX = cursorX;
-	} else if (cursorX - m_ScrollOffsetX > visibleWidth) {
-		m_ScrollOffsetX = cursorX - visibleWidth;
+void TextInput::clamp_scroll_offset(Text::FontAtlas *font, float scale, float visible_width) {
+	const float cursor_x = m_state.measure_to_pos(*font, scale, m_state.cursor);
+	if (cursor_x - m_scroll_offset_x < 0.F) {
+		m_scroll_offset_x = cursor_x;
+	} else if (cursor_x - m_scroll_offset_x > visible_width) {
+		m_scroll_offset_x = cursor_x - visible_width;
 	}
-	m_ScrollOffsetX = std::max(0.f, m_ScrollOffsetX);
+	m_scroll_offset_x = std::max(0.F, m_scroll_offset_x);
 }
 
-void TextInput::OnMousePress(Platform::MouseButton btn, vec2 pos) {
-	View::OnMousePress(btn, pos);
+void TextInput::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
+	View::on_mouse_press(btn, pos);
 	if (btn != Platform::MouseButton::Left) {
 		return;
 	}
 
-	Text::FontAtlas *font = ResolveFont();
+	Text::FontAtlas *font = resolve_font();
 	if (!font) {
 		return;
 	}
 
-	const float fontSize = GetDisplayStyle().fontSize;
-	const float bakeSize = font->GetBakeSize();
-	const float scale = (bakeSize > 0.f && fontSize > 0.f) ? (fontSize / bakeSize) : 1.f;
+	const float font_size = get_display_style().font_size;
+	const float bake_size = font->get_bake_size();
+	const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
 
-	constexpr float kPadX = 4.f;
-	const float visibleWidth = GetLayoutRect().size.x - kPadX * 2.f;
-	const float localX = pos.x - GetAbsolutePosition().x - kPadX + m_ScrollOffsetX;
-	const size_t hit = m_State.HitTestPos(*font, scale, localX);
+	constexpr float k_pad_x = 4.F;
+	const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
+	const float local_x = pos.x - get_absolute_position().x - k_pad_x + m_scroll_offset_x;
+	const size_t hit = m_state.hit_test_pos(*font, scale, local_x);
 
-	const bool shift = Platform::Input::IsKeyPressed(Platform::KeyCode::LeftShift) ||
-		Platform::Input::IsKeyPressed(Platform::KeyCode::RightShift);
+	const bool shift = Platform::Input::is_key_pressed(Platform::KeyCode::LeftShift) ||
+		Platform::Input::is_key_pressed(Platform::KeyCode::RightShift);
 
 	if (shift) {
-		m_State.cursor = hit;
+		m_state.cursor = hit;
 	} else {
-		m_State.cursor = hit;
-		m_State.selectAnchor = hit;
+		m_state.cursor = hit;
+		m_state.select_anchor = hit;
 	}
-	ClampScrollOffset(font, scale, visibleWidth);
-	ResetBlink();
-	QueueRedraw();
+	clamp_scroll_offset(font, scale, visible_width);
+	reset_blink();
+	queue_redraw();
 }
 
-void TextInput::OnMouseMove(vec2 pos) {
-	if (!m_IsPressed) {
+void TextInput::on_mouse_move(Vec2 pos) {
+	if (!m_is_pressed) {
 		return;
 	}
-	Text::FontAtlas *font = ResolveFont();
+	Text::FontAtlas *font = resolve_font();
 	if (!font) {
 		return;
 	}
 
-	const float fontSize = GetDisplayStyle().fontSize;
-	const float bakeSize = font->GetBakeSize();
-	const float scale = (bakeSize > 0.f && fontSize > 0.f) ? (fontSize / bakeSize) : 1.f;
+	const float font_size = get_display_style().font_size;
+	const float bake_size = font->get_bake_size();
+	const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
 
-	constexpr float kPadX = 4.f;
-	const float visibleWidth = GetLayoutRect().size.x - kPadX * 2.f;
-	const float localX = pos.x - GetAbsolutePosition().x - kPadX + m_ScrollOffsetX;
-	const size_t hit = m_State.HitTestPos(*font, scale, localX);
-	if (hit != m_State.cursor) {
-		m_State.cursor = hit;
-		ClampScrollOffset(font, scale, visibleWidth);
-		QueueRedraw();
+	constexpr float k_pad_x = 4.F;
+	const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
+	const float local_x = pos.x - get_absolute_position().x - k_pad_x + m_scroll_offset_x;
+	const size_t hit = m_state.hit_test_pos(*font, scale, local_x);
+	if (hit != m_state.cursor) {
+		m_state.cursor = hit;
+		clamp_scroll_offset(font, scale, visible_width);
+		queue_redraw();
 	}
 }
 
-void TextInput::OnKeyPress(Platform::KeyCode key, int mods) {
-	const bool handled = m_State.HandleKeyPress(key, mods);
+void TextInput::on_key_press(Platform::KeyCode key, int mods) {
+	const bool handled = m_state.handle_key_press(key, mods);
 	if (handled) {
-		onChanged(m_State.text);
-		if (Text::FontAtlas *font = ResolveFont()) {
-			const float fontSize = GetDisplayStyle().fontSize;
-			const float bakeSize = font->GetBakeSize();
-			const float scale = (bakeSize > 0.f && fontSize > 0.f) ? (fontSize / bakeSize) : 1.f;
-			constexpr float kPadX = 4.f;
-			const float visibleWidth = GetLayoutRect().size.x - kPadX * 2.f;
-			ClampScrollOffset(font, scale, visibleWidth);
+		on_changed(m_state.text);
+		if (Text::FontAtlas *font = resolve_font()) {
+			const float font_size = get_display_style().font_size;
+			const float bake_size = font->get_bake_size();
+			const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
+			constexpr float k_pad_x = 4.F;
+			const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
+			clamp_scroll_offset(font, scale, visible_width);
 		}
-		ResetBlink();
-		QueueRedraw();
+		reset_blink();
+		queue_redraw();
 		return;
 	}
 
 	if (key == Platform::KeyCode::Enter) {
-		onSubmit(m_State.text);
+		on_submit(m_state.text);
 	}
 }
 
-void TextInput::OnCharInput(uint32 codepoint) {
-	if (m_State.HandleCharInput(codepoint)) {
-		onChanged(m_State.text);
-		ResetBlink();
-		QueueRedraw();
+void TextInput::on_char_input(Uint32 codepoint) {
+	if (m_state.handle_char_input(codepoint)) {
+		on_changed(m_state.text);
+		reset_blink();
+		queue_redraw();
 	}
 }
 
-void TextInput::OnFocusGained() {
-	View::OnFocusGained();
-	ResetBlink();
-	if (Canvas *canvas = GetCanvas()) {
-		canvas->RegisterTick(this);
+void TextInput::on_focus_gained() {
+	View::on_focus_gained();
+	reset_blink();
+	if (Canvas *canvas = get_canvas()) {
+		canvas->register_tick(this);
 	}
-	QueueRedraw();
+	queue_redraw();
 }
 
-void TextInput::OnFocusLost() {
-	View::OnFocusLost();
-	m_State.selectAnchor = m_State.cursor;
-	m_ScrollOffsetX = 0.f;
-	if (Canvas *canvas = GetCanvas()) {
-		canvas->UnregisterTick(this);
+void TextInput::on_focus_lost() {
+	View::on_focus_lost();
+	m_state.select_anchor = m_state.cursor;
+	m_scroll_offset_x = 0.F;
+	if (Canvas *canvas = get_canvas()) {
+		canvas->unregister_tick(this);
 	}
-	QueueRedraw();
+	queue_redraw();
 }
 
-void TextInput::OnUpdate(f32 deltaTime) {
-	constexpr float kBlinkPeriod = 0.53f;
-	m_BlinkTimer += deltaTime;
-	if (m_BlinkTimer >= kBlinkPeriod) {
-		m_BlinkTimer -= kBlinkPeriod;
-		m_CaretVisible = !m_CaretVisible;
-		QueueRedraw();
+void TextInput::on_update(F32 delta_time) {
+	constexpr float k_blink_period = 0.53f;
+	m_blink_timer += delta_time;
+	if (m_blink_timer >= k_blink_period) {
+		m_blink_timer -= k_blink_period;
+		m_caret_visible = !m_caret_visible;
+		queue_redraw();
 	}
 }
 
-void TextInput::ResetBlink() {
-	m_BlinkTimer = 0.f;
-	m_CaretVisible = true;
+void TextInput::reset_blink() {
+	m_blink_timer = 0.F;
+	m_caret_visible = true;
 }
 
-vec2 TextInput::GetIntrinsicSize() const {
-	vec2 result{};
-	auto &style = GetComputedStyle();
+Vec2 TextInput::get_intrinsic_size() const {
+	Vec2 result{};
+	auto &style = get_computed_style();
 
-	Text::FontAtlas *font = ResolveFont();
-	auto scale = style.fontSize / font->GetBakeSize();
+	Text::FontAtlas *font = resolve_font();
+	auto scale = style.font_size / font->get_bake_size();
 
 	result.x = -1; // we dont care bout width
-	result.y = font->GetLineHeight() * scale;
+	result.y = font->get_line_height() * scale;
 
 	return result;
 }
 
-void TextInput::OnDrawSelf(Rendering::DrawList &drawList) {
-	View::OnDrawSelf(drawList);
+void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
+	View::on_draw_self(draw_list);
 
 	using namespace Rendering;
-	const Rect rect = GetAbsoluteRect();
-	const auto &style = GetComputedStyle();
-	const int32 z = 0;
-	const float fontSize = style.fontSize > 0.f ? style.fontSize : 14.f;
+	const Rect rect = get_absolute_rect();
+	const auto &style = get_computed_style();
+	const Int32 z = 0;
+	const float font_size = style.font_size > 0.F ? style.font_size : 14.F;
 
-	Text::FontAtlas *font = ResolveFont();
+	Text::FontAtlas *font = resolve_font();
 	if (!font) {
 		return;
 	}
 
-	const float bakeSize = font->GetBakeSize();
-	const float scale = (bakeSize > 0.f) ? (fontSize / bakeSize) : 1.f;
-	const float lineH = font->GetLineHeight() * scale;
-	const float textY = rect.position.y + (rect.size.y - lineH) * 0.5f;
-	constexpr float kPadX = 4.f;
+	const float bake_size = font->get_bake_size();
+	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float line_h = font->get_line_height() * scale;
+	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5f;
+	constexpr float k_pad_x = 4.F;
 
-	const Rect textRect = {
-		.position = { rect.position.x + kPadX - m_ScrollOffsetX, textY },
-		.size = { rect.size.x - kPadX * 2.f + m_ScrollOffsetX, lineH },
+	const Rect text_rect = {
+		.position = { rect.position.x + k_pad_x - m_scroll_offset_x, text_y },
+		.size = { rect.size.x - k_pad_x * 2.F + m_scroll_offset_x, line_h },
 	};
 
-	if (m_IsFocused && m_State.HasSelection()) {
-		const float x0 = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.SelectionMin());
-		const float x1 = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.SelectionMax());
-		const Rect selRect = { .position = { x0, textY }, .size = { x1 - x0, lineH } };
-		const vec4 selColor = style.EffectiveSelectionColor();
-		drawList.DrawRect(selRect, selColor, vec4(2.f), 0.f, vec4(0.f), z + 1);
+	if (m_is_focused && m_state.has_selection()) {
+		const float x0 = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.selection_min());
+		const float x1 = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.selection_max());
+		const Rect sel_rect = { .position = { x0, text_y }, .size = { x1 - x0, line_h } };
+		const Vec4 sel_color = style.effective_selection_color();
+		draw_list.draw_rect(sel_rect, sel_color, Vec4(2.F), 0.F, Vec4(0.F), z + 1);
 	}
 
-	if (!m_State.text.empty()) {
-		drawList.DrawText(textRect, m_State.text, font, style.color, fontSize, TextAlign::Left, z + 1);
-	} else if (!m_Placeholder.empty() && !m_IsFocused) {
-		const vec4 muted = style.EffectivePlaceholderColor();
-		drawList.DrawText(textRect, m_Placeholder, font, muted, fontSize, TextAlign::Left, z + 1);
+	if (!m_state.text.empty()) {
+		draw_list.DrawText(text_rect, m_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
+	} else if (!m_placeholder.empty() && !m_is_focused) {
+		const Vec4 muted = style.effective_placeholder_color();
+		draw_list.DrawText(text_rect, m_placeholder, font, muted, font_size, TextAlign::Left, z + 1);
 	}
 
-	if (m_IsFocused && !m_State.HasSelection() && m_CaretVisible) {
-		const float cx = textRect.position.x + m_State.MeasureToPos(*font, scale, m_State.cursor);
-		const float cy = rect.position.y + (rect.size.y - lineH) * 0.5f;
-		drawList.DrawLine({ cx, cy }, { cx, cy + lineH }, 0.5f, style.color, z + 2);
+	if (m_is_focused && !m_state.has_selection() && m_caret_visible) {
+		const float cx = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.cursor);
+		const float cy = rect.position.y + (rect.size.y - line_h) * 0.5f;
+		draw_list.draw_line({ cx, cy }, { cx, cy + line_h }, 0.5f, style.color, z + 2);
 	}
 }
 

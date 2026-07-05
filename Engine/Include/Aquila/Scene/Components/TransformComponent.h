@@ -7,127 +7,127 @@
 namespace Aquila::SceneManagement::Components {
 struct TransformComponent {
   public:
-	TransformComponent(const vec3 &position = vec3{ 0.f }, const glm::quat &rotation = glm::quat{ 1.f, 0.f, 0.f, 0.f },
-					   const vec3 &scale = vec3{ 1.f })
-		: m_LocalPosition(position), m_LocalRotation(rotation), m_LocalScale(scale), m_WorldMatrix(1.0f),
-		  m_WorldMatrixDirty(true) {}
+	TransformComponent(const Vec3 &position = Vec3{ 0.F }, const glm::quat &rotation = glm::quat{ 1.F, 0.F, 0.F, 0.F },
+					   const Vec3 &scale = Vec3{ 1.F })
+		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0f),
+		  m_world_matrix_dirty(true) {}
 
-	void SetLocalPosition(const vec3 &position) {
-		m_LocalPosition = position;
-		MarkWorldMatrixDirty();
+	void set_local_position(const Vec3 &position) {
+		m_local_position = position;
+		mark_world_matrix_dirty();
 	}
 
-	void SetLocalRotation(const glm::quat &rotation) {
-		m_LocalRotation = rotation;
-		MarkWorldMatrixDirty();
+	void set_local_rotation(const glm::quat &rotation) {
+		m_local_rotation = rotation;
+		mark_world_matrix_dirty();
 	}
 
-	void SetLocalScale(const vec3 &scale) {
-		m_LocalScale = scale;
-		MarkWorldMatrixDirty();
+	void set_local_scale(const Vec3 &scale) {
+		m_local_scale = scale;
+		mark_world_matrix_dirty();
 	}
 
-	[[nodiscard]] const vec3 &GetLocalPosition() const { return m_LocalPosition; }
-	[[nodiscard]] const glm::quat &GetLocalRotation() const { return m_LocalRotation; }
-	[[nodiscard]] const vec3 &GetLocalScale() const { return m_LocalScale; }
+	[[nodiscard]] const Vec3 &get_local_position() const { return m_local_position; }
+	[[nodiscard]] const glm::quat &get_local_rotation() const { return m_local_rotation; }
+	[[nodiscard]] const Vec3 &get_local_scale() const { return m_local_scale; }
 
 	// Mutable versions only when you need to modify directly
-	vec3 &GetLocalPositionMut() {
-		MarkWorldMatrixDirty();
-		return m_LocalPosition;
+	Vec3 &get_local_position_mut() {
+		mark_world_matrix_dirty();
+		return m_local_position;
 	}
-	glm::quat &GetLocalRotationMut() {
-		MarkWorldMatrixDirty();
-		return m_LocalRotation;
+	glm::quat &get_local_rotation_mut() {
+		mark_world_matrix_dirty();
+		return m_local_rotation;
 	}
-	vec3 &GetLocalScaleMut() {
-		MarkWorldMatrixDirty();
-		return m_LocalScale;
-	}
-
-	[[nodiscard]] glm::mat4 GetLocalTransformMatrix() const {
-		glm::mat4 translationMatrix = glm::translate(glm::mat4(1.0f), m_LocalPosition);
-		glm::mat4 rotationMatrix = glm::toMat4(m_LocalRotation);
-		glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), m_LocalScale);
-		return translationMatrix * rotationMatrix * scaleMatrix;
+	Vec3 &get_local_scale_mut() {
+		mark_world_matrix_dirty();
+		return m_local_scale;
 	}
 
-	void UpdateWorldMatrix(const glm::mat4 &parentMatrix = glm::mat4(1.0f)) {
-		m_WorldMatrix = parentMatrix * GetLocalTransformMatrix();
-		m_WorldMatrixDirty = false;
+	[[nodiscard]] glm::mat4 get_local_transform_matrix() const {
+		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_local_position);
+		glm::mat4 rotation_matrix = glm::toMat4(m_local_rotation);
+		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), m_local_scale);
+		return translation_matrix * rotation_matrix * scale_matrix;
+	}
+
+	void update_world_matrix(const glm::mat4 &parent_matrix = glm::mat4(1.0f)) {
+		m_world_matrix = parent_matrix * get_local_transform_matrix();
+		m_world_matrix_dirty = false;
 	}
 
 	// Get world matrix (const version - use cached value)
-	[[nodiscard]] const glm::mat4 &GetWorldMatrix() const {
-		AQUILA_ASSERT(!m_WorldMatrixDirty, "World matrix is dirty! Call UpdateWorldMatrix() before rendering.");
-		return m_WorldMatrix;
+	[[nodiscard]] const glm::mat4 &get_world_matrix() const {
+		AQUILA_ASSERT(!m_world_matrix_dirty, "World matrix is dirty! Call UpdateWorldMatrix() before rendering.");
+		return m_world_matrix;
 	}
 
 	// Get world matrix (mutable version - lazy update)
 	// WARNING: Only use this outside of render loops!
-	const glm::mat4 &GetWorldMatrixLazy() {
-		if (m_WorldMatrixDirty) {
-			UpdateWorldMatrix(m_ParentMatrix);
+	const glm::mat4 &get_world_matrix_lazy() {
+		if (m_world_matrix_dirty) {
+			update_world_matrix(m_parent_matrix);
 		}
-		return m_WorldMatrix;
+		return m_world_matrix;
 	}
 
 	// Extract world position from world matrix
-	[[nodiscard]] vec3 GetWorldPosition() const { return vec3(m_WorldMatrix[3]); }
+	[[nodiscard]] Vec3 get_world_position() const { return Vec3(m_world_matrix[3]); }
 
 	// Extract world scale from world matrix
-	[[nodiscard]] vec3 GetWorldScale() const {
-		vec3 scale;
-		scale.x = glm::length(vec3(m_WorldMatrix[0]));
-		scale.y = glm::length(vec3(m_WorldMatrix[1]));
-		scale.z = glm::length(vec3(m_WorldMatrix[2]));
+	[[nodiscard]] Vec3 get_world_scale() const {
+		Vec3 scale;
+		scale.x = glm::length(Vec3(m_world_matrix[0]));
+		scale.y = glm::length(Vec3(m_world_matrix[1]));
+		scale.z = glm::length(Vec3(m_world_matrix[2]));
 		return scale;
 	}
 
 	// Extract world rotation from world matrix
-	[[nodiscard]] glm::quat GetWorldRotation() const {
-		vec3 scale = GetWorldScale();
+	[[nodiscard]] glm::quat get_world_rotation() const {
+		Vec3 scale = get_world_scale();
 
 		// Create rotation matrix by removing scale
-		glm::mat3 rotationMatrix;
-		rotationMatrix[0] = vec3(m_WorldMatrix[0]) / scale.x;
-		rotationMatrix[1] = vec3(m_WorldMatrix[1]) / scale.y;
-		rotationMatrix[2] = vec3(m_WorldMatrix[2]) / scale.z;
+		glm::mat3 rotation_matrix;
+		rotation_matrix[0] = Vec3(m_world_matrix[0]) / scale.x;
+		rotation_matrix[1] = Vec3(m_world_matrix[1]) / scale.y;
+		rotation_matrix[2] = Vec3(m_world_matrix[2]) / scale.z;
 
-		return glm::quat_cast(rotationMatrix);
+		return glm::quat_cast(rotation_matrix);
 	}
 
-	[[nodiscard]] glm::mat3 GetNormalMatrix() const {
-		glm::mat3 normalMatrix = glm::mat3(m_WorldMatrix);
-		return glm::transpose(glm::inverse(normalMatrix));
+	[[nodiscard]] glm::mat3 get_normal_matrix() const {
+		glm::mat3 normal_matrix = glm::mat3(m_world_matrix);
+		return glm::transpose(glm::inverse(normal_matrix));
 	}
 
-	[[nodiscard]] glm::mat3 GetNormalMatrixFast() const { return glm::mat3(m_WorldMatrix); }
+	[[nodiscard]] glm::mat3 get_normal_matrix_fast() const { return glm::mat3(m_world_matrix); }
 
-	void SetParentMatrix(const glm::mat4 &parentMatrix) {
-		m_ParentMatrix = parentMatrix;
-		MarkWorldMatrixDirty();
+	void set_parent_matrix(const glm::mat4 &parent_matrix) {
+		m_parent_matrix = parent_matrix;
+		mark_world_matrix_dirty();
 	}
 
-	[[nodiscard]] bool IsWorldMatrixDirty() const { return m_WorldMatrixDirty; }
+	[[nodiscard]] bool is_world_matrix_dirty() const { return m_world_matrix_dirty; }
 
-	void SetDirtyCallback(std::function<void()> fn) { m_OnDirty = std::move(fn); }
+	void set_dirty_callback(std::function<void()> fn) { m_on_dirty = std::move(fn); }
 
   private:
-	void MarkWorldMatrixDirty() {
-		m_WorldMatrixDirty = true;
-		if (m_OnDirty) {
-			m_OnDirty();
+	void mark_world_matrix_dirty() {
+		m_world_matrix_dirty = true;
+		if (m_on_dirty) {
+			m_on_dirty();
 		}
 	}
 
-	vec3 m_LocalPosition{ 0.f };
-	glm::quat m_LocalRotation{ 1.f, 0.f, 0.f, 0.f };
-	vec3 m_LocalScale{ 1.f };
-	glm::mat4 m_WorldMatrix{ 1.f };
-	glm::mat4 m_ParentMatrix{ 1.f };
-	bool m_WorldMatrixDirty{ true };
-	std::function<void()> m_OnDirty;
+	Vec3 m_local_position{ 0.F };
+	glm::quat m_local_rotation{ 1.F, 0.F, 0.F, 0.F };
+	Vec3 m_local_scale{ 1.F };
+	glm::mat4 m_world_matrix{ 1.F };
+	glm::mat4 m_parent_matrix{ 1.F };
+	bool m_world_matrix_dirty{ true };
+	std::function<void()> m_on_dirty;
 };
 } // namespace Aquila::SceneManagement::Components
 #endif

@@ -11,29 +11,29 @@
 
 namespace Aquila::UI::ParserHelper {
 
-std::string_view TrimSV(std::string_view s);
-std::string Trim(std::string_view s);
-std::string ToLower(std::string_view s);
+std::string_view trim_sv(std::string_view s);
+std::string trim(std::string_view s);
+std::string to_lower(std::string_view s);
 
-std::vector<std::string> Split(std::string_view s, char delim);
+std::vector<std::string> split(std::string_view s, char delim);
 
-std::vector<std::string> SplitWS(std::string_view s);
+std::vector<std::string> split_ws(std::string_view s);
 
-std::string StripComments(std::string_view src);
+std::string strip_comments(std::string_view src);
 
-float ParseFloat(std::string_view s);
+float parse_float(std::string_view s);
 
-float ParseDurationMs(std::string_view s);
+float parse_duration_ms(std::string_view s);
 
-std::optional<TransitionEasing> ParseEasing(std::string_view s);
-Option<StyleLength> ParseLength(std::string_view raw);
-Option<vec4> ParseColor(std::string_view raw);
+std::optional<TransitionEasing> parse_easing(std::string_view s);
+Option<StyleLength> parse_length(std::string_view raw);
+Option<Vec4> parse_color(std::string_view raw);
 
-Option<StyleEdges> ParseEdges(std::string_view s);
-Option<vec4> ParseRadius(std::string_view s);
-Option<BoxShadow> ParseOneShadow(std::string_view raw);
+Option<StyleEdges> parse_edges(std::string_view s);
+Option<Vec4> parse_radius(std::string_view s);
+Option<BoxShadow> parse_one_shadow(std::string_view raw);
 
-void ApplyDeclaration(StyleProperties &props, std::string_view propRaw, std::string_view valueRaw);
-void ParseBlock(std::string_view selectorList, std::string_view body, StyleSheet &sheet);
+void apply_declaration(StyleProperties &props, std::string_view prop_raw, std::string_view value_raw);
+void parse_block(std::string_view selector_list, std::string_view body, StyleSheet &sheet);
 
 } // namespace Aquila::UI::ParserHelper

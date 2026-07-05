@@ -5,20 +5,20 @@ namespace Aquila::Rendering {
 
 class FrameScheduler : public Foundation::Singleton<FrameScheduler> {
   public:
-	void RequestFrame() { m_Dirty = true; }
+	void request_frame() { m_dirty = true; }
 
-	bool Consume() {
-		if (!m_Dirty) {
+	bool consume() {
+		if (!m_dirty) {
 			return false;
 		}
-		m_Dirty = false;
+		m_dirty = false;
 		return true;
 	}
 
   private:
 	friend class Foundation::Singleton<FrameScheduler>;
 	FrameScheduler() = default;
-	bool m_Dirty = true; // always render the first frame
+	bool m_dirty = true; // always render the first frame
 };
 
 } // namespace Aquila::Rendering

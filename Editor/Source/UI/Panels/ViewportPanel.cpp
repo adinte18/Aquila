@@ -8,22 +8,22 @@ namespace Editor {
 
 using namespace Aquila;
 
-ViewportPanel::ViewportPanel(GFX::GfxTexture &initialTexture) : m_InitialTexture(initialTexture) {}
+ViewportPanel::ViewportPanel(GFX::GfxTexture &initial_texture) : m_initial_texture(initial_texture) {}
 
-void ViewportPanel::Build(UI::Core::DockPanel *panel, UI::Core::View *) {
-	m_Image = panel->FindById<UI::Core::Image>("viewport");
-	if (m_Image == nullptr) {
+void ViewportPanel::build(UI::Core::DockPanel *panel, UI::Core::View *) {
+	m_image = panel->find_by_id<UI::Core::Image>("viewport");
+	if (m_image == nullptr) {
 		AQUILA_LOG_ERROR("ViewportPanel: 'viewport' image not found in layout");
 		return;
 	}
 
-	m_Image->SetTexture(&m_InitialTexture);
-	m_Image->SetPassThroughScroll(true);
+	m_image->set_texture(&m_initial_texture);
+	m_image->set_pass_through_scroll(true);
 }
 
-void ViewportPanel::SetTexture(GFX::GfxTexture *texture) {
-	if (m_Image) {
-		m_Image->SetTexture(texture);
+void ViewportPanel::set_texture(GFX::GfxTexture *texture) {
+	if (m_image) {
+		m_image->set_texture(texture);
 	}
 }
 

@@ -14,14 +14,14 @@ class GfxPipeline {
 	~GfxPipeline() = default;
 	AQUILA_NONCOPYABLE(GfxPipeline);
 
-	void Bind(GfxCommandList &cmd);
+	void bind(GfxCommandList &cmd);
 
-	[[nodiscard]] RHI::IRHIPipeline &GetRHI() { return *m_Pipeline; }
+	[[nodiscard]] RHI::IRHIPipeline &get_rhi() { return *m_pipeline; }
 
   private:
 	friend class GfxContext;
 	explicit GfxPipeline(Unique<RHI::IRHIPipeline> pipeline);
-	Unique<RHI::IRHIPipeline> m_Pipeline;
+	Unique<RHI::IRHIPipeline> m_pipeline;
 };
 
 } // namespace Aquila::GFX

@@ -2,7 +2,6 @@
 
 #include "UI/Panels/IEditorPanel.h"
 #include "Aquila/Scene/Entity.h"
-#include <functional>
 
 namespace Aquila::SceneManagement {
 class EntityManager;
@@ -15,15 +14,15 @@ class HierarchyTreeNode;
 
 class HierarchyPanel : public IEditorPanel {
   public:
-	explicit HierarchyPanel(Aquila::SceneManagement::EntityManager &entityManager);
-	void Build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlayRoot) override;
-	Signal<void(Aquila::SceneManagement::Entity)> onEntitySelected;
-	void AddEntity(Aquila::SceneManagement::Entity entity);
+	explicit HierarchyPanel(Aquila::SceneManagement::EntityManager &entity_manager);
+	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	Signal<void(Aquila::SceneManagement::Entity)> on_entity_selected;
+	void add_entity(Aquila::SceneManagement::Entity entity);
 
   private:
-	Aquila::SceneManagement::EntityManager &m_EntityManager;
-	HierarchyTreeView *m_TreeView = nullptr;
-	HierarchyTreeNode *m_SelectedNode = nullptr;
+	Aquila::SceneManagement::EntityManager &m_entity_manager;
+	HierarchyTreeView *m_tree_view = nullptr;
+	HierarchyTreeNode *m_selected_node = nullptr;
 };
 
 } // namespace Editor

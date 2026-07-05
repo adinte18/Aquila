@@ -13,18 +13,18 @@ class IRHISwapchain {
 	IRHISwapchain &operator=(const IRHISwapchain &) = delete;
 
 	// Returns false when the swapchain is out-of-date (must call Resize before next frame).
-	virtual bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) = 0;
+	virtual bool acquire_next_image(Uint32 &out_image_index, bool drive_device_frame) = 0;
 
-	[[nodiscard]] virtual uint32 GetWidth() const = 0;
-	[[nodiscard]] virtual uint32 GetHeight() const = 0;
-	[[nodiscard]] virtual TextureFormat GetFormat() const = 0;
-	[[nodiscard]] virtual uint32 GetImageCount() const = 0;
+	[[nodiscard]] virtual Uint32 get_width() const = 0;
+	[[nodiscard]] virtual Uint32 get_height() const = 0;
+	[[nodiscard]] virtual TextureFormat get_format() const = 0;
+	[[nodiscard]] virtual Uint32 get_image_count() const = 0;
 
 	// True after a suboptimal present; also call Resize to fix it.
-	[[nodiscard]] virtual bool NeedsResize() const = 0;
-	virtual void Resize(uint32 width, uint32 height) = 0;
+	[[nodiscard]] virtual bool needs_resize() const = 0;
+	virtual void resize(Uint32 width, Uint32 height) = 0;
 
-	[[nodiscard]] virtual uint32 GetCurrentFrameSlot() const = 0;
+	[[nodiscard]] virtual Uint32 get_current_frame_slot() const = 0;
 
   protected:
 	IRHISwapchain() = default;

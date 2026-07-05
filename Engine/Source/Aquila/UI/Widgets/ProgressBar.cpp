@@ -3,30 +3,30 @@
 namespace Aquila::UI::Core {
 
 ProgressBar::ProgressBar() {
-	AddClass("progress-bar");
+	add_class("progress-bar");
 
-	auto fill = CreateUnique<View>();
-	fill->AddClass("progress-fill");
-	m_Fill = AddChild(std::move(fill));
+	auto fill = create_unique<View>();
+	fill->add_class("progress-fill");
+	m_fill = add_child(std::move(fill));
 
-	SetValue(0.f);
+	set_value(0.F);
 }
 
-void ProgressBar::SetValue(float value) {
-	m_Value = std::clamp(value, 0.f, 1.f);
+void ProgressBar::set_value(float value) {
+	m_value = std::clamp(value, 0.F, 1.F);
 
 	StyleProperties sp;
-	sp.width = StyleLength::Percent(m_Value * 100.f);
-	sp.height = StyleLength::Grow();
-	m_Fill->MergeStyle(sp);
+	sp.width = StyleLength::percent(m_value * 100.F);
+	sp.height = StyleLength::grow();
+	m_fill->merge_style(sp);
 }
 
-void ProgressBar::ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx) {
+void ProgressBar::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
 	if (name == "value") {
-		SetValue(std::stof(std::string(value)));
+		set_value(std::stof(std::string(value)));
 		return;
 	}
-	View::ApplyXmlAttribute(name, value, loaderCtx);
+	View::apply_xml_attribute(name, value, loader_ctx);
 }
 
 } // namespace Aquila::UI::Core

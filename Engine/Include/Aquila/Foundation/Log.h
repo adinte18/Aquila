@@ -2,11 +2,18 @@
 #define AQUILA_LOG_H
 
 #include "Aquila/Foundation/Color.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include <format>
+#include <iostream>
+#include <exception>
 #include <ostream>
+#include <string>
+#include <source_location>
+#include <string_view>
 
 namespace Aquila::Foundation {
 
-enum class LogLevel : uint8 {
+enum class LogLevel : Uint8 {
 	Trace = 1 << 2,
 	Debug = 1 << 3,
 	Info = 1 << 4,
@@ -23,48 +30,48 @@ class Logger {
 	static bool s_useColors;
 
   public:
-	static void SetLogLevel(LogLevel level) { s_currentLevel = level; }
-	static LogLevel GetLogLevel() { return s_currentLevel; }
+	static void set_log_level(LogLevel level) { s_currentLevel = level; }
+	static LogLevel get_log_level() { return s_currentLevel; }
 
-	static void SetSink(std::ostream *buf) { s_sink = buf; }
+	static void set_sink(std::ostream *buf) { s_sink = buf; }
 
-	static void EnableTimestamp(bool enable = true) { s_showTimestamp = enable; }
-	static void EnableLocation(bool enable = true) { s_showLocation = enable; }
-	static void EnableColors(bool enable = true) { s_useColors = enable; }
+	static void enable_timestamp(bool enable = true) { s_showTimestamp = enable; }
+	static void enable_location(bool enable = true) { s_showLocation = enable; }
+	static void enable_colors(bool enable = true) { s_useColors = enable; }
 
   private:
 	static std::ostream *s_sink;
-	static std::string GetTimestamp();
-	static std::string GetLevelString(LogLevel level);
-	static std::string FormatLocation(const std::source_location &location);
+	static std::string get_timestamp();
+	static std::string get_level_string(LogLevel level);
+	static std::string format_location(const std::source_location &location);
 
-	static const char *GetLevelColor(LogLevel level) {
+	static const char *get_level_color(LogLevel level) {
 		if (!s_useColors) {
 			return "";
 		}
 
 		switch (level) {
 		case LogLevel::Trace:
-			return Color::BrightBlack;
+			return Color::BRIGHT_BLACK;
 		case LogLevel::Debug:
-			return Color::Cyan;
+			return Color::CYAN;
 		case LogLevel::Info:
-			return Color::BrightGreen;
+			return Color::BRIGHT_GREEN;
 		case LogLevel::Warning:
-			return Color::BrightYellow;
+			return Color::BRIGHT_YELLOW;
 		case LogLevel::Error:
-			return Color::BrightRed;
+			return Color::BRIGHT_RED;
 		case LogLevel::Critical:
-			static const std::string criticalColor = std::format("{}{}", Color::Bold, Color::BrightRed);
-			return criticalColor.c_str();
+			static const std::string critical_color = std::format("{}{}", Color::BOLD, Color::BRIGHT_RED);
+			return critical_color.c_str();
 		default:
-			return Color::Reset;
+			return Color::RESET;
 		}
 	}
 
 	template <typename... Args>
-	static void LogImplInternal(LogLevel level, std::string_view format_str, const std::source_location &location,
-								Args &&...args) {
+	static void log_impl_internal(LogLevel level, std::string_view format_str, const std::source_location &location,
+								  Args &&...args) {
 		if (level < s_currentLevel) {
 			return;
 		}
@@ -76,18 +83,18 @@ class Logger {
 			message = std::string{ format_str };
 		}
 
-		const char *color = GetLevelColor(level);
-		const char *reset = s_useColors ? Color::Reset : "";
-		const char *dimColor = s_useColors ? Color::Dim : "";
+		const char *color = get_level_color(level);
+		const char *reset = s_useColors ? Color::RESET : "";
+		const char *dim_color = s_useColors ? Color::DIM : "";
 
-		std::string prefix = std::format("{}[AQUILA {}]{}", color, GetLevelString(level), reset);
+		std::string prefix = std::format("{}[AQUILA {}]{}", color, get_level_string(level), reset);
 
 		if (s_showTimestamp) {
-			prefix = std::format("{}{}{} {}", dimColor, GetTimestamp(), reset, prefix);
+			prefix = std::format("{}{}{} {}", dim_color, get_timestamp(), reset, prefix);
 		}
 
 		if (s_showLocation && level >= LogLevel::Warning) {
-			prefix = std::format("{} {}{}{}", prefix, dimColor, FormatLocation(location), reset);
+			prefix = std::format("{} {}{}{}", prefix, dim_color, format_location(location), reset);
 		}
 
 		auto &stream = s_sink ? *s_sink : (level >= LogLevel::Error) ? std::cerr : std::cout;
@@ -97,97 +104,97 @@ class Logger {
 
   public:
 	template <typename... Args>
-	static void LogTrace(std::string_view format_str, Args &&...args,
-						 const std::source_location &location = std::source_location::current()) {
+	static void log_trace(std::string_view format_str, Args &&...args,
+						  const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Trace, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	static void LogDebug(std::string_view format_str, Args &&...args,
-						 const std::source_location &location = std::source_location::current()) {
+	static void log_debug(std::string_view format_str, Args &&...args,
+						  const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Debug, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	static void LogInfo(std::string_view format_str, Args &&...args,
-						const std::source_location &location = std::source_location::current()) {
+	static void log_info(std::string_view format_str, Args &&...args,
+						 const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Info, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	static void LogWarning(std::string_view format_str, Args &&...args,
-						   const std::source_location &location = std::source_location::current()) {
+	static void log_warning(std::string_view format_str, Args &&...args,
+							const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Warning, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	static void LogError(std::string_view format_str, Args &&...args,
-						 const std::source_location &location = std::source_location::current()) {
+	static void log_error(std::string_view format_str, Args &&...args,
+						  const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Error, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
-	static void LogCritical(std::string_view format_str, Args &&...args,
-							const std::source_location &location = std::source_location::current()) {
+	static void log_critical(std::string_view format_str, Args &&...args,
+							 const std::source_location &location = std::source_location::current()) {
 		LogImplInternal(LogLevel::Critical, format_str, location, std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogTrace(std::string_view format_str, Args &&...args) {
+	template <typename... Args> static void simple_log_trace(std::string_view format_str, Args &&...args) {
 		LogImplInternal(LogLevel::Trace, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogDebug(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Debug, format_str, std::source_location::current(), std::forward<Args>(args)...);
+	template <typename... Args> static void simple_log_debug(std::string_view format_str, Args &&...args) {
+		log_impl_internal(LogLevel::Debug, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogInfo(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Info, format_str, std::source_location::current(), std::forward<Args>(args)...);
+	template <typename... Args> static void simple_log_info(std::string_view format_str, Args &&...args) {
+		log_impl_internal(LogLevel::Info, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogWarning(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Warning, format_str, std::source_location::current(), std::forward<Args>(args)...);
+	template <typename... Args> static void simple_log_warning(std::string_view format_str, Args &&...args) {
+		log_impl_internal(LogLevel::Warning, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogError(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Error, format_str, std::source_location::current(), std::forward<Args>(args)...);
+	template <typename... Args> static void simple_log_error(std::string_view format_str, Args &&...args) {
+		log_impl_internal(LogLevel::Error, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
-	template <typename... Args> static void SimpleLogCritical(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Critical, format_str, std::source_location::current(), std::forward<Args>(args)...);
+	template <typename... Args> static void simple_log_critical(std::string_view format_str, Args &&...args) {
+		log_impl_internal(LogLevel::Critical, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 };
 
-template <typename... Args> void Log(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogInfo(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_info(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogError(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogError(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_error(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_error(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogWarning(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogWarning(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_warning(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_warning(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogTrace(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogTrace(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_trace(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_trace(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogDebug(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogDebug(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_debug(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_debug(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogCritical(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogCritical(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_critical(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_critical(format_str, std::forward<Args>(args)...);
 }
 
-template <typename... Args> void LogInfo(std::string_view format_str, Args &&...args) {
-	Logger::SimpleLogInfo(format_str, std::forward<Args>(args)...);
+template <typename... Args> void log_info(std::string_view format_str, Args &&...args) {
+	Logger::simple_log_info(format_str, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-[[noreturn]] void AssertFailed(std::string_view condition, std::string_view format_str, Args &&...args,
-							   const std::source_location &location) {
+[[noreturn]] void assert_failed(std::string_view condition, std::string_view format_str, Args &&...args,
+								const std::source_location &location) {
 	std::string message;
 	if constexpr (sizeof...(args) > 0) {
 		message = std::format(format_str, std::forward<Args>(args)...);
@@ -195,18 +202,18 @@ template <typename... Args>
 		message = std::string{ format_str };
 	}
 
-	std::cerr << std::format("{}{}ASSERTION FAILED: {}{}\n", Color::Bold, Color::BrightRed, condition, Color::Reset);
-	std::cerr << std::format("{}Message: {}{}\n", Color::BrightYellow, message, Color::Reset);
-	std::cerr << std::format("{}File: {}:{} in {}{}\n", Color::Dim, location.file_name(), location.line(),
-							 location.function_name(), Color::Reset);
+	std::cerr << std::format("{}{}ASSERTION FAILED: {}{}\n", Color::BOLD, Color::BRIGHT_RED, condition, Color::RESET);
+	std::cerr << std::format("{}Message: {}{}\n", Color::BRIGHT_YELLOW, message, Color::RESET);
+	std::cerr << std::format("{}File: {}:{} in {}{}\n", Color::DIM, location.file_name(), location.line(),
+							 location.function_name(), Color::RESET);
 
 	std::terminate();
 }
 
-[[noreturn]] inline void AssertFailed(const char *condition, const char *message, const char *file, int line) {
-	std::cerr << std::format("{}{}ASSERTION FAILED: {}{}\n", Color::Bold, Color::BrightRed, condition, Color::Reset);
-	std::cerr << std::format("{}Message: {}{}\n", Color::BrightYellow, message, Color::Reset);
-	std::cerr << std::format("{}File: {}:{}{}\n", Color::Dim, file, line, Color::Reset);
+[[noreturn]] inline void assert_failed(const char *condition, const char *message, const char *file, int line) {
+	std::cerr << std::format("{}{}ASSERTION FAILED: {}{}\n", Color::BOLD, Color::BRIGHT_RED, condition, Color::RESET);
+	std::cerr << std::format("{}Message: {}{}\n", Color::BRIGHT_YELLOW, message, Color::RESET);
+	std::cerr << std::format("{}File: {}:{}{}\n", Color::DIM, file, line, Color::RESET);
 	std::terminate();
 }
 

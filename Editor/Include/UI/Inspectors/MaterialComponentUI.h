@@ -17,17 +17,17 @@ namespace Editor {
 class MaterialComponentUI : public IComponentUI {
   public:
 	explicit MaterialComponentUI(Aquila::GFX::GfxContext &context);
-	bool Matches(Aquila::SceneManagement::Entity entity) const override;
-	void Build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
-	void Show(Aquila::SceneManagement::Entity entity) override;
+	bool matches(Aquila::SceneManagement::Entity entity) const override;
+	void build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
+	void show(Aquila::SceneManagement::Entity entity) override;
 
   private:
-	Aquila::GFX::GfxContext &m_Context;
-	Aquila::UI::Core::Dropdown *m_Type = nullptr;
-	Aquila::UI::Core::ColorPicker *m_Albedo = nullptr;
-	Aquila::UI::Core::DragFloat *m_Metallic = nullptr;
-	Aquila::UI::Core::DragFloat *m_Roughness = nullptr;
-	Aquila::UI::Core::PropertyGrid *m_TextureArea = nullptr;
+	Aquila::GFX::GfxContext &m_context;
+	Aquila::UI::Core::Dropdown *m_type = nullptr;
+	Aquila::UI::Core::ColorPicker *m_albedo = nullptr;
+	Aquila::UI::Core::DragFloat *m_metallic = nullptr;
+	Aquila::UI::Core::DragFloat *m_roughness = nullptr;
+	Aquila::UI::Core::PropertyGrid *m_texture_area = nullptr;
 };
 
 } // namespace Editor

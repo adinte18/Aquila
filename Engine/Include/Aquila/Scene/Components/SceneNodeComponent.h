@@ -4,9 +4,9 @@
 #include "Aquila/Scene/Entity.h"
 namespace Aquila::SceneManagement::Components {
 struct SceneNodeComponent {
-	Entity Ent;
-	Entity Parent;
-	std::vector<Entity> Children;
+	Entity ent;
+	Entity parent;
+	std::vector<Entity> children;
 
 	SceneNodeComponent() = default;
 

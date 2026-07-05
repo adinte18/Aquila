@@ -9,15 +9,15 @@ class Separator : public View {
 	Separator();
 	explicit Separator(bool vertical);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Separator"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Separator"; }
 
-	void SetVertical(bool vertical);
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	void set_vertical(bool vertical);
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
 
   private:
-	bool m_Vertical = false;
+	bool m_vertical = false;
 
-	void ApplyOrientation();
+	void apply_orientation();
 };
 
 } // namespace Aquila::UI::Core

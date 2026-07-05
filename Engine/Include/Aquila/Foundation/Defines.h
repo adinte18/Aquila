@@ -1,7 +1,7 @@
 #ifndef AQUILA_DEFINES_H
 #define AQUILA_DEFINES_H
 
-#define BIT(x) (1 << x)
+#define BIT(x) (1 << (x))
 
 #define AQUILA_NONCOPYABLE(ClassName)      \
 	ClassName(const ClassName &) = delete; \
@@ -13,11 +13,11 @@
 
 #define AQUILA_DEFAULT_MOVE_CONSTRUCTOR(ClassName) \
 	ClassName(ClassName &&) = default;             \
-	ClassName &operator=(ClassName &&) = default
+	ClassName &operator=((ClassName) &&) = default
 
 #define AQUILA_DEFAULT_COPY_CONSTRUCTOR(ClassName) \
 	ClassName(ClassName &) = default;              \
-	ClassName &operator=(ClassName &) = default
+	ClassName &operator=((ClassName) &) = default
 
 // NOTE (Alex) :
 // Note to self, FORCE_INLINE should be reserved for functions that are small, hot,
@@ -72,21 +72,21 @@
 #define AQUILA_DEPRECATED(msg)
 #endif
 
-#define EVENT_CLASS_TYPE(type)                                    \
-	static const char *GetStaticName() {                          \
-		return #type;                                             \
-	}                                                             \
-	[[nodiscard]] const char *GetName() const override {          \
-		return GetStaticName();                                   \
-	}                                                             \
-	[[nodiscard]] std::type_index GetTypeIndex() const override { \
-		static const std::type_index s_Index(typeid(type));       \
-		return s_Index;                                           \
+#define EVENT_CLASS_TYPE(type)                                      \
+	static const char *get_static_name() {                          \
+		return #type;                                               \
+	}                                                               \
+	[[nodiscard]] const char *get_name() const override {           \
+		return get_static_name();                                   \
+	}                                                               \
+	[[nodiscard]] std::type_index get_type_index() const override { \
+		static const std::type_index s_index(typeid(type));         \
+		return s_index;                                             \
 	}
 
-#define EVENT_CLASS_CATEGORY(category)                   \
-	virtual EventCategory GetCategory() const override { \
-		return category;                                 \
+#define EVENT_CLASS_CATEGORY(category)                    \
+	virtual EventCategory get_category() const override { \
+		return category;                                  \
 	}
 
 #endif // AQUILA_DEFINES_H

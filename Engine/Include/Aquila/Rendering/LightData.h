@@ -3,7 +3,7 @@
 
 namespace Aquila::Rendering {
 
-enum class GpuLightType : int8 {
+enum class GpuLightType : Int8 {
 	Point = 0,
 	Directional = 1,
 	Spot = 2,
@@ -11,24 +11,24 @@ enum class GpuLightType : int8 {
 };
 
 struct alignas(16) GpuLightData {
-	vec4 m_PositionAndRange;
-	vec4 m_ColorAndIntensity;
-	vec4 m_DirectionAndType;
-	vec4 m_RightAndWidth;
-	vec4 m_UpAndHeight;
-	f32 m_CosInnerAngle;
-	f32 m_CosOuterAngle;
-	int32 m_ShadowIndex;
-	uint32 m_Flags;
+	Vec4 m_position_and_range;
+	Vec4 m_color_and_intensity;
+	Vec4 m_direction_and_type;
+	Vec4 m_right_and_width;
+	Vec4 m_up_and_height;
+	F32 m_cos_inner_angle;
+	F32 m_cos_outer_angle;
+	Int32 m_shadow_index;
+	Uint32 m_flags;
 };
 
 static_assert(sizeof(GpuLightData) == 96, "GpuLightData must be 96 bytes for std430 packing");
 
 struct alignas(16) GpuEnvironmentData {
-	std::array<vec4, 9> m_ShCoeffs;
-	vec4 m_TintAndIntensity;
-	int32 m_Enabled;
-	std::array<int32, 3> m_Padding;
+	std::array<Vec4, 9> m_sh_coeffs;
+	Vec4 m_tint_and_intensity;
+	Int32 m_enabled;
+	std::array<Int32, 3> m_padding;
 };
 
 static_assert(sizeof(GpuEnvironmentData) == 176, "GpuEnvironmentData layout mismatch");

@@ -8,14 +8,14 @@ namespace Aquila::Graphics {
 class MaterialLibrary {
   public:
 	void Register(const std::string &name, Ref<Material> material);
-	Ref<Material> Get(const std::string &name) const;
-	bool Has(const std::string &name) const;
-	void Remove(const std::string &name);
+	Ref<Material> get(const std::string &name) const;
+	bool has(const std::string &name) const;
+	void remove(const std::string &name);
 
-	[[nodiscard]] const std::unordered_map<std::string, Ref<Material>> &GetAll() const { return m_Materials; }
+	[[nodiscard]] const std::unordered_map<std::string, Ref<Material>> &get_all() const { return m_materials; }
 
   private:
-	std::unordered_map<std::string, Ref<Material>> m_Materials;
+	std::unordered_map<std::string, Ref<Material>> m_materials;
 };
 
 } // namespace Aquila::Graphics

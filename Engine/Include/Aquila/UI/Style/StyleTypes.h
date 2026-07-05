@@ -4,33 +4,34 @@
 
 namespace Aquila::UI {
 
-enum class LengthUnit : uint8 { Pixel, Percent, Auto, Grow };
+enum class LengthUnit : Uint8 { Pixel, Percent, Auto, Grow };
 
-enum class FlexDirection : uint8 { Row, Column, RowReverse, ColumnReverse };
-enum class JustifyContent : uint8 { Start, End, Center };
-enum class AlignItems : uint8 { Start, End, Center, Stretch };
-enum class FlexWrap : uint8 { NoWrap, Wrap };
+enum class FlexDirection : Uint8 { Row, Column, RowReverse, ColumnReverse };
+enum class JustifyContent : Uint8 { Start, End, Center };
+enum class AlignItems : Uint8 { Start, End, Center, Stretch };
+enum class FlexWrap : Uint8 { NoWrap, Wrap };
 
-enum class Display : uint8 { Flex, None };
-enum class Overflow : uint8 { Visible, Hidden, Scroll };
-enum class Position : uint8 { Static, Relative, Absolute };
+enum class Display : Uint8 { Flex, None };
+enum class Overflow : Uint8 { Visible, Hidden, Scroll };
+enum class Position : Uint8 { Static, Relative, Absolute };
+enum class BorderStyle : Uint8 { Solid, Dashed, Dotted };
 
-enum class TransitionEasing : uint8 { Linear, Ease, EaseIn, EaseOut, EaseInOut };
+enum class TransitionEasing : Uint8 { Linear, Ease, EaseIn, EaseOut, EaseInOut };
 
 struct BoxShadow {
-	vec2 offset = { 0.f, 0.f };
-	float blur = 0.f;
-	float spread = 0.f;
-	vec4 color = { 0.f, 0.f, 0.f, 0.75f };
+	Vec2 offset = { 0.F, 0.F };
+	float blur = 0.F;
+	float spread = 0.F;
+	Vec4 color = { 0.F, 0.F, 0.F, 0.75f };
 	bool inset = false;
 
 	bool operator==(const BoxShadow &) const = default;
 };
 
-enum class TextAlign : uint8 { Left, Center, Right };
+enum class TextAlign : Uint8 { Left, Center, Right };
 
-enum class FloatingAttachTo : uint8 { Parent, Root };
-enum class FloatingAttachPoint : uint8 {
+enum class FloatingAttachTo : Uint8 { Parent, Root };
+enum class FloatingAttachPoint : Uint8 {
 	LeftTop,
 	LeftCenter,
 	LeftBottom,
@@ -43,15 +44,15 @@ enum class FloatingAttachPoint : uint8 {
 };
 
 struct FloatingConfig {
-	vec2 offset = {};
-	int16_t zIndex = 10;
-	FloatingAttachTo attachTo = FloatingAttachTo::Parent;
-	FloatingAttachPoint elementPoint = FloatingAttachPoint::LeftTop;
-	FloatingAttachPoint parentPoint = FloatingAttachPoint::LeftBottom;
+	Vec2 offset = {};
+	int16_t z_index = 10;
+	FloatingAttachTo attach_to = FloatingAttachTo::Parent;
+	FloatingAttachPoint element_point = FloatingAttachPoint::LeftTop;
+	FloatingAttachPoint parent_point = FloatingAttachPoint::LeftBottom;
 	bool operator==(const FloatingConfig &) const = default;
 };
 
-enum class FontSize : uint8 {
+enum class FontSize : Uint8 {
 	Tiny = 9,
 	XSmall = 11,
 	Small = 13,
@@ -66,8 +67,8 @@ enum class FontSize : uint8 {
 	DisplayLarge = 64,
 };
 
-constexpr float FontSizeToPixels(FontSize size) {
-	return static_cast<float>(static_cast<uint8>(size));
+constexpr float font_size_to_pixels(FontSize size) {
+	return static_cast<float>(static_cast<Uint8>(size));
 }
 
 } // namespace Aquila::UI

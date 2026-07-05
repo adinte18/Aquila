@@ -6,20 +6,20 @@
 namespace Aquila::Platform::Filesystem {
 class MemoryFile final : public VirtualFile {
   private:
-	std::vector<uint8> *m_data;
-	usize m_position;
-	bool m_canWrite;
+	std::vector<Uint8> *m_data;
+	Usize m_position;
+	bool m_can_write;
 
   public:
-	MemoryFile(std::vector<uint8> *data, bool canWrite);
-	usize Read(void *buffer, usize size) override;
-	usize Write(const void *buffer, usize size) override;
-	bool Seek(int64 offset, int origin) override;
-	[[nodiscard]] int64 Tell() const override;
-	[[nodiscard]] int64 Size() const override;
-	[[nodiscard]] bool IsValid() const override;
+	MemoryFile(std::vector<Uint8> *data, bool can_write);
+	Usize read(void *buffer, Usize size) override;
+	Usize write(const void *buffer, Usize size) override;
+	bool seek(Int64 offset, int origin) override;
+	[[nodiscard]] Int64 tell() const override;
+	[[nodiscard]] Int64 size() const override;
+	[[nodiscard]] bool is_valid() const override;
 
-	void Close() override;
+	void close() override;
 };
 } // namespace Aquila::Platform::Filesystem
 

@@ -7,64 +7,64 @@ namespace Aquila::Application::Events {
 
 class WindowResizeEvent final : public Event {
   public:
-	WindowResizeEvent(const uint32 width, const uint32 height) : m_Width(width), m_Height(height) {}
+	WindowResizeEvent(const Uint32 width, const Uint32 height) : m_width(width), m_height(height) {}
 
-	[[nodiscard]] uint32 GetWidth() const { return m_Width; }
-	[[nodiscard]] uint32 GetHeight() const { return m_Height; }
+	[[nodiscard]] Uint32 get_width() const { return m_width; }
+	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "WindowResizeEvent: " + std::to_string(m_Width) + ", " + std::to_string(m_Height);
+	[[nodiscard]] std::string to_string() const override {
+		return "WindowResizeEvent: " + std::to_string(m_width) + ", " + std::to_string(m_height);
 	}
 
 	EVENT_CLASS_TYPE(WindowResizeEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 
   private:
-	uint32 m_Width, m_Height;
+	Uint32 m_width, m_height;
 };
 
 class ViewportResizeEvent final : public Event {
   public:
-	ViewportResizeEvent(const uint32 width, const uint32 height) : m_Width(width), m_Height(height) {}
+	ViewportResizeEvent(const Uint32 width, const Uint32 height) : m_width(width), m_height(height) {}
 
-	[[nodiscard]] uint32 GetWidth() const { return m_Width; }
-	[[nodiscard]] uint32 GetHeight() const { return m_Height; }
+	[[nodiscard]] Uint32 get_width() const { return m_width; }
+	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
-	[[nodiscard]] std::string ToString() const override {
-		return "ViewportResizeEvent: " + std::to_string(m_Width) + ", " + std::to_string(m_Width);
+	[[nodiscard]] std::string to_string() const override {
+		return "ViewportResizeEvent: " + std::to_string(m_width) + ", " + std::to_string(m_width);
 	}
 
 	EVENT_CLASS_TYPE(ViewportResizeEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 
   private:
-	uint32 m_Width, m_Height;
+	Uint32 m_width, m_height;
 };
 
 class WindowCloseEvent final : public Event {
   public:
-	WindowCloseEvent(const bool isClosed) : m_Closed(isClosed) {}
+	WindowCloseEvent(const bool is_closed) : m_closed(is_closed) {}
 
-	[[nodiscard]] bool IsClosed() const { return m_Closed; }
+	[[nodiscard]] bool is_closed() const { return m_closed; }
 
 	EVENT_CLASS_TYPE(WindowCloseEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 
   private:
-	bool m_Closed;
+	bool m_closed;
 };
 
 class WindowFocusEvent final : public Event {
   public:
-	explicit WindowFocusEvent(const bool focused) : m_Focused(focused) {}
+	explicit WindowFocusEvent(const bool focused) : m_focused(focused) {}
 
-	[[nodiscard]] bool IsFocused() const { return m_Focused; }
+	[[nodiscard]] bool is_focused() const { return m_focused; }
 
 	EVENT_CLASS_TYPE(WindowFocusEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 
   private:
-	bool m_Focused;
+	bool m_focused;
 };
 
 class AppTickEvent final : public Event {
@@ -77,15 +77,15 @@ class AppTickEvent final : public Event {
 
 class AppUpdateEvent final : public Event {
   public:
-	explicit AppUpdateEvent(const f32 deltaTime) : m_DeltaTime(deltaTime) {}
+	explicit AppUpdateEvent(const F32 delta_time) : m_delta_time(delta_time) {}
 
-	[[nodiscard]] f32 GetDeltaTime() const { return m_DeltaTime; }
+	[[nodiscard]] F32 get_delta_time() const { return m_delta_time; }
 
 	EVENT_CLASS_TYPE(AppUpdateEvent)
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 
   private:
-	f32 m_DeltaTime;
+	F32 m_delta_time;
 };
 
 class AppRenderEvent final : public Event {

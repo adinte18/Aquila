@@ -7,28 +7,28 @@ namespace Aquila::UI::Core {
 
 struct IconEntry {
 	GFX::GfxTexture *texture = nullptr; // weak ref
-	vec2 uvMin = { 0.f, 0.f };
-	vec2 uvMax = { 1.f, 1.f };
+	Vec2 uv_min = { 0.F, 0.F };
+	Vec2 uv_max = { 1.F, 1.F };
 };
 
 class TextureIconBank {
   public:
 	TextureIconBank() = default;
 
-	void SetTexture(GFX::GfxTexture *texture) { m_Texture = texture; }
-	[[nodiscard]] GFX::GfxTexture *GetTexture() const { return m_Texture; }
+	void set_texture(GFX::GfxTexture *texture) { m_texture = texture; }
+	[[nodiscard]] GFX::GfxTexture *get_texture() const { return m_texture; }
 
-	void AddIcon(const std::string &name, vec2 uvMin, vec2 uvMax);
+	void add_icon(const std::string &name, Vec2 uv_min, Vec2 uv_max);
 
-	void AddIconPixels(const std::string &name, float x, float y, float w, float h);
+	void add_icon_pixels(const std::string &name, float x, float y, float w, float h);
 
-	[[nodiscard]] const IconEntry *GetIcon(std::string_view name) const;
+	[[nodiscard]] const IconEntry *get_icon(std::string_view name) const;
 
-	[[nodiscard]] bool IsEmpty() const { return m_Icons.empty(); }
+	[[nodiscard]] bool is_empty() const { return m_icons.empty(); }
 
   private:
-	GFX::GfxTexture *m_Texture = nullptr;
-	std::unordered_map<std::string, IconEntry> m_Icons;
+	GFX::GfxTexture *m_texture = nullptr;
+	std::unordered_map<std::string, IconEntry> m_icons;
 };
 
 } // namespace Aquila::UI::Core

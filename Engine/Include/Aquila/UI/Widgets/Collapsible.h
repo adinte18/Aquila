@@ -9,27 +9,27 @@ class Collapsible : public View {
   public:
 	explicit Collapsible(std::string title = "");
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Collapsible"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Collapsible"; }
 
-	void SetTitle(std::string title);
-	void ApplyXmlTextContent(std::string_view text) override { SetTitle(std::string(text)); }
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
-	void SetExpanded(bool expanded);
-	[[nodiscard]] bool IsExpanded() const { return m_Expanded; }
-	Signal<void(bool)> onToggled;
+	void set_title(std::string title);
+	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void set_expanded(bool expanded);
+	[[nodiscard]] bool is_expanded() const { return m_expanded; }
+	Signal<void(bool)> on_toggled;
 
-	View *AddContent(Unique<View> child);
+	View *add_content(Unique<View> child);
 
-	template <typename T, typename... Args> T *AddContent(Args &&...args) {
-		return static_cast<T *>(AddContent(CreateUnique<T>(std::forward<Args>(args)...)));
+	template <typename T, typename... Args> T *add_content(Args &&...args) {
+		return static_cast<T *>(add_content(create_unique<T>(std::forward<Args>(args)...)));
 	}
 
   private:
-	void ApplyState();
+	void apply_state();
 
-	bool m_Expanded = true;
-	Button *m_Header = nullptr;
-	View *m_Content = nullptr;
+	bool m_expanded = true;
+	Button *m_header = nullptr;
+	View *m_content = nullptr;
 };
 
 } // namespace Aquila::UI::Core

@@ -8,37 +8,37 @@ namespace Aquila::UI::Core {
 struct TextInputState {
 	std::string text;
 	size_t cursor = 0;
-	size_t selectAnchor = 0;
+	size_t select_anchor = 0;
 
-	[[nodiscard]] bool HasSelection() const { return cursor != selectAnchor; }
-	[[nodiscard]] size_t SelectionMin() const { return std::min(cursor, selectAnchor); }
-	[[nodiscard]] size_t SelectionMax() const { return std::max(cursor, selectAnchor); }
+	[[nodiscard]] bool has_selection() const { return cursor != select_anchor; }
+	[[nodiscard]] size_t selection_min() const { return std::min(cursor, select_anchor); }
+	[[nodiscard]] size_t selection_max() const { return std::max(cursor, select_anchor); }
 
-	void SetText(std::string t) {
+	void set_text(std::string t) {
 		text = std::move(t);
 		cursor = text.size();
-		selectAnchor = cursor;
+		select_anchor = cursor;
 	}
 
-	void SelectAll() {
-		selectAnchor = 0;
+	void select_all() {
+		select_anchor = 0;
 		cursor = text.size();
 	}
 
-	void DeleteSelection() {
-		const size_t lo = SelectionMin();
-		const size_t hi = SelectionMax();
+	void delete_selection() {
+		const size_t lo = selection_min();
+		const size_t hi = selection_max();
 		text.erase(lo, hi - lo);
 		cursor = lo;
-		selectAnchor = lo;
+		select_anchor = lo;
 	}
 
-	bool HandleKeyPress(Platform::KeyCode key, int mods);
-	bool HandleCharInput(uint32 codepoint);
+	bool handle_key_press(Platform::KeyCode key, int mods);
+	bool handle_char_input(Uint32 codepoint);
 
-	[[nodiscard]] float MeasureToPos(const Text::FontAtlas &font, float scale, size_t pos) const;
+	[[nodiscard]] float measure_to_pos(const Text::FontAtlas &font, float scale, size_t pos) const;
 
-	[[nodiscard]] size_t HitTestPos(const Text::FontAtlas &font, float scale, float localX) const;
+	[[nodiscard]] size_t hit_test_pos(const Text::FontAtlas &font, float scale, float local_x) const;
 };
 
 } // namespace Aquila::UI::Core

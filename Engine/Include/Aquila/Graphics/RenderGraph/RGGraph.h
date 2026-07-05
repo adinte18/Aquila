@@ -20,18 +20,18 @@ class RenderGraph {
 	RenderGraph(RenderGraph &&) = default;
 	RenderGraph &operator=(RenderGraph &&) = default;
 
-	RGTextureHandle DeclareTexture(const RGTextureDesc &desc) { return m_Registry.DeclareTexture(desc); }
+	RGTextureHandle declare_texture(const RGTextureDesc &desc) { return m_registry.declare_texture(desc); }
 
-	RGBufferHandle DeclareBuffer(const RGBufferDesc &desc) { return m_Registry.DeclareBuffer(desc); }
+	RGBufferHandle declare_buffer(const RGBufferDesc &desc) { return m_registry.declare_buffer(desc); }
 
-	RGTextureHandle ImportTexture(GFX::GfxTexture *tex, std::string_view name = {},
-								  RG::ResourceState initialState = RG::ResourceState::Undefined) {
-		return m_Registry.ImportTexture(tex, name, initialState);
+	RGTextureHandle import_texture(GFX::GfxTexture *tex, std::string_view name = {},
+								  RG::ResourceState initial_state = RG::ResourceState::Undefined) {
+		return m_registry.import_texture(tex, name, initial_state);
 	}
 
-	RGBufferHandle ImportBuffer(GFX::GfxBuffer *buf, std::string_view name = {},
-								RG::ResourceState initialState = RG::ResourceState::Undefined) {
-		return m_Registry.ImportBuffer(buf, name, initialState);
+	RGBufferHandle import_buffer(GFX::GfxBuffer *buf, std::string_view name = {},
+								RG::ResourceState initial_state = RG::ResourceState::Undefined) {
+		return m_registry.import_buffer(buf, name, initial_state);
 	}
 
 	/// Register a pass with a setup lambda and an execute lambda.
@@ -42,36 +42,36 @@ class RenderGraph {
 	/// @param executeFn   Captured and called later during Execute().
 	///                    Receives a resolved command list and the registry.
 	template <typename SetupFn, typename ExecuteFn>
-	void AddPass(std::string_view name, SetupFn &&setupFn, ExecuteFn &&executeFn) {
-		RGPassBuilder builder(name, m_Registry);
+	void add_pass(std::string_view name, SetupFn &&setup_fn, ExecuteFn &&execute_fn) {
+		RGPassBuilder builder(name, m_registry);
 
 		// Run setup immediately so resource versioning stays in-order.
-		std::forward<SetupFn>(setupFn)(builder);
+		std::forward<SetupFn>(setup_fn)(builder);
 
-		RGPassData data = std::move(builder).TakeData();
-		data.RenderPassExecute = std::forward<ExecuteFn>(executeFn);
+		RGPassData data = std::move(builder).take_data();
+		data.render_pass_execute = std::forward<ExecuteFn>(execute_fn);
 
-		m_Passes.push_back(std::move(data));
+		m_passes.push_back(std::move(data));
 	}
 
 	/// Must be called once per frame after all AddPass calls and before Execute().
-	void Compile(GFX::GfxContext &ctx);
+	void compile(GFX::GfxContext &ctx);
 
 	/// Replay the compiled schedule.
 	/// Compile() must have been called first.
-	void Execute(GFX::GfxCommandList &cmd);
+	void execute(GFX::GfxCommandList &cmd);
 
 	/// Reset all state for the next frame (releases transient resources).
-	void Reset();
+	void reset();
 
-	[[nodiscard]] const RGRegistry &GetRegistry() const { return m_Registry; }
-	[[nodiscard]] const std::vector<RGPassData> &GetPasses() const { return m_Passes; }
-	[[nodiscard]] const RGCompiledGraph &GetCompiled() const { return m_Compiled; }
+	[[nodiscard]] const RGRegistry &get_registry() const { return m_registry; }
+	[[nodiscard]] const std::vector<RGPassData> &get_passes() const { return m_passes; }
+	[[nodiscard]] const RGCompiledGraph &get_compiled() const { return m_compiled; }
 
   private:
-	RGRegistry m_Registry;
-	std::vector<RGPassData> m_Passes;
-	RGCompiledGraph m_Compiled;
+	RGRegistry m_registry;
+	std::vector<RGPassData> m_passes;
+	RGCompiledGraph m_compiled;
 };
 
 } // namespace Aquila::Graphics::RG

@@ -9,20 +9,20 @@ class GfxContext;
 
 class GfxMesh {
   public:
-	static Ref<GfxMesh> Create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh);
+	static Ref<GfxMesh> create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh);
 
 	AQUILA_NONCOPYABLE(GfxMesh);
 	AQUILA_NONMOVEABLE(GfxMesh);
 
-	[[nodiscard]] GfxBuffer &GetVertexBuffer() const { return *m_VertexBuffer; }
-	[[nodiscard]] GfxBuffer &GetIndexBuffer() const { return *m_IndexBuffer; }
-	[[nodiscard]] uint32 GetIndexCount() const { return m_IndexCount; }
+	[[nodiscard]] GfxBuffer &get_vertex_buffer() const { return *m_vertex_buffer; }
+	[[nodiscard]] GfxBuffer &get_index_buffer() const { return *m_index_buffer; }
+	[[nodiscard]] Uint32 get_index_count() const { return m_index_count; }
 
   private:
 	GfxMesh() = default;
-	Ref<GfxBuffer> m_VertexBuffer;
-	Ref<GfxBuffer> m_IndexBuffer;
-	uint32 m_IndexCount = 0;
+	Ref<GfxBuffer> m_vertex_buffer;
+	Ref<GfxBuffer> m_index_buffer;
+	Uint32 m_index_count = 0;
 };
 
 } // namespace Aquila::GFX

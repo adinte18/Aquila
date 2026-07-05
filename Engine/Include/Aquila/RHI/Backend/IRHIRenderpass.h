@@ -23,13 +23,13 @@ class IRHIRenderPass {
 	AQUILA_NONMOVEABLE(IRHIRenderPass);
 
 	// swapchain/imageIndex are only required when useSwapchain=true in the desc.
-	virtual void Begin(IRHICommandList &cmd, IRHISwapchain *swapchain = nullptr, uint32 imageIndex = 0) = 0;
-	virtual void End(IRHICommandList &cmd) = 0;
+	virtual void begin(IRHICommandList &cmd, IRHISwapchain *swapchain = nullptr, Uint32 image_index = 0) = 0;
+	virtual void end(IRHICommandList &cmd) = 0;
 
-	[[nodiscard]] virtual uint32 GetWidth() const = 0;
-	[[nodiscard]] virtual uint32 GetHeight() const = 0;
-	[[nodiscard]] virtual RHI::TextureFormat GetColorFormat() const = 0;
-	[[nodiscard]] virtual RHI::SampleCount GetSampleCount() const = 0;
+	[[nodiscard]] virtual Uint32 get_width() const = 0;
+	[[nodiscard]] virtual Uint32 get_height() const = 0;
+	[[nodiscard]] virtual RHI::TextureFormat get_color_format() const = 0;
+	[[nodiscard]] virtual RHI::SampleCount get_sample_count() const = 0;
 
   protected:
 	IRHIRenderPass() = default;

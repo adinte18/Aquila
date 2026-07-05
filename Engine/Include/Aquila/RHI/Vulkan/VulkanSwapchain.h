@@ -15,109 +15,109 @@ class VulkanSwapchain final : public IRHISwapchain {
   public:
 	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync);
 	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, Ref<VulkanSwapchain> previous);
-	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, VkSurfaceKHR surface, bool ownsSurface);
+	VulkanSwapchain(VulkanDevice &device, VkExtent2D extent, bool vsync, VkSurfaceKHR surface, bool owns_surface);
 	~VulkanSwapchain() override;
 
 	AQUILA_NONCOPYABLE(VulkanSwapchain);
 
 	// IRHISwapchain semaphores managed internally per frame
-	bool AcquireNextImage(uint32 &outImageIndex, bool driveDeviceFrame) override;
-	[[nodiscard]] bool NeedsResize() const override { return m_NeedsResize; }
-	void Resize(uint32 width, uint32 height) override;
+	bool acquire_next_image(Uint32 &out_image_index, bool drive_device_frame) override;
+	[[nodiscard]] bool needs_resize() const override { return m_needs_resize; }
+	void resize(Uint32 width, Uint32 height) override;
 
-	[[nodiscard]] uint32 GetWidth() const override { return m_Extent.width; }
-	[[nodiscard]] uint32 GetHeight() const override { return m_Extent.height; }
-	[[nodiscard]] TextureFormat GetFormat() const override;
-	[[nodiscard]] uint32 GetImageCount() const override { return static_cast<uint32>(m_Images.size()); }
+	[[nodiscard]] Uint32 get_width() const override { return m_extent.width; }
+	[[nodiscard]] Uint32 get_height() const override { return m_extent.height; }
+	[[nodiscard]] TextureFormat get_format() const override;
+	[[nodiscard]] Uint32 get_image_count() const override { return static_cast<Uint32>(m_images.size()); }
 
 	// Vulkan-specific accessors (render loops, ImGui, etc.)
-	[[nodiscard]] VkFormat GetImageFormat() const { return m_ImageFormat; }
-	[[nodiscard]] VkFormat GetDepthFormat() const { return m_DepthFormat; }
-	[[nodiscard]] VkExtent2D GetExtent() const { return m_Extent; }
-	[[nodiscard]] VkImage GetImage(uint32 index) const { return m_Images[index]; }
-	[[nodiscard]] VkImageView GetImageView(uint32 index) const { return m_ImageViews[index]; }
-	[[nodiscard]] VkImageView GetDepthImageView(uint32 index) const { return m_DepthImageViews[index]; }
-	[[nodiscard]] VkImage GetDepthImage(uint32 index) const { return m_DepthAllocations[index].image; }
+	[[nodiscard]] VkFormat get_image_format() const { return m_image_format; }
+	[[nodiscard]] VkFormat get_depth_format() const { return m_depth_format; }
+	[[nodiscard]] VkExtent2D get_extent() const { return m_extent; }
+	[[nodiscard]] VkImage get_image(Uint32 index) const { return m_images[index]; }
+	[[nodiscard]] VkImageView get_image_view(Uint32 index) const { return m_image_views[index]; }
+	[[nodiscard]] VkImageView get_depth_image_view(Uint32 index) const { return m_depth_image_views[index]; }
+	[[nodiscard]] VkImage get_depth_image(Uint32 index) const { return m_depth_allocations[index].image; }
 
 	// Semaphore accessors for external sync (render loop)
-	[[nodiscard]] VkSemaphore GetImageAvailableSemaphore(uint32 frameIndex) const {
-		return m_ImageAvailableSemaphores[frameIndex];
+	[[nodiscard]] VkSemaphore get_image_available_semaphore(Uint32 frame_index) const {
+		return m_image_available_semaphores[frame_index];
 	}
-	[[nodiscard]] VkSemaphore GetRenderFinishedSemaphore(uint32 frameIndex) const {
-		return m_RenderFinishedSemaphores[frameIndex];
+	[[nodiscard]] VkSemaphore get_render_finished_semaphore(Uint32 frame_index) const {
+		return m_render_finished_semaphores[frame_index];
 	}
-	[[nodiscard]] VkFence GetInFlightFence(uint32 frameIndex) const { return m_InFlightFences[frameIndex]; }
+	[[nodiscard]] VkFence get_in_flight_fence(Uint32 frame_index) const { return m_in_flight_fences[frame_index]; }
 
 	// Queue a command buffer for deferred free once frameIndex's fence is waited on next.
-	void DeferCmdBufFree(uint32 frameIndex, VkCommandBuffer cmd, VkCommandPool pool);
+	void defer_cmd_buf_free(Uint32 frame_index, VkCommandBuffer cmd, VkCommandPool pool);
 
-	VkResult PresentImageRaw(const uint32 *imageIndex, VkSemaphore renderFinishedSemaphore);
+	VkResult present_image_raw(const Uint32 *image_index, VkSemaphore render_finished_semaphore);
 
-	[[nodiscard]] uint32 GetCurrentFrameSlot() const override {
-		return (m_NextFrameSlot + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	[[nodiscard]] Uint32 get_current_frame_slot() const override {
+		return (m_next_frame_slot + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
 	}
 
-	[[nodiscard]] bool IsImageInitialized(uint32 index) const {
-		return index < m_ImageInitialized.size() && m_ImageInitialized[index];
+	[[nodiscard]] bool is_image_initialized(Uint32 index) const {
+		return index < m_image_initialized.size() && m_image_initialized[index];
 	}
-	void MarkImageInitialized(uint32 index) {
-		if (index < m_ImageInitialized.size()) {
-			m_ImageInitialized[index] = true;
+	void mark_image_initialized(Uint32 index) {
+		if (index < m_image_initialized.size()) {
+			m_image_initialized[index] = true;
 		}
 	}
-	void MarkSlotSubmitted(uint32 slot) { m_SlotSubmitted[slot] = true; }
+	void mark_slot_submitted(Uint32 slot) { m_slot_submitted[slot] = true; }
 
-	[[nodiscard]] f32 AspectRatio() const {
-		return static_cast<f32>(m_Extent.width) / static_cast<f32>(m_Extent.height);
+	[[nodiscard]] F32 aspect_ratio() const {
+		return static_cast<F32>(m_extent.width) / static_cast<F32>(m_extent.height);
 	}
-	[[nodiscard]] VkFormat FindDepthFormat();
+	[[nodiscard]] VkFormat find_depth_format();
 
   private:
-	void Initialize();
-	void CreateSwapchain(VkSwapchainKHR oldHandle = VK_NULL_HANDLE);
-	void CreateImageViews();
-	void CreateDepthResources();
-	void CreateSyncObjects();
-	void DestroyImageResources();
+	void initialize();
+	void create_swapchain(VkSwapchainKHR old_handle = VK_NULL_HANDLE);
+	void create_image_views();
+	void create_depth_resources();
+	void create_sync_objects();
+	void destroy_image_resources();
 
-	VkSurfaceFormatKHR ChooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR> &availableFormats);
-	VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes);
-	[[nodiscard]] VkExtent2D ChooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilities) const;
+	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &available_formats);
+	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &available_present_modes);
+	[[nodiscard]] VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR &capabilities) const;
 
-	VulkanDevice &m_Device;
-	VkExtent2D m_WindowExtent;
-	bool m_VSyncEnabled = false;
-	VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
-	bool m_OwnsSurface = false;
-	VkSwapchainKHR m_Swapchain = VK_NULL_HANDLE;
-	Ref<VulkanSwapchain> m_OldSwapchain;
+	VulkanDevice &m_device;
+	VkExtent2D m_window_extent;
+	bool m_v_sync_enabled = false;
+	VkSurfaceKHR m_surface = VK_NULL_HANDLE;
+	bool m_owns_surface = false;
+	VkSwapchainKHR m_swapchain = VK_NULL_HANDLE;
+	Ref<VulkanSwapchain> m_old_swapchain;
 
-	VkFormat m_ImageFormat{};
-	VkFormat m_DepthFormat{};
-	VkExtent2D m_Extent{};
+	VkFormat m_image_format{};
+	VkFormat m_depth_format{};
+	VkExtent2D m_extent{};
 
-	std::vector<VkImage> m_Images;
-	std::vector<VkImageView> m_ImageViews;
+	std::vector<VkImage> m_images;
+	std::vector<VkImageView> m_image_views;
 
-	std::vector<ImageAllocation> m_DepthAllocations;
-	std::vector<VkImageView> m_DepthImageViews;
-	std::vector<bool> m_ImageInitialized;
+	std::vector<ImageAllocation> m_depth_allocations;
+	std::vector<VkImageView> m_depth_image_views;
+	std::vector<bool> m_image_initialized;
 
 	struct PendingCmdBuf {
 		VkCommandBuffer cmd;
 		VkCommandPool pool;
 	};
 
-	std::vector<VkSemaphore> m_ImageAvailableSemaphores;
-	std::vector<VkSemaphore> m_RenderFinishedSemaphores;
-	std::vector<VkFence> m_InFlightFences;
-	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_PendingCmdBufs;
-	std::array<bool, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_SlotSubmitted{};
+	std::vector<VkSemaphore> m_image_available_semaphores;
+	std::vector<VkSemaphore> m_render_finished_semaphores;
+	std::vector<VkFence> m_in_flight_fences;
+	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_pending_cmd_bufs;
+	std::array<bool, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_slot_submitted{};
 
-	uint32 m_NextFrameSlot = 0; // index of the frame slot to acquire on the NEXT call to AcquireNextImage
-	uint32 m_CurrentFrameSlot = 0; // slot locked in by AcquireNextImage
+	Uint32 m_next_frame_slot = 0; // index of the frame slot to acquire on the NEXT call to AcquireNextImage
+	Uint32 m_current_frame_slot = 0; // slot locked in by AcquireNextImage
 
-	bool m_NeedsResize = false;
+	bool m_needs_resize = false;
 };
 
 } // namespace Aquila::RHI

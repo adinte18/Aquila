@@ -7,30 +7,30 @@ namespace Aquila::Foundation {
 
 template <typename Key, typename Hash = std::hash<Key>> class DirtySet {
   public:
-	void MarkDirty(const Key &key) {
-		if (m_Set.insert(key).second) {
-			m_Ordered.push_back(key);
+	void mark_dirty(const Key &key) {
+		if (m_set.insert(key).second) {
+			m_ordered.push_back(key);
 		}
 	}
 
-	[[nodiscard]] bool IsDirty(const Key &key) const { return m_Set.count(key) > 0; }
-	[[nodiscard]] bool IsEmpty() const { return m_Ordered.empty(); }
-	[[nodiscard]] const std::vector<Key> &GetOrdered() const { return m_Ordered; }
+	[[nodiscard]] bool is_dirty(const Key &key) const { return m_set.count(key) > 0; }
+	[[nodiscard]] bool is_empty() const { return m_ordered.empty(); }
+	[[nodiscard]] const std::vector<Key> &get_ordered() const { return m_ordered; }
 
-	void Remove(const Key &key) {
-		if (m_Set.erase(key)) {
-			m_Ordered.erase(std::remove(m_Ordered.begin(), m_Ordered.end(), key), m_Ordered.end());
+	void remove(const Key &key) {
+		if (m_set.erase(key)) {
+			m_ordered.erase(std::remove(m_ordered.begin(), m_ordered.end(), key), m_ordered.end());
 		}
 	}
 
-	void Clear() {
-		m_Set.clear();
-		m_Ordered.clear();
+	void clear() {
+		m_set.clear();
+		m_ordered.clear();
 	}
 
   private:
-	std::unordered_set<Key, Hash> m_Set;
-	std::vector<Key> m_Ordered;
+	std::unordered_set<Key, Hash> m_set;
+	std::vector<Key> m_ordered;
 };
 
 } // namespace Aquila::Foundation

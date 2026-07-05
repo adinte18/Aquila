@@ -23,350 +23,350 @@ namespace Aquila::Application {
 
 using namespace SceneManagement;
 
-Application::Application(const ApplicationSpec &spec) : m_Spec(spec) {
-	m_Timer = CreateUnique<Foundation::Stopwatch>();
-	m_Window = CreateUnique<Window>(spec.Width, spec.Height, spec.Name);
-	Foundation::Profiler::Profiler::Init();
-	Platform::Filesystem::VirtualFileSystem::Init();
+Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
+	m_timer = create_unique<Foundation::Stopwatch>();
+	m_window = create_unique<Window>(spec.width, spec.height, spec.name);
+	Foundation::Profiler::Profiler::init();
+	Platform::Filesystem::VirtualFileSystem::init();
 
-	m_Window->SetEventCallback([this](Events::Event &event) { RouteWindowEvent(event); });
+	m_window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
 
-	m_Window->SetRefreshCallback([this]() {
-		m_Timer->Tick();
-		InternalUpdate(m_Timer->GetDeltaTime());
+	m_window->set_refresh_callback([this]() {
+		m_timer->tick();
+		internal_update(m_timer->get_delta_time());
 	});
 
-	m_Timer->Start();
+	m_timer->start();
 }
 
-void Application::RouteWindowEvent(Events::Event &event) {
-	Platform::Input::OnEvent(event);
+void Application::route_window_event(Events::Event &event) {
+	Platform::Input::on_event(event);
 
-	auto *source = event.GetSource();
+	auto *source = event.get_source();
 
 	if (!source) {
 		return;
 	}
 
-	if (source == m_Window.get()) {
-		InternalOnMainWindowEvent(event);
+	if (source == m_window.get()) {
+		internal_on_main_window_event(event);
 		return;
 	}
 
-	for (auto &rw : m_SecondaryWindows) {
+	for (auto &rw : m_secondary_windows) {
 		if (source == rw->window.get()) {
-			InternalOnSecondaryWindowEvent(*rw, event);
+			internal_on_secondary_window_event(*rw, event);
 			return;
 		}
 	}
 }
 
 Application::~Application() {
-	m_Ctx->WaitIdle();
+	m_ctx->wait_idle();
 
-	Platform::Filesystem::VirtualFileSystem::Shutdown();
-	Foundation::Profiler::Profiler::Shutdown();
-	Graphics::MaterialFactory::Shutdown();
-	Rendering::FrameScheduler::Shutdown();
+	Platform::Filesystem::VirtualFileSystem::shutdown();
+	Foundation::Profiler::Profiler::shutdown();
+	Graphics::MaterialFactory::shutdown();
+	Rendering::FrameScheduler::shutdown();
 
-	m_Scene.reset();
-	m_RenderPipeline.reset();
-	m_SecondaryWindows.clear();
-	m_SecondaryBatcher.reset();
-	m_Swapchain.reset();
-	m_Ctx.reset();
+	m_scene.reset();
+	m_render_pipeline.reset();
+	m_secondary_windows.clear();
+	m_secondary_batcher.reset();
+	m_swapchain.reset();
+	m_ctx.reset();
 
 	// TODO: move to a generic shader compiler abstraction
-	RHI::VulkanShaderCompiler::Shutdown();
+	RHI::VulkanShaderCompiler::shutdown();
 }
 
-void Application::Run() {
-	InitRendering(m_Window->GetWidth(), m_Window->GetHeight());
-	m_Scene = CreateUnique<Scene>("Main");
-	OnInit();
+void Application::run() {
+	init_rendering(m_window->get_width(), m_window->get_height());
+	m_scene = create_unique<Scene>("Main");
+	on_init();
 
-	while (m_Running) {
-		const bool hasFrames = Rendering::FrameScheduler::Get()->Consume();
+	while (m_running) {
+		const bool has_frames = Rendering::FrameScheduler::get()->consume();
 
-		if (hasFrames) {
-			m_Window->PollEvents();
+		if (has_frames) {
+			m_window->poll_events();
 		} else {
-			m_Window->WaitEvents();
+			m_window->wait_events();
 		}
 
-		m_Window->FlushPendingEvents();
+		m_window->flush_pending_events();
 
-		for (auto &rw : m_SecondaryWindows) {
-			rw->window->FlushPendingEvents();
+		for (auto &rw : m_secondary_windows) {
+			rw->window->flush_pending_events();
 		}
 
-		bool anyClosing = false;
-		for (const auto &rw : m_SecondaryWindows) {
-			if (rw->window->ShouldClose()) {
-				anyClosing = true;
+		bool any_closing = false;
+		for (const auto &rw : m_secondary_windows) {
+			if (rw->window->should_close()) {
+				any_closing = true;
 				break;
 			}
 		}
-		if (anyClosing) {
-			m_Ctx->WaitIdle();
-			std::erase_if(m_SecondaryWindows, [](const Unique<RenderWindow> &rw) {
-				if (!rw->window->ShouldClose()) {
+		if (any_closing) {
+			m_ctx->wait_idle();
+			std::erase_if(m_secondary_windows, [](const Unique<RenderWindow> &rw) {
+				if (!rw->window->should_close()) {
 					return false;
 				}
-				if (rw->onClose) {
-					rw->onClose();
+				if (rw->on_close) {
+					rw->on_close();
 				}
-				Platform::Input::OnWindowDestroyed(rw->window.get());
+				Platform::Input::on_window_destroyed(rw->window.get());
 				return true;
 			});
 		}
 
-		if (m_Window->ShouldClose()) {
-			m_Running = false;
+		if (m_window->should_close()) {
+			m_running = false;
 			break;
 		}
 
-		if (hasFrames) {
-			m_Timer->Tick();
+		if (has_frames) {
+			m_timer->tick();
 
 			PROFILE_FRAME_BEGIN();
-			InternalUpdate(m_Timer->GetDeltaTime());
+			internal_update(m_timer->get_delta_time());
 			PROFILE_FRAME_END();
 		}
 	}
 
-	m_Ctx->WaitIdle();
-	OnShutdown();
+	m_ctx->wait_idle();
+	on_shutdown();
 }
 
-void Application::Close() {
-	m_Running = false;
+void Application::close() {
+	m_running = false;
 }
 
-void Application::InitRendering(uint32 width, uint32 height) {
+void Application::init_rendering(Uint32 width, Uint32 height) {
 	// TODO: replace with a generic shader compiler abstraction
-	RHI::VulkanShaderCompiler::Initialize();
-	Graphics::MaterialFactory::Init();
-	Rendering::FrameScheduler::Init();
+	RHI::VulkanShaderCompiler::initialize();
+	Graphics::MaterialFactory::init();
+	Rendering::FrameScheduler::init();
 
 	using namespace Platform::Filesystem;
-	VirtualFileSystem::Get()->Mount("/resources", CreateRef<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
-	VirtualFileSystem::Get()->Mount("/shaders", CreateRef<NativeFileSystem>(SharedConstants::SHADERS_DIR));
+	VirtualFileSystem::get()->mount("/resources", create_ref<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
+	VirtualFileSystem::get()->mount("/shaders", create_ref<NativeFileSystem>(SharedConstants::SHADERS_DIR));
 
-	m_Ctx = GFX::GfxContext::Create(*GetWindow().GetNativeWindow());
+	m_ctx = GFX::GfxContext::create(*get_window().get_native_window());
 
-	m_Swapchain = m_Ctx->CreateSwapchain({
+	m_swapchain = m_ctx->create_swapchain({
 		.width = width,
 		.height = height,
 		.format = RHI::TextureFormat::BGRA8,
-		.imageCount = 2,
+		.image_count = 2,
 		.vsync = false,
 	});
 
-	m_RenderPipeline = CreateUnique<Rendering::RenderPipeline>(*m_Ctx, width, height);
-	m_Renderer = &m_RenderPipeline->Add<Rendering::Renderer>();
-	m_Renderer2D = &m_RenderPipeline->Add<Rendering::Renderer2D>();
+	m_render_pipeline = create_unique<Rendering::RenderPipeline>(*m_ctx, width, height);
+	m_renderer = &m_render_pipeline->add<Rendering::Renderer>();
+	m_renderer2_d = &m_render_pipeline->add<Rendering::Renderer2D>();
 
-	m_Renderer->AddSystem<Rendering::DepthPrepassSystem>();
-	m_Renderer->AddSystem<Rendering::ClusterComputeSystem>();
-	m_Renderer->AddSystem<Rendering::LightCullingSystem>();
-	m_Renderer->AddSystem<Rendering::GeometrySystem>();
+	m_renderer->add_system<Rendering::DepthPrepassSystem>();
+	m_renderer->add_system<Rendering::ClusterComputeSystem>();
+	m_renderer->add_system<Rendering::LightCullingSystem>();
+	m_renderer->add_system<Rendering::GeometrySystem>();
 
-	m_SecondaryBatcher = CreateUnique<Graphics::QuadBatcher>(*m_Ctx);
+	m_secondary_batcher = create_unique<Graphics::QuadBatcher>(*m_ctx);
 }
 
-RenderWindow &Application::CreateSecondaryWindow(uint32 width, uint32 height, const std::string &title) {
-	auto rw = CreateUnique<RenderWindow>();
-	rw->window = CreateUnique<Window>(width, height, title, false);
-	rw->window->SetEventCallback([this](Events::Event &event) { RouteWindowEvent(event); });
-	rw->window->SetRefreshCallback([this, p = rw.get()]() { RenderOneSecondaryWindow(*p); });
-	rw->swapchain = m_Ctx->CreateSwapchain({
+RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, const std::string &title) {
+	auto rw = create_unique<RenderWindow>();
+	rw->window = create_unique<Window>(width, height, title, false);
+	rw->window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
+	rw->window->set_refresh_callback([this, p = rw.get()]() { render_one_secondary_window(*p); });
+	rw->swapchain = m_ctx->create_swapchain({
 		.width = width,
 		.height = height,
 		.format = RHI::TextureFormat::BGRA8,
-		.imageCount = 2,
+		.image_count = 2,
 		.vsync = false,
-		.nativeWindowHandle = rw->window->GetNativeWindow(),
+		.native_window_handle = rw->window->get_native_window(),
 	});
 
 	RenderWindow &ref = *rw;
-	m_SecondaryWindows.push_back(std::move(rw));
+	m_secondary_windows.push_back(std::move(rw));
 	return ref;
 }
 
-void Application::EnsureWindowTargets(RenderWindow &rw, uint32 width, uint32 height) {
-	if (!rw.msaaColor) {
-		rw.msaaColor = m_Ctx->CreateTexture({
+void Application::ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height) {
+	if (!rw.msaa_color) {
+		rw.msaa_color = m_ctx->create_texture({
 			.width = width,
 			.height = height,
 			.format = RHI::TextureFormat::BGRA8,
 			.usage = RHI::TextureUsage::ColorAttachment,
-			.samples = RHI::SampleCount::x4,
-			.debugName = "SecondaryUIMSAA",
+			.samples = RHI::SampleCount::X4,
+			.debug_name = "SecondaryUIMSAA",
 		});
-		rw.renderPass = m_Ctx->CreateRenderPass({
-			.colorAttachments = { {
-				.texture = &rw.msaaColor->GetRHI(),
-				.loadOp = RHI::AttachmentLoadOp::Clear,
-				.storeOp = RHI::AttachmentStoreOp::DontCare,
+		rw.render_pass = m_ctx->create_render_pass({
+			.color_attachments = { {
+				.texture = &rw.msaa_color->get_rhi(),
+				.load_op = RHI::AttachmentLoadOp::Clear,
+				.store_op = RHI::AttachmentStoreOp::DontCare,
 			} },
-			.useSwapchainAsResolve = true,
-			.debugName = "SecondaryUI",
+			.use_swapchain_as_resolve = true,
+			.debug_name = "SecondaryUI",
 		});
 	}
 }
 
-void Application::RenderSecondaryWindows() {
-	for (auto &rw : m_SecondaryWindows) {
-		RenderOneSecondaryWindow(*rw);
+void Application::render_secondary_windows() {
+	for (auto &rw : m_secondary_windows) {
+		render_one_secondary_window(*rw);
 	}
 }
 
-void Application::RenderOneSecondaryWindow(RenderWindow &rw) {
-	const uint32 width = rw.window->GetWidth();
-	const uint32 height = rw.window->GetHeight();
+void Application::render_one_secondary_window(RenderWindow &rw) {
+	const Uint32 width = rw.window->get_width();
+	const Uint32 height = rw.window->get_height();
 	if (width == 0 || height == 0) {
 		return;
 	}
 
-	if (rw.needsResize || rw.swapchain->NeedsResize()) {
-		m_Ctx->WaitIdle();
-		rw.swapchain->Resize(width, height);
-		rw.needsResize = false;
-		rw.msaaColor.reset(); // force render-target rebuild at the new size
-		rw.renderPass.reset();
+	if (rw.needs_resize || rw.swapchain->needs_resize()) {
+		m_ctx->wait_idle();
+		rw.swapchain->resize(width, height);
+		rw.needs_resize = false;
+		rw.msaa_color.reset(); // force render-target rebuild at the new size
+		rw.render_pass.reset();
 	}
 
-	if (rw.onUpdate) {
-		rw.onUpdate(m_Timer->GetDeltaTime());
+	if (rw.on_update) {
+		rw.on_update(m_timer->get_delta_time());
 	}
 
-	if (!rw.onRender) {
-		uint32 imageIndex = 0;
-		if (!rw.swapchain->AcquireNextImage(imageIndex, false)) {
+	if (!rw.on_render) {
+		Uint32 image_index = 0;
+		if (!rw.swapchain->acquire_next_image(image_index, false)) {
 			return;
 		}
-		m_Ctx->GetDevice().PresentFrame(rw.swapchain->GetRHI(), imageIndex, vec4(0.f, 0.f, 0.f, 1.f));
+		m_ctx->get_device().present_frame(rw.swapchain->get_rhi(), image_index, Vec4(0.F, 0.F, 0.F, 1.F));
 		return;
 	}
 
-	EnsureWindowTargets(rw, width, height);
+	ensure_window_targets(rw, width, height);
 
-	uint32 imageIndex = 0;
-	if (!rw.swapchain->AcquireNextImage(imageIndex, false)) {
+	Uint32 image_index = 0;
+	if (!rw.swapchain->acquire_next_image(image_index, false)) {
 		return;
 	}
 
-	auto cmd = m_Ctx->CreateCommandList(RHI::CommandListType::Graphics, "SecondaryUICmd");
-	cmd->Begin();
+	auto cmd = m_ctx->create_command_list(RHI::CommandListType::Graphics, "SecondaryUICmd");
+	cmd->begin();
 
-	const mat4 ortho = glm::ortho(0.f, static_cast<float>(width), static_cast<float>(height), 0.f, -1.f, 1.f);
-	rw.renderPass->Begin(*cmd, rw.swapchain.get(), imageIndex);
-	m_SecondaryBatcher->Begin(*cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::x4, ortho);
-	rw.onRender(*m_SecondaryBatcher, *cmd);
-	m_SecondaryBatcher->End();
-	rw.renderPass->End(*cmd);
+	const Mat4 ortho = glm::ortho(0.F, static_cast<float>(width), static_cast<float>(height), 0.F, -1.F, 1.F);
+	rw.render_pass->begin(*cmd, rw.swapchain.get(), image_index);
+	m_secondary_batcher->begin(*cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, ortho);
+	rw.on_render(*m_secondary_batcher, *cmd);
+	m_secondary_batcher->end();
+	rw.render_pass->end(*cmd);
 
-	m_Ctx->SubmitFrame(*cmd, rw.swapchain.get(), imageIndex);
+	m_ctx->submit_frame(*cmd, rw.swapchain.get(), image_index);
 }
 
-void Application::InternalUpdate(f32 deltaTime) {
+void Application::internal_update(F32 delta_time) {
 	PROFILE_SCOPE("OnUpdate");
 
-	if (m_PendingResize || m_Swapchain->NeedsResize()) {
-		m_PendingResize = false;
-		const uint32 width = m_Window->GetWidth();
-		const uint32 height = m_Window->GetHeight();
+	if (m_pending_resize || m_swapchain->needs_resize()) {
+		m_pending_resize = false;
+		const Uint32 width = m_window->get_width();
+		const Uint32 height = m_window->get_height();
 		if (width == 0 || height == 0) {
 			return;
 		}
-		HandleResize();
+		handle_resize();
 	}
 
-	uint32 imageIndex = 0;
+	Uint32 image_index = 0;
 	{
 		PROFILE_SCOPE("AcquireNextImage");
-		if (!m_Swapchain->AcquireNextImage(imageIndex)) {
+		if (!m_swapchain->acquire_next_image(image_index)) {
 			return;
 		}
 	}
 
-	m_Renderer->SetSwapchainTarget(*m_Swapchain, imageIndex);
-	m_Renderer2D->SetSwapchainTarget(*m_Swapchain, imageIndex);
+	m_renderer->set_swapchain_target(*m_swapchain, image_index);
+	m_renderer2_d->set_swapchain_target(*m_swapchain, image_index);
 
-	uint32 frameSlot = m_Swapchain->GetCurrentFrameSlot();
-	auto &cmd = m_Ctx->AcquireFrameCommandList(frameSlot);
-	cmd.Begin();
+	Uint32 frame_slot = m_swapchain->get_current_frame_slot();
+	auto &cmd = m_ctx->acquire_frame_command_list(frame_slot);
+	cmd.begin();
 
-	OnPreRender(deltaTime);
+	on_pre_render(delta_time);
 
 	{
-		Graphics::MaterialFactory::Get()->Tick(*m_Ctx);
+		Graphics::MaterialFactory::get()->tick(*m_ctx);
 	}
 
 	{
 		PROFILE_SCOPE("RenderPipeline::Render");
-		m_RenderPipeline->Render(cmd, *m_Scene, deltaTime);
+		m_render_pipeline->render(cmd, *m_scene, delta_time);
 	}
 
 	{
 		PROFILE_SCOPE("SubmitFrame");
-		m_Ctx->SubmitFrame(cmd, m_Swapchain.get(), imageIndex);
+		m_ctx->submit_frame(cmd, m_swapchain.get(), image_index);
 	}
 
-	RenderSecondaryWindows();
+	render_secondary_windows();
 }
 
-void Application::InternalOnMainWindowEvent(Events::Event &event) {
-	const bool isCursorEvent = (event.GetCategory() & Events::EventCategory::Mouse) &&
-		!(event.GetCategory() & Events::EventCategory::MouseButton);
-	if (!isCursorEvent) {
-		Rendering::FrameScheduler::Get()->RequestFrame();
+void Application::internal_on_main_window_event(Events::Event &event) {
+	const bool is_cursor_event = (event.get_category() & Events::EventCategory::Mouse) &&
+		!(event.get_category() & Events::EventCategory::MouseButton);
+	if (!is_cursor_event) {
+		Rendering::FrameScheduler::get()->request_frame();
 	}
 
-	OnEvent(event);
+	on_event(event);
 
 	Events::EventDispatcher dispatcher(event);
 
-	dispatcher.Dispatch<Events::WindowCloseEvent>([this](Events::WindowCloseEvent &) {
-		m_Running = false;
+	dispatcher.dispatch<Events::WindowCloseEvent>([this](Events::WindowCloseEvent &) {
+		m_running = false;
 		return true;
 	});
 
-	dispatcher.Dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &ev) {
-		if (ev.GetWidth() > 0 && ev.GetHeight() > 0) {
-			m_PendingResize = true;
+	dispatcher.dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &ev) {
+		if (ev.get_width() > 0 && ev.get_height() > 0) {
+			m_pending_resize = true;
 		}
 		return true;
 	});
 }
 
-void Application::InternalOnSecondaryWindowEvent(RenderWindow &rw, Events::Event &event) {
-	Rendering::FrameScheduler::Get()->RequestFrame();
+void Application::internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event) {
+	Rendering::FrameScheduler::get()->request_frame();
 
 	Events::EventDispatcher dispatcher(event);
-	dispatcher.Dispatch<Events::WindowResizeEvent>([&](auto &) {
-		rw.needsResize = true; // swapchain + targets rebuilt in RenderOneSecondaryWindow
+	dispatcher.dispatch<Events::WindowResizeEvent>([&](auto &) {
+		rw.needs_resize = true; // swapchain + targets rebuilt in RenderOneSecondaryWindow
 		return false;
 	});
 
-	if (rw.onEvent) {
-		rw.onEvent(event);
+	if (rw.on_event) {
+		rw.on_event(event);
 	}
 }
 
-void Application::HandleResize() {
-	const uint32 width = m_Window->GetWidth();
-	const uint32 height = m_Window->GetHeight();
+void Application::handle_resize() {
+	const Uint32 width = m_window->get_width();
+	const Uint32 height = m_window->get_height();
 	if (width == 0 || height == 0) {
 		return;
 	}
 
-	m_Ctx->WaitIdle();
-	m_Swapchain->Resize(width, height);
-	m_RenderPipeline->Resize(width, height);
+	m_ctx->wait_idle();
+	m_swapchain->resize(width, height);
+	m_render_pipeline->resize(width, height);
 
-	OnResize(width, height);
+	on_resize(width, height);
 }
 
 } // namespace Aquila::Application

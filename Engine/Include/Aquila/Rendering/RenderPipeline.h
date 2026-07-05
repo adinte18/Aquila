@@ -20,45 +20,45 @@ namespace Aquila::Rendering {
 
 class RenderPipeline {
   public:
-	RenderPipeline(GFX::GfxContext &ctx, uint32 width, uint32 height);
+	RenderPipeline(GFX::GfxContext &ctx, Uint32 width, Uint32 height);
 	~RenderPipeline();
 
 	AQUILA_NONCOPYABLE(RenderPipeline);
 	AQUILA_NONMOVEABLE(RenderPipeline);
 
-	template <typename T, typename... Args> T &Add(Args &&...args) {
+	template <typename T, typename... Args> T &add(Args &&...args) {
 		static_assert(std::is_base_of_v<IRenderer, T>, "T must derive from IRenderer");
-		auto renderer = CreateUnique<T>(std::forward<Args>(args)...);
+		auto renderer = create_unique<T>(std::forward<Args>(args)...);
 		T &ref = *renderer;
-		renderer->OnInit(m_Ctx);
-		m_Renderers.push_back(std::move(renderer));
+		renderer->on_init(m_ctx);
+		m_renderers.push_back(std::move(renderer));
 		return ref;
 	}
 
-	void Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime);
-	void Render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, f32 deltaTime, uint32 width, uint32 height);
-	void Resize(uint32 width, uint32 height);
+	void render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, F32 delta_time);
+	void render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, F32 delta_time, Uint32 width, Uint32 height);
+	void resize(Uint32 width, Uint32 height);
 
-	[[nodiscard]] GFX::GfxTexture &GetOutput() const { return *m_SceneColor; }
-	[[nodiscard]] uint32 GetWidth() const { return m_Width; }
-	[[nodiscard]] uint32 GetHeight() const { return m_Height; }
+	[[nodiscard]] GFX::GfxTexture &get_output() const { return *m_scene_color; }
+	[[nodiscard]] Uint32 get_width() const { return m_width; }
+	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
   private:
-	void BuildFrameContext(SceneManagement::Scene &scene, f32 deltaTime, FrameContext &out);
-	void RebuildTargets();
+	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, FrameContext &out);
+	void rebuild_targets();
 
-	GFX::GfxContext &m_Ctx;
-	Graphics::RG::RenderGraph m_Graph;
-	std::vector<Unique<IRenderer>> m_Renderers;
+	GFX::GfxContext &m_ctx;
+	Graphics::RG::RenderGraph m_graph;
+	std::vector<Unique<IRenderer>> m_renderers;
 
-	Ref<GFX::GfxTexture> m_SceneColor;
-	Ref<GFX::GfxTexture> m_DepthTex;
+	Ref<GFX::GfxTexture> m_scene_color;
+	Ref<GFX::GfxTexture> m_depth_tex;
 
-	uint32 m_Width = 0;
-	uint32 m_Height = 0;
+	Uint32 m_width = 0;
+	Uint32 m_height = 0;
 
 	// Rotates 0..MAX_FRAMES_IN_FLIGHT-1 each Render() call, matching swapchain fence rotation.
-	uint32 m_FrameSlot = 0;
+	Uint32 m_frame_slot = 0;
 };
 
 } // namespace Aquila::Rendering

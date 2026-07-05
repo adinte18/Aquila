@@ -7,11 +7,11 @@
 
 namespace Aquila::RHI {
 
-AQUILA_FORCE_INLINE VkFormat ToVkFormat(TextureFormat format) {
+AQUILA_FORCE_INLINE VkFormat to_vk_format(TextureFormat format) {
 	switch (format) {
 	case TextureFormat::RGBA8:
 		return VK_FORMAT_R8G8B8A8_UNORM;
-	case TextureFormat::RGBA8_SRGB:
+	case TextureFormat::RgbA8Srgb:
 		return VK_FORMAT_R8G8B8A8_SRGB;
 	case TextureFormat::RGBA16F:
 		return VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -41,7 +41,7 @@ AQUILA_FORCE_INLINE VkFormat ToVkFormat(TextureFormat format) {
 		return VK_FORMAT_R32_UINT;
 	case TextureFormat::BGRA8:
 		return VK_FORMAT_B8G8R8A8_UNORM;
-	case TextureFormat::BGRA8_SRGB:
+	case TextureFormat::BgrA8Srgb:
 		return VK_FORMAT_B8G8R8A8_SRGB;
 	case TextureFormat::Depth16:
 		return VK_FORMAT_D16_UNORM;
@@ -57,12 +57,12 @@ AQUILA_FORCE_INLINE VkFormat ToVkFormat(TextureFormat format) {
 	}
 }
 
-AQUILA_FORCE_INLINE TextureFormat FromVkFormat(VkFormat format) {
+AQUILA_FORCE_INLINE TextureFormat from_vk_format(VkFormat format) {
 	switch (format) {
 	case VK_FORMAT_R8G8B8A8_UNORM:
 		return TextureFormat::RGBA8;
 	case VK_FORMAT_R8G8B8A8_SRGB:
-		return TextureFormat::RGBA8_SRGB;
+		return TextureFormat::RgbA8Srgb;
 	case VK_FORMAT_R16G16B16A16_SFLOAT:
 		return TextureFormat::RGBA16F;
 	case VK_FORMAT_R32G32B32A32_SFLOAT:
@@ -92,7 +92,7 @@ AQUILA_FORCE_INLINE TextureFormat FromVkFormat(VkFormat format) {
 	case VK_FORMAT_B8G8R8A8_UNORM:
 		return TextureFormat::BGRA8;
 	case VK_FORMAT_B8G8R8A8_SRGB:
-		return TextureFormat::BGRA8_SRGB;
+		return TextureFormat::BgrA8Srgb;
 	case VK_FORMAT_D16_UNORM:
 		return TextureFormat::Depth16;
 	case VK_FORMAT_D32_SFLOAT:
@@ -107,21 +107,21 @@ AQUILA_FORCE_INLINE TextureFormat FromVkFormat(VkFormat format) {
 	}
 }
 
-AQUILA_FORCE_INLINE VkSampleCountFlagBits ToVkSampleCount(SampleCount samples) {
+AQUILA_FORCE_INLINE VkSampleCountFlagBits to_vk_sample_count(SampleCount samples) {
 	switch (samples) {
-	case SampleCount::x1:
+	case SampleCount::X1:
 		return VK_SAMPLE_COUNT_1_BIT;
-	case SampleCount::x2:
+	case SampleCount::X2:
 		return VK_SAMPLE_COUNT_2_BIT;
-	case SampleCount::x4:
+	case SampleCount::X4:
 		return VK_SAMPLE_COUNT_4_BIT;
-	case SampleCount::x8:
+	case SampleCount::X8:
 		return VK_SAMPLE_COUNT_8_BIT;
-	case SampleCount::x16:
+	case SampleCount::X16:
 		return VK_SAMPLE_COUNT_16_BIT;
-	case SampleCount::x32:
+	case SampleCount::X32:
 		return VK_SAMPLE_COUNT_32_BIT;
-	case SampleCount::x64:
+	case SampleCount::X64:
 		return VK_SAMPLE_COUNT_64_BIT;
 	default:
 		AQUILA_ASSERT(false, "Unknown SampleCount");
@@ -129,7 +129,7 @@ AQUILA_FORCE_INLINE VkSampleCountFlagBits ToVkSampleCount(SampleCount samples) {
 	}
 }
 
-AQUILA_FORCE_INLINE VkImageUsageFlags ToVkImageUsage(TextureUsage usage) {
+AQUILA_FORCE_INLINE VkImageUsageFlags to_vk_image_usage(TextureUsage usage) {
 	VkImageUsageFlags flags = 0;
 	if ((usage & TextureUsage::ColorAttachment) != TextureUsage::None) {
 		flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -155,7 +155,7 @@ AQUILA_FORCE_INLINE VkImageUsageFlags ToVkImageUsage(TextureUsage usage) {
 	return flags;
 }
 
-AQUILA_FORCE_INLINE VkBufferUsageFlags ToVkBufferUsage(BufferUsage usage) {
+AQUILA_FORCE_INLINE VkBufferUsageFlags to_vk_buffer_usage(BufferUsage usage) {
 	VkBufferUsageFlags flags = 0;
 	if ((usage & BufferUsage::VertexBuffer) != BufferUsage::None) {
 		flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
@@ -181,7 +181,7 @@ AQUILA_FORCE_INLINE VkBufferUsageFlags ToVkBufferUsage(BufferUsage usage) {
 	return flags;
 }
 
-AQUILA_FORCE_INLINE VkImageViewType ToVkImageViewType(TextureViewType type) {
+AQUILA_FORCE_INLINE VkImageViewType to_vk_image_view_type(TextureViewType type) {
 	switch (type) {
 	case TextureViewType::Tex1D:
 		return VK_IMAGE_VIEW_TYPE_1D;
@@ -201,7 +201,7 @@ AQUILA_FORCE_INLINE VkImageViewType ToVkImageViewType(TextureViewType type) {
 	return VK_IMAGE_VIEW_TYPE_2D;
 }
 
-AQUILA_FORCE_INLINE VkComponentSwizzle ToVkComponentSwizzle(ComponentSwizzle s) {
+AQUILA_FORCE_INLINE VkComponentSwizzle to_vk_component_swizzle(ComponentSwizzle s) {
 	switch (s) {
 	case ComponentSwizzle::Identity:
 		return VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -221,12 +221,12 @@ AQUILA_FORCE_INLINE VkComponentSwizzle ToVkComponentSwizzle(ComponentSwizzle s) 
 	return VK_COMPONENT_SWIZZLE_IDENTITY;
 }
 
-AQUILA_FORCE_INLINE VkComponentMapping ToVkComponentMapping(const ComponentMapping &m) {
-	return { ToVkComponentSwizzle(m.r), ToVkComponentSwizzle(m.g), ToVkComponentSwizzle(m.b),
-			 ToVkComponentSwizzle(m.a) };
+AQUILA_FORCE_INLINE VkComponentMapping to_vk_component_mapping(const ComponentMapping &m) {
+	return { to_vk_component_swizzle(m.r), to_vk_component_swizzle(m.g), to_vk_component_swizzle(m.b),
+			 to_vk_component_swizzle(m.a) };
 }
 
-AQUILA_FORCE_INLINE VkShaderStageFlags ToVkShaderStage(ShaderStageFlags flags) {
+AQUILA_FORCE_INLINE VkShaderStageFlags to_vk_shader_stage(ShaderStageFlags flags) {
 	VkShaderStageFlags vk = 0;
 	if ((flags & ShaderStageFlags::Vertex) != ShaderStageFlags::None) {
 		vk |= VK_SHADER_STAGE_VERTEX_BIT;
@@ -243,7 +243,7 @@ AQUILA_FORCE_INLINE VkShaderStageFlags ToVkShaderStage(ShaderStageFlags flags) {
 	return vk;
 }
 
-AQUILA_FORCE_INLINE VkPrimitiveTopology ToVkPrimitiveTopology(PrimitiveTopology t) {
+AQUILA_FORCE_INLINE VkPrimitiveTopology to_vk_primitive_topology(PrimitiveTopology t) {
 	switch (t) {
 	case PrimitiveTopology::TriangleList:
 		return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
@@ -261,7 +261,7 @@ AQUILA_FORCE_INLINE VkPrimitiveTopology ToVkPrimitiveTopology(PrimitiveTopology 
 	return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
-AQUILA_FORCE_INLINE VkCullModeFlags ToVkCullMode(CullMode m) {
+AQUILA_FORCE_INLINE VkCullModeFlags to_vk_cull_mode(CullMode m) {
 	switch (m) {
 	case CullMode::None:
 		return VK_CULL_MODE_NONE;
@@ -273,15 +273,15 @@ AQUILA_FORCE_INLINE VkCullModeFlags ToVkCullMode(CullMode m) {
 	return VK_CULL_MODE_BACK_BIT;
 }
 
-AQUILA_FORCE_INLINE VkPolygonMode ToVkPolygonMode(FillMode m) {
+AQUILA_FORCE_INLINE VkPolygonMode to_vk_polygon_mode(FillMode m) {
 	return m == FillMode::Wireframe ? VK_POLYGON_MODE_LINE : VK_POLYGON_MODE_FILL;
 }
 
-AQUILA_FORCE_INLINE VkFrontFace ToVkFrontFace(FrontFace f) {
+AQUILA_FORCE_INLINE VkFrontFace to_vk_front_face(FrontFace f) {
 	return f == FrontFace::Clockwise ? VK_FRONT_FACE_CLOCKWISE : VK_FRONT_FACE_COUNTER_CLOCKWISE;
 }
 
-AQUILA_FORCE_INLINE VkBlendFactor ToVkBlendFactor(BlendFactor f) {
+AQUILA_FORCE_INLINE VkBlendFactor to_vk_blend_factor(BlendFactor f) {
 	switch (f) {
 	case BlendFactor::Zero:
 		return VK_BLEND_FACTOR_ZERO;
@@ -307,7 +307,7 @@ AQUILA_FORCE_INLINE VkBlendFactor ToVkBlendFactor(BlendFactor f) {
 	return VK_BLEND_FACTOR_ONE;
 }
 
-AQUILA_FORCE_INLINE VkBlendOp ToVkBlendOp(BlendOp op) {
+AQUILA_FORCE_INLINE VkBlendOp to_vk_blend_op(BlendOp op) {
 	switch (op) {
 	case BlendOp::Add:
 		return VK_BLEND_OP_ADD;
@@ -323,7 +323,7 @@ AQUILA_FORCE_INLINE VkBlendOp ToVkBlendOp(BlendOp op) {
 	return VK_BLEND_OP_ADD;
 }
 
-AQUILA_FORCE_INLINE VkDescriptorType ToVkDescriptorType(DescriptorType t) {
+AQUILA_FORCE_INLINE VkDescriptorType to_vk_descriptor_type(DescriptorType t) {
 	switch (t) {
 	case DescriptorType::UniformBuffer:
 		return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -339,7 +339,7 @@ AQUILA_FORCE_INLINE VkDescriptorType ToVkDescriptorType(DescriptorType t) {
 	return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 }
 
-AQUILA_FORCE_INLINE VkCompareOp ToVkCompareOp(CompareOp op) {
+AQUILA_FORCE_INLINE VkCompareOp to_vk_compare_op(CompareOp op) {
 	switch (op) {
 	case CompareOp::Never:
 		return VK_COMPARE_OP_NEVER;
@@ -361,7 +361,7 @@ AQUILA_FORCE_INLINE VkCompareOp ToVkCompareOp(CompareOp op) {
 	return VK_COMPARE_OP_LESS;
 }
 
-AQUILA_FORCE_INLINE VkFilter ToVkFilter(FilterMode mode) {
+AQUILA_FORCE_INLINE VkFilter to_vk_filter(FilterMode mode) {
 	switch (mode) {
 	case FilterMode::Nearest:
 		return VK_FILTER_NEAREST;
@@ -371,7 +371,7 @@ AQUILA_FORCE_INLINE VkFilter ToVkFilter(FilterMode mode) {
 	return VK_FILTER_LINEAR;
 }
 
-AQUILA_FORCE_INLINE VkSamplerMipmapMode ToVkMipmapMode(MipmapMode mode) {
+AQUILA_FORCE_INLINE VkSamplerMipmapMode to_vk_mipmap_mode(MipmapMode mode) {
 	switch (mode) {
 	case MipmapMode::Nearest:
 		return VK_SAMPLER_MIPMAP_MODE_NEAREST;
@@ -381,7 +381,7 @@ AQUILA_FORCE_INLINE VkSamplerMipmapMode ToVkMipmapMode(MipmapMode mode) {
 	return VK_SAMPLER_MIPMAP_MODE_LINEAR;
 }
 
-AQUILA_FORCE_INLINE VkSamplerAddressMode ToVkAddressMode(AddressMode mode) {
+AQUILA_FORCE_INLINE VkSamplerAddressMode to_vk_address_mode(AddressMode mode) {
 	switch (mode) {
 	case AddressMode::Repeat:
 		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
@@ -395,7 +395,7 @@ AQUILA_FORCE_INLINE VkSamplerAddressMode ToVkAddressMode(AddressMode mode) {
 	return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
 }
 
-AQUILA_FORCE_INLINE VkBorderColor ToVkBorderColor(BorderColor color) {
+AQUILA_FORCE_INLINE VkBorderColor to_vk_border_color(BorderColor color) {
 	switch (color) {
 	case BorderColor::TransparentBlack:
 		return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
@@ -407,24 +407,24 @@ AQUILA_FORCE_INLINE VkBorderColor ToVkBorderColor(BorderColor color) {
 	return VK_BORDER_COLOR_INT_TRANSPARENT_BLACK;
 }
 
-AQUILA_FORCE_INLINE VkSamplerCreateInfo ToVkSamplerCreateInfo(const SamplerDesc &desc, float maxAnisotropyLimit) {
+AQUILA_FORCE_INLINE VkSamplerCreateInfo to_vk_sampler_create_info(const SamplerDesc &desc, float max_anisotropy_limit) {
 	VkSamplerCreateInfo info{};
 	info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	info.magFilter = ToVkFilter(desc.magFilter);
-	info.minFilter = ToVkFilter(desc.minFilter);
-	info.mipmapMode = ToVkMipmapMode(desc.mipmapMode);
-	info.addressModeU = ToVkAddressMode(desc.addressU);
-	info.addressModeV = ToVkAddressMode(desc.addressV);
-	info.addressModeW = ToVkAddressMode(desc.addressW);
-	info.borderColor = ToVkBorderColor(desc.borderColor);
-	info.mipLodBias = desc.mipLodBias;
-	info.minLod = desc.minLod;
-	info.maxLod = desc.maxLod;
+	info.magFilter = to_vk_filter(desc.mag_filter);
+	info.minFilter = to_vk_filter(desc.min_filter);
+	info.mipmapMode = to_vk_mipmap_mode(desc.mipmap_mode);
+	info.addressModeU = to_vk_address_mode(desc.address_u);
+	info.addressModeV = to_vk_address_mode(desc.address_v);
+	info.addressModeW = to_vk_address_mode(desc.address_w);
+	info.borderColor = to_vk_border_color(desc.border_color);
+	info.mipLodBias = desc.mip_lod_bias;
+	info.minLod = desc.min_lod;
+	info.maxLod = desc.max_lod;
 	info.unnormalizedCoordinates = VK_FALSE;
 	info.anisotropyEnable = desc.anisotropy ? VK_TRUE : VK_FALSE;
-	info.maxAnisotropy = desc.anisotropy ? maxAnisotropyLimit : 1.0f;
-	info.compareEnable = desc.compareEnable ? VK_TRUE : VK_FALSE;
-	info.compareOp = ToVkCompareOp(desc.compareOp);
+	info.maxAnisotropy = desc.anisotropy ? max_anisotropy_limit : 1.0f;
+	info.compareEnable = desc.compare_enable ? VK_TRUE : VK_FALSE;
+	info.compareOp = to_vk_compare_op(desc.compare_op);
 	return info;
 }
 

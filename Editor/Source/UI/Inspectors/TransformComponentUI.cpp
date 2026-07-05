@@ -11,22 +11,22 @@ using namespace Aquila;
 using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 
-bool TransformComponentUI::Matches(Entity entity) const {
-	return entity.HasComponent<TransformComponent>();
+bool TransformComponentUI::matches(Entity entity) const {
+	return entity.has_component<TransformComponent>();
 }
 
-void TransformComponentUI::Build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
-	m_Position = grid->AddRow<UI::Core::Vec3Field>("Position");
-	m_Position->SetSpeed(0.1f);
+void TransformComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
+	m_position = grid->add_row<UI::Core::Vec3Field>("Position");
+	m_position->set_speed(0.1f);
 
-	m_Scale = grid->AddRow<UI::Core::Vec3Field>("Scale");
-	m_Scale->SetSpeed(0.1f);
+	m_scale = grid->add_row<UI::Core::Vec3Field>("Scale");
+	m_scale->set_speed(0.1f);
 }
 
-void TransformComponentUI::Show(Entity entity) {
+void TransformComponentUI::show(Entity entity) {
 	ComponentBinder<TransformComponent> bind(entity);
-	bind.Bind(m_Position, &TransformComponent::GetLocalPosition, &TransformComponent::SetLocalPosition);
-	bind.Bind(m_Scale, &TransformComponent::GetLocalScale, &TransformComponent::SetLocalScale);
+	bind.bind(m_position, &TransformComponent::get_local_position, &TransformComponent::set_local_position);
+	bind.bind(m_scale, &TransformComponent::get_local_scale, &TransformComponent::set_local_scale);
 }
 
 } // namespace Editor

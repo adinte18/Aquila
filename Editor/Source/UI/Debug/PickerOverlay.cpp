@@ -9,38 +9,38 @@ using namespace Aquila;
 using namespace Aquila::UI::Core;
 
 PickerOverlay::PickerOverlay() {
-	AddClass("picker-overlay");
-	m_ShouldSkipHitTest = true;
+	add_class("picker-overlay");
+	m_should_skip_hit_test = true;
 
 	Aquila::UI::FloatingConfig fc;
-	fc.attachTo = Aquila::UI::FloatingAttachTo::Root;
-	fc.elementPoint = Aquila::UI::FloatingAttachPoint::LeftTop;
-	fc.parentPoint = Aquila::UI::FloatingAttachPoint::LeftTop;
-	fc.zIndex = 900;
-	SetFloating(fc);
+	fc.attach_to = Aquila::UI::FloatingAttachTo::Root;
+	fc.element_point = Aquila::UI::FloatingAttachPoint::LeftTop;
+	fc.parent_point = Aquila::UI::FloatingAttachPoint::LeftTop;
+	fc.z_index = 900;
+	set_floating(fc);
 }
 
-void PickerOverlay::SetTarget(const Rect &rect) {
-	m_Active = true;
-	m_Target = rect;
-	QueueRedraw();
+void PickerOverlay::set_target(const Rect &rect) {
+	m_active = true;
+	m_target = rect;
+	queue_redraw();
 }
 
-void PickerOverlay::Clear() {
-	if (!m_Active) {
+void PickerOverlay::clear() {
+	if (!m_active) {
 		return;
 	}
-	m_Active = false;
-	QueueRedraw();
+	m_active = false;
+	queue_redraw();
 }
 
-void PickerOverlay::OnDrawSelf(Aquila::UI::Rendering::DrawList &drawList) {
-	if (!m_Active) {
+void PickerOverlay::on_draw_self(Aquila::UI::Rendering::DrawList &draw_list) {
+	if (!m_active) {
 		return;
 	}
-	const vec4 accent = GetComputedStyle().color;
-	const vec4 fill = { accent.r, accent.g, accent.b, accent.a * 0.18f };
-	drawList.DrawRect(m_Target, fill, vec4(0.f), 1.5f, accent, 0);
+	const Vec4 accent = get_computed_style().color;
+	const Vec4 fill = { accent.r, accent.g, accent.b, accent.a * 0.18f };
+	draw_list.draw_rect(m_target, fill, Vec4(0.F), 1.5f, accent, 0);
 }
 
 } // namespace Editor

@@ -24,7 +24,7 @@ struct VkBufBarrierInfo {
 	VkAccessFlags access = 0;
 };
 
-static VkTexBarrierInfo TexBarrierInfo(ResourceState state, bool isDepth) {
+static VkTexBarrierInfo tex_barrier_info(ResourceState state, bool is_depth) {
 	VkTexBarrierInfo out{};
 
 	if (state == ResourceState::Undefined) {
@@ -34,8 +34,8 @@ static VkTexBarrierInfo TexBarrierInfo(ResourceState state, bool isDepth) {
 		return out;
 	}
 
-	const auto s = static_cast<uint16>(state);
-	const auto has = [s](ResourceState bit) { return (s & static_cast<uint16>(bit)) != 0; };
+	const auto s = static_cast<Uint16>(state);
+	const auto has = [s](ResourceState bit) { return (s & static_cast<Uint16>(bit)) != 0; };
 
 	if (has(ResourceState::ColorAttachmentWrite)) {
 		out.stage |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -69,7 +69,7 @@ static VkTexBarrierInfo TexBarrierInfo(ResourceState state, bool isDepth) {
 		out.access |= VK_ACCESS_SHADER_READ_BIT;
 		if (out.layout == VK_IMAGE_LAYOUT_UNDEFINED) {
 			out.layout =
-				isDepth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+				is_depth ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		}
 	}
 
@@ -111,7 +111,7 @@ static VkTexBarrierInfo TexBarrierInfo(ResourceState state, bool isDepth) {
 	return out;
 }
 
-static VkBufBarrierInfo BufBarrierInfo(ResourceState state) {
+static VkBufBarrierInfo buf_barrier_info(ResourceState state) {
 	VkBufBarrierInfo out{};
 
 	if (state == ResourceState::Undefined) {
@@ -119,8 +119,8 @@ static VkBufBarrierInfo BufBarrierInfo(ResourceState state) {
 		return out;
 	}
 
-	const auto s = static_cast<uint16>(state);
-	const auto has = [s](ResourceState bit) { return (s & static_cast<uint16>(bit)) != 0; };
+	const auto s = static_cast<Uint16>(state);
+	const auto has = [s](ResourceState bit) { return (s & static_cast<Uint16>(bit)) != 0; };
 
 	if (has(ResourceState::UniformRead)) {
 		out.stage |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT | VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT |
@@ -167,11 +167,11 @@ static VkBufBarrierInfo BufBarrierInfo(ResourceState state) {
 	return out;
 }
 
-static VkImageAspectFlags AspectFor(TextureFormat fmt) {
+static VkImageAspectFlags aspect_for(TextureFormat fmt) {
 	if (fmt == TextureFormat::Depth24Stencil8 || fmt == TextureFormat::Depth32Stencil8) {
 		return VK_IMAGE_ASPECT_DEPTH_BIT | VK_IMAGE_ASPECT_STENCIL_BIT;
 	}
-	if (IsDepthFormat(fmt)) {
+	if (is_depth_format(fmt)) {
 		return VK_IMAGE_ASPECT_DEPTH_BIT;
 	}
 	return VK_IMAGE_ASPECT_COLOR_BIT;
@@ -181,68 +181,68 @@ static VkImageAspectFlags AspectFor(TextureFormat fmt) {
 
 // Lifecycle
 
-VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, CommandListType type,
+VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool command_pool, CommandListType type,
 									 const std::string &name)
-	: m_CommandPool(commandPool), m_Type(type), m_Name(name), m_Device(device) {
-	VkCommandBufferAllocateInfo allocInfo{};
-	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandPool = commandPool;
-	allocInfo.commandBufferCount = 1;
+	: m_command_pool(command_pool), m_type(type), m_name(name), m_device(device) {
+	VkCommandBufferAllocateInfo alloc_info{};
+	alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+	alloc_info.commandPool = command_pool;
+	alloc_info.commandBufferCount = 1;
 
-	AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_Device.GetDevice(), &allocInfo, &m_CommandBuffer));
+	AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_device.get_device(), &alloc_info, &m_command_buffer));
 
-	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64>(m_CommandBuffer), name.c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer), name.c_str());
 }
 
-VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool commandPool, VkCommandBuffer existingCmd,
+VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool command_pool, VkCommandBuffer existing_cmd,
 									 CommandListType type, const std::string &name)
-	: m_CommandBuffer(existingCmd), m_CommandPool(commandPool), m_Type(type), m_Name(name), m_Device(device) {
-	m_Device.SetObjectDebugName(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<uint64>(m_CommandBuffer), name.c_str());
+	: m_command_buffer(existing_cmd), m_command_pool(command_pool), m_type(type), m_name(name), m_device(device) {
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer), name.c_str());
 }
 
 VulkanCommandList::~VulkanCommandList() {
 	// Freed automatically when the command pool is destroyed
 }
 
-void VulkanCommandList::Begin() {
-	if (m_IsRecording) {
-		throw std::runtime_error("Command list '" + m_Name + "' is already recording");
+void VulkanCommandList::begin() {
+	if (m_is_recording) {
+		throw std::runtime_error("Command list '" + m_name + "' is already recording");
 	}
 
-	VkCommandBufferBeginInfo beginInfo{};
-	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-	AQUILA_VULKAN_CHECK(vkBeginCommandBuffer(m_CommandBuffer, &beginInfo));
-	m_IsRecording = true;
+	VkCommandBufferBeginInfo begin_info{};
+	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+	AQUILA_VULKAN_CHECK(vkBeginCommandBuffer(m_command_buffer, &begin_info));
+	m_is_recording = true;
 }
 
-void VulkanCommandList::End() {
-	if (!m_IsRecording) {
-		throw std::runtime_error("Command list '" + m_Name + "' is not recording");
+void VulkanCommandList::end() {
+	if (!m_is_recording) {
+		throw std::runtime_error("Command list '" + m_name + "' is not recording");
 	}
 
-	AQUILA_VULKAN_CHECK(vkEndCommandBuffer(m_CommandBuffer));
-	m_IsRecording = false;
+	AQUILA_VULKAN_CHECK(vkEndCommandBuffer(m_command_buffer));
+	m_is_recording = false;
 }
 
-void VulkanCommandList::Reset() {
-	vkResetCommandBuffer(m_CommandBuffer, 0);
-	m_IsRecording = false;
-	m_BoundPipelineLayout = VK_NULL_HANDLE;
+void VulkanCommandList::reset() {
+	vkResetCommandBuffer(m_command_buffer, 0);
+	m_is_recording = false;
+	m_bound_pipeline_layout = VK_NULL_HANDLE;
 }
 
 // Resource transitions
 
-void VulkanCommandList::TransitionTexture(IRHITexture &texture, ResourceState oldState, ResourceState newState) {
-	if (oldState == newState) {
+void VulkanCommandList::transition_texture(IRHITexture &texture, ResourceState old_state, ResourceState new_state) {
+	if (old_state == new_state) {
 		return;
 	}
 
-	auto &vkTex = static_cast<VulkanTexture &>(texture);
-	const bool depth = IsDepthFormat(vkTex.GetFormat());
+	auto &vk_tex = static_cast<VulkanTexture &>(texture);
+	const bool depth = is_depth_format(vk_tex.get_format());
 
-	VkTexBarrierInfo src = TexBarrierInfo(oldState, depth);
-	VkTexBarrierInfo dst = TexBarrierInfo(newState, depth);
+	VkTexBarrierInfo src = tex_barrier_info(old_state, depth);
+	VkTexBarrierInfo dst = tex_barrier_info(new_state, depth);
 
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -252,22 +252,22 @@ void VulkanCommandList::TransitionTexture(IRHITexture &texture, ResourceState ol
 	barrier.newLayout = dst.layout;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = vkTex.GetImage();
-	barrier.subresourceRange = { AspectFor(vkTex.GetFormat()), 0, VK_REMAINING_MIP_LEVELS, 0,
+	barrier.image = vk_tex.get_image();
+	barrier.subresourceRange = { aspect_for(vk_tex.get_format()), 0, VK_REMAINING_MIP_LEVELS, 0,
 								 VK_REMAINING_ARRAY_LAYERS };
 
-	vkCmdPipelineBarrier(m_CommandBuffer, src.stage, dst.stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+	vkCmdPipelineBarrier(m_command_buffer, src.stage, dst.stage, 0, 0, nullptr, 0, nullptr, 1, &barrier);
 }
 
-void VulkanCommandList::TransitionBuffer(IRHIBuffer &buffer, ResourceState oldState, ResourceState newState) {
-	if (oldState == newState) {
+void VulkanCommandList::transition_buffer(IRHIBuffer &buffer, ResourceState old_state, ResourceState new_state) {
+	if (old_state == new_state) {
 		return;
 	}
 
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
 
-	VkBufBarrierInfo src = BufBarrierInfo(oldState);
-	VkBufBarrierInfo dst = BufBarrierInfo(newState);
+	VkBufBarrierInfo src = buf_barrier_info(old_state);
+	VkBufBarrierInfo dst = buf_barrier_info(new_state);
 
 	VkBufferMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER;
@@ -275,121 +275,121 @@ void VulkanCommandList::TransitionBuffer(IRHIBuffer &buffer, ResourceState oldSt
 	barrier.dstAccessMask = dst.access;
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.buffer = vkBuf.GetBuffer();
+	barrier.buffer = vk_buf.get_buffer();
 	barrier.offset = 0;
 	barrier.size = VK_WHOLE_SIZE;
 
-	vkCmdPipelineBarrier(m_CommandBuffer, src.stage, dst.stage, 0, 0, nullptr, 1, &barrier, 0, nullptr);
+	vkCmdPipelineBarrier(m_command_buffer, src.stage, dst.stage, 0, 0, nullptr, 1, &barrier, 0, nullptr);
 }
 
 // Pipeline and state
 
-void VulkanCommandList::BindPipeline(IRHIPipeline &pipeline) {
-	if (pipeline.GetBindPoint() == PipelineBindPoint::Compute) {
-		auto &vkPipeline = static_cast<VulkanComputePipeline &>(pipeline);
-		m_BoundPipelineLayout = vkPipeline.GetLayout();
-		m_BoundBindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
-		vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, vkPipeline.GetPipeline());
+void VulkanCommandList::bind_pipeline(IRHIPipeline &pipeline) {
+	if (pipeline.get_bind_point() == PipelineBindPoint::Compute) {
+		auto &vk_pipeline = static_cast<VulkanComputePipeline &>(pipeline);
+		m_bound_pipeline_layout = vk_pipeline.get_layout();
+		m_bound_bind_point = VK_PIPELINE_BIND_POINT_COMPUTE;
+		vkCmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_COMPUTE, vk_pipeline.get_pipeline());
 	} else {
-		auto &vkPipeline = static_cast<VulkanPipeline &>(pipeline);
-		m_BoundPipelineLayout = vkPipeline.GetLayout();
-		m_BoundBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		vkCmdBindPipeline(m_CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vkPipeline.GetPipeline());
+		auto &vk_pipeline = static_cast<VulkanPipeline &>(pipeline);
+		m_bound_pipeline_layout = vk_pipeline.get_layout();
+		m_bound_bind_point = VK_PIPELINE_BIND_POINT_GRAPHICS;
+		vkCmdBindPipeline(m_command_buffer, VK_PIPELINE_BIND_POINT_GRAPHICS, vk_pipeline.get_pipeline());
 	}
 }
 
-void VulkanCommandList::SetViewport(float x, float y, float width, float height, float minDepth, float maxDepth) {
-	VkViewport vp{ x, y, width, height, minDepth, maxDepth };
-	vkCmdSetViewport(m_CommandBuffer, 0, 1, &vp);
+void VulkanCommandList::set_viewport(float x, float y, float width, float height, float min_depth, float max_depth) {
+	VkViewport vp{ x, y, width, height, min_depth, max_depth };
+	vkCmdSetViewport(m_command_buffer, 0, 1, &vp);
 }
 
-void VulkanCommandList::SetScissor(int32 x, int32 y, uint32 width, uint32 height) {
+void VulkanCommandList::set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height) {
 	VkRect2D s{ { x, y }, { width, height } };
-	vkCmdSetScissor(m_CommandBuffer, 0, 1, &s);
+	vkCmdSetScissor(m_command_buffer, 0, 1, &s);
 }
 
 // Resource binding
 
-void VulkanCommandList::BindDescriptorSet(uint32 set, IRHIDescriptorSet &descriptorSet) {
-	AQUILA_ASSERT(m_BoundPipelineLayout != VK_NULL_HANDLE, "BindDescriptorSet called before BindPipeline");
-	auto &vkSet = static_cast<VulkanDescriptorSet &>(descriptorSet);
-	VkDescriptorSet raw = vkSet.GetDescriptorSet();
-	vkCmdBindDescriptorSets(m_CommandBuffer, m_BoundBindPoint, m_BoundPipelineLayout, set, 1, &raw, 0, nullptr);
+void VulkanCommandList::bind_descriptor_set(Uint32 set, IRHIDescriptorSet &descriptor_set) {
+	AQUILA_ASSERT(m_bound_pipeline_layout != VK_NULL_HANDLE, "BindDescriptorSet called before BindPipeline");
+	auto &vk_set = static_cast<VulkanDescriptorSet &>(descriptor_set);
+	VkDescriptorSet raw = vk_set.get_descriptor_set();
+	vkCmdBindDescriptorSets(m_command_buffer, m_bound_bind_point, m_bound_pipeline_layout, set, 1, &raw, 0, nullptr);
 }
 
-void VulkanCommandList::PushConstants(const void *data, uint32 size, ShaderStageFlags stages, uint32 offset) {
-	AQUILA_ASSERT(m_BoundPipelineLayout != VK_NULL_HANDLE, "PushConstants called before BindPipeline");
-	vkCmdPushConstants(m_CommandBuffer, m_BoundPipelineLayout, ToVkShaderStage(stages), offset, size, data);
+void VulkanCommandList::push_constants(const void *data, Uint32 size, ShaderStageFlags stages, Uint32 offset) {
+	AQUILA_ASSERT(m_bound_pipeline_layout != VK_NULL_HANDLE, "PushConstants called before BindPipeline");
+	vkCmdPushConstants(m_command_buffer, m_bound_pipeline_layout, to_vk_shader_stage(stages), offset, size, data);
 }
 
-void VulkanCommandList::BindVertexBuffer(IRHIBuffer &buffer, uint32 binding, uint64 offset) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
-	VkBuffer raw = vkBuf.GetBuffer();
+void VulkanCommandList::bind_vertex_buffer(IRHIBuffer &buffer, Uint32 binding, Uint64 offset) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
+	VkBuffer raw = vk_buf.get_buffer();
 	VkDeviceSize off = static_cast<VkDeviceSize>(offset);
-	vkCmdBindVertexBuffers(m_CommandBuffer, binding, 1, &raw, &off);
+	vkCmdBindVertexBuffers(m_command_buffer, binding, 1, &raw, &off);
 }
 
-void VulkanCommandList::BindIndexBuffer(IRHIBuffer &buffer, IndexFormat format, uint64 offset) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
-	VkIndexType indexType = (format == IndexFormat::UInt32) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
-	vkCmdBindIndexBuffer(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset), indexType);
+void VulkanCommandList::bind_index_buffer(IRHIBuffer &buffer, IndexFormat format, Uint64 offset) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
+	VkIndexType index_type = (format == IndexFormat::UInt32) ? VK_INDEX_TYPE_UINT32 : VK_INDEX_TYPE_UINT16;
+	vkCmdBindIndexBuffer(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset), index_type);
 }
 
 // Draw commands
 
-void VulkanCommandList::Draw(uint32 vertexCount, uint32 instanceCount, uint32 firstVertex, uint32 firstInstance) {
-	vkCmdDraw(m_CommandBuffer, vertexCount, instanceCount, firstVertex, firstInstance);
+void VulkanCommandList::draw(Uint32 vertex_count, Uint32 instance_count, Uint32 first_vertex, Uint32 first_instance) {
+	vkCmdDraw(m_command_buffer, vertex_count, instance_count, first_vertex, first_instance);
 }
 
-void VulkanCommandList::DrawIndexed(uint32 indexCount, uint32 instanceCount, uint32 firstIndex, int32 vertexOffset,
-									uint32 firstInstance) {
-	vkCmdDrawIndexed(m_CommandBuffer, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+void VulkanCommandList::draw_indexed(Uint32 index_count, Uint32 instance_count, Uint32 first_index, Int32 vertex_offset,
+									Uint32 first_instance) {
+	vkCmdDrawIndexed(m_command_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
-void VulkanCommandList::DrawIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
-	vkCmdDrawIndirect(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset), drawCount, stride);
+void VulkanCommandList::draw_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
+	vkCmdDrawIndirect(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset), draw_count, stride);
 }
 
-void VulkanCommandList::DrawIndexedIndirect(IRHIBuffer &buffer, uint64 offset, uint32 drawCount, uint32 stride) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
-	vkCmdDrawIndexedIndirect(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset), drawCount, stride);
+void VulkanCommandList::draw_indexed_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
+	vkCmdDrawIndexedIndirect(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset), draw_count, stride);
 }
 
-void VulkanCommandList::CopyBufferToTexture(IRHIBuffer &src, IRHITexture &dst, uint32 width, uint32 height,
-											uint32 dstArrayLayer, uint32 dstMipLevel) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(src);
-	auto &vkTex = static_cast<VulkanTexture &>(dst);
+void VulkanCommandList::copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height,
+											Uint32 dst_array_layer, Uint32 dst_mip_level) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(src);
+	auto &vk_tex = static_cast<VulkanTexture &>(dst);
 
 	VkBufferImageCopy region{};
 	region.bufferOffset = 0;
 	region.bufferRowLength = 0;
 	region.bufferImageHeight = 0;
 	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = dstMipLevel;
-	region.imageSubresource.baseArrayLayer = dstArrayLayer;
+	region.imageSubresource.mipLevel = dst_mip_level;
+	region.imageSubresource.baseArrayLayer = dst_array_layer;
 	region.imageSubresource.layerCount = 1;
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { width, height, 1 };
 
-	vkCmdCopyBufferToImage(m_CommandBuffer, vkBuf.GetBuffer(), vkTex.GetImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+	vkCmdCopyBufferToImage(m_command_buffer, vk_buf.get_buffer(), vk_tex.get_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 						   1, &region);
 }
 
-void VulkanCommandList::FillBuffer(IRHIBuffer &buffer, uint64 offset, uint64 size, uint32 value) {
-	auto &vkBuf = static_cast<VulkanBuffer &>(buffer);
-	vkCmdFillBuffer(m_CommandBuffer, vkBuf.GetBuffer(), static_cast<VkDeviceSize>(offset),
+void VulkanCommandList::fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) {
+	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
+	vkCmdFillBuffer(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset),
 					static_cast<VkDeviceSize>(size), value);
 }
 
-void VulkanCommandList::Dispatch(uint32 x, uint32 y, uint32 z) {
-	vkCmdDispatch(m_CommandBuffer, x, y, z);
+void VulkanCommandList::dispatch(Uint32 x, Uint32 y, Uint32 z) {
+	vkCmdDispatch(m_command_buffer, x, y, z);
 }
 
 // Debug markers
 
-void VulkanCommandList::PushDebugGroup(const char *name) {
-	if (auto fn = m_Device.GetDebugBeginLabel()) {
+void VulkanCommandList::push_debug_group(const char *name) {
+	if (auto fn = m_device.get_debug_begin_label()) {
 		VkDebugUtilsLabelEXT label{};
 		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
 		label.pLabelName = name;
@@ -397,13 +397,13 @@ void VulkanCommandList::PushDebugGroup(const char *name) {
 		label.color[1] = 0.6f;
 		label.color[2] = 1.0f;
 		label.color[3] = 1.0f;
-		fn(m_CommandBuffer, &label);
+		fn(m_command_buffer, &label);
 	}
 }
 
-void VulkanCommandList::PopDebugGroup() {
-	if (auto fn = m_Device.GetDebugEndLabel()) {
-		fn(m_CommandBuffer);
+void VulkanCommandList::pop_debug_group() {
+	if (auto fn = m_device.get_debug_end_label()) {
+		fn(m_command_buffer);
 	}
 }
 

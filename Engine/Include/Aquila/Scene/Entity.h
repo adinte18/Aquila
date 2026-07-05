@@ -27,7 +27,7 @@ enum class EntityPreset {
 class Entity {
   public:
 	Entity() = default;
-	Entity(const entt::entity handle, Scene *scene) : m_EntityHandle(handle), m_Scene(scene) {};
+	Entity(const entt::entity handle, Scene *scene) : m_entity_handle(handle), m_scene(scene) {};
 
 	Entity(const Entity &other) = default;
 	Entity &operator=(const Entity &other) = default;
@@ -35,140 +35,140 @@ class Entity {
 	Entity &operator=(Entity &&other) noexcept = default;
 	~Entity() = default;
 
-	static Entity Null() { return {}; }
+	static Entity null() { return {}; }
 
-	template <typename T, typename... Args> T &AddComponent(Args &&...args) {
-		return m_Scene->GetRegistry().emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+	template <typename T, typename... Args> T &add_component(Args &&...args) {
+		return m_scene->get_registry().emplace<T>(m_entity_handle, std::forward<Args>(args)...);
 	}
 
-	template <typename T> T &GetComponent() { return m_Scene->GetRegistry().get<T>(m_EntityHandle); }
+	template <typename T> T &get_component() { return m_scene->get_registry().get<T>(m_entity_handle); }
 
-	template <typename T> const T &GetComponent() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene->GetRegistry().get<T>(m_EntityHandle);
+	template <typename T> const T &get_component() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene->get_registry().get<T>(m_entity_handle);
 	}
 
-	template <typename T> T *TryGetComponent() {
+	template <typename T> T *try_get_component() {
+		if (has_component<T>()) {
+			return &get_component<T>();
+		}
+		return nullptr;
+	}
+
+	template <typename T> const T *try_get_component() const {
 		if (HasComponent<T>()) {
 			return &GetComponent<T>();
 		}
 		return nullptr;
 	}
 
-	template <typename T> const T *TryGetComponent() const {
-		if (HasComponent<T>()) {
-			return &GetComponent<T>();
-		}
-		return nullptr;
-	}
-
-	template <typename T> void TryRemoveComponent() const {
+	template <typename T> void try_remove_component() const {
 		if (HasComponent<T>()) {
 			RemoveComponent<T>();
 		}
 	}
 
-	template <typename T> void AddOrReplaceComponent() const {
-		m_Scene->GetRegistry().emplace_or_replace<T>(m_EntityHandle);
+	template <typename T> void add_or_replace_component() const {
+		m_scene->get_registry().emplace_or_replace<T>(m_entity_handle);
 	}
 
-	template <typename T> void AddOrReplaceComponent(const T &component) const {
-		m_Scene->GetRegistry().emplace_or_replace<T>(m_EntityHandle, component);
+	template <typename T> void add_or_replace_component(const T &component) const {
+		m_scene->get_registry().emplace_or_replace<T>(m_entity_handle, component);
 	}
 
-	template <typename T, typename... Args> void AddOrReplaceComponent(Args &&...args) const {
-		m_Scene->GetRegistry().emplace_or_replace<T>(m_EntityHandle, std::forward<Args>(args)...);
+	template <typename T, typename... Args> void add_or_replace_component(Args &&...args) const {
+		m_scene->get_registry().emplace_or_replace<T>(m_entity_handle, std::forward<Args>(args)...);
 	}
 
-	template <typename T> T &GetOrEmplace() { return m_Scene->GetRegistry().get_or_emplace<T>(m_EntityHandle); }
+	template <typename T> T &get_or_emplace() { return m_scene->get_registry().get_or_emplace<T>(m_entity_handle); }
 
-	template <typename T, typename... Args> T &GetOrEmplace(Args &&...args) {
-		return m_Scene->GetRegistry().get_or_emplace<T>(m_EntityHandle, std::forward<Args>(args)...);
+	template <typename T, typename... Args> T &get_or_emplace(Args &&...args) {
+		return m_scene->get_registry().get_or_emplace<T>(m_entity_handle, std::forward<Args>(args)...);
 	}
 
-	template <typename T> [[nodiscard]] bool HasComponent() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene->GetRegistry().all_of<T>(m_EntityHandle);
+	template <typename T> [[nodiscard]] bool has_component() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene->get_registry().all_of<T>(m_entity_handle);
 	}
 
-	template <typename... Components> [[nodiscard]] bool HasAllComponents() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene->GetRegistry().all_of<Components...>(m_EntityHandle);
+	template <typename... Components> [[nodiscard]] bool has_all_components() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene->get_registry().all_of<Components...>(m_entity_handle);
 	}
 
-	template <typename... Components> [[nodiscard]] bool HasAnyComponent() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene->GetRegistry().any_of<Components...>(m_EntityHandle);
+	template <typename... Components> [[nodiscard]] bool has_any_component() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene->get_registry().any_of<Components...>(m_entity_handle);
 	}
 
-	template <typename T> void RemoveComponent() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		m_Scene->GetRegistry().remove<T>(m_EntityHandle);
+	template <typename T> void remove_component() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		m_scene->get_registry().remove<T>(m_entity_handle);
 	}
 
-	template <typename... Components> void RemoveComponents() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		m_Scene->GetRegistry().remove<Components...>(m_EntityHandle);
+	template <typename... Components> void remove_components() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		m_scene->get_registry().remove<Components...>(m_entity_handle);
 	}
 
-	template <typename T> T &ReplaceComponent(const T &component) {
-		return m_Scene->GetRegistry().replace<T>(m_EntityHandle, component);
+	template <typename T> T &replace_component(const T &component) {
+		return m_scene->get_registry().replace<T>(m_entity_handle, component);
 	}
 
-	template <typename T, typename... Args> T &ReplaceComponent(Args &&...args) {
-		return m_Scene->GetRegistry().replace<T>(m_EntityHandle, std::forward<Args>(args)...);
+	template <typename T, typename... Args> T &replace_component(Args &&...args) {
+		return m_scene->get_registry().replace<T>(m_entity_handle, std::forward<Args>(args)...);
 	}
 
-	template <typename T, typename... Args> T &PatchComponent(Args &&...args) {
-		return m_Scene->GetRegistry().patch<T>(m_EntityHandle, std::forward<Args>(args)...);
+	template <typename T, typename... Args> T &patch_component(Args &&...args) {
+		return m_scene->get_registry().patch<T>(m_entity_handle, std::forward<Args>(args)...);
 	}
 
-	[[nodiscard]] entt::entity GetHandle() const { return m_EntityHandle; }
+	[[nodiscard]] entt::entity get_handle() const { return m_entity_handle; }
 
-	[[nodiscard]] Scene *GetScene() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene;
+	[[nodiscard]] Scene *get_scene() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene;
 	}
 
-	[[nodiscard]] const Utils::UUID &GetUUID() const;
-	[[nodiscard]] const std::string &GetName() const;
+	[[nodiscard]] const Foundation::UUID &get_uuid() const;
+	[[nodiscard]] const std::string &get_name() const;
 
-	void Kill() const;
+	void kill() const;
 
-	[[nodiscard]] bool IsValid() const;
-	[[nodiscard]] bool IsNull() const;
+	[[nodiscard]] bool is_valid() const;
+	[[nodiscard]] bool is_null() const;
 
-	[[nodiscard]] bool Exists() const { return (m_Scene != nullptr) && m_Scene->GetRegistry().valid(m_EntityHandle); }
+	[[nodiscard]] bool exists() const { return (m_scene != nullptr) && m_scene->get_registry().valid(m_entity_handle); }
 
-	[[nodiscard]] entt::registry::version_type GetVersion() const {
-		AQUILA_ASSERT(m_Scene, "There should be an active scene");
-		return m_Scene->GetRegistry().current(m_EntityHandle);
+	[[nodiscard]] entt::registry::version_type get_version() const {
+		AQUILA_ASSERT(m_scene, "There should be an active scene");
+		return m_scene->get_registry().current(m_entity_handle);
 	}
 
 	bool operator==(const Entity &other) const {
-		return m_EntityHandle == other.m_EntityHandle && m_Scene == other.m_Scene;
+		return m_entity_handle == other.m_entity_handle && m_scene == other.m_scene;
 	}
 
 	bool operator!=(const Entity &other) const { return !(*this == other); }
 
-	bool operator<(const Entity &other) const { return m_EntityHandle < other.m_EntityHandle; }
+	bool operator<(const Entity &other) const { return m_entity_handle < other.m_entity_handle; }
 
-	explicit operator entt::entity() const { return m_EntityHandle; }
+	explicit operator entt::entity() const { return m_entity_handle; }
 
-	[[nodiscard]] std::string ToString() const {
-		if (IsNull()) {
+	[[nodiscard]] std::string to_string() const {
+		if (is_null()) {
 			return "Entity::Null";
 		}
-		return "Entity(" + std::to_string(static_cast<uint32_t>(m_EntityHandle)) + ")";
+		return "Entity(" + std::to_string(static_cast<uint32_t>(m_entity_handle)) + ")";
 	}
 
-	void CopyFrom(const Entity &other) const {
-		AQUILA_ASSERT(m_Scene && other.m_Scene, "Both entities must have valid scenes");
+	void copy_from(const Entity &other) const {
+		AQUILA_ASSERT(m_scene && other.m_scene, "Both entities must have valid scenes");
 	}
 
   private:
-	entt::entity m_EntityHandle = entt::null;
-	Scene *m_Scene = nullptr;
+	entt::entity m_entity_handle = entt::null;
+	Scene *m_scene = nullptr;
 
 	friend class EntityManager;
 };
@@ -178,7 +178,7 @@ class Entity {
 namespace std {
 template <> struct hash<Aquila::SceneManagement::Entity> {
 	size_t operator()(const Aquila::SceneManagement::Entity &entity) const noexcept {
-		return hash<entt::entity>{}(entity.GetHandle());
+		return hash<entt::entity>{}(entity.get_handle());
 	}
 };
 } // namespace std

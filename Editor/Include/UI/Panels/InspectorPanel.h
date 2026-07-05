@@ -21,21 +21,21 @@ namespace Editor {
 class InspectorPanel : public IEditorPanel {
   public:
 	explicit InspectorPanel(Aquila::GFX::GfxContext &context);
-	void Build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlayRoot) override;
-	void ShowEntity(Aquila::SceneManagement::Entity entity);
+	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void show_entity(Aquila::SceneManagement::Entity entity);
 
   private:
-	void SetVisible(Aquila::UI::Core::View *v, bool visible);
+	void set_visible(Aquila::UI::Core::View *v, bool visible);
 
-	Aquila::GFX::GfxContext &m_Context;
-	Aquila::UI::Core::View *m_ScrollView = nullptr;
-	Aquila::UI::Core::TextInput *m_NameInput = nullptr;
+	Aquila::GFX::GfxContext &m_context;
+	Aquila::UI::Core::View *m_scroll_view = nullptr;
+	Aquila::UI::Core::TextInput *m_name_input = nullptr;
 
 	struct Section {
 		Aquila::UI::Core::Collapsible *collapsible = nullptr;
 		Unique<IComponentUI> ui;
 	};
-	std::vector<Section> m_Sections;
+	std::vector<Section> m_sections;
 };
 
 } // namespace Editor

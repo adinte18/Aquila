@@ -2,63 +2,63 @@
 
 namespace Aquila::UI::Core {
 
-CanvasManager::CanvasManager(uint32 width, uint32 height) {
-	for (auto &layer : m_Layers) {
-		layer = CreateUnique<Canvas>(width, height);
+CanvasManager::CanvasManager(Uint32 width, Uint32 height) {
+	for (auto &layer : m_layers) {
+		layer = create_unique<Canvas>(width, height);
 	}
 }
 
-Canvas &CanvasManager::GetLayer(UILayer layer) {
-	return *m_Layers[static_cast<uint8>(layer)];
+Canvas &CanvasManager::get_layer(UILayer layer) {
+	return *m_layers[static_cast<Uint8>(layer)];
 }
 
-void CanvasManager::OnEvent(Application::Events::Event &e) {
-	for (int i = static_cast<int>(m_Layers.size()) - 1; i >= 0; i--) {
-		m_Layers[i]->OnEvent(e);
+void CanvasManager::on_event(Application::Events::Event &e) {
+	for (int i = static_cast<int>(m_layers.size()) - 1; i >= 0; i--) {
+		m_layers[i]->on_event(e);
 		if (e.handled) {
 			break;
 		}
 	}
 }
 
-void CanvasManager::Update(float deltaTime) {
-	for (auto &layer : m_Layers) {
-		layer->Update(deltaTime);
+void CanvasManager::update(float delta_time) {
+	for (auto &layer : m_layers) {
+		layer->update(delta_time);
 	}
 }
 
-void CanvasManager::Compute() {
-	for (auto &layer : m_Layers) {
-		layer->Compute();
+void CanvasManager::compute() {
+	for (auto &layer : m_layers) {
+		layer->compute();
 	}
 }
 
-void CanvasManager::RenderLayers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to) {
+void CanvasManager::render_layers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to) {
 	const int first = static_cast<int>(from);
 	const int last = static_cast<int>(to);
 	for (int i = first; i <= last; i++) {
-		m_Layers[i]->SubmitToQuadBatcher(r2d, cmd);
+		m_layers[i]->submit_to_quad_batcher(r2d, cmd);
 	}
 }
 
-bool CanvasManager::IsAnyLayerDirty(UILayer from, UILayer to) const {
+bool CanvasManager::is_any_layer_dirty(UILayer from, UILayer to) const {
 	for (int i = static_cast<int>(from); i <= static_cast<int>(to); i++) {
-		if (m_Layers[i]->IsDrawListDirty()) {
+		if (m_layers[i]->is_draw_list_dirty()) {
 			return true;
 		}
 	}
 	return false;
 }
 
-void CanvasManager::ClearLayerDirtyFlags(UILayer from, UILayer to) {
+void CanvasManager::clear_layer_dirty_flags(UILayer from, UILayer to) {
 	for (int i = static_cast<int>(from); i <= static_cast<int>(to); i++) {
-		m_Layers[i]->ClearDrawListDirty();
+		m_layers[i]->clear_draw_list_dirty();
 	}
 }
 
-void CanvasManager::Resize(uint32 width, uint32 height) {
-	for (auto &layer : m_Layers) {
-		layer->Resize(width, height);
+void CanvasManager::resize(Uint32 width, Uint32 height) {
+	for (auto &layer : m_layers) {
+		layer->resize(width, height);
 	}
 }
 

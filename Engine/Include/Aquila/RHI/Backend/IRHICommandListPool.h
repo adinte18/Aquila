@@ -10,10 +10,10 @@ class IRHICommandListPool {
 	AQUILA_NONCOPYABLE(IRHICommandListPool);
 	AQUILA_NONMOVEABLE(IRHICommandListPool);
 
-	virtual IRHICommandList *Allocate(CommandListType type, const std::string &name = "") = 0;
-	virtual void Free(IRHICommandList *cmd) = 0;
-	virtual void Reset() = 0;
-	[[nodiscard]] virtual uint32 GetFramesInFlight() const = 0;
+	virtual IRHICommandList *allocate(CommandListType type, const std::string &name = "") = 0;
+	virtual void free(IRHICommandList *cmd) = 0;
+	virtual void reset() = 0;
+	[[nodiscard]] virtual Uint32 get_frames_in_flight() const = 0;
 
   protected:
 	IRHICommandListPool() = default;

@@ -11,22 +11,22 @@ class Button : public Control {
 	Button();
 	Button(std::string text, Text::FontAtlas *font = nullptr);
 
-	[[nodiscard]] std::string_view GetTypeName() const override { return "Button"; }
+	[[nodiscard]] std::string_view get_type_name() const override { return "Button"; }
 
-	void SetText(std::string text);
-	void SetFont(Text::FontAtlas *font) override;
-	void SetIcon(GFX::GfxTexture *texture);
-	Signal<void()> onClick;
+	void set_text(std::string text);
+	void set_font(Text::FontAtlas *font) override;
+	void set_icon(GFX::GfxTexture *texture);
+	Signal<void()> on_click;
 
-	void OnMouseRelease(Platform::MouseButton btn, vec2 pos) override;
-	void OnStyleResolved() override;
-	void ApplyXmlTextContent(std::string_view text) override { SetText(std::string(text)); }
-	void ApplyXmlAttribute(std::string_view name, std::string_view value, void *loaderCtx = nullptr) override;
+	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
+	void on_style_resolved() override;
+	void apply_xml_text_content(std::string_view text) override { set_text(std::string(text)); }
+	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
 
   private:
-	void EnsureContent();
+	void ensure_content();
 
-	IconLabel *m_Content = nullptr;
+	IconLabel *m_content = nullptr;
 };
 
 } // namespace Aquila::UI::Core

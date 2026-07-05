@@ -16,16 +16,16 @@ namespace Editor {
 class LightComponentUI : public IComponentUI {
   public:
 	explicit LightComponentUI(Aquila::GFX::GfxContext &context);
-	bool Matches(Aquila::SceneManagement::Entity entity) const override;
-	void Build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
-	void Show(Aquila::SceneManagement::Entity entity) override;
+	bool matches(Aquila::SceneManagement::Entity entity) const override;
+	void build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
+	void show(Aquila::SceneManagement::Entity entity) override;
 
   private:
-	Aquila::GFX::GfxContext &m_Context;
-	Aquila::UI::Core::ColorPicker *m_Color = nullptr;
-	Aquila::UI::Core::DragFloat *m_Intensity = nullptr;
-	Aquila::UI::Core::DragFloat *m_Range = nullptr;
-	Aquila::UI::Core::Toggle *m_Active = nullptr;
+	Aquila::GFX::GfxContext &m_context;
+	Aquila::UI::Core::ColorPicker *m_color = nullptr;
+	Aquila::UI::Core::DragFloat *m_intensity = nullptr;
+	Aquila::UI::Core::DragFloat *m_range = nullptr;
+	Aquila::UI::Core::Toggle *m_active = nullptr;
 };
 
 } // namespace Editor

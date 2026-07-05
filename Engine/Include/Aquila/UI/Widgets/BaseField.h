@@ -6,31 +6,31 @@ namespace Aquila::UI::Core {
 
 template <typename T> class BaseField : public Control {
   public:
-	[[nodiscard]] const T &GetValue() const { return m_Value; }
+	[[nodiscard]] const T &get_value() const { return m_value; }
 
-	void SetValue(const T &value) {
-		const T coerced = Coerce(value);
-		if (coerced == m_Value) {
+	void set_value(const T &value) {
+		const T coerced = coerce(value);
+		if (coerced == m_value) {
 			return;
 		}
-		m_Value = coerced;
-		OnValueUpdated();
-		onChanged(m_Value);
+		m_value = coerced;
+		on_value_updated();
+		on_changed(m_value);
 	}
 
-	void SetValueWithoutNotify(const T &value) {
-		m_Value = Coerce(value);
-		OnValueUpdated();
+	void set_value_without_notify(const T &value) {
+		m_value = coerce(value);
+		on_value_updated();
 	}
 
-	Signal<void(const T &)> onChanged;
+	Signal<void(const T &)> on_changed;
 
   protected:
-	virtual void OnValueUpdated() {}
+	virtual void on_value_updated() {}
 
-	virtual T Coerce(const T &value) const { return value; }
+	virtual T coerce(const T &value) const { return value; }
 
-	T m_Value{};
+	T m_value{};
 };
 
 } // namespace Aquila::UI::Core
