@@ -39,14 +39,6 @@ template <typename... Visitors> struct Overloaded : Visitors... {
 };
 template <typename... Visitors> Overloaded(Visitors...) -> Overloaded<Visitors...>;
 
-template <typename T, typename... Args> constexpr Ref<T> create_ref(Args &&...args) {
-	return std::make_shared<T>(std::forward<Args>(args)...);
-}
-
-template <typename T, typename... Args> constexpr Unique<T> create_unique(Args &&...args) {
-	return std::make_unique<T>(std::forward<Args>(args)...);
-}
-
 enum class AccessMode : Uint8 { Read = 0, Write = 1, ReadWrite = 2 };
 enum class OpenMode : Uint8 {
 	Text = 0, // default, text mode

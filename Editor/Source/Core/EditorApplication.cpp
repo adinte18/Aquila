@@ -176,7 +176,7 @@ void EditorApplication::setup_scene() {
 
 	auto add_cube = [&](const char *name, Vec3 pos) {
 		auto entity = em->create_entity(name);
-		auto mesh = create_ref<Graphics::Resources::Mesh>(name);
+		auto mesh = std::make_shared<Graphics::Resources::Mesh>(name);
 		mesh->load_from_data(Graphics::Resources::Mesh::generate_cube(0.5f));
 		entity.add_component<MeshComponent>().set_mesh(mesh);
 		entity.get_component<TransformComponent>().set_local_position(pos);

@@ -150,8 +150,8 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	Rendering::FrameScheduler::init();
 
 	using namespace Platform::Filesystem;
-	VirtualFileSystem::get()->mount("/resources", create_ref<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
-	VirtualFileSystem::get()->mount("/shaders", create_ref<NativeFileSystem>(SharedConstants::SHADERS_DIR));
+	VirtualFileSystem::get()->mount("/resources", std::make_shared<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
+	VirtualFileSystem::get()->mount("/shaders", std::make_shared<NativeFileSystem>(SharedConstants::SHADERS_DIR));
 
 	m_ctx = GFX::GfxContext::create(*get_window().get_native_window());
 
