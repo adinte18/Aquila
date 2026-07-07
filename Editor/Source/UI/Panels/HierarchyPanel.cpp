@@ -18,7 +18,7 @@ using namespace Aquila::SceneManagement::Components;
 HierarchyPanel::HierarchyPanel(EntityManager &entity_manager) : m_entity_manager(entity_manager) {}
 
 void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
-	auto ctx_uniq = create_unique<UI::Core::ContextMenu>();
+	auto ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
 	auto *ctx = static_cast<UI::Core::ContextMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
 	ctx->add_item("Create Empty", [this] {
 		auto entity = m_entity_manager.create_entity("New Entity");
@@ -27,10 +27,10 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 	ctx->add_item("Create Cube", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Cube (not yet implemented)"); });
 
 	{
-		auto tree_uniq = create_unique<HierarchyTreeView>(m_entity_manager);
+		auto tree_uniq = std::make_unique<HierarchyTreeView>(m_entity_manager);
 		m_tree_view = static_cast<HierarchyTreeView *>(panel->add_child(std::move(tree_uniq)));
 
-		auto node_ctx_uniq = create_unique<UI::Core::ContextMenu>();
+		auto node_ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
 		auto *node_context_menu =
 			static_cast<UI::Core::ContextMenu *>(m_tree_view->View::add_child(std::move(node_ctx_uniq)));
 		node_context_menu->add_item("Add child", [this] {

@@ -5,7 +5,7 @@ namespace Aquila::UI::Core {
 ScrollView::ScrollView() {
 	add_class("scroll-view");
 
-	auto inner = create_unique<View>();
+	auto inner = std::make_unique<View>();
 	inner->add_class("scroll-inner");
 	m_inner = add_child(std::move(inner));
 }

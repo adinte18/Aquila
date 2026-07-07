@@ -32,7 +32,7 @@ void ContextMenu::rebuild() {
 	m_item_views.clear();
 
 	for (auto &item : m_items) {
-		auto btn = create_unique<Button>();
+		auto btn = std::make_unique<Button>();
 		btn->set_text(item.text);
 		btn->add_class("context-item");
 		btn->on_click.connect([this, cb = item.callback] {

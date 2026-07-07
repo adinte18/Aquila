@@ -212,7 +212,7 @@ void EditorApplication::setup_editor_ui() {
 	auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
 	const auto &cfg = Config::get_preferences();
 
-	m_texture_cache = create_unique<Aquila::UI::Core::TextureCache>(get_context(), cfg.ui.resources_path);
+	m_texture_cache = std::make_unique<Aquila::UI::Core::TextureCache>(get_context(), cfg.ui.resources_path);
 
 	Aquila::UI::StyleParser::load_file(cfg.ui.style_path, editor_canvas.get_style_sheet());
 
@@ -221,7 +221,7 @@ void EditorApplication::setup_editor_ui() {
 	loader.register_texture_cache(m_texture_cache.get());
 	loader.register_widget("ColorPicker",
 						   [this](std::string_view, Aquila::UI::Text::FontAtlas *) -> Unique<Aquila::UI::Core::View> {
-							   return create_unique<Aquila::UI::Core::ColorPicker>(get_context());
+							   return std::make_unique<Aquila::UI::Core::ColorPicker>(get_context());
 						   });
 
 	loader.register_command("entity.create", [this] {
@@ -257,10 +257,10 @@ void EditorApplication::setup_editor_ui() {
 
 	wire_dock_space(m_dock_space, get_window().get_native_window());
 
-	m_hierarchy_panel = create_unique<HierarchyPanel>(*get_scene().get_entity_manager());
-	m_viewport_panel = create_unique<ViewportPanel>(get_render_output());
-	m_inspector_panel = create_unique<InspectorPanel>(get_context());
-	m_console_panel = create_unique<ConsolePanel>(m_texture_cache.get());
+	m_hierarchy_panel = std::make_unique<HierarchyPanel>(*get_scene().get_entity_manager());
+	m_viewport_panel = std::make_unique<ViewportPanel>(get_render_output());
+	m_inspector_panel = std::make_unique<InspectorPanel>(get_context());
+	m_console_panel = std::make_unique<ConsolePanel>(m_texture_cache.get());
 
 	m_hierarchy_panel->build(hierarchy_panel, layout_root);
 	m_viewport_panel->build(viewport_panel, layout_root);
@@ -271,10 +271,10 @@ void EditorApplication::setup_editor_ui() {
 
 	wire_menubar(layout_root);
 
-	m_ui_debug_panel = create_unique<UIDebugPanel>();
+	m_ui_debug_panel = std::make_unique<UIDebugPanel>();
 	m_ui_debug_panel->build(layout_root, &editor_canvas);
 
-	auto ctx_uniq = create_unique<Aquila::UI::Core::ContextMenu>();
+	auto ctx_uniq = std::make_unique<Aquila::UI::Core::ContextMenu>();
 	auto *ctx = dynamic_cast<Aquila::UI::Core::ContextMenu *>(layout_root->add_child(std::move(ctx_uniq)));
 	ctx->add_item("Open UI Inspector", [this] { open_ui_inspector_window(); });
 	ctx->add_item("Open Widget Gallery", [this] { open_widget_gallery_window(); });
@@ -294,7 +294,7 @@ void EditorApplication::open_ui_inspector_window() {
 	auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
 	RenderWindow &rw = create_secondary_window(800, 600, "Aquila - UI Inspector");
 
-	m_ui_debug_window = create_unique<UIDebugWindow>();
+	m_ui_debug_window = std::make_unique<UIDebugWindow>();
 	m_ui_debug_window->build(&editor_canvas, 800, 600, Config::get_preferences().ui.style_path);
 
 	m_ui_debug_window->on_pick_requested = [this] { start_pick(); };
@@ -327,7 +327,7 @@ void EditorApplication::open_widget_gallery_window() {
 
 	RenderWindow &rw = create_secondary_window(420, 720, "Aquila - Widget Gallery");
 
-	m_widget_gallery_window = create_unique<WidgetGalleryWindow>();
+	m_widget_gallery_window = std::make_unique<WidgetGalleryWindow>();
 	m_widget_gallery_window->build(get_context(), m_texture_cache.get(), 420, 720,
 								   Config::get_preferences().ui.style_path);
 
@@ -450,7 +450,7 @@ void EditorApplication::spawn_floating_panel(Unique<Aquila::UI::Core::View> pane
 	glfwSetWindowPos(rw.window->get_native_window(), static_cast<int>(screen_pos.x) - 60,
 					 static_cast<int>(screen_pos.y) - 12);
 
-	auto fpw = create_unique<FloatingPanelWindow>();
+	auto fpw = std::make_unique<FloatingPanelWindow>();
 	fpw->build(std::move(panel_subtree), title, 800, 600, Config::get_preferences().ui.style_path);
 
 	FloatingPanelWindow *panel = fpw.get();

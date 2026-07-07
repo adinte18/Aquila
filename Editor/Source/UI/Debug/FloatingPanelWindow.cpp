@@ -22,7 +22,7 @@ FloatingPanelWindow::~FloatingPanelWindow() = default;
 void FloatingPanelWindow::build(Unique<View> panel_subtree, const std::string &title, Uint32 width, Uint32 height,
 								const std::string &style_path) {
 	m_title = title;
-	m_canvas = create_unique<Canvas>(width, height);
+	m_canvas = std::make_unique<Canvas>(width, height);
 	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
 	auto *root = m_canvas->get_root();

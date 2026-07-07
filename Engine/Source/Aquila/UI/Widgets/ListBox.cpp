@@ -5,13 +5,13 @@ namespace Aquila::UI::Core {
 ListBox::ListBox() {
 	add_class("list-box");
 
-	auto scroll = create_unique<ScrollView>();
+	auto scroll = std::make_unique<ScrollView>();
 	scroll->add_class("list-box-scroll");
 	m_scroll = static_cast<ScrollView *>(add_child(std::move(scroll)));
 }
 
 void ListBox::add_item(std::string id, std::string display) {
-	auto btn = create_unique<Button>(display);
+	auto btn = std::make_unique<Button>(display);
 	btn->add_class("list-item");
 	btn->on_click.connect([this, id] { select_item(id); });
 
@@ -50,7 +50,6 @@ void ListBox::set_selected_id(const std::string &id) {
 	m_selected_id = id;
 	update_selection_styles();
 }
-
 
 void ListBox::select_item(const std::string &id) {
 	if (m_selected_id == id) {

@@ -7,7 +7,7 @@ using namespace Aquila::UI::Rendering;
 
 Canvas::Canvas(Uint32 width, Uint32 height)
 	: m_width(width), m_height(height), m_layout_engine(width, height), m_input_router(*this, m_draw_compositor) {
-	m_root = create_unique<View>();
+	m_root = std::make_unique<View>();
 	m_root->set_canvas(this);
 
 	m_draw_compositor.set_canvas_size(width, height);
@@ -156,7 +156,7 @@ void Canvas::compute() {
 
 	if (m_layout_dirty) {
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(),
-								 m_input_router.take_scroll_delta(), m_delta_time);
+								   m_input_router.take_scroll_delta(), m_delta_time);
 		m_layout_dirty = false;
 
 		// @container rules depend on element sizes — re-resolve immediately after
@@ -172,7 +172,8 @@ void Canvas::compute() {
 	if (m_scroll_target) {
 		m_layout_engine.scroll_into_view(m_scroll_target);
 		m_scroll_target = nullptr;
-		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {}, m_delta_time);
+		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {},
+								   m_delta_time);
 		m_draw_compositor.invalidate_all(m_root.get());
 	}
 

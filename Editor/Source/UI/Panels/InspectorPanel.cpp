@@ -45,10 +45,10 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *) {
 		m_sections.push_back({ section, std::move(component_ui) });
 	};
 
-	add_ui_component("section-transform", create_unique<TransformComponentUI>());
-	add_ui_component("section-material", create_unique<MaterialComponentUI>(m_context));
-	add_ui_component("section-light", create_unique<LightComponentUI>(m_context));
-	add_ui_component("section-camera", create_unique<CameraComponentUI>());
+	add_ui_component("section-transform", std::make_unique<TransformComponentUI>());
+	add_ui_component("section-material", std::make_unique<MaterialComponentUI>(m_context));
+	add_ui_component("section-light", std::make_unique<LightComponentUI>(m_context));
+	add_ui_component("section-camera", std::make_unique<CameraComponentUI>());
 }
 
 void InspectorPanel::show_entity(Entity entity) {

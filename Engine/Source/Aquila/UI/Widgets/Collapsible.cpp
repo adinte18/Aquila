@@ -3,7 +3,7 @@
 namespace Aquila::UI::Core {
 
 Collapsible::Collapsible(std::string title) {
-	auto header = create_unique<Button>();
+	auto header = std::make_unique<Button>();
 	header->set_text(std::move(title));
 	header->add_class("collapsible-header");
 	header->on_click.connect([this] {
@@ -12,7 +12,7 @@ Collapsible::Collapsible(std::string title) {
 	});
 	m_header = static_cast<Button *>(add_child(std::move(header)));
 
-	auto content = create_unique<View>();
+	auto content = std::make_unique<View>();
 	content->add_class("collapsible-content");
 	m_content = add_child(std::move(content));
 	apply_state(); // apply initial collapsed/expanded display state
@@ -37,7 +37,6 @@ void Collapsible::set_expanded(bool expanded) {
 	m_expanded = expanded;
 	apply_state();
 }
-
 
 View *Collapsible::add_content(Unique<View> child) {
 	return m_content->add_child(std::move(child));

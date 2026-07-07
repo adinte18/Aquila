@@ -5,13 +5,13 @@ namespace Aquila::UI::Core {
 TreeView::TreeView() {
 	add_class("tree-view");
 
-	auto content = create_unique<View>();
+	auto content = std::make_unique<View>();
 	content->add_class("tree-view-content");
 	m_content = View::add_child(std::move(content));
 }
 
 TreeNode *TreeView::add_node(std::string label) {
-	auto node = create_unique<TreeNode>(std::move(label), *this, 0);
+	auto node = std::make_unique<TreeNode>(std::move(label), *this, 0);
 	return static_cast<TreeNode *>(add_child(std::move(node)));
 }
 
@@ -82,7 +82,7 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	: m_owner(owner), m_label(std::move(label)), m_depth(depth) {
 	add_class("tree-node");
 
-	auto header = create_unique<Button>();
+	auto header = std::make_unique<Button>();
 	{
 		StyleProperties hp;
 		const float indent = K_INDENT_PER_DEPTH * static_cast<float>(m_depth);
@@ -99,7 +99,7 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	header->on_context_menu.connect([this](Vec2 pos) { on_header_right_clicked(pos); });
 	m_header = static_cast<Button *>(View::add_child(std::move(header)));
 
-	auto children = create_unique<View>();
+	auto children = std::make_unique<View>();
 	children->add_class("tree-node-children");
 	m_children = View::add_child(std::move(children));
 	update_header_text();
@@ -121,7 +121,7 @@ void TreeNode::on_drag_leave(DragState &) {
 }
 
 TreeNode *TreeNode::add_child_node(std::string label) {
-	auto node = create_unique<TreeNode>(std::move(label), m_owner, m_depth + 1);
+	auto node = std::make_unique<TreeNode>(std::move(label), m_owner, m_depth + 1);
 	return static_cast<TreeNode *>(add_child(std::move(node)));
 }
 

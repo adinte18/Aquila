@@ -13,7 +13,7 @@ namespace Aquila::UI::Core {
 DockSpace::DockSpace() {
 	add_class("dock-space");
 
-	auto preview = create_unique<View>();
+	auto preview = std::make_unique<View>();
 	preview->add_class("dock-drop-preview");
 	{
 		FloatingConfig cfg;
@@ -139,7 +139,7 @@ DockSpace::DockSpace() {
 		m_drag_ctx.source_node = nullptr;
 	};
 
-	auto root = create_unique<DockNode>(&m_drag_ctx);
+	auto root = std::make_unique<DockNode>(&m_drag_ctx);
 	m_root = static_cast<DockNode *>(add_child(std::move(root)));
 }
 

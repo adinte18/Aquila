@@ -76,7 +76,7 @@ void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 
 	auto make_filter_btn = [&](Vec4 icon_tint, FilterGroup group, UI::Core::View *&btn_out,
 							   UI::Core::Label *&count_out) {
-		auto btn = create_unique<ClickableView>();
+		auto btn = std::make_unique<ClickableView>();
 		btn->add_class("console-filter-btn");
 		btn_out = btn.get();
 
@@ -92,11 +92,11 @@ void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 			icon_tex = m_error_icon;
 			break;
 		}
-		auto icon = create_unique<UI::Core::Image>(icon_tex, icon_tint);
+		auto icon = std::make_unique<UI::Core::Image>(icon_tex, icon_tint);
 		icon->add_class("console-filter-icon");
 		btn->add_child(std::move(icon));
 
-		auto count = create_unique<UI::Core::Label>("0");
+		auto count = std::make_unique<UI::Core::Label>("0");
 		count->add_class("console-filter-count");
 		count_out = static_cast<UI::Core::Label *>(btn->add_child(std::move(count)));
 
@@ -162,16 +162,16 @@ void ConsolePanel::append_entry(LogEntry entry) {
 		break;
 	}
 
-	auto row = create_unique<ClickableView>();
+	auto row = std::make_unique<ClickableView>();
 	row->add_class("console-row");
 	row->add_class(level_class(entry.level));
 	row->add_class((row_index % 2 == 0) ? "console-row-even" : "console-row-odd");
 
-	auto icon = create_unique<UI::Core::Image>(level_icon(entry.level), level_icon_tint(entry.level));
+	auto icon = std::make_unique<UI::Core::Image>(level_icon(entry.level), level_icon_tint(entry.level));
 	icon->add_class("console-row-icon");
 	row->add_child(std::move(icon));
 
-	auto text = create_unique<UI::Core::Label>(entry.message);
+	auto text = std::make_unique<UI::Core::Label>(entry.message);
 	text->add_class("console-row-text");
 	row->add_child(std::move(text));
 

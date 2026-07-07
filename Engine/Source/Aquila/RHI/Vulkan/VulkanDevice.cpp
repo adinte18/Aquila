@@ -25,7 +25,7 @@ VulkanDevice::VulkanDevice(GLFWwindow &native_window) : m_window_handle(native_w
 
 	initialize_vma();
 
-	m_deletion_queue = create_unique<RHI::DeletionQueue>(*this);
+	m_deletion_queue = std::make_unique<RHI::DeletionQueue>(*this);
 
 	create_graphics_command_pool();
 	create_compute_command_pool();
@@ -92,12 +92,13 @@ Unique<IRHIBuffer> VulkanDevice::create_buffer(const BufferDesc &desc) {
 	if (desc.domain == MemoryDomain::GpuOnly) {
 		vk_usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
 	}
-	return create_unique<VulkanBuffer>(*this, desc.debug_name, static_cast<VkDeviceSize>(desc.size), desc.instance_count,
-									  vk_usage, desc.domain, static_cast<VkDeviceSize>(desc.min_alignment));
+	return std::make_unique<VulkanBuffer>(*this, desc.debug_name, static_cast<VkDeviceSize>(desc.size),
+										  desc.instance_count, vk_usage, desc.domain,
+										  static_cast<VkDeviceSize>(desc.min_alignment));
 }
 
 Unique<IRHITexture> VulkanDevice::create_texture(const TextureDesc &desc) {
-	return create_unique<VulkanTexture>(*this, desc);
+	return std::make_unique<VulkanTexture>(*this, desc);
 }
 
 Unique<IRHICommandList> VulkanDevice::create_command_list(CommandListType type, const std::string &name) {
@@ -113,16 +114,16 @@ Unique<IRHICommandList> VulkanDevice::create_command_list(CommandListType type, 
 		pool = m_graphics_command_pool;
 		break;
 	}
-	return create_unique<VulkanCommandList>(*this, pool, type, name);
+	return std::make_unique<VulkanCommandList>(*this, pool, type, name);
 }
 
 Unique<IRHISwapchain> VulkanDevice::create_swapchain(const SwapchainDesc &desc) {
 	VkExtent2D extent{ desc.width, desc.height };
 	if (desc.native_window_handle != nullptr) {
 		VkSurfaceKHR surface = create_surface_for_window(static_cast<GLFWwindow *>(desc.native_window_handle));
-		return create_unique<VulkanSwapchain>(*this, extent, desc.vsync, surface, true);
+		return std::make_unique<VulkanSwapchain>(*this, extent, desc.vsync, surface, true);
 	}
-	return create_unique<VulkanSwapchain>(*this, extent, desc.vsync);
+	return std::make_unique<VulkanSwapchain>(*this, extent, desc.vsync);
 }
 
 VkSurfaceKHR VulkanDevice::create_surface_for_window(GLFWwindow *window) const {
@@ -133,7 +134,8 @@ VkSurfaceKHR VulkanDevice::create_surface_for_window(GLFWwindow *window) const {
 
 	const VkQueueFamilyIndices indices = find_queue_families(m_physical_device);
 	VkBool32 present_supported = VK_FALSE;
-	vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, indices.m_present_family.value(), surface, &present_supported);
+	vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device, indices.m_present_family.value(), surface,
+										 &present_supported);
 	if (present_supported != VK_TRUE) {
 		AQUILA_LOG_ERROR("VulkanDevice: present queue family does not support the secondary window surface");
 	}
@@ -148,7 +150,7 @@ void VulkanDevice::destroy_surface_handle(VkSurfaceKHR surface) const {
 }
 
 Unique<IRHIRenderPass> VulkanDevice::create_render_pass(const RHI::RenderPassDesc &desc) {
-	return create_unique<VulkanRenderPass>(*this, desc);
+	return std::make_unique<VulkanRenderPass>(*this, desc);
 }
 
 void VulkanDevice::submit(IRHICommandList &cmd) {
@@ -335,7 +337,7 @@ RHI::DeletionQueue &VulkanDevice::get_deletion_queue() const {
 }
 
 void VulkanDevice::copy_buffer(IRHICommandList &cmd, IRHIBuffer &src, IRHIBuffer &dst, Uint64 size, Uint64 src_offset,
-							  Uint64 dst_offset) {
+							   Uint64 dst_offset) {
 	auto &vk_cmd = static_cast<VulkanCommandList &>(cmd);
 	auto &vk_src = static_cast<VulkanBuffer &>(src);
 	auto &vk_dst = static_cast<VulkanBuffer &>(dst);
@@ -376,14 +378,16 @@ Unique<IRHIPipeline> VulkanDevice::create_graphics_pipeline(const GraphicsPipeli
 	};
 
 	VkShaderModule vert_module = make_module(desc.vertex_shader);
-	VkShaderModule frag_module = desc.fragment_shader.spirv.empty() ? VK_NULL_HANDLE : make_module(desc.fragment_shader);
+	VkShaderModule frag_module =
+		desc.fragment_shader.spirv.empty() ? VK_NULL_HANDLE : make_module(desc.fragment_shader);
 
 	std::vector<VkPipelineShaderStageCreateInfo> stages;
 	stages.push_back({ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0, VK_SHADER_STAGE_VERTEX_BIT,
 					   vert_module, desc.vertex_shader.entry_point.c_str(), nullptr });
 	if (frag_module != VK_NULL_HANDLE) {
 		stages.push_back({ VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO, nullptr, 0,
-						   VK_SHADER_STAGE_FRAGMENT_BIT, frag_module, desc.fragment_shader.entry_point.c_str(), nullptr });
+						   VK_SHADER_STAGE_FRAGMENT_BIT, frag_module, desc.fragment_shader.entry_point.c_str(),
+						   nullptr });
 	}
 
 	VulkanPipelineConfig config{};
@@ -451,7 +455,7 @@ Unique<IRHIPipeline> VulkanDevice::create_graphics_pipeline(const GraphicsPipeli
 		config.binding_descriptions = Vertex::get_binding_descriptions();
 		config.attribute_descriptions = Vertex::get_attribute_descriptions();
 	}
-	auto pipeline = create_unique<VulkanPipeline>(*this, stages, config);
+	auto pipeline = std::make_unique<VulkanPipeline>(*this, stages, config);
 
 	vkDestroyShaderModule(m_device, vert_module, nullptr);
 	if (frag_module != VK_NULL_HANDLE) {
@@ -488,7 +492,7 @@ Unique<IRHIPipeline> VulkanDevice::create_compute_pipeline(const ComputePipeline
 		VulkanShader::create_shader_module(desc.compute_shader.spirv, *this, desc.compute_shader.entry_point);
 
 	auto pipeline =
-		create_unique<VulkanComputePipeline>(*this, comp_module, desc.compute_shader.entry_point, pipeline_layout);
+		std::make_unique<VulkanComputePipeline>(*this, comp_module, desc.compute_shader.entry_point, pipeline_layout);
 
 	// Layout is owned by VulkanComputePipeline — do not destroy here.
 	vkDestroyShaderModule(m_device, comp_module, nullptr);
@@ -519,8 +523,8 @@ void VulkanDevice::create_global_descriptor_pool() {
 		{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 }, { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 256 },
 		{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 64 },
 	};
-	m_global_pool =
-		create_unique<VulkanDescriptorPool>(*this, 4000, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_sizes);
+	m_global_pool = std::make_unique<VulkanDescriptorPool>(
+		*this, 4000, VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT, pool_sizes);
 }
 
 void VulkanDevice::destroy_global_descriptor_pool() {
@@ -579,7 +583,8 @@ void VulkanDevice::create_frame_command_pools() {
 		AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_device, &alloc_info, &m_frame_slots[i].cmd));
 
 		std::string name = "FrameCmd_" + std::to_string(i);
-		set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_frame_slots[i].cmd), name.c_str());
+		set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_frame_slots[i].cmd),
+							  name.c_str());
 	}
 }
 
@@ -590,8 +595,8 @@ void VulkanDevice::reset_frame_command_pool(Uint32 slot) {
 
 Unique<IRHICommandList> VulkanDevice::create_frame_command_list(Uint32 slot) {
 	AQUILA_ASSERT(slot < SharedConstants::MAX_FRAMES_IN_FLIGHT, "Frame slot out of range");
-	return create_unique<VulkanCommandList>(*this, m_frame_slots[slot].pool, m_frame_slots[slot].cmd,
-										   CommandListType::Graphics, "FrameCmd_" + std::to_string(slot));
+	return std::make_unique<VulkanCommandList>(*this, m_frame_slots[slot].pool, m_frame_slots[slot].cmd,
+											   CommandListType::Graphics, "FrameCmd_" + std::to_string(slot));
 }
 
 void VulkanDevice::submit_to_compute_queue(const VkSubmitInfo *submit_info, VkFence fence) {
@@ -687,7 +692,7 @@ void VulkanDevice::destroy_fence(VkFence fence) {
 }
 
 VkFormat VulkanDevice::find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling,
-										   VkFormatFeatureFlags features) {
+											 VkFormatFeatureFlags features) {
 	for (VkFormat format : candidates) {
 		VkFormatProperties props;
 		vkGetPhysicalDeviceFormatProperties(m_physical_device, format, &props);
@@ -749,7 +754,8 @@ void VulkanDevice::log_device_info() const {
 					std::to_string(VK_VERSION_PATCH(driver_version)));
 
 	AQUILA_LOG_INFO("Vulkan Version: " + std::to_string(VK_VERSION_MAJOR(api_version)) + "." +
-					std::to_string(VK_VERSION_MINOR(api_version)) + "." + std::to_string(VK_VERSION_PATCH(api_version)));
+					std::to_string(VK_VERSION_MINOR(api_version)) + "." +
+					std::to_string(VK_VERSION_PATCH(api_version)));
 
 	VkPhysicalDeviceMemoryProperties mem_properties;
 	vkGetPhysicalDeviceMemoryProperties(m_physical_device, &mem_properties);
@@ -867,7 +873,7 @@ void VulkanDevice::create_logical_device() {
 
 	std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
 	std::set<Uint32> unique_queue_families = { indices.m_graphics_family.value(), indices.m_present_family.value(),
-											 indices.m_compute_family.value(), indices.m_transfer_family.value() };
+											   indices.m_compute_family.value(), indices.m_transfer_family.value() };
 
 	std::vector<F32> queue_priorities = { 1.0F, 0.5F };
 
@@ -1059,7 +1065,7 @@ VkQueueFamilyIndices VulkanDevice::find_queue_families(const VkPhysicalDevice vk
 }
 
 VkSwapChainSupportDetails VulkanDevice::query_swap_chain_support(VkPhysicalDevice vk_physical_device,
-															  VkSurfaceKHR surface) const {
+																 VkSurfaceKHR surface) const {
 	VkSwapChainSupportDetails details;
 
 	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(vk_physical_device, surface, &details.m_surface_capabilities);
@@ -1099,9 +1105,9 @@ void VulkanDevice::setup_debug_messenger() {
 }
 
 VkResult VulkanDevice::create_debug_messenger_ext(const VkInstance instance,
-											   const VkDebugUtilsMessengerCreateInfoEXT *p_create_info,
-											   const VkAllocationCallbacks *p_allocator,
-											   VkDebugUtilsMessengerEXT *p_debug_messenger) {
+												  const VkDebugUtilsMessengerCreateInfoEXT *p_create_info,
+												  const VkAllocationCallbacks *p_allocator,
+												  VkDebugUtilsMessengerEXT *p_debug_messenger) {
 	if (const auto func = reinterpret_cast<PFN_vkCreateDebugUtilsMessengerEXT>(
 			vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT"));
 		func != nullptr) {
@@ -1110,8 +1116,9 @@ VkResult VulkanDevice::create_debug_messenger_ext(const VkInstance instance,
 	return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void VulkanDevice::destroy_debug_messenger_ext(const VkInstance instance, const VkDebugUtilsMessengerEXT debug_messenger,
-											const VkAllocationCallbacks *p_allocator) {
+void VulkanDevice::destroy_debug_messenger_ext(const VkInstance instance,
+											   const VkDebugUtilsMessengerEXT debug_messenger,
+											   const VkAllocationCallbacks *p_allocator) {
 	const auto func = reinterpret_cast<PFN_vkDestroyDebugUtilsMessengerEXT>(
 		vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT"));
 	if (func != nullptr) {
@@ -1130,9 +1137,9 @@ void VulkanDevice::populate_debug_messenger_create_info(VkDebugUtilsMessengerCre
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL VulkanDevice::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
-														   VkDebugUtilsMessageTypeFlagsEXT message_type,
-														   const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
-														   void *p_user_data) {
+															VkDebugUtilsMessageTypeFlagsEXT message_type,
+															const VkDebugUtilsMessengerCallbackDataEXT *p_callback_data,
+															void *p_user_data) {
 	if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
 		AQUILA_LOG_ERROR("Vulkan: {}", p_callback_data->pMessage);
 	} else if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {

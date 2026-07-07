@@ -34,7 +34,7 @@ Scene::~Scene() = default;
  * components for managing entities and their relationships within the scene.
  */
 void Scene::on_start() {
-	m_entity_manager = create_unique<EntityManager>(this);
+	m_entity_manager = std::make_unique<EntityManager>(this);
 	// Wire dirty callback on every TransformComponent that gets created.
 	m_entity_manager->get_registry()
 		.on_construct<Components::TransformComponent>()

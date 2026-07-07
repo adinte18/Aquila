@@ -466,10 +466,10 @@ Unique<View> LayoutLoader::LoadString(std::string_view xml) {
 
 void LayoutLoader::register_builtins() {
 	m_factories["Label"] = [](std::string_view text, Text::FontAtlas *font) -> Unique<View> {
-		return create_unique<Label>(std::string(text), font);
+		return std::make_unique<Label>(std::string(text), font);
 	};
 	m_factories["Collapsible"] = [](std::string_view text, Text::FontAtlas *) -> Unique<View> {
-		return create_unique<Collapsible>(std::string(text));
+		return std::make_unique<Collapsible>(std::string(text));
 	};
 
 	Register<View>("View");

@@ -4,7 +4,7 @@
 namespace Aquila::RHI {
 
 Unique<IRHIDevice> create_vulkan_backend(GLFWwindow &native_window) {
-	return create_unique<VulkanDevice>(native_window);
+	return std::make_unique<VulkanDevice>(native_window);
 }
 
 } // namespace Aquila::RHI

@@ -3,12 +3,12 @@
 namespace Aquila::UI::Core {
 
 Dropdown::Dropdown() {
-	auto header = create_unique<Button>();
+	auto header = std::make_unique<Button>();
 	header->add_class("dropdown-header");
 	header->on_click.connect([this] { m_popup->toggle(); });
 	m_header = static_cast<Button *>(add_child(std::move(header)));
 
-	auto popup = create_unique<Popup>();
+	auto popup = std::make_unique<Popup>();
 	popup->add_class("dropdown-popup");
 	m_popup = static_cast<Popup *>(add_child(std::move(popup)));
 
@@ -42,7 +42,6 @@ void Dropdown::set_placeholder(std::string text) {
 	update_header_text();
 }
 
-
 void Dropdown::rebuild() {
 	for (View *v : m_option_buttons) {
 		m_popup->remove_child(v);
@@ -50,7 +49,7 @@ void Dropdown::rebuild() {
 	m_option_buttons.clear();
 
 	for (const auto &opt : m_options) {
-		auto btn = create_unique<Button>();
+		auto btn = std::make_unique<Button>();
 		btn->set_text(opt.label());
 		btn->add_class("dropdown-option");
 		btn->on_click.connect([this, value = opt.value] {

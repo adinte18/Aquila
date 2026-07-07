@@ -24,8 +24,8 @@ namespace Aquila::Application {
 using namespace SceneManagement;
 
 Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
-	m_timer = create_unique<Foundation::Stopwatch>();
-	m_window = create_unique<Window>(spec.width, spec.height, spec.name);
+	m_timer = std::make_unique<Foundation::Stopwatch>();
+	m_window = std::make_unique<Window>(spec.width, spec.height, spec.name);
 	Foundation::Profiler::Profiler::init();
 	Platform::Filesystem::VirtualFileSystem::init();
 
@@ -82,7 +82,7 @@ Application::~Application() {
 
 void Application::run() {
 	init_rendering(m_window->get_width(), m_window->get_height());
-	m_scene = create_unique<Scene>("Main");
+	m_scene = std::make_unique<Scene>("Main");
 	on_init();
 
 	while (m_running) {
@@ -163,7 +163,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 		.vsync = false,
 	});
 
-	m_render_pipeline = create_unique<Rendering::RenderPipeline>(*m_ctx, width, height);
+	m_render_pipeline = std::make_unique<Rendering::RenderPipeline>(*m_ctx, width, height);
 	m_renderer = &m_render_pipeline->add<Rendering::Renderer>();
 	m_renderer2_d = &m_render_pipeline->add<Rendering::Renderer2D>();
 
@@ -172,12 +172,12 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::LightCullingSystem>();
 	m_renderer->add_system<Rendering::GeometrySystem>();
 
-	m_secondary_batcher = create_unique<Graphics::QuadBatcher>(*m_ctx);
+	m_secondary_batcher = std::make_unique<Graphics::QuadBatcher>(*m_ctx);
 }
 
 RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, const std::string &title) {
-	auto rw = create_unique<RenderWindow>();
-	rw->window = create_unique<Window>(width, height, title, false);
+	auto rw = std::make_unique<RenderWindow>();
+	rw->window = std::make_unique<Window>(width, height, title, false);
 	rw->window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
 	rw->window->set_refresh_callback([this, p = rw.get()]() { render_one_secondary_window(*p); });
 	rw->swapchain = m_ctx->create_swapchain({

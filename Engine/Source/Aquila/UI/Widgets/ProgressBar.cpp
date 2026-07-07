@@ -5,7 +5,7 @@ namespace Aquila::UI::Core {
 ProgressBar::ProgressBar() {
 	add_class("progress-bar");
 
-	auto fill = create_unique<View>();
+	auto fill = std::make_unique<View>();
 	fill->add_class("progress-fill");
 	m_fill = add_child(std::move(fill));
 

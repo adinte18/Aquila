@@ -51,7 +51,7 @@ View *WidgetGalleryWindow::add_group(View *host, const std::string &heading) {
 
 void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cache, Uint32 width, Uint32 height,
 								const std::string &style_path) {
-	m_canvas = create_unique<Canvas>(width, height);
+	m_canvas = std::make_unique<Canvas>(width, height);
 	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
 	auto *root = m_canvas->get_root();

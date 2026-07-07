@@ -36,7 +36,7 @@ class LayoutLoader {
 
 	[[nodiscard]] Text::FontAtlas *resolve_font(const std::string &name) const;
 	[[nodiscard]] Unique<View> create_widget(const std::string &type, std::string_view text,
-											Text::FontAtlas *font) const;
+											 Text::FontAtlas *font) const;
 
   private:
 	std::unordered_map<std::string, Text::FontAtlas *> m_fonts;
@@ -51,7 +51,9 @@ class LayoutLoader {
 	std::vector<std::string> m_include_stack;
 
 	template <typename T> void Register(const std::string &type_name) {
-		m_factories[type_name] = [](std::string_view, Text::FontAtlas *) -> Unique<View> { return create_unique<T>(); };
+		m_factories[type_name] = [](std::string_view, Text::FontAtlas *) -> Unique<View> {
+			return std::make_unique<T>();
+		};
 	}
 
 	void register_builtins();

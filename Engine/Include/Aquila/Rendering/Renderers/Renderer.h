@@ -29,7 +29,7 @@ class Renderer : public IRenderer {
 
 	template <typename T, typename... Args> T &add_system(Args &&...args) {
 		static_assert(std::is_base_of_v<IRenderingSystem, T>);
-		auto sys = create_unique<T>(std::forward<Args>(args)...);
+		auto sys = std::make_unique<T>(std::forward<Args>(args)...);
 		T &ref = *sys;
 		sys->on_init(*m_ctx);
 		m_systems.push_back(std::move(sys));

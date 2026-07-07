@@ -10,12 +10,12 @@ Button::Button() {
 
 Button::Button(std::string text, Text::FontAtlas *font) {
 	set_input_leaf(true);
-	m_content = dynamic_cast<IconLabel *>(add_child(create_unique<IconLabel>(std::move(text), font)));
+	m_content = dynamic_cast<IconLabel *>(add_child(std::make_unique<IconLabel>(std::move(text), font)));
 }
 
 void Button::ensure_content() {
 	if (m_content == nullptr) {
-		m_content = static_cast<IconLabel *>(add_child(create_unique<IconLabel>()));
+		m_content = static_cast<IconLabel *>(add_child(std::make_unique<IconLabel>()));
 	}
 }
 

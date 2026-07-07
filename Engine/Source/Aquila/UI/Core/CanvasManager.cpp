@@ -4,7 +4,7 @@ namespace Aquila::UI::Core {
 
 CanvasManager::CanvasManager(Uint32 width, Uint32 height) {
 	for (auto &layer : m_layers) {
-		layer = create_unique<Canvas>(width, height);
+		layer = std::make_unique<Canvas>(width, height);
 	}
 }
 

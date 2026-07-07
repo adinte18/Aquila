@@ -3,11 +3,11 @@
 namespace Aquila::UI::Core {
 
 TabView::TabView() {
-	auto bar = create_unique<View>();
+	auto bar = std::make_unique<View>();
 	bar->add_class("tab-bar");
 	m_tab_bar = add_child(std::move(bar));
 
-	auto panels = create_unique<View>();
+	auto panels = std::make_unique<View>();
 	panels->add_class("tab-panels");
 	m_panels = add_child(std::move(panels));
 }
@@ -15,7 +15,7 @@ TabView::TabView() {
 View *TabView::add_tab(std::string title, GFX::GfxTexture *icon) {
 	const int idx = static_cast<int>(m_tabs.size());
 
-	auto btn = create_unique<Button>();
+	auto btn = std::make_unique<Button>();
 	btn->set_text(title);
 	if (icon != nullptr) {
 		btn->set_icon(icon);
@@ -24,7 +24,7 @@ View *TabView::add_tab(std::string title, GFX::GfxTexture *icon) {
 	btn->on_click.connect([this, idx] { set_active_tab(idx); });
 	Button *btn_raw = static_cast<Button *>(m_tab_bar->add_child(std::move(btn)));
 
-	auto panel = create_unique<View>();
+	auto panel = std::make_unique<View>();
 	panel->add_class("tab-panel");
 	View *panel_raw = m_panels->add_child(std::move(panel));
 
@@ -45,7 +45,6 @@ void TabView::set_active_tab(int index) {
 	apply_active_tab();
 	on_tab_changed(m_active_tab);
 }
-
 
 void TabView::apply_active_tab() {
 	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {

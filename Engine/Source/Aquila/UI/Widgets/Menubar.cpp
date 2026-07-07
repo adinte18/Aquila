@@ -47,13 +47,13 @@ void MenuDropdown::rebuild() {
 
 	for (auto &item : m_items) {
 		if (item.is_separator) {
-			auto sep = create_unique<Separator>();
+			auto sep = std::make_unique<Separator>();
 			sep->add_class("menu-separator");
 			m_item_views.push_back(add_child(std::move(sep)));
 			continue;
 		}
 
-		auto btn = create_unique<Button>();
+		auto btn = std::make_unique<Button>();
 		btn->set_text(item.text);
 		btn->add_class("menu-item");
 		btn->on_click.connect([this, cb = item.callback] {
@@ -75,11 +75,11 @@ MenuBar::MenuBar() {
 }
 
 MenuDropdown *MenuBar::add_menu(std::string title) {
-	auto btn = create_unique<Button>();
+	auto btn = std::make_unique<Button>();
 	btn->set_text(title);
 	btn->add_class("menu-bar-item");
 
-	auto dropdown = create_unique<MenuDropdown>(this);
+	auto dropdown = std::make_unique<MenuDropdown>(this);
 	MenuDropdown *dropdown_ptr = dropdown.get();
 
 	btn->on_click.connect([this, dropdown_ptr] {

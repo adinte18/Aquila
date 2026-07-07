@@ -4,9 +4,9 @@
 namespace Aquila::RHI {
 
 VulkanDescriptorSetLayout::Builder &VulkanDescriptorSetLayout::Builder::add_binding(Uint32 binding,
-																				   VkDescriptorType descriptor_type,
-																				   VkShaderStageFlags stage_flags,
-																				   Uint32 count) {
+																					VkDescriptorType descriptor_type,
+																					VkShaderStageFlags stage_flags,
+																					Uint32 count) {
 	AQUILA_ASSERT(!m_bindings.contains(binding), "Binding already in use");
 	VkDescriptorSetLayoutBinding layout_binding{};
 	layout_binding.binding = binding;
@@ -18,7 +18,7 @@ VulkanDescriptorSetLayout::Builder &VulkanDescriptorSetLayout::Builder::add_bind
 }
 
 Unique<VulkanDescriptorSetLayout> VulkanDescriptorSetLayout::Builder::build() const {
-	return create_unique<VulkanDescriptorSetLayout>(m_device, m_bindings);
+	return std::make_unique<VulkanDescriptorSetLayout>(m_device, m_bindings);
 }
 
 VulkanDescriptorSetLayout::VulkanDescriptorSetLayout(VulkanDevice &device,
@@ -57,10 +57,11 @@ VulkanDescriptorPool::Builder &VulkanDescriptorPool::Builder::set_max_sets(Uint3
 }
 
 Unique<VulkanDescriptorPool> VulkanDescriptorPool::Builder::build() const {
-	return create_unique<VulkanDescriptorPool>(m_device, m_max_sets, m_pool_flags, m_pool_sizes);
+	return std::make_unique<VulkanDescriptorPool>(m_device, m_max_sets, m_pool_flags, m_pool_sizes);
 }
 
-VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice &device, Uint32 max_sets, VkDescriptorPoolCreateFlags pool_flags,
+VulkanDescriptorPool::VulkanDescriptorPool(VulkanDevice &device, Uint32 max_sets,
+										   VkDescriptorPoolCreateFlags pool_flags,
 										   const std::vector<VkDescriptorPoolSize> &pool_sizes)
 	: m_device(device) {
 	VkDescriptorPoolCreateInfo info{};
@@ -140,7 +141,7 @@ VulkanDescriptorWriter &VulkanDescriptorWriter::write_image(Uint32 binding, cons
 }
 
 VulkanDescriptorWriter &VulkanDescriptorWriter::write_image_array(Uint32 binding,
-																const std::vector<VkDescriptorImageInfo> &infos) {
+																  const std::vector<VkDescriptorImageInfo> &infos) {
 	AQUILA_ASSERT(m_set_layout.m_bindings.count(binding) == 1, "Layout does not contain binding");
 
 	m_image_infos.insert(m_image_infos.end(), infos.begin(), infos.end());

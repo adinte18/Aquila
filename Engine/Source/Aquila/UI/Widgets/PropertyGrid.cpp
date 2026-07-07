@@ -7,10 +7,10 @@ PropertyGrid::PropertyGrid(float label_width) : m_label_width(label_width) {
 }
 
 View *PropertyGrid::add_row(std::string label, Unique<View> widget) {
-	auto row = create_unique<View>();
+	auto row = std::make_unique<View>();
 	row->add_class("property-row");
 
-	auto lbl = create_unique<Label>(std::move(label));
+	auto lbl = std::make_unique<Label>(std::move(label));
 	{
 		StyleProperties lp;
 		lp.width = StyleLength::pixel(m_label_width);
@@ -27,7 +27,7 @@ View *PropertyGrid::add_row(std::string label, Unique<View> widget) {
 }
 
 void PropertyGrid::add_separator() {
-	auto sep = create_unique<View>();
+	auto sep = std::make_unique<View>();
 	sep->add_class("property-separator");
 	add_child(std::move(sep));
 }

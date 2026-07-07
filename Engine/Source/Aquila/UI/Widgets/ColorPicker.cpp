@@ -388,7 +388,7 @@ void ColorPicker::init() {
 	add_class("color-picker");
 
 	{
-		auto btn = create_unique<Button>();
+		auto btn = std::make_unique<Button>();
 		btn->add_class("cp-swatch");
 		btn->on_click.connect([this] { toggle_popup(); });
 		m_swatch = add_child(std::move(btn));
@@ -406,14 +406,14 @@ void ColorPicker::init() {
 		fc.offset = { 0.F, 4.F };
 		fc.z_index = 60;
 
-		auto popup = create_unique<Popup>();
+		auto popup = std::make_unique<Popup>();
 		popup->add_class("cp-popup");
 		popup->set_floating(fc);
 		m_popup = static_cast<Popup *>(add_child(std::move(popup)));
 	}
 
 	{
-		auto sv = create_unique<PickerArea>();
+		auto sv = std::make_unique<PickerArea>();
 		sv->add_class("cp-sv-area");
 		sv->m_tex = m_sv_tex.get();
 		sv->m_is1_d = false;
@@ -433,12 +433,12 @@ void ColorPicker::init() {
 	}
 
 	{
-		auto row = create_unique<View>();
+		auto row = std::make_unique<View>();
 		row->add_class("cp-hue-row");
 		View *row_raw = m_popup->add_child(std::move(row));
 
 		{
-			auto hue = create_unique<PickerArea>();
+			auto hue = std::make_unique<PickerArea>();
 			hue->add_class("cp-hue-bar");
 			hue->m_tex = m_hue_tex.get();
 			hue->m_is1_d = true;
@@ -461,14 +461,14 @@ void ColorPicker::init() {
 		}
 
 		{
-			auto prev = create_unique<View>();
+			auto prev = std::make_unique<View>();
 			prev->add_class("cp-preview");
 			m_preview = row_raw->add_child(std::move(prev));
 		}
 	}
 
 	{
-		auto alpha = create_unique<PickerArea>();
+		auto alpha = std::make_unique<PickerArea>();
 		alpha->add_class("cp-alpha-bar");
 		alpha->m_tex = m_alpha_tex.get();
 		alpha->m_is1_d = true;
@@ -482,12 +482,12 @@ void ColorPicker::init() {
 	}
 
 	{
-		auto row = create_unique<View>();
+		auto row = std::make_unique<View>();
 		row->add_class("cp-mode-row");
 		View *row_raw = m_popup->add_child(std::move(row));
 
 		auto make_btn = [&](const char *text) -> Button * {
-			auto btn = create_unique<Button>(text);
+			auto btn = std::make_unique<Button>(text);
 			btn->add_class("cp-mode-btn");
 			return static_cast<Button *>(row_raw->add_child(std::move(btn)));
 		};
@@ -501,24 +501,24 @@ void ColorPicker::init() {
 
 	const char *labels[4] = { "R", "G", "B", "A" };
 	for (int i = 0; i < 4; ++i) {
-		auto row = create_unique<View>();
+		auto row = std::make_unique<View>();
 		row->add_class("cp-ch-row");
 		m_ch[i].row = m_popup->add_child(std::move(row));
 
 		{
-			auto lbl = create_unique<Label>(labels[i]);
+			auto lbl = std::make_unique<Label>(labels[i]);
 			lbl->add_class("cp-ch-lbl");
 			m_ch[i].label = static_cast<Label *>(m_ch[i].row->add_child(std::move(lbl)));
 		}
 		{
-			auto sl = create_unique<Slider>();
+			auto sl = std::make_unique<Slider>();
 			sl->set_range(0.F, 255.F);
 			sl->set_step(1.F);
 			sl->add_class("cp-ch-slider");
 			m_ch[i].slider = static_cast<Slider *>(m_ch[i].row->add_child(std::move(sl)));
 		}
 		{
-			auto ti = create_unique<TextInput>();
+			auto ti = std::make_unique<TextInput>();
 			ti->add_class("cp-ch-input");
 			m_ch[i].input = static_cast<TextInput *>(m_ch[i].row->add_child(std::move(ti)));
 		}
@@ -539,17 +539,17 @@ void ColorPicker::init() {
 	}
 
 	{
-		auto row = create_unique<View>();
+		auto row = std::make_unique<View>();
 		row->add_class("cp-hex-row");
 		m_hex_row = m_popup->add_child(std::move(row));
 
 		{
-			auto lbl = create_unique<Label>("#");
+			auto lbl = std::make_unique<Label>("#");
 			lbl->add_class("cp-hex-lbl");
 			m_hex_row->add_child(std::move(lbl));
 		}
 		{
-			auto ti = create_unique<TextInput>();
+			auto ti = std::make_unique<TextInput>();
 			ti->add_class("cp-hex-input");
 			ti->on_submit.connect([this](const std::string &s) {
 				Vec4 c;

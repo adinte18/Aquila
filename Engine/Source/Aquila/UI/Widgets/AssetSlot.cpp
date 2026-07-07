@@ -6,11 +6,11 @@ AssetSlot::AssetSlot() {
 	m_is_accepting_payload = true;
 	add_class("asset-slot");
 
-	auto label = create_unique<Label>("");
+	auto label = std::make_unique<Label>("");
 	label->add_class("asset-slot-label");
 	m_label = static_cast<Label *>(add_child(std::move(label)));
 
-	auto clear_btn = create_unique<Button>("×");
+	auto clear_btn = std::make_unique<Button>("×");
 	clear_btn->add_class("asset-slot-clear");
 	clear_btn->on_click.connect([this] { clear(); });
 	m_clear_button = static_cast<Button *>(add_child(std::move(clear_btn)));
@@ -41,7 +41,6 @@ void AssetSlot::clear() {
 	remove_class("asset-slot-filled");
 	on_changed(std::nullopt);
 }
-
 
 void AssetSlot::on_drop(DragState &state) {
 	if (!state.payload.has_value()) {

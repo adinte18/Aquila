@@ -6,15 +6,15 @@ AssetCard::AssetCard() {
 	m_is_draggable = true;
 	add_class("asset-card");
 
-	auto thumbnail = create_unique<Image>();
+	auto thumbnail = std::make_unique<Image>();
 	thumbnail->add_class("asset-card-thumbnail");
 	m_thumbnail = static_cast<Image *>(add_child(std::move(thumbnail)));
 
-	auto type_label = create_unique<Label>("");
+	auto type_label = std::make_unique<Label>("");
 	type_label->add_class("asset-card-type");
 	m_type_label = static_cast<Label *>(add_child(std::move(type_label)));
 
-	auto name_label = create_unique<Label>("");
+	auto name_label = std::make_unique<Label>("");
 	name_label->add_class("asset-card-name");
 	m_name_label = static_cast<Label *>(add_child(std::move(name_label)));
 }

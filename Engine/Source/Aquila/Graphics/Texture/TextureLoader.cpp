@@ -39,7 +39,7 @@ TextureLoader::RawImageData TextureLoader::load_from_vfs(const std::string &file
 
 	if (pixels != nullptr) {
 		size_t pixel_size = static_cast<size_t>(data.width * data.height) * 4;
-		data.pixels = create_unique<Uint8[]>(pixel_size);
+		data.pixels = std::make_unique<Uint8[]>(pixel_size);
 		std::memcpy(data.pixels.get(), pixels, pixel_size);
 		stbi_image_free(pixels);
 	}
@@ -85,7 +85,7 @@ TextureLoader::RawHDRData TextureLoader::load_hdr_from_file(const std::string &f
 	}
 
 	const size_t pixel_count = static_cast<size_t>(data.width) * data.height * 4;
-	data.pixels = create_unique<F32[]>(pixel_count);
+	data.pixels = std::make_unique<F32[]>(pixel_count);
 	std::memcpy(data.pixels.get(), pixels, pixel_count * sizeof(F32));
 	stbi_image_free(pixels);
 

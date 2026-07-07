@@ -24,7 +24,7 @@ class View {
 	virtual View *add_child(Unique<View> child);
 
 	template <typename T, typename... Args> T *add_child(Args &&...args) {
-		return static_cast<T *>(add_child(create_unique<T>(std::forward<Args>(args)...)));
+		return static_cast<T *>(add_child(std::make_unique<T>(std::forward<Args>(args)...)));
 	}
 
 	void remove_child(View *child);

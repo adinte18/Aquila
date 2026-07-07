@@ -12,7 +12,7 @@ namespace Aquila::UI::Core {
 
 View *DockNode::make_zone_indicator(FloatingAttachPoint elem_pt, FloatingAttachPoint parent_pt, Vec2 offset,
 									const char *cls) {
-	auto zone = create_unique<View>();
+	auto zone = std::make_unique<View>();
 	zone->add_class("dock-zone-indicator");
 	zone->add_class(cls);
 
@@ -31,11 +31,11 @@ View *DockNode::make_zone_indicator(FloatingAttachPoint elem_pt, FloatingAttachP
 DockNode::DockNode(DockDragContext *drag_ctx) : m_drag_ctx(drag_ctx) {
 	add_class("dock-node");
 
-	auto tab_bar = create_unique<View>();
+	auto tab_bar = std::make_unique<View>();
 	tab_bar->add_class("dock-tab-bar");
 	m_tab_bar = add_child(std::move(tab_bar));
 
-	auto panel_area = create_unique<View>();
+	auto panel_area = std::make_unique<View>();
 	panel_area->add_class("dock-panel-area");
 	m_panel_area = add_child(std::move(panel_area));
 
@@ -72,7 +72,7 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 
 	const bool is_h = (dir == SplitDirection::Horizontal);
 
-	auto first = create_unique<DockNode>(m_drag_ctx);
+	auto first = std::make_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties fp;
 
@@ -84,10 +84,10 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 		first->merge_style(fp);
 	}
 
-	auto splitter = create_unique<DockSplitter>(dir);
+	auto splitter = std::make_unique<DockSplitter>(dir);
 	splitter->set_resize_before(anchor_first);
 
-	auto second = create_unique<DockNode>(m_drag_ctx);
+	auto second = std::make_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties sp2;
 		sp2.flex_grow = 1.F;
@@ -121,10 +121,10 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 
 	const bool is_h = (dir == SplitDirection::Horizontal);
 
-	auto splitter = create_unique<DockSplitter>(dir);
+	auto splitter = std::make_unique<DockSplitter>(dir);
 	splitter->set_resize_before(false);
 
-	auto leaf = create_unique<DockNode>(m_drag_ctx);
+	auto leaf = std::make_unique<DockNode>(m_drag_ctx);
 	{
 		StyleProperties lp;
 		lp.flex_grow = 0.F;
@@ -145,11 +145,11 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 }
 
 void DockNode::append_tab(DockPanel *panel, std::string title) {
-	auto wrapper = create_unique<View>();
+	auto wrapper = std::make_unique<View>();
 	wrapper->add_class("dock-tab-wrapper");
 	View *wrapper_raw = m_tab_bar->add_child(std::move(wrapper));
 
-	auto btn = create_unique<DockTabButton>();
+	auto btn = std::make_unique<DockTabButton>();
 	btn->set_text(title);
 	if (panel != nullptr && panel->get_tab_icon() != nullptr) {
 		btn->set_icon(panel->get_tab_icon());
@@ -157,7 +157,7 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 	btn->add_class("dock-tab-btn");
 	DockTabButton *btn_raw = static_cast<DockTabButton *>(wrapper_raw->add_child(std::move(btn)));
 
-	auto close_btn = create_unique<DockCloseButton>();
+	auto close_btn = std::make_unique<DockCloseButton>();
 	close_btn->set_text("x");
 	close_btn->add_class("dock-tab-close-btn");
 	close_btn->set_close_info(this, panel);
@@ -170,7 +170,7 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 }
 
 DockPanel *DockNode::add_panel(std::string title, GFX::GfxTexture *tab_icon) {
-	auto panel = create_unique<DockPanel>(title);
+	auto panel = std::make_unique<DockPanel>(title);
 	DockPanel *panel_raw = static_cast<DockPanel *>(m_panel_area->add_child(std::move(panel)));
 	panel_raw->set_tab_icon(tab_icon);
 

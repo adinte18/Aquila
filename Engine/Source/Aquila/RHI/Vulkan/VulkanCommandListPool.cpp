@@ -52,7 +52,7 @@ VkCommandPool VulkanCommandListPool::get_vk_pool(CommandListType type) const {
 
 IRHICommandList *VulkanCommandListPool::allocate(CommandListType type, const std::string &name) {
 	// VulkanCommandList allocates its own VkCommandBuffer in its constructor
-	auto cmd = create_unique<VulkanCommandList>(m_device, get_vk_pool(type), type, name);
+	auto cmd = std::make_unique<VulkanCommandList>(m_device, get_vk_pool(type), type, name);
 	auto *ptr = cmd.get();
 	m_allocated.push_back(std::move(cmd));
 	return ptr;

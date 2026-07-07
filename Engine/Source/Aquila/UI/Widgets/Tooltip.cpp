@@ -6,7 +6,7 @@ Tooltip::Tooltip() : FloatingOverlay(48) {
 	add_class("tooltip");
 	set_dismiss_on_click_away(false);
 
-	auto label = create_unique<Label>("");
+	auto label = std::make_unique<Label>("");
 	label->add_class("tooltip-label");
 	m_label = static_cast<Label *>(add_child(std::move(label)));
 }

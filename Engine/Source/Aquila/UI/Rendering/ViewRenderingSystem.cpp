@@ -13,7 +13,7 @@ namespace Aquila::UI::Rendering {
 
 void ViewRenderingSystem::on_init(GFX::GfxContext &ctx) {
 	m_ctx = &ctx;
-	m_r2_d = create_unique<Graphics::QuadBatcher>(ctx);
+	m_r2_d = std::make_unique<Graphics::QuadBatcher>(ctx);
 }
 
 void ViewRenderingSystem::rebuild_overlay_resources(Uint32 w, Uint32 h) {

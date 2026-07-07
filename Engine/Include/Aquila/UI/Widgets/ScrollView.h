@@ -13,7 +13,7 @@ class ScrollView : public View {
 	View *add_content(Unique<View> child);
 
 	template <typename T, typename... Args> T *add_content(Args &&...args) {
-		return static_cast<T *>(add_content(create_unique<T>(std::forward<Args>(args)...)));
+		return static_cast<T *>(add_content(std::make_unique<T>(std::forward<Args>(args)...)));
 	}
 
 	void remove_oldest_content();

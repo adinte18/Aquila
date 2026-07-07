@@ -28,7 +28,7 @@ class RenderPipeline {
 
 	template <typename T, typename... Args> T &add(Args &&...args) {
 		static_assert(std::is_base_of_v<IRenderer, T>, "T must derive from IRenderer");
-		auto renderer = create_unique<T>(std::forward<Args>(args)...);
+		auto renderer = std::make_unique<T>(std::forward<Args>(args)...);
 		T &ref = *renderer;
 		renderer->on_init(m_ctx);
 		m_renderers.push_back(std::move(renderer));

@@ -38,7 +38,7 @@ bool SceneManager::has_scene(const Foundation::UUID &handle) const {
 // Scene Creation & Loading
 
 Scene *SceneManager::create_scene(const std::string &name) {
-	auto scene = create_unique<Scene>(name);
+	auto scene = std::make_unique<Scene>(name);
 
 	auto handle = scene->get_handle();
 	m_scenes[handle] = std::move(scene);
@@ -53,7 +53,7 @@ Scene *SceneManager::load_scene(const std::string &filepath, Assets::AssetManage
 		return nullptr;
 	}
 
-	auto scene = create_unique<Scene>();
+	auto scene = std::make_unique<Scene>();
 	auto handle = scene->get_handle();
 
 	// Deserialize scene data
@@ -177,7 +177,7 @@ Scene *SceneManager::load_scene_in_background(const std::string &filepath, Asset
 	}
 
 	// Create new scene
-	auto scene = create_unique<Scene>();
+	auto scene = std::make_unique<Scene>();
 
 	// Deserialize scene data
 	if (!scene->deserialize(filepath, asset_manager)) {
@@ -249,7 +249,7 @@ Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, Assets::Ass
 	// Create new scene with new name
 	std::string duplicate_name = new_name.empty() ? source_scene->get_scene_name() + " (Copy)" : new_name;
 
-	auto duplicate_scene = create_unique<Scene>(duplicate_name);
+	auto duplicate_scene = std::make_unique<Scene>(duplicate_name);
 
 	// Serialize source to temporary string
 	std::string temp_path = "temp://scene_duplicate.aqscene";

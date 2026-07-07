@@ -5,11 +5,11 @@ namespace Aquila::UI::Core {
 LabeledDragFloat::LabeledDragFloat(const char *label) {
 	add_class("labeled-drag");
 
-	auto lbl = create_unique<Label>(label);
+	auto lbl = std::make_unique<Label>(label);
 	lbl->add_class("vec-label");
 	m_label = static_cast<Label *>(add_child(std::move(lbl)));
 
-	auto drag = create_unique<DragFloat>();
+	auto drag = std::make_unique<DragFloat>();
 	drag->add_class("vec-drag");
 	m_drag = static_cast<DragFloat *>(add_child(std::move(drag)));
 }
@@ -17,8 +17,8 @@ LabeledDragFloat::LabeledDragFloat(const char *label) {
 Vec2Field::Vec2Field() {
 	add_class("vec2-field");
 
-	auto xf = create_unique<LabeledDragFloat>("X");
-	auto yf = create_unique<LabeledDragFloat>("Y");
+	auto xf = std::make_unique<LabeledDragFloat>("X");
+	auto yf = std::make_unique<LabeledDragFloat>("Y");
 
 	register_component(0, xf->get_drag());
 	register_component(1, yf->get_drag());
@@ -29,7 +29,7 @@ Vec2Field::Vec2Field() {
 
 Vec3Field::Vec3Field() {
 	auto make_drag = [](const char *prefix, const char *axis_class) {
-		auto drag = create_unique<DragFloat>();
+		auto drag = std::make_unique<DragFloat>();
 		drag->set_prefix(prefix);
 		drag->add_class("vec-drag");
 		drag->add_class(axis_class);
@@ -48,10 +48,10 @@ Vec3Field::Vec3Field() {
 Vec4Field::Vec4Field() {
 	add_class("vec4-field");
 
-	auto xf = create_unique<LabeledDragFloat>("X");
-	auto yf = create_unique<LabeledDragFloat>("Y");
-	auto zf = create_unique<LabeledDragFloat>("Z");
-	auto wf = create_unique<LabeledDragFloat>("W");
+	auto xf = std::make_unique<LabeledDragFloat>("X");
+	auto yf = std::make_unique<LabeledDragFloat>("Y");
+	auto zf = std::make_unique<LabeledDragFloat>("Z");
+	auto wf = std::make_unique<LabeledDragFloat>("W");
 
 	register_component(0, xf->get_drag());
 	register_component(1, yf->get_drag());

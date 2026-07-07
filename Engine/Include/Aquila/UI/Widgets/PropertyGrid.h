@@ -17,7 +17,7 @@ class PropertyGrid : public View {
 	View *add_row(std::string label, Unique<View> widget);
 
 	template <typename T, typename... Args> T *add_row(std::string label, Args &&...args) {
-		return static_cast<T *>(add_row(std::move(label), create_unique<T>(std::forward<Args>(args)...)));
+		return static_cast<T *>(add_row(std::move(label), std::make_unique<T>(std::forward<Args>(args)...)));
 	}
 
 	void add_separator();

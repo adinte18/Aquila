@@ -33,7 +33,7 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 }
 
 HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity entity) {
-	auto node = create_unique<HierarchyTreeNode>(std::move(label), *this, 0, entity, m_entity_manager);
+	auto node = std::make_unique<HierarchyTreeNode>(std::move(label), *this, 0, entity, m_entity_manager);
 	auto *raw = static_cast<HierarchyTreeNode *>(add_child(std::move(node)));
 	m_node_entity_map[raw] = entity;
 	return raw;
@@ -74,7 +74,8 @@ void HierarchyTreeView::on_drop(DragState &state) {
 	}
 
 	View *old_parent_container = source_node->get_parent();
-	auto *old_parent_node = dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
+	auto *old_parent_node =
+		dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
 
 	auto detached = old_parent_container->detach_child(source_node);
 
