@@ -46,8 +46,13 @@ std::string NativeFileSystem::to_fopen_mode(AccessMode access_mode, OpenMode ope
 }
 
 Unique<NativeFile> NativeFileSystem::file_open(const std::string &path, AccessMode access_mode, OpenMode open_mode) {
-	FILE *file = fopen(resolve_path(path).c_str(), to_fopen_mode(access_mode, open_mode).c_str());
-	return (file != nullptr) ? create_unique<NativeFile>(file) : nullptr;
+	FILE *file = nullptr;
+#ifdef AQUILA_PLATFORM_WINDOWS
+	fopen_s(&file, resolve_path(path).c_str(), to_fopen_mode(access_mode, open_mode).c_str());
+#else
+	file = fopen(resolve_path(path).c_str(), to_fopen_mode(access_mode, open_mode).c_str());
+#endif
+	return (file != nullptr) ? std::make_unique<NativeFile>(file) : nullptr;
 }
 
 bool NativeFileSystem::file_exists(const std::string &path) {

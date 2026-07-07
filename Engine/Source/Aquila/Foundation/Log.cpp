@@ -18,7 +18,15 @@ std::string Logger::get_timestamp() {
 	auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
 
 	std::stringstream ss;
+
+#ifdef AQUILA_PLATFORM_WINDOWS
+	tm buf{};
+	localtime_s(&buf, &time_t);
+	ss << std::put_time(&buf, "%H:%M:%S");
+#else
 	ss << std::put_time(std::localtime(&time_t), "%H:%M:%S");
+#endif
+
 	ss << std::format(".{:03d}", ms.count());
 	return ss.str();
 }
