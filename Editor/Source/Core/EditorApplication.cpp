@@ -268,6 +268,7 @@ void EditorApplication::setup_editor_ui() {
 	m_console_panel->build(console_panel, layout_root);
 
 	m_hierarchy_panel->on_entity_selected.connect([this](Entity entity) { m_inspector_panel->show_entity(entity); });
+	m_hierarchy_panel->on_entity_deselected.connect([this] { m_inspector_panel->clear(); });
 
 	wire_menubar(layout_root);
 

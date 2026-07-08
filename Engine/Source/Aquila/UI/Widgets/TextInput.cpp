@@ -196,25 +196,35 @@ void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
 	const float font_size = style.font_size > 0.F ? style.font_size : 14.F;
 
 	Text::FontAtlas *font = resolve_font();
-	if (!font) {
+	if (font == nullptr) {
 		return;
 	}
 
 	const float bake_size = font->get_bake_size();
 	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
 	const float line_h = font->get_line_height() * scale;
-	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5f;
-	constexpr float k_pad_x = 4.F;
+	const float k_pad_x = style.padding.left.value;
+	const float k_pad_y = style.padding.top.value;
+	const float content_h = rect.size.y - (k_pad_y * 2.0F);
+	const float text_y = rect.position.y + k_pad_y + ((content_h - line_h) * 0.5F);
 
 	const Rect text_rect = {
-		.position = { rect.position.x + k_pad_x - m_scroll_offset_x, text_y },
-		.size = { rect.size.x - k_pad_x * 2.F + m_scroll_offset_x, line_h },
-	};
-
+    .position = {
+        rect.position.x + k_pad_x - m_scroll_offset_x,
+        text_y,
+    },
+    .size = {
+        rect.size.x - (k_pad_x * 2.0F),
+        line_h,
+    },
+};
 	if (m_is_focused && m_state.has_selection()) {
 		const float x0 = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.selection_min());
 		const float x1 = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.selection_max());
-		const Rect sel_rect = { .position = { x0, text_y }, .size = { x1 - x0, line_h } };
+		const Rect sel_rect = {
+			.position = { x0, text_rect.position.y },
+			.size = { x1 - x0, line_h },
+		};
 		const Vec4 sel_color = style.effective_selection_color();
 		draw_list.draw_rect(sel_rect, sel_color, Vec4(2.F), 0.F, Vec4(0.F), z + 1);
 	}
@@ -228,8 +238,9 @@ void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
 
 	if (m_is_focused && !m_state.has_selection() && m_caret_visible) {
 		const float cx = text_rect.position.x + m_state.measure_to_pos(*font, scale, m_state.cursor);
-		const float cy = rect.position.y + (rect.size.y - line_h) * 0.5f;
-		draw_list.draw_line({ cx, cy }, { cx, cy + line_h }, 0.5f, style.color, z + 2);
+		const float cy = text_rect.position.y;
+
+		draw_list.draw_line({ cx, cy }, { cx, cy + line_h }, 0.5F, style.color, z + 2);
 	}
 }
 

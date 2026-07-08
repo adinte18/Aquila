@@ -161,7 +161,7 @@ void Canvas::compute() {
 
 		// @container rules depend on element sizes — re-resolve immediately after
 		// layout so rules see the current frame's container sizes.
-		if (m_style_engine.get_style_sheet().has_container_blocks()) {
+		if (m_layout_engine.did_layout_resize() && m_style_engine.get_style_sheet().has_container_blocks()) {
 			mark_subtree_dirty(m_root.get());
 			style_pass();
 		}
@@ -212,7 +212,8 @@ void Canvas::scroll_into_view(View *target) {
 void Canvas::update(F32 delta_time) {
 	m_delta_time = delta_time;
 	if (!m_ticking.empty()) {
-		for (View *view : m_ticking) {
+		std::vector<View *> ticking_snapshot = m_ticking;
+		for (View *view : ticking_snapshot) {
 			view->on_update(delta_time);
 		}
 		Aquila::Rendering::FrameScheduler::get()->request_frame();

@@ -151,8 +151,6 @@ struct Parser {
 		Text::FontAtlas *font = loader.resolve_font("default");
 
 		std::string image_src;
-		std::string image_icon;
-		std::string image_bank;
 		std::string image_uv;
 		std::string image_tint;
 		std::vector<std::pair<std::string, std::string>> generic_attrs;
@@ -210,10 +208,6 @@ struct Parser {
 				}
 			} else if (attr_name == "src") {
 				image_src = attr_value;
-			} else if (attr_name == "icon") {
-				image_icon = attr_value;
-			} else if (attr_name == "bank") {
-				image_bank = attr_value;
 			} else if (attr_name == "uv") {
 				image_uv = attr_value;
 			} else if (attr_name == "tint") {
@@ -260,18 +254,12 @@ struct Parser {
 			view->set_font(font);
 		}
 
-		LayoutLoader *loader_ctx = const_cast<LayoutLoader *>(&loader);
+		IResourceResolver *loader_ctx = &loader;
 		if (!image_tint.empty()) {
 			view->apply_xml_attribute("tint", image_tint, loader_ctx);
 		}
 		if (!image_src.empty()) {
 			view->apply_xml_attribute("src", image_src, loader_ctx);
-		}
-		if (!image_bank.empty()) {
-			view->apply_xml_attribute("bank", image_bank, loader_ctx);
-		}
-		if (!image_icon.empty()) {
-			view->apply_xml_attribute("icon", image_icon, loader_ctx);
 		}
 		if (!image_uv.empty()) {
 			view->apply_xml_attribute("uv", image_uv, loader_ctx);
@@ -396,10 +384,6 @@ GFX::GfxTexture *LayoutLoader::resolve_texture(const std::string &path) const {
 	return m_texture_cache->load(path);
 }
 
-void LayoutLoader::register_texture_icon_bank(const std::string &name, TextureIconBank *bank) {
-	m_icon_banks[name] = bank;
-}
-
 void LayoutLoader::register_command(const std::string &name, Delegate<void()> command) {
 	m_commands[name] = std::move(command);
 }
@@ -407,19 +391,6 @@ void LayoutLoader::register_command(const std::string &name, Delegate<void()> co
 Delegate<void()> LayoutLoader::resolve_command(const std::string &name) const {
 	auto it = m_commands.find(name);
 	return (it != m_commands.end()) ? it->second : Delegate<void()>{};
-}
-
-TextureIconBank *LayoutLoader::resolve_texture_icon_bank(const std::string &name) const {
-	const std::string &key = name.empty() ? "default" : name;
-	auto it = m_icon_banks.find(key);
-	if (it != m_icon_banks.end()) {
-		return it->second;
-	}
-	if (key != "default") {
-		auto def = m_icon_banks.find("default");
-		return (def != m_icon_banks.end()) ? def->second : nullptr;
-	}
-	return nullptr;
 }
 
 Unique<View> LayoutLoader::create_widget(const std::string &type, std::string_view text, Text::FontAtlas *font) const {
