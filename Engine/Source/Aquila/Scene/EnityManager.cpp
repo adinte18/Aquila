@@ -63,7 +63,7 @@ std::string EntityManager::get_default_name(EntityPreset preset) {
 	case EntityPreset::OrthographicCamera:
 		return "Orthographic Camera";
 	default:
-		return "Unknown Entity";
+		return "Empty Entity";
 	}
 }
 
@@ -104,7 +104,7 @@ std::string EntityManager::generate_unique_name(const std::string &base_name) {
 		existing_names.insert(metadata.get_name());
 	}
 
-	if (existing_names.find(base_name) == existing_names.end()) {
+	if (!existing_names.contains(base_name)) {
 		return base_name;
 	}
 
@@ -113,7 +113,7 @@ std::string EntityManager::generate_unique_name(const std::string &base_name) {
 	do {
 		candidate_name = base_name + " (" + std::to_string(counter) + ")";
 		counter++;
-	} while (existing_names.find(candidate_name) != existing_names.end());
+	} while (existing_names.contains(candidate_name));
 
 	return candidate_name;
 }

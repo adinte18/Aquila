@@ -10,12 +10,12 @@ static void glfw_error_callback(int error, const char *description) {
 	AQUILA_LOG_ERROR("GLFW Error ({}): {}", error, description);
 }
 
-Window::Window(const Uint32 width, const Uint32 height, const std::string &title, bool maximized) {
+Window::Window(const Uint32 width, const Uint32 height, const std::string &title, bool maximized)
+	: m_start_maximized(maximized) {
 	m_data.title = title;
 	m_data.width = width;
 	m_data.height = height;
 	m_data.owner = this;
-	m_start_maximized = maximized;
 
 	initialize();
 }
@@ -45,7 +45,8 @@ void Window::initialize() {
 
 	// Sync dimensions after maximize — the WM_SIZE fires before SetupCallbacks so
 	// the size callback never ran for it; query the actual size directly.
-	int actual_w, actual_h;
+	int actual_w = 0;
+	int actual_h = 0;
 	glfwGetWindowSize(m_window, &actual_w, &actual_h);
 	m_data.width = static_cast<Uint32>(actual_w);
 	m_data.height = static_cast<Uint32>(actual_h);

@@ -2,7 +2,7 @@
 
 int main() {
 	ApplicationSpec spec;
-	spec.name = "Aquila Studio";
+	spec.name = std::string("Aquila Studio | ") + AQUILA_VERSION_STRING;
 	spec.width = 1920;
 	spec.height = 1080;
 
