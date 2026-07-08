@@ -45,19 +45,17 @@ void InputRouter::on_event(Application::Events::Event &e) {
 	dispatcher.dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
 		m_mouse_pos = { e.get_x(), e.get_y() };
 
-		if (Platform::Input::is_mouse_button_pressed(MouseButton::Left) && !m_drag_state.is_dragging) {
+		if (Platform::Input::is_mouse_button_pressed(MouseButton::Left) && !m_drag_state.is_dragging &&
+			m_drag_source_candidate != nullptr) {
 			Vec2 delta = m_mouse_pos - m_drag_start_pos;
-			if (Math::length(delta) > 5.F && m_hovered_view) {
-				m_drag_source_candidate = m_hovered_view->get_first_draggable_parent();
-				if (m_drag_source_candidate != nullptr) {
-					m_drag_state.is_dragging = true;
-					m_drag_source_candidate->on_drag_start(m_drag_state);
-					m_drag_target = m_hovered_view->get_first_parent_that_accepts_drop();
-					if (m_drag_target) {
-						m_drag_target->on_drag_enter(m_drag_state);
-					}
-					m_canvas.mark_dirty();
+			if (Math::length(delta) > 5.F) {
+				m_drag_state.is_dragging = true;
+				m_drag_source_candidate->on_drag_start(m_drag_state);
+				m_drag_target = m_hovered_view ? m_hovered_view->get_first_parent_that_accepts_drop() : nullptr;
+				if (m_drag_target) {
+					m_drag_target->on_drag_enter(m_drag_state);
 				}
+				m_canvas.mark_dirty();
 			}
 		}
 
@@ -96,6 +94,7 @@ void InputRouter::on_event(Application::Events::Event &e) {
 		if (e.get_mouse_button() == MouseButton::Left) {
 			m_mouse_down = true;
 		}
+		m_drag_source_candidate = nullptr;
 		m_canvas.dismiss_popups_outside(m_hovered_view);
 		if (!m_hovered_view) {
 			return false;
@@ -104,6 +103,7 @@ void InputRouter::on_event(Application::Events::Event &e) {
 		m_focused_view->on_mouse_press(e.get_mouse_button(), m_mouse_pos);
 
 		m_drag_start_pos = Platform::Input::get_mouse_position();
+		m_drag_source_candidate = m_hovered_view->get_first_draggable_parent();
 
 		return false;
 	});

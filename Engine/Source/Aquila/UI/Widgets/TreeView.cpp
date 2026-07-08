@@ -8,6 +8,9 @@ TreeView::TreeView() {
 	auto content = std::make_unique<View>();
 	content->add_class("tree-view-content");
 	m_content = View::add_child(std::move(content));
+
+	m_content->on_pressed.connect([this](Vec2) { deselect(); });
+	on_pressed.connect([this](Vec2) { deselect(); });
 }
 
 TreeNode *TreeView::add_node(std::string label) {
@@ -65,6 +68,14 @@ void TreeView::select_node(TreeNode *node) {
 	if (m_selected != nullptr) {
 		m_selected->set_selected(true);
 	}
+}
+
+void TreeView::deselect() {
+	if (m_selected == nullptr) {
+		return;
+	}
+	select_node(nullptr);
+	on_deselected();
 }
 
 void TreeView::notify_selected(TreeNode *node) {

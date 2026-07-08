@@ -19,7 +19,7 @@ HierarchyPanel::HierarchyPanel(EntityManager &entity_manager) : m_entity_manager
 
 void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
 	auto ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
-	auto *ctx = static_cast<UI::Core::ContextMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
+	auto *ctx = dynamic_cast<UI::Core::ContextMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
 	ctx->add_item("Create Empty", [this] {
 		auto entity = m_entity_manager.create_entity("New Entity");
 		m_tree_view->add_entity_node(entity.get_name(), entity);
@@ -28,14 +28,19 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 
 	{
 		auto tree_uniq = std::make_unique<HierarchyTreeView>(m_entity_manager);
-		m_tree_view = static_cast<HierarchyTreeView *>(panel->add_child(std::move(tree_uniq)));
+		m_tree_view = dynamic_cast<HierarchyTreeView *>(panel->add_child(std::move(tree_uniq)));
 
 		auto node_ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
 		auto *node_context_menu =
-			static_cast<UI::Core::ContextMenu *>(m_tree_view->View::add_child(std::move(node_ctx_uniq)));
+			dynamic_cast<UI::Core::ContextMenu *>(m_tree_view->add_child(std::move(node_ctx_uniq)));
+
 		node_context_menu->add_item("Add child", [this] {
 			if (m_selected_node != nullptr) {
-				AQUILA_LOG_DEBUG("Hello");
+				auto parent_entity = m_selected_node->get_entity();
+				auto new_entity = m_entity_manager.create_entity("Empty entity");
+				m_entity_manager.add_child(parent_entity, new_entity);
+
+				add_entity(new_entity);
 			}
 		});
 
@@ -45,6 +50,11 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		m_tree_view->on_entity_selected.connect([this](Entity entity) {
 			m_selected_node = m_tree_view->find_node_for_entity(entity);
 			on_entity_selected(entity);
+		});
+
+		m_tree_view->on_deselected.connect([this] {
+			m_selected_node = nullptr;
+			on_entity_deselected();
 		});
 
 		m_tree_view->on_entity_right_clicked.connect([node_context_menu, this](Entity entity, Vec2 pos) {
@@ -57,7 +67,7 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 }
 
 void HierarchyPanel::add_entity(Entity entity) {
-	if (m_tree_view) {
+	if (m_tree_view != nullptr) {
 		m_tree_view->add_entity_node(entity.get_name(), entity);
 	}
 }

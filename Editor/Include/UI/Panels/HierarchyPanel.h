@@ -17,6 +17,7 @@ class HierarchyPanel : public IEditorPanel {
 	explicit HierarchyPanel(Aquila::SceneManagement::EntityManager &entity_manager);
 	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
 	Signal<void(Aquila::SceneManagement::Entity)> on_entity_selected;
+	Signal<void()> on_entity_deselected;
 	void add_entity(Aquila::SceneManagement::Entity entity);
 
   private:

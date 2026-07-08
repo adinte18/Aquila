@@ -61,7 +61,7 @@ static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 flex_grow = 0.F) 
 	case LengthUnit::Percent:
 		return CLAY_SIZING_PERCENT(len.value / 100.F);
 	case LengthUnit::Grow:
-		return CLAY_SIZING_GROW(flex_grow);
+		return CLAY_SIZING_GROW(.min = flex_grow);
 	case LengthUnit::Auto:
 	default:
 		return CLAY_SIZING_FIT(0, 0);
@@ -147,13 +147,16 @@ void LayoutEngine::run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 
 	Clay_SetPointerState({ mouse_pos.x, mouse_pos.y }, mouse_down);
 	Clay_UpdateScrollContainers(true, { scroll_delta.x, scroll_delta.y }, delta_time);
 	Clay_BeginLayout();
+	//
 	layout_pass(root);
+	//
 	Clay_EndLayout(delta_time);
+	m_size_changed = false;
 	update_rects(root);
 }
 
 void LayoutEngine::scroll_into_view(View *target) {
-	if (!target) {
+	if (target == nullptr) {
 		return;
 	}
 
@@ -164,7 +167,7 @@ void LayoutEngine::scroll_into_view(View *target) {
 			break;
 		}
 	}
-	if (!container) {
+	if (container == nullptr) {
 		return;
 	}
 
@@ -321,7 +324,7 @@ void LayoutEngine::layout_pass(View *node) {
 	}
 }
 
-void LayoutEngine::update_rects(View *node, Vec2 parent_abs_pos) {
+void LayoutEngine::update_rects(View *node, Vec2 parent_clay_pos, Vec2 accumulated_offset) {
 	const ComputedStyle &cs = node->get_display_style();
 	if (cs.display == Display::None) {
 		node->set_layout_rect({});
@@ -331,24 +334,31 @@ void LayoutEngine::update_rects(View *node, Vec2 parent_abs_pos) {
 	const Clay_ElementId clay_id = make_element_id(node);
 	const Clay_ElementData data = Clay_GetElementData(clay_id);
 
-	Vec2 my_abs_pos = parent_abs_pos;
+	Vec2 clay_pos = parent_clay_pos;
+	const Vec2 subtree_offset = accumulated_offset + node->get_layout_anim_offset();
 	if (data.found) {
 		const Clay_BoundingBox &bb = data.boundingBox;
-		my_abs_pos = { bb.x, bb.y };
-		const Rect new_rect = { .position = my_abs_pos - parent_abs_pos, .size = { bb.width, bb.height } };
+		clay_pos = { bb.x, bb.y };
+		node->set_layout_home(clay_pos);
+		const Vec2 old_size = node->get_layout_rect().size;
+		const Rect new_rect = { .position = clay_pos - parent_clay_pos, .size = { bb.width, bb.height } };
 		if (new_rect != node->get_layout_rect()) {
+			if (new_rect.size != old_size) {
+				m_size_changed = true;
+			}
 			node->set_layout_rect(new_rect);
 			node->mark_subtree_bounds_dirty();
 		}
-		if (my_abs_pos != node->get_absolute_position()) {
-			node->set_absolute_position(my_abs_pos);
+		const Vec2 abs_pos = clay_pos + subtree_offset;
+		if (abs_pos != node->get_absolute_position()) {
+			node->set_absolute_position(abs_pos);
 			node->mark_subtree_bounds_dirty();
 			node->queue_redraw();
 		}
 	}
 
 	for (const auto &child : node->get_children()) {
-		update_rects(child.get(), my_abs_pos);
+		update_rects(child.get(), clay_pos, subtree_offset);
 	}
 }
 

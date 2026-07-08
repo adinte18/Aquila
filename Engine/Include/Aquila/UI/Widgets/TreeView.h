@@ -23,10 +23,12 @@ class TreeView : public View {
 	void on_drag_leave(DragState &state) override;
 
 	Signal<void(TreeNode *)> on_selected;
+	Signal<void()> on_deselected;
 	Signal<void(TreeNode *, Vec2)> on_node_right_clicked;
 	void set_on_background_right_clicked(Delegate<void(Vec2)> callback);
 
 	void select_node(TreeNode *node);
+	void deselect();
 	[[nodiscard]] TreeNode *get_selected() const { return m_selected; }
 
   protected:

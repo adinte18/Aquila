@@ -22,6 +22,9 @@ void HierarchyTreeNode::on_drag_start(DragState &state) {
 }
 
 void HierarchyTreeNode::on_drop(DragState &state) {
+	if (!state.payload.has_value()) {
+		return;
+	}
 	auto dragged_entity = std::any_cast<Entity>(state.payload);
 	if (dragged_entity == m_entity) {
 		return;

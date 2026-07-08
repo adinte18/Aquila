@@ -2,6 +2,7 @@
 
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Widgets/Button.h"
+#include <unordered_map>
 
 namespace Aquila::UI::Core {
 
@@ -13,10 +14,11 @@ class Collapsible : public View {
 
 	void set_title(std::string title);
 	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 	void set_expanded(bool expanded);
 	[[nodiscard]] bool is_expanded() const { return m_expanded; }
 	Signal<void(bool)> on_toggled;
+	Signal<void()> on_reordered;
 
 	View *add_content(Unique<View> child);
 
@@ -24,12 +26,33 @@ class Collapsible : public View {
 		return static_cast<T *>(add_content(std::make_unique<T>(std::forward<Args>(args)...)));
 	}
 
+	void begin_drag();
+	void on_update(F32 delta_time) override;
+
   private:
 	void apply_state();
+	void seed_flip_homes();
+	void update_drag();
+	void update_drop_target();
+	void finalize_drag();
+	void tick_flip(F32 delta_time);
+	void start_ticking();
+	void stop_ticking();
 
 	bool m_expanded = true;
-	Button *m_header = nullptr;
+	View *m_header_bar = nullptr;
+	Button *m_title_button = nullptr;
+	View *m_grip = nullptr;
 	View *m_content = nullptr;
+
+	bool m_dragging = false;
+	bool m_ticking = false;
+	View *m_container = nullptr;
+	View *m_placeholder = nullptr;
+	View *m_drop_anchor = nullptr;
+	Vec2 m_grab_offset{};
+	F32 m_locked_x = 0.0F;
+	std::unordered_map<View *, Vec2> m_flip_home;
 };
 
 } // namespace Aquila::UI::Core
