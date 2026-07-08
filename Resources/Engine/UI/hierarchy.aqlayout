@@ -1,3 +1,3 @@
 <View class="hierarchy-toolbar">
-    <Button id="hierarchy-new-entity" class="hierarchy-toolbar-btn" on-click="entity.create">+ New Entity</Button>
+    <Button class="hierarchy-toolbar-btn" on-click="entity.create">+ New Entity</Button>
 </View>

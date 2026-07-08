@@ -2,7 +2,7 @@
     --bg-deep: #0f1118;
     --bg-base: #15171d;
     --bg-panel: #1e212a;
-    --bg-muted: #252935;
+    --bg-muted: #22242b;
     --bg-surface: #2a2f3d;
     --bg-widget: #2f3545;
     --bg-hover: #363d50;
@@ -39,7 +39,7 @@ TabView {
     background-color: var(--bg-panel);
     border-width: 1px;
     border-color: var(--border);
-    border-radius: 6px;
+    border-radius: 2px;
 }
 
 .tab-bar {
@@ -96,14 +96,14 @@ ProgressBar {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-ui);
-    border-radius: 8px;
+    border-radius: 2px;
     overflow: hidden;
 }
 
 .progress-fill {
     height: 100%;
     background-color: var(--accent);
-    border-radius: 8px;
+    border-radius: 2px;
 }
 
 ListBox {
@@ -112,7 +112,7 @@ ListBox {
     background-color: var(--bg-panel);
     border-width: 1px;
     border-color: var(--border-ui);
-    border-radius: 6px;
+    border-radius: 2px;
     padding: 4px;
     flex-direction: column;
     gap: 2px;
@@ -126,7 +126,7 @@ ListBox {
     color: var(--text);
     background-color: transparent;
     border-width: 0px;
-    border-radius: 4px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -145,7 +145,7 @@ ListBox {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 6px;
+    border-radius: 2px;
     align-items: center;
     justify-content: start;
     padding: 0px 10px;
@@ -164,7 +164,7 @@ ListBox {
     background-color: var(--bg-deep);
     border-width: 1px;
     border-color: var(--border-dim);
-    border-radius: 5px;
+    border-radius: 2px;
     padding: 5px 9px;
     box-shadow: var(--shadow-pop);
 }
@@ -227,9 +227,9 @@ Dropdown {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-ui);
-    border-radius: 6px;
+    border-radius: 2px;
     box-shadow: var(--shadow-pop);
-    padding: 4px 0px;
+    padding: 4px 4px;
 }
 
 .dropdown-option {
@@ -251,7 +251,7 @@ AssetSlot {
     border-width: 2px;
     border-color: var(--border-dim);
     border-style: dashed;
-    border-radius: 8px;
+    border-radius: 2px;
     align-items: center;
     justify-content: center;
     transition: 80ms ease-out;
@@ -277,7 +277,7 @@ AssetCard {
     background-color: var(--bg-surface);
     border-width: 1px;
     border-color: var(--border-ui);
-    border-radius: 8px;
+    border-radius: 2px;
     padding: 10px;
     gap: 8px;
     box-shadow: var(--shadow-sm);
@@ -304,7 +304,7 @@ AssetCard:hover {
 .asset-card-thumbnail {
     width: 48px;
     height: 48px;
-    border-radius: 6px;
+    border-radius: 2px;
     background-color: var(--bg-muted);
 }
 
@@ -313,6 +313,14 @@ AssetCard:hover {
     height: grow;
     flex-direction: column;
     background-color: var(--bg-base);
+}
+
+.hierarchy-toolbar{
+    width: 100%;
+    background-color:
+    border-color: var(--bg-base);
+    border-width: 2px;
+    padding: 5px;
 }
 
 #toolbar {
@@ -352,7 +360,7 @@ AssetCard:hover {
     font-size: 14px;
     color: var(--text-dim);
     padding: 4px 10px;
-    border-radius: 5px;
+    border-radius: 2px;
     align-items: center;
     justify-content: center;
     transition: 80ms ease-out;
@@ -375,7 +383,7 @@ AssetCard:hover {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-dim);
-    border-radius: 8px;
+    border-radius: 2px;
     padding: 6px 6px;
     gap: 4px;
 }
@@ -474,11 +482,7 @@ AssetCard:hover {
     flex-grow: 1;
     height: 100%;
     align-items: center;
-    transition: 60ms linear;
-}
-
-.dock-tab-wrapper:hover {
-    background-color: var(--bg-hover);
+    padding: 5px;
 }
 
 .dock-tab-active {
@@ -494,7 +498,7 @@ AssetCard:hover {
     padding: 0px 10px;
     height: 100%;
     flex-grow: 1;
-    border-radius: 0px;
+    border-radius: 2px;
     align-items: center;
     justify-content: center;
     transition: 60ms linear;
@@ -508,16 +512,15 @@ AssetCard:hover {
     font-family: regular;
     font-size: 14px;
     color: var(--text-muted);
-    width: 18px;
-    height: 18px;
-    border-radius: 3px;
+    width: 14px;
+    height: 100%;
     align-items: center;
     justify-content: center;
     transition: 60ms linear;
 }
 
 .dock-tab-close-btn:hover {
-    background-color: rgba(255, 80, 80, 0.18);
+    background-color: var(--danger);
     color: var(--text);
 }
 
@@ -552,13 +555,13 @@ AssetCard:hover {
 }
 
 .dock-splitter-h {
-    width: 5px;
+    width: 2px;
     height: 100%;
 }
 
 .dock-splitter-v {
     width: 100%;
-    height: 5px;
+    height: 2px;
 }
 
 .dock-splitter:hover {
@@ -587,7 +590,7 @@ AssetCard:hover {
     background-color: rgba(58, 146, 255, 0.18);
     border-color: var(--accent);
     border-width: 2px;
-    border-radius: 6px;
+    border-radius: 2px;
     align-items: center;
     justify-content: center;
     display: none;
@@ -607,7 +610,7 @@ AssetCard:hover {
     background-color: rgba(58, 146, 255, 0.18);
     border-color: var(--accent);
     border-width: 2px;
-    border-radius: 3px;
+    border-radius: 2px;
 }
 
 .dock-zone-indicator {
@@ -616,7 +619,7 @@ AssetCard:hover {
     background-color: var(--bg-surface);
     border-color: var(--accent-muted);
     border-width: 1px;
-    border-radius: 4px;
+    border-radius: 2px;
     opacity: 0.85;
 }
 
@@ -653,9 +656,9 @@ AssetCard:hover {
 .console-clear-btn {
     font-family: regular;
     font-size: 14px;
-    color: var(--text-muted);
+    color: var(--text-bright);
     padding: 3px 8px;
-    border-radius: 3px;
+    border-radius: 2px;
     align-items: center;
     justify-content: center;
     transition: 60ms ease-out;
@@ -681,7 +684,7 @@ AssetCard:hover {
     align-items: center;
     gap: 4px;
     padding: 3px 6px;
-    border-radius: 3px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -797,7 +800,6 @@ AssetCard:hover {
     color: var(--text-bright);
     width: 100%;
     height: 24px;
-    padding: 100px;
     border-width: 1px;
     border-color: var(--border-dim);
 }
@@ -814,24 +816,51 @@ IconLabel {
 }
 
 .collapsible-header {
+    flex-direction: row;
+    width: 100%;
+    height: 24px;
+    padding: 0px 2px;
+    background-color: var(--bg-surface);
+    align-items: center;
+}
+
+.collapsible-title {
+    width: grow;
+    height: 100%;
     font-family: medium;
     font-size: 14px;
     color: var(--text);
-    width: 100%;
-    height: auto;
-    padding: 0px 10px;
     background-color: var(--bg-surface);
-    border-color: var(--border-dim);
-    border-width: 1px;
-    border-radius: 7px;
+    border-width: 0px;
+    padding: 0px 6px;
     align-items: center;
     justify-content: start;
     transition: 60ms linear;
 }
 
-.collapsible-header:hover {
-    background-color: var(--bg-hover);
+.collapsible-title:hover {
     color: var(--text-bright);
+}
+
+.collapsible-grip {
+    width: 18px;
+    height: 100%;
+    color: var(--text-muted);
+    transition: 60ms ease-out;
+    opacity: 1;
+}
+
+.collapsible-grip:hover {
+    color: var(--text-dim);
+}
+
+.collapsible-drop-slot {
+    width: 100%;
+    background-color: var(--accent-dark);
+    border-color: var(--accent);
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 2px;
 }
 
 .collapsible-content {
@@ -841,7 +870,6 @@ IconLabel {
     background-color: var(--bg-muted);
     border-color: var(--border-ui);
     border-width: 1px;
-    border-radius: 7px;
     padding: 8px;
     gap: 5px;
 }
@@ -881,7 +909,6 @@ IconLabel {
 Button {
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
     padding: 5px 12px;
     background-color: var(--bg-widget);
     color: var(--text);
@@ -918,11 +945,11 @@ TextInput {
     width: grow;
     min-width: 0px;
     height: 26px;
-    padding: 0px 8px;
+    padding: 10px;
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 5px;
+    border-radius: 2px;
     color: var(--text);
     font-family: regular;
     font-size: 14px;
@@ -946,7 +973,7 @@ Checkbox {
     width: 16px;
     height: 16px;
     background-color: var(--input-bg);
-    border-radius: 4px;
+    border-radius: 2px;
     border-width: 1px;
     border-color: var(--border-dim);
     color: var(--accent);
@@ -988,9 +1015,6 @@ Toggle {
     accent-color: var(--accent);
 }
 
-
-
-
 DragFloat {
     width: grow;
     height: 24px;
@@ -998,7 +1022,7 @@ DragFloat {
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 5px;
+    border-radius: 2px;
     color: var(--text);
     font-family: regular;
     font-size: 14px;
@@ -1012,7 +1036,7 @@ DragInt {
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 5px;
+    border-radius: 2px;
     color: var(--text);
     font-family: regular;
     font-size: 14px;
@@ -1027,7 +1051,7 @@ NumberInput {
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 5px;
+    border-radius: 2px;
     color: var(--text);
     font-family: regular;
     font-size: 14px;
@@ -1124,21 +1148,21 @@ ContextMenu {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border);
-    border-radius: 8px;
+    border-radius: 2px;
     padding: 5px;
-    width: 160px;
+    width: auto;
 }
 
 .context-item {
     font-family: regular;
     font-size: 14px;
     color: var(--text);
-    width: 100%;
+    width: grow;
     height: 24px;
     padding: 0px 12px;
     align-items: center;
     justify-content: start;
-    border-radius: 5px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -1156,7 +1180,6 @@ ContextMenu {
     flex-direction: column;
     width: grow;
     gap: 2px;
-    padding: 4px 4px;
 }
 
 .tree-view {
@@ -1164,7 +1187,7 @@ ContextMenu {
     width: grow;
     height: grow;
     overflow: scroll;
-    padding: 4px 4px;
+    padding: 6px;
 }
 
 .tree-node {
@@ -1185,7 +1208,7 @@ ContextMenu {
     height: 24px;
     align-items: center;
     justify-content: start;
-    border-radius: 5px;
+    border-radius: 2px;
     transition: 60ms linear;
     padding: 4px 4px;
 }
@@ -1207,7 +1230,7 @@ ContextMenu {
 .drag-target {
     border-width: 2px;
     border-color: var(--accent);
-    border-radius: 4px;
+    border-radius: 2px;
 }
 
 .color-picker {
@@ -1218,7 +1241,7 @@ ContextMenu {
 .cp-swatch {
     width: grow;
     height: 24px;
-    border-radius: 4px;
+    border-radius: 2px;
     border-width: 1px;
     border-color: rgba(0, 0, 0, 0.35);
     padding: 0px;
@@ -1231,7 +1254,7 @@ ContextMenu {
     padding: 8px;
     width: 220px;
     background-color: var(--bg-panel);
-    border-radius: 10px;
+    border-radius: 2px;
     border-width: 1px;
     border-color: rgba(255, 255, 255, 0.07);
 }
@@ -1239,7 +1262,7 @@ ContextMenu {
 .cp-sv-area {
     width: grow;
     height: 140px;
-    border-radius: 4px;
+    border-radius: 2px;
     overflow: hidden;
 }
 
@@ -1253,14 +1276,14 @@ ContextMenu {
 .cp-hue-bar {
     width: grow;
     height: 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     overflow: hidden;
 }
 
 .cp-preview {
     width: 28px;
     height: 28px;
-    border-radius: 4px;
+    border-radius: 2px;
     border-width: 1px;
     border-color: rgba(0, 0, 0, 0.35);
 }
@@ -1268,7 +1291,7 @@ ContextMenu {
 .cp-alpha-bar {
     width: grow;
     height: 12px;
-    border-radius: 6px;
+    border-radius: 2px;
     overflow: hidden;
 }
 
@@ -1287,7 +1310,7 @@ ContextMenu {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-ui);
-    border-radius: 3px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -1335,7 +1358,7 @@ ContextMenu {
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 3px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -1367,7 +1390,7 @@ ContextMenu {
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 3px;
+    border-radius: 2px;
     transition: 60ms ease-out;
 }
 
@@ -1454,6 +1477,11 @@ ContextMenu {
     background-color: var(--bg-base);
 }
 
+#panel-hierarchy {
+    gap: 2px;
+    padding: 2px;
+}
+
 .floating-panel-body {
     flex-direction: column;
     width: 100%;
@@ -1467,7 +1495,7 @@ ContextMenu {
     background-color: var(--bg-panel);
     border-width: 1px;
     border-color: var(--border-dim);
-    border-radius: 8px;
+    border-radius: 2px;
     box-shadow: var(--shadow-pop);
     overflow: hidden;
 }
@@ -1496,7 +1524,7 @@ ContextMenu {
     font-size: 14px;
     color: var(--text-dim);
     padding: 3px 10px;
-    border-radius: 4px;
+    border-radius: 2px;
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--border-ui);

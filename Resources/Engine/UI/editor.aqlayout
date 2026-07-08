@@ -18,10 +18,10 @@
                         <DockPanel id="panel-hierarchy">Hierarchy
                             <Include src="hierarchy.aqlayout"/>
                         </DockPanel>
-                        <DockPanel id="panel-viewport" src="Engine/UI/Icons/square-asterisk.png">Viewport
+                        <DockPanel id="panel-viewport">Viewport
                             <Include src="viewport.aqlayout"/>
                         </DockPanel>
-                        <DockPanel id="panel-inspector" src="Engine/UI/Icons/book-open-text.png">Inspector
+                        <DockPanel id="panel-inspector">Inspector
                             <Include src="inspector.aqlayout"/>
                         </DockPanel>
                     </DockNode>

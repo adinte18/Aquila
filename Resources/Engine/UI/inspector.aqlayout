@@ -1,7 +1,7 @@
 <View id="inspector-scroll">
     <TextInput id="inspector-name" class="inspector-entity-name"/>
     <Collapsible id="section-transform" src="Engine/UI/Icons/move-3d.png">Transform</Collapsible>
-    <Collapsible id="section-material">Material</Collapsible>
-    <Collapsible id="section-light">Light</Collapsible>
+    <Collapsible id="section-material" src="Engine/UI/Icons/eclipse.png">Material</Collapsible>
+    <Collapsible id="section-light" src="Engine/UI/Icons/lightbulb.png">Light</Collapsible>
     <Collapsible id="section-camera" src="Engine/UI/Icons/video.png">Camera</Collapsible>
 </View>
