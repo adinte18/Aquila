@@ -33,14 +33,13 @@ class Image : public View {
 	}
 
 	void on_draw_self(Rendering::DrawList &draw_list) override;
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	GFX::GfxTexture *m_texture = nullptr;
 	Vec4 m_tint = Vec4(1.F);
 	Vec2 m_uv_min = { 0.F, 0.F };
 	Vec2 m_uv_max = { 1.F, 1.F };
-	std::string m_icon_bank; // remembers the "bank" attribute so a later "icon" resolves against it
 };
 
 } // namespace Aquila::UI::Core

@@ -73,7 +73,7 @@ void View::update_animation(float dt) {
 	}
 }
 
-void View::apply_xml_attribute(std::string_view name, std::string_view value, void * /*loaderCtx*/) {
+void View::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver * /*resolver*/) {
 	StyleProperties props;
 	UI::ParserHelper::apply_declaration(props, name, value);
 	merge_style(props);
@@ -262,6 +262,29 @@ View *View::replace_child(View *old, Unique<View> new_child) {
 	return raw;
 }
 
+void View::reorder_child(View *child, View *before) {
+	if (child == before) {
+		return;
+	}
+	auto it = std::ranges::find_if(m_children, [child](const Unique<View> &view) { return view.get() == child; });
+	if (it == m_children.end()) {
+		return;
+	}
+	Unique<View> owned = std::move(*it);
+	m_children.erase(it);
+
+	if (before == nullptr) {
+		m_children.push_back(std::move(owned));
+	} else {
+		auto dest = std::ranges::find_if(m_children, [before](const Unique<View> &view) { return view.get() == before; });
+		m_children.insert(dest, std::move(owned));
+	}
+
+	mark_subtree_bounds_dirty();
+	child->set_draw_dirty();
+	invalidate_layout();
+}
+
 View *View::get_parent() const {
 	return m_parent;
 }
@@ -326,6 +349,7 @@ void View::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 		if (m_canvas) {
 			m_canvas->notify_style_dirty(this);
 		}
+		on_pressed(pos);
 	}
 	if (btn == Platform::MouseButton::Right) {
 		on_context_menu(pos);

@@ -43,13 +43,13 @@ void IconLabel::on_style_resolved() {
 	}
 }
 
-void IconLabel::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
-	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
-		m_icon->apply_xml_attribute(name, value, loader_ctx);
+void IconLabel::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
+	if (name == "src" || name == "uv" || name == "tint") {
+		m_icon->apply_xml_attribute(name, value, resolver);
 		update_icon_visibility();
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 void IconLabel::update_icon_visibility() {

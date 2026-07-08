@@ -21,7 +21,7 @@ class DockPanel : public View {
 	void set_tab_icon(GFX::GfxTexture *icon) { m_tab_icon = icon; }
 
 	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	std::string m_title;

@@ -23,7 +23,7 @@ class IconLabel : public View {
 
 	void on_style_resolved() override;
 	void apply_xml_text_content(std::string_view text) override { set_text(std::string(text)); }
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	void update_icon_visibility();

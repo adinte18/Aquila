@@ -82,12 +82,12 @@ void AssetSlot::on_drag_leave(DragState &) {
 	remove_class("drag-over-invalid");
 }
 
-void AssetSlot::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void AssetSlot::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "accept") {
 		set_accepted_type(std::string(value));
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 void AssetSlot::update_display() {

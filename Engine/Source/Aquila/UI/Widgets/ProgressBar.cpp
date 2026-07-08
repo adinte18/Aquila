@@ -21,12 +21,12 @@ void ProgressBar::set_value(float value) {
 	m_fill->merge_style(sp);
 }
 
-void ProgressBar::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void ProgressBar::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "value") {
 		set_value(std::stof(std::string(value)));
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 } // namespace Aquila::UI::Core

@@ -20,12 +20,12 @@ void Separator::set_vertical(bool vertical) {
 	apply_orientation();
 }
 
-void Separator::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void Separator::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "vertical") {
 		set_vertical(value == "true");
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 void Separator::apply_orientation() {

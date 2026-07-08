@@ -13,7 +13,7 @@ class ProgressBar : public View {
 	void set_value(float value);
 	[[nodiscard]] float get_value() const { return m_value; }
 
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	float m_value = 0.F;

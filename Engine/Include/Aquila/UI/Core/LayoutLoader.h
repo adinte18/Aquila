@@ -2,15 +2,15 @@
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Core/IResourceResolver.h"
 #include "Aquila/UI/Core/TextureCache.h"
-#include "Aquila/UI/Core/TextureIconBank.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 #include <string>
 #include <vector>
 
 namespace Aquila::UI::Core {
 
-class LayoutLoader {
+class LayoutLoader : public IResourceResolver {
   public:
 	using WidgetFactory = Delegate<Unique<View>(std::string_view text, Text::FontAtlas *font)>;
 
@@ -22,14 +22,10 @@ class LayoutLoader {
 
 	// Texture-based image loading for <Image src="..."/>.
 	void register_texture_cache(TextureCache *cache);
-	[[nodiscard]] GFX::GfxTexture *resolve_texture(const std::string &path) const;
-
-	// Texture-based icon banks for <Image icon="name" bank="bankName"/>.
-	void register_texture_icon_bank(const std::string &name, TextureIconBank *bank);
-	[[nodiscard]] TextureIconBank *resolve_texture_icon_bank(const std::string &name) const;
+	[[nodiscard]] GFX::GfxTexture *resolve_texture(const std::string &path) const override;
 
 	void register_command(const std::string &name, Delegate<void()> command);
-	[[nodiscard]] Delegate<void()> resolve_command(const std::string &name) const;
+	[[nodiscard]] Delegate<void()> resolve_command(const std::string &name) const override;
 
 	Unique<View> load_file(const std::string &path);
 	Unique<View> LoadString(std::string_view xml);
@@ -44,7 +40,6 @@ class LayoutLoader {
 	std::unordered_map<std::string, WidgetFactory> m_factories;
 
 	TextureCache *m_texture_cache = nullptr;
-	std::unordered_map<std::string, TextureIconBank *> m_icon_banks;
 	std::unordered_map<std::string, Delegate<void()>> m_commands;
 
 	std::string m_current_dir;

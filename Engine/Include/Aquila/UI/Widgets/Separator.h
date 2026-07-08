@@ -12,7 +12,7 @@ class Separator : public View {
 	[[nodiscard]] std::string_view get_type_name() const override { return "Separator"; }
 
 	void set_vertical(bool vertical);
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	bool m_vertical = false;

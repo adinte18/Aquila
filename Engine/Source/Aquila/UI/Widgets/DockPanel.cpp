@@ -1,5 +1,5 @@
 #include "Aquila/UI/Widgets/DockPanel.h"
-#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/UI/Core/IResourceResolver.h"
 
 namespace Aquila::UI::Core {
 
@@ -11,16 +11,16 @@ void DockPanel::set_title(std::string title) {
 	m_title = std::move(title);
 }
 
-void DockPanel::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void DockPanel::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "src" || name == "icon") {
-		if (auto *loader = static_cast<LayoutLoader *>(loader_ctx)) {
-			if (GFX::GfxTexture *tex = loader->resolve_texture(std::string(value))) {
+		if (resolver != nullptr) {
+			if (GFX::GfxTexture *tex = resolver->resolve_texture(std::string(value))) {
 				m_tab_icon = tex;
 			}
 		}
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 } // namespace Aquila::UI::Core

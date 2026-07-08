@@ -27,7 +27,7 @@ class DockNode : public View {
 
 	DockPanel *add_panel(std::string title, GFX::GfxTexture *tab_icon = nullptr);
 
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 	[[nodiscard]] Option<SplitDirection> get_declared_split() const { return m_declared_split; }
 
 	void set_active_panel(int index);

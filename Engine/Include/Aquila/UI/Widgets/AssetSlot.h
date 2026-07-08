@@ -28,7 +28,7 @@ class AssetSlot : public View {
 	void on_drop(DragState &state) override;
 	void on_drag_enter(DragState &state) override;
 	void on_drag_leave(DragState &state) override;
-	void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr) override;
+	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 
   private:
 	void update_display();

@@ -1,5 +1,5 @@
 #include "Aquila/UI/Widgets/Button.h"
-#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/UI/Core/IResourceResolver.h"
 #include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::UI::Core {
@@ -15,7 +15,7 @@ Button::Button(std::string text, Text::FontAtlas *font) {
 
 void Button::ensure_content() {
 	if (m_content == nullptr) {
-		m_content = static_cast<IconLabel *>(add_child(std::make_unique<IconLabel>()));
+		m_content = dynamic_cast<IconLabel *>(add_child(std::make_unique<IconLabel>()));
 	}
 }
 
@@ -37,8 +37,9 @@ void Button::set_icon(GFX::GfxTexture *texture) {
 }
 
 void Button::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
+	const bool was_pressed = m_is_pressed;
 	View::on_mouse_release(btn, pos);
-	if (btn == Platform::MouseButton::Left && m_is_hovered) {
+	if (btn == Platform::MouseButton::Left && m_is_hovered && was_pressed) {
 		on_click();
 	}
 }
@@ -53,15 +54,15 @@ void Button::on_style_resolved() {
 	}
 }
 
-void Button::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
-	if (name == "src" || name == "icon" || name == "bank" || name == "uv" || name == "tint") {
+void Button::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
+	if (name == "src" || name == "uv" || name == "tint") {
 		ensure_content();
-		m_content->apply_xml_attribute(name, value, loader_ctx);
+		m_content->apply_xml_attribute(name, value, resolver);
 		return;
 	}
 	if (name == "on-click") {
-		if (auto *loader = static_cast<LayoutLoader *>(loader_ctx)) {
-			if (Delegate<void()> command = loader->resolve_command(std::string(value))) {
+		if (resolver != nullptr) {
+			if (Delegate<void()> command = resolver->resolve_command(std::string(value))) {
 				on_click.connect(std::move(command));
 			} else {
 				AQUILA_LOG_WARNING("Button: on-click references unknown command '{}'", value);
@@ -69,7 +70,7 @@ void Button::apply_xml_attribute(std::string_view name, std::string_view value, 
 		}
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 } // namespace Aquila::UI::Core

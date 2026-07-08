@@ -1,6 +1,6 @@
 #include "Aquila/UI/Widgets/Image.h"
 #include "Aquila/Foundation/Macros.h"
-#include "Aquila/UI/Core/LayoutLoader.h"
+#include "Aquila/UI/Core/IResourceResolver.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 #include <sstream>
 
@@ -51,7 +51,7 @@ void Image::on_draw_self(Rendering::DrawList &draw_list) {
 	draw_list.draw_image(world_rect, m_texture, tint, m_uv_min, m_uv_max, 2);
 }
 
-void Image::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void Image::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "tint") {
 		if (auto c = UI::ParserHelper::parse_color(value)) {
 			set_tint(*c);
@@ -59,36 +59,12 @@ void Image::apply_xml_attribute(std::string_view name, std::string_view value, v
 		return;
 	}
 	if (name == "src") {
-		auto *loader = static_cast<Core::LayoutLoader *>(loader_ctx);
-		if (loader) {
-			if (GFX::GfxTexture *tex = loader->resolve_texture(std::string(value))) {
+		if (resolver != nullptr) {
+			if (GFX::GfxTexture *tex = resolver->resolve_texture(std::string(value))) {
 				set_texture(tex);
 			} else {
 				AQUILA_LOG_WARNING("Image: could not load texture '{}'", value);
 			}
-		}
-		return;
-	}
-	if (name == "bank") {
-		m_icon_bank = std::string(value);
-		return;
-	}
-	if (name == "icon") {
-		auto *loader = static_cast<Core::LayoutLoader *>(loader_ctx);
-		if (loader == nullptr) {
-			return;
-		}
-		const std::string &bank_name = m_icon_bank.empty() ? std::string("default") : m_icon_bank;
-		TextureIconBank *bank = loader->resolve_texture_icon_bank(m_icon_bank);
-		if (bank == nullptr) {
-			AQUILA_LOG_WARNING("Image: no TextureIconBank registered as '{}'", bank_name);
-			return;
-		}
-		if (const IconEntry *entry = bank->get_icon(std::string(value))) {
-			set_texture(entry->texture);
-			set_uv_region(entry->uv_min, entry->uv_max);
-		} else {
-			AQUILA_LOG_WARNING("Image: icon '{}' not found in bank '{}'", value, bank_name);
 		}
 		return;
 	}
@@ -100,7 +76,7 @@ void Image::apply_xml_attribute(std::string_view name, std::string_view value, v
 		}
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 } // namespace Aquila::UI::Core

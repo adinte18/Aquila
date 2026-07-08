@@ -14,6 +14,7 @@ class FontAtlas;
 namespace Aquila::UI::Core {
 
 class Canvas;
+class IResourceResolver;
 
 class View {
   public:
@@ -30,6 +31,7 @@ class View {
 	void remove_child(View *child);
 	Unique<View> detach_child(View *child);
 	View *replace_child(View *old, Unique<View> new_child);
+	void reorder_child(View *child, View *before);
 	[[nodiscard]] View *get_parent() const;
 	[[nodiscard]] View *get_first_draggable_parent() const;
 	[[nodiscard]] View *get_first_parent_that_accepts_drop() const;
@@ -80,6 +82,11 @@ class View {
 	}
 	void set_clay_id(Uint32 id) { m_clay_id = id; }
 
+	void set_layout_home(Vec2 pos) { m_layout_home = pos; }
+	[[nodiscard]] Vec2 get_layout_home() const { return m_layout_home; }
+	void set_layout_anim_offset(Vec2 offset) { m_layout_anim_offset = offset; }
+	[[nodiscard]] Vec2 get_layout_anim_offset() const { return m_layout_anim_offset; }
+
 	void set_input_leaf(bool v) { m_is_input_leaf = v; }
 	[[nodiscard]] bool is_input_leaf() const { return m_is_input_leaf; }
 	[[nodiscard]] bool is_visible() const { return m_visible; }
@@ -104,6 +111,7 @@ class View {
 	const Rect &get_subtree_bounds();
 
 	Signal<void(Vec2)> on_context_menu;
+	Signal<void(Vec2)> on_pressed;
 	bool is_animation_finished() const { return m_is_animation_finished; }
 
 	[[nodiscard]] bool is_hovered() const { return m_is_hovered; }
@@ -138,7 +146,7 @@ class View {
 
 	virtual void on_update(F32 delta_time) { (void)delta_time; }
 
-	virtual void apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx = nullptr);
+	virtual void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr);
 
 	virtual void apply_xml_text_content(std::string_view text) { (void)text; }
 
@@ -192,6 +200,8 @@ class View {
 	ComputedStyle m_computed_style;
 	Rect m_layout_rect;
 	Vec2 m_absolute_position;
+	Vec2 m_layout_home{};
+	Vec2 m_layout_anim_offset{};
 	bool m_visible = true;
 	bool m_enabled = true;
 	bool m_is_input_leaf = false;

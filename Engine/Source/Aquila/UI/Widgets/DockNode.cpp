@@ -185,7 +185,7 @@ DockPanel *DockNode::add_panel(std::string title, GFX::GfxTexture *tab_icon) {
 	return panel_raw;
 }
 
-void DockNode::apply_xml_attribute(std::string_view name, std::string_view value, void *loader_ctx) {
+void DockNode::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "split") {
 		if (value == "horizontal" || value == "row") {
 			m_declared_split = SplitDirection::Horizontal;
@@ -194,7 +194,7 @@ void DockNode::apply_xml_attribute(std::string_view name, std::string_view value
 		}
 		return;
 	}
-	View::apply_xml_attribute(name, value, loader_ctx);
+	View::apply_xml_attribute(name, value, resolver);
 }
 
 void DockNode::set_active_panel(int index) {
