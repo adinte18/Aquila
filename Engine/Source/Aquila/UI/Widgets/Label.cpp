@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/Label.h"
+#include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Style/StyleTypes.h"
 
@@ -41,26 +42,32 @@ Vec2 Label::measure(float override_font_size) const {
 	const float render_size = (override_font_size > 0.F) ? override_font_size : get_computed_style().font_size;
 	const float scale = (bake_size > 0.F && render_size > 0.F) ? (render_size / bake_size) : 1.F;
 
-	float width = 0.F;
-	float first_bearing_x = 0.F;
-	bool first = true;
-	for (unsigned char ch : m_text) {
-		const Text::GlyphInfo *glyph = font->get_glyph(static_cast<Uint32>(ch));
-		if (glyph) {
-			if (first) {
-				first_bearing_x = glyph->bearing.x;
-				first = false;
-			}
-			width += glyph->advance * scale;
-		}
+	Vec2 dims = font->measure_text(m_text, render_size);
+
+	const Foundation::Utf8::Decoded first = Foundation::Utf8::decode(m_text, 0);
+	if (const Text::GlyphInfo *glyph = font->get_glyph(first.codepoint)) {
+		dims.x -= glyph->bearing.x * scale;
 	}
-	width -= first_bearing_x * scale;
-	const float height = font->get_line_height() * scale;
-	return { width, height };
+	return dims;
 }
 
 Vec2 Label::get_intrinsic_size() const {
 	return measure();
+}
+
+bool Label::get_clay_text_run(ClayTextRun &out) const {
+	if (get_display_style().white_space != WhiteSpace::Normal) {
+		return false;
+	}
+	Text::FontAtlas *font = resolve_font();
+	if (font == nullptr || m_text.empty()) {
+		return false;
+	}
+	out.text = m_text;
+	out.font = font;
+	out.font_size = get_display_style().font_size;
+	out.align = get_display_style().text_align;
+	return true;
 }
 
 void Label::on_draw_self(Rendering::DrawList &draw_list) {
@@ -75,8 +82,9 @@ void Label::on_draw_self(Rendering::DrawList &draw_list) {
 	const Vec4 color = get_display_style().color;
 	const float font_size = get_display_style().font_size;
 	const Int32 z = 3;
+	const bool wrap = get_display_style().white_space == WhiteSpace::Normal;
 
-	draw_list.DrawText(world_rect, m_text, font, color, font_size, get_display_style().text_align, z);
+	draw_list.DrawText(world_rect, m_text, font, color, font_size, get_display_style().text_align, z, wrap);
 }
 
 } // namespace Aquila::UI::Core

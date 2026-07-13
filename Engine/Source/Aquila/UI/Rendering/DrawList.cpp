@@ -55,12 +55,13 @@ void DrawList::draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spre
 }
 
 void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, Vec4 color, float font_size,
-						TextAlign align, Int32 z) {
+						TextAlign align, Int32 z, bool wrap) {
 	if ((font == nullptr) || text.empty()) {
 		return;
 	}
 
 	font->ensure_glyphs(text);
+	font->ensure_bitmaps(text, font_size);
 
 	TextCmd command;
 	command.rect = bounds;
@@ -70,6 +71,7 @@ void DrawList::DrawText(Rect bounds, std::string_view text, Text::FontAtlas *fon
 	command.font = font;
 	command.font_size = font_size;
 	command.align = align;
+	command.wrap = wrap;
 
 	m_commands.push_back(std::move(command));
 }
@@ -154,75 +156,125 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					}
 
 					Text::FontAtlas *atlas = c.font;
-					const auto depth = 0.F;
-					const auto align = c.align;
 
 					const F32 bake_size = c.font->get_bake_size();
 					const F32 render_size = (c.font_size > 0.F) ? c.font_size : bake_size;
 					const F32 scale = (bake_size > 0.F) ? (render_size / bake_size) : 1.F;
+					const F32 line_height = c.font->get_line_height() * scale;
+					const F32 ascent = c.font->get_ascent() * scale;
+					const F32 descent = c.font->get_descent() * scale;
+					const F32 glyph_block = ascent - descent;
 
-					struct CharEntry {
-						const Text::GlyphInfo *glyph;
-						const Text::SlugGlyphData *slug;
+					GFX::GfxTexture *atlas_texture = atlas->get_atlas_texture();
+					if (atlas_texture == nullptr) {
+						return;
+					}
+
+					auto draw_line_range = [&](size_t start, size_t end, F32 baseline_y) {
+						F32 text_width = 0.F;
+						for (size_t ci = start; ci < end;) {
+							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
+							ci += (d.size > 0 ? d.size : 1u);
+							if (const Text::BitmapGlyph *bmp = atlas->get_bitmap(d.codepoint, render_size)) {
+								text_width += bmp->advance;
+							}
+						}
+
+						F32 cursor_x = c.rect.position.x;
+						if (c.align == TextAlign::Center) {
+							cursor_x += (c.rect.size.x - text_width) * 0.5f;
+						} else if (c.align == TextAlign::Right) {
+							cursor_x += c.rect.size.x - text_width;
+						} else {
+							for (size_t ci = start; ci < end;) {
+								const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
+								ci += (d.size > 0 ? d.size : 1u);
+								if (const Text::BitmapGlyph *bmp = atlas->get_bitmap(d.codepoint, render_size)) {
+									cursor_x -= bmp->bearing.x;
+									break;
+								}
+							}
+						}
+
+						const F32 baseline = std::round(baseline_y);
+
+						for (size_t ci = start; ci < end;) {
+							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
+							ci += (d.size > 0 ? d.size : 1u);
+							const Text::BitmapGlyph *bmp = atlas->get_bitmap(d.codepoint, render_size);
+							if (bmp == nullptr) {
+								continue;
+							}
+							if (bmp->size.x > 0.F && bmp->size.y > 0.F) {
+								Graphics::SpriteSpec spec{};
+								spec.position = { std::round(cursor_x + bmp->bearing.x), baseline + bmp->bearing.y };
+								spec.size = bmp->size;
+								spec.tint = c.color;
+								spec.texture = atlas_texture;
+								spec.uv_min = bmp->uv_min;
+								spec.uv_max = bmp->uv_max;
+								r2d.draw_sprite(spec);
+							}
+							cursor_x += bmp->advance;
+						}
 					};
-					CharEntry glyph_cache[512];
-					Uint32 cache_count = 0;
-					F32 text_width = 0.F;
 
-					const auto text_len = std::min(c.text.size(), static_cast<size_t>(512));
-					for (size_t ci = 0; ci < text_len && cache_count < 512;) {
-						const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
-						ci += (d.size > 0 ? d.size : 1u);
-						const Text::GlyphInfo *g = c.font->get_glyph(d.codepoint);
-						if (!g) {
-							continue;
+					if (!c.wrap) {
+						const F32 baseline = c.rect.position.y + (c.rect.size.y - glyph_block) * 0.5F + ascent;
+						draw_line_range(0, c.text.size(), baseline);
+					} else {
+						const std::string &s = c.text;
+						const F32 max_w = c.rect.size.x;
+						const F32 space_w = atlas->measure_text(" ", render_size).x;
+						F32 baseline_y = c.rect.position.y + ascent;
+						size_t line_start = std::string::npos;
+						size_t line_end = 0;
+						F32 line_w = 0.F;
+
+						auto flush = [&]() {
+							if (line_start != std::string::npos) {
+								draw_line_range(line_start, line_end, baseline_y);
+							}
+							baseline_y += line_height;
+							line_start = std::string::npos;
+							line_w = 0.F;
+						};
+
+						size_t i = 0;
+						while (i < s.size()) {
+							if (s[i] == '\n') {
+								flush();
+								++i;
+								continue;
+							}
+							if (s[i] == ' ') {
+								++i;
+								continue;
+							}
+							const size_t word_start = i;
+							while (i < s.size() && s[i] != ' ' && s[i] != '\n') {
+								++i;
+							}
+							const size_t word_end = i;
+							const F32 word_w =
+								atlas->measure_text(std::string_view(s).substr(word_start, word_end - word_start),
+													render_size)
+									.x;
+							if (line_start == std::string::npos) {
+								line_start = word_start;
+								line_end = word_end;
+								line_w = word_w;
+							} else if (line_w + space_w + word_w <= max_w) {
+								line_end = word_end;
+								line_w += space_w + word_w;
+							} else {
+								flush();
+								line_start = word_start;
+								line_end = word_end;
+								line_w = word_w;
+							}
 						}
-						text_width += g->advance * scale;
-						glyph_cache[cache_count++] = { g, atlas->get_slug_data(g->glyph_id) };
-					}
-
-					F32 cursor_x = c.rect.position.x;
-					if (align == TextAlign::Center) {
-						cursor_x += (c.rect.size.x - text_width) * 0.5f;
-					} else if (align == TextAlign::Right) {
-						cursor_x += c.rect.size.x - text_width;
-					} else if (cache_count > 0) {
-						cursor_x -= glyph_cache[0].glyph->bearing.x * scale;
-					}
-					const F32 baseline_y = c.rect.position.y + c.font->get_ascent() * scale;
-
-					GFX::GfxTexture *curve_texture = atlas->get_curve_texture();
-					GFX::GfxTexture *band_texture = atlas->get_band_texture();
-
-					for (Uint32 ci = 0; ci < cache_count; ++ci) {
-						const Text::GlyphInfo *glyph = glyph_cache[ci].glyph;
-						const Text::SlugGlyphData *slug = glyph_cache[ci].slug;
-
-						if (slug == nullptr) {
-							cursor_x += glyph->advance * scale;
-							continue;
-						}
-
-						const F32 glyph_x = cursor_x + glyph->bearing.x * scale;
-						const F32 glyph_y = baseline_y + glyph->bearing.y * scale;
-
-						Graphics::GlyphSpec spec{};
-						spec.position = { glyph_x, glyph_y };
-						spec.size = glyph->size * scale;
-						spec.color = c.color;
-						spec.depth = depth;
-						spec.glyph_loc_x = slug->glyph_loc_x;
-						spec.glyph_loc_y = slug->glyph_loc_y;
-						spec.band_max_x = slug->band_max_x;
-						spec.band_max_y = slug->band_max_y;
-						spec.banding = slug->band_transform;
-						spec.em_min = slug->em_min;
-						spec.em_max = slug->em_max;
-						spec.curve_texture = curve_texture;
-						spec.band_texture = band_texture;
-
-						r2d.draw_glyph(spec);
-						cursor_x += glyph->advance * scale;
+						flush();
 					}
 				} else if constexpr (std::is_same_v<T, ClipPushCmd>) {
 					r2d.flush();
