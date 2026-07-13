@@ -74,6 +74,10 @@ void View::update_animation(float dt) {
 }
 
 void View::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver * /*resolver*/) {
+	if (name == "tooltip") {
+		set_tooltip(std::string(value));
+		return;
+	}
 	StyleProperties props;
 	UI::ParserHelper::apply_declaration(props, name, value);
 	merge_style(props);
@@ -270,6 +274,14 @@ void View::reorder_child(View *child, View *before) {
 	if (it == m_children.end()) {
 		return;
 	}
+
+	auto next = it + 1;
+	const bool already_positioned =
+		(before == nullptr) ? (next == m_children.end()) : (next != m_children.end() && next->get() == before);
+	if (already_positioned) {
+		return;
+	}
+
 	Unique<View> owned = std::move(*it);
 	m_children.erase(it);
 
@@ -333,6 +345,7 @@ void View::on_mouse_enter() {
 	if (m_canvas) {
 		m_canvas->notify_style_dirty(this);
 	}
+	on_mouse_entered();
 }
 void View::on_mouse_leave() {
 	if (!m_is_hovered) {

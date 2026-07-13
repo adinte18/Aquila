@@ -1,5 +1,6 @@
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/UI/Widgets/Tooltip.h"
 
 namespace Aquila::UI::Core {
 
@@ -18,6 +19,8 @@ Canvas::Canvas(Uint32 width, Uint32 height)
 	m_root->set_style(root_style);
 	notify_style_dirty(m_root.get());
 	style_pass();
+
+	m_tooltip = static_cast<Tooltip *>(m_root->add_child(std::make_unique<Tooltip>()));
 }
 
 void Canvas::mark_dirty() {
@@ -68,6 +71,14 @@ void Canvas::notify_view_removed(View *view) {
 	}
 	if (auto it = std::ranges::find(m_active_anims, view); it != m_active_anims.end()) {
 		m_active_anims.erase(it);
+	}
+	if (m_tooltip_target == view) {
+		m_tooltip_target = nullptr;
+		m_tooltip_timer = 0.F;
+	}
+	if (m_tooltip == view) {
+		m_tooltip = nullptr;
+		m_tooltip_shown = false;
 	}
 }
 
@@ -155,15 +166,24 @@ void Canvas::compute() {
 	}
 
 	if (m_layout_dirty) {
+		constexpr int k_max_container_resolve_passes = 3;
+		const bool has_container_rules = m_style_engine.get_style_sheet().has_container_blocks();
+
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(),
 								   m_input_router.take_scroll_delta(), m_delta_time);
 		m_layout_dirty = false;
 
-		// @container rules depend on element sizes — re-resolve immediately after
-		// layout so rules see the current frame's container sizes.
-		if (m_layout_engine.did_layout_resize() && m_style_engine.get_style_sheet().has_container_blocks()) {
+		for (int pass = 0;
+			 has_container_rules && m_layout_engine.did_layout_resize() && pass < k_max_container_resolve_passes;
+			 ++pass) {
 			mark_subtree_dirty(m_root.get());
 			style_pass();
+			if (!m_layout_dirty) {
+				break;
+			}
+			m_layout_dirty = false;
+			animation_pass(0.F);
+			m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {}, 0.F);
 		}
 
 		m_draw_compositor.invalidate_all(m_root.get());
@@ -211,6 +231,7 @@ void Canvas::scroll_into_view(View *target) {
 
 void Canvas::update(F32 delta_time) {
 	m_delta_time = delta_time;
+	update_tooltip(delta_time);
 	if (!m_ticking.empty()) {
 		std::vector<View *> ticking_snapshot = m_ticking;
 		for (View *view : ticking_snapshot) {
@@ -220,6 +241,60 @@ void Canvas::update(F32 delta_time) {
 	}
 	style_pass();
 	animation_pass(delta_time);
+}
+
+void Canvas::update_tooltip(F32 dt) {
+	if (m_tooltip == nullptr) {
+		return;
+	}
+
+	static constexpr F32 K_TOOLTIP_DELAY = 0.5F;
+	static constexpr F32 K_TOOLTIP_GAP = 4.F;
+
+	View *owner = nullptr;
+	for (View *v = m_input_router.hovered_view(); v != nullptr; v = v->get_parent()) {
+		if (v == m_tooltip) {
+			break;
+		}
+		if (!v->get_tooltip().empty()) {
+			owner = v;
+			break;
+		}
+	}
+
+	if (owner == nullptr) {
+		if (m_tooltip_shown) {
+			m_tooltip->hide();
+			m_tooltip_shown = false;
+			mark_dirty();
+		}
+		m_tooltip_target = nullptr;
+		m_tooltip_timer = 0.F;
+		return;
+	}
+
+	if (owner != m_tooltip_target) {
+		m_tooltip_target = owner;
+		m_tooltip_timer = 0.F;
+		if (m_tooltip_shown) {
+			m_tooltip->hide();
+			m_tooltip_shown = false;
+		}
+	}
+
+	if (m_tooltip_shown) {
+		return;
+	}
+
+	m_tooltip_timer += dt;
+	if (m_tooltip_timer >= K_TOOLTIP_DELAY) {
+		const Rect rect = owner->get_absolute_rect();
+		m_tooltip->show_at({ rect.position.x, rect.position.y + rect.size.y + K_TOOLTIP_GAP }, owner->get_tooltip());
+		m_tooltip_shown = true;
+		mark_dirty();
+	} else {
+		Aquila::Rendering::FrameScheduler::get()->request_frame();
+	}
 }
 
 void Canvas::resize(Uint32 width, Uint32 height) {

@@ -12,6 +12,8 @@ namespace Aquila::UI::Core {
 
 using namespace Aquila::UI::Rendering;
 
+class Tooltip;
+
 class Canvas {
 	friend class InputRouter; // calls MarkDirty()/RequestLayout() on input
 
@@ -79,5 +81,11 @@ class Canvas {
 	void request_layout(); // mark layout dirty + request a frame (used by input/scroll)
 	void style_pass();
 	void animation_pass(F32 dt);
+	void update_tooltip(F32 dt);
+
+	Tooltip *m_tooltip = nullptr;
+	View *m_tooltip_target = nullptr;
+	float m_tooltip_timer = 0.F;
+	bool m_tooltip_shown = false;
 };
 } // namespace Aquila::UI::Core

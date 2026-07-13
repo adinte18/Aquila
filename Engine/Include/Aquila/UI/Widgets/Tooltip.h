@@ -14,6 +14,9 @@ class Tooltip : public FloatingOverlay {
 	void show_at(Vec2 canvas_pos, std::string text);
 	void hide();
 
+	// A tooltip is display-only; it must never capture hover (which would flicker it).
+	View *hit_test_absolute(Vec2 /*canvas_pos*/) override { return nullptr; }
+
   private:
 	Label *m_label = nullptr;
 };
