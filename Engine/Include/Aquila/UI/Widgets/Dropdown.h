@@ -23,6 +23,8 @@ class Dropdown : public Control {
 	void set_placeholder(std::string text);
 	Signal<void(const std::string &)> on_changed;
 
+	[[nodiscard]] Vec2 get_intrinsic_size() const override;
+
   private:
 	struct Option {
 		std::string value;
@@ -33,6 +35,7 @@ class Dropdown : public Control {
 	void rebuild();
 	void select(const std::string &value);
 	void update_header_text();
+	void toggle_popup();
 
 	Button *m_header = nullptr;
 	Popup *m_popup = nullptr;
