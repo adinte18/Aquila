@@ -79,22 +79,22 @@ static Option<MediaCondition> parse_media_condition(std::string_view raw) {
 		const std::string prop = ParserHelper::trim(c.substr(0, colon_pos));
 		const float val = ParserHelper::parse_float(ParserHelper::trim(c.substr(colon_pos + 1)));
 		if (prop == "min-width") {
-			return MediaCondition{ Axis::Width, Op::GreaterEq, val };
+			return MediaCondition{ .axis = Axis::Width, .op = Op::GreaterEq, .value = val };
 		}
 		if (prop == "max-width") {
-			return MediaCondition{ Axis::Width, Op::LessEq, val };
+			return MediaCondition{ .axis = Axis::Width, .op = Op::LessEq, .value = val };
 		}
 		if (prop == "min-height") {
-			return MediaCondition{ Axis::Height, Op::GreaterEq, val };
+			return MediaCondition{ .axis = Axis::Height, .op = Op::GreaterEq, .value = val };
 		}
 		if (prop == "max-height") {
-			return MediaCondition{ Axis::Height, Op::LessEq, val };
+			return MediaCondition{ .axis = Axis::Height, .op = Op::LessEq, .value = val };
 		}
 		if (prop == "width") {
-			return MediaCondition{ Axis::Width, Op::Equal, val };
+			return MediaCondition{ .axis = Axis::Width, .op = Op::Equal, .value = val };
 		}
 		if (prop == "height") {
-			return MediaCondition{ Axis::Height, Op::Equal, val };
+			return MediaCondition{ .axis = Axis::Height, .op = Op::Equal, .value = val };
 		}
 		return std::nullopt;
 	}
@@ -135,7 +135,7 @@ static Option<MediaCondition> parse_media_condition(std::string_view raw) {
 	}
 
 	const float val = ParserHelper::parse_float(ParserHelper::trim(rest.substr(op_end)));
-	return MediaCondition{ axis, op, val };
+	return MediaCondition{ .axis = axis, .op = op, .value = val };
 }
 
 static void parse_at_block(std::string_view cond_text, std::string_view body, StyleSheet &sheet, bool is_container) {
@@ -143,7 +143,7 @@ static void parse_at_block(std::string_view cond_text, std::string_view body, St
 	const std::string cond_str = ParserHelper::trim(cond_text);
 	size_t j = 0;
 	while (j < cond_str.size()) {
-		while (j < cond_str.size() && std::isspace((unsigned char)cond_str[j])) {
+		while (j < cond_str.size() && (std::isspace((unsigned char)cond_str[j]) != 0)) {
 			++j;
 		}
 		if (j >= cond_str.size()) {
@@ -173,7 +173,7 @@ static void parse_at_block(std::string_view cond_text, std::string_view body, St
 	StyleSheet temp_sheet;
 	size_t k = 0;
 	while (k < body.size()) {
-		while (k < body.size() && std::isspace((unsigned char)body[k])) {
+		while (k < body.size() && (std::isspace((unsigned char)body[k]) != 0)) {
 			++k;
 		}
 		if (k >= body.size()) {
@@ -224,6 +224,8 @@ bool StyleParser::load_file(const std::string &path, StyleSheet &sheet) {
 }
 
 bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
+	sheet.clear();
+
 	std::string src = ParserHelper::strip_comments(css);
 
 	auto vars = extract_variables(src);
@@ -237,7 +239,7 @@ bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
 
 	size_t i = 0;
 	while (i < src.size()) {
-		while (i < src.size() && std::isspace(static_cast<unsigned char>(src[i]))) {
+		while (i < src.size() && (std::isspace(static_cast<unsigned char>(src[i])) != 0)) {
 			++i;
 		}
 		if (i >= src.size()) {
@@ -260,7 +262,7 @@ bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
 		const std::string_view body = std::string_view(src).substr(brace_open + 1, brace_close - brace_open - 1);
 
 		if (!selector.empty()) {
-			if (selector.size() > 6 && selector.substr(0, 6) == "@media") {
+			if (selector.size() > 6 && selector.starts_with("@media")) {
 				parse_at_block(std::string_view(selector).substr(6), body, sheet, false);
 			} else if (selector.size() > 10 && selector.substr(0, 10) == "@container") {
 				parse_at_block(std::string_view(selector).substr(10), body, sheet, true);

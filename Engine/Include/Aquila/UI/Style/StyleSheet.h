@@ -67,6 +67,13 @@ class StyleSheet {
 
 	[[nodiscard]] Usize get_rule_count() const { return m_rules.size(); }
 
+	AQUILA_INLINE void clear() {
+		m_rules.clear();
+		m_media_blocks.clear();
+		m_container_blocks.clear();
+		m_variables.clear();
+	}
+
   private:
 	[[nodiscard]] bool matches(const StyleRule &rule, const Core::View &view) const;
 
