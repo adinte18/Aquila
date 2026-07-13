@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/Application/ApplicationNew.h"
+#include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 
 #include <vector>
@@ -67,6 +68,7 @@ class EditorApplication : public Aquila::Application::Application {
 
 	PickerOverlay *m_picker = nullptr;
 	bool m_pick_mode = false;
+	Aquila::UI::Core::LayoutLoader m_layout_loader;
 
 	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
 

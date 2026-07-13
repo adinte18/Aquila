@@ -6,7 +6,7 @@
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Widgets/Button.h"
-#include "Aquila/UI/Widgets/ContextMenu.h"
+#include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/DockPanel.h"
 
 namespace Editor {
@@ -18,8 +18,8 @@ using namespace Aquila::SceneManagement::Components;
 HierarchyPanel::HierarchyPanel(EntityManager &entity_manager) : m_entity_manager(entity_manager) {}
 
 void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
-	auto ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
-	auto *ctx = dynamic_cast<UI::Core::ContextMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
+	auto ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
+	auto *ctx = dynamic_cast<UI::Core::PopupMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
 	ctx->add_item("Create Empty", [this] {
 		auto entity = m_entity_manager.create_entity("New Entity");
 		m_tree_view->add_entity_node(entity.get_name(), entity);
@@ -30,9 +30,8 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		auto tree_uniq = std::make_unique<HierarchyTreeView>(m_entity_manager);
 		m_tree_view = dynamic_cast<HierarchyTreeView *>(panel->add_child(std::move(tree_uniq)));
 
-		auto node_ctx_uniq = std::make_unique<UI::Core::ContextMenu>();
-		auto *node_context_menu =
-			dynamic_cast<UI::Core::ContextMenu *>(m_tree_view->add_child(std::move(node_ctx_uniq)));
+		auto node_ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
+		auto *node_context_menu = dynamic_cast<UI::Core::PopupMenu *>(m_tree_view->add_child(std::move(node_ctx_uniq)));
 
 		node_context_menu->add_item("Add child", [this] {
 			if (m_selected_node != nullptr) {

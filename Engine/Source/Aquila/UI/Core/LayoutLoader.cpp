@@ -8,7 +8,7 @@
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Slider.h"
 #include "Aquila/UI/Widgets/Popup.h"
-#include "Aquila/UI/Widgets/ContextMenu.h"
+#include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/UI/Widgets/NumberInput.h"
 #include "Aquila/UI/Widgets/DragFloat.h"
@@ -55,7 +55,7 @@ struct Parser {
 	}
 
 	void skip_ws() {
-		while (!at_end() && std::isspace(static_cast<unsigned char>(peek()))) {
+		while (!at_end() && (std::isspace(static_cast<unsigned char>(peek())) != 0)) {
 			advance();
 		}
 	}
@@ -407,7 +407,7 @@ Unique<View> LayoutLoader::load_file(const std::string &path) {
 		resolved = m_current_dir + "/" + path;
 	}
 
-	if (std::find(m_include_stack.begin(), m_include_stack.end(), resolved) != m_include_stack.end()) {
+	if (std::ranges::find(m_include_stack, resolved) != m_include_stack.end()) {
 		AQUILA_LOG_ERROR("LayoutLoader: include cycle detected at '{}'", resolved);
 		return nullptr;
 	}
@@ -451,7 +451,7 @@ void LayoutLoader::register_builtins() {
 	Register<Slider>("Slider");
 	Register<TextInput>("TextInput");
 	Register<Popup>("Popup");
-	Register<ContextMenu>("ContextMenu");
+	Register<PopupMenu>("PopupMenu");
 	Register<NumberInput>("NumberInput");
 	Register<DragFloat>("DragFloat");
 	Register<DragInt>("DragInt");

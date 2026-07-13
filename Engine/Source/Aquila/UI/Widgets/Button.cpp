@@ -24,6 +24,11 @@ void Button::set_text(std::string text) {
 	m_content->set_text(std::move(text));
 }
 
+void Button::set_shortcut(std::string shortcut) {
+	ensure_content();
+	m_content->set_shortcut(std::move(shortcut));
+}
+
 void Button::set_font(Text::FontAtlas *font) {
 	if (m_content == nullptr) {
 		return;
@@ -34,6 +39,16 @@ void Button::set_font(Text::FontAtlas *font) {
 void Button::set_icon(GFX::GfxTexture *texture) {
 	ensure_content();
 	m_content->set_icon_texture(texture);
+}
+
+void Button::set_reserve_icon_space(bool reserve) {
+	ensure_content();
+	m_content->set_reserve_icon_space(reserve);
+}
+
+void Button::set_trailing_icon(GFX::GfxTexture *texture) {
+	ensure_content();
+	m_content->set_trailing_icon(texture);
 }
 
 void Button::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
