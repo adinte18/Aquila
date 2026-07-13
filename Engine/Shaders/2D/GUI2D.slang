@@ -76,8 +76,7 @@ float perimeterCoord(float2 point, float2 halfSize) {
 	float outerAlpha = 1.0 - smoothstep(-0.5, 0.5, dist);
 	float innerAlpha = 1.0 - smoothstep(-0.5, 0.5, dist + input.borderWidth);
 
-	float4 col = lerp(input.borderColor, input.color, innerAlpha);
-	col.a *= outerAlpha;
+	float ringCoverage = saturate(outerAlpha - innerAlpha);
 
 	int style = (int)(input.borderStyle + 0.5);
 	if (style != 0 && input.borderWidth > 0.0) {
@@ -93,10 +92,15 @@ float perimeterCoord(float2 point, float2 halfSize) {
 		float phase = frac(perimeterCoord(localPos, halfSize) / period);
 		float aa = fwidth(phase);
 		float on = 1.0 - smoothstep(duty - aa, duty + aa, phase);
-		float ring = 1.0 - innerAlpha;
-		col.a *= lerp(1.0, on, ring);
+		ringCoverage *= on;
 	}
-	return col;
+
+	float fillAlpha = input.color.a * innerAlpha;
+	float borderAlpha = input.borderColor.a * ringCoverage;
+	float outAlpha = borderAlpha + fillAlpha * (1.0 - borderAlpha);
+	float3 outRgb =
+		(input.borderColor.rgb * borderAlpha + input.color.rgb * fillAlpha * (1.0 - borderAlpha)) / max(outAlpha, 1e-5);
+	return float4(outRgb, outAlpha);
 }
 
 #endif // AQUILA_GUI2D_SLANG
