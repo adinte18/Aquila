@@ -20,6 +20,7 @@ class Label : public View {
 	[[nodiscard]] Text::FontAtlas *resolve_font() const;
 
 	Vec2 get_intrinsic_size() const override;
+	bool get_clay_text_run(ClayTextRun &out) const override;
 
 	[[nodiscard]] const std::string &get_text() const { return m_text; }
 	[[nodiscard]] Text::FontAtlas *get_font() const { return m_font; }

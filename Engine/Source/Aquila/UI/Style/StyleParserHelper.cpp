@@ -541,6 +541,12 @@ void apply_declaration(StyleProperties &props, std::string_view prop_raw, std::s
 		} else if (value_lower == "right") {
 			props.text_align = TextAlign::Right;
 		}
+	} else if (prop == "white-space") {
+		if (value_lower == "normal") {
+			props.white_space = WhiteSpace::Normal;
+		} else if (value_lower == "nowrap" || value_lower == "no-wrap") {
+			props.white_space = WhiteSpace::Nowrap;
+		}
 
 	} else if (prop == "box-shadow") {
 		if (value_lower == "none") {

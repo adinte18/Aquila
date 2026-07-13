@@ -1,4 +1,5 @@
 #include "Aquila/UI/Core/LayoutEngine.h"
+#include "Aquila/UI/Text/FontAtlas.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-designated-field-initializers"
@@ -52,6 +53,27 @@ static Clay_LayoutAlignmentY align_to_align_y(AlignItems align) {
 	default:
 		return CLAY_ALIGN_Y_TOP;
 	}
+}
+
+static Clay_TextAlignment to_clay_text_align(TextAlign align) {
+	switch (align) {
+	case TextAlign::Center:
+		return CLAY_TEXT_ALIGN_CENTER;
+	case TextAlign::Right:
+		return CLAY_TEXT_ALIGN_RIGHT;
+	default:
+		return CLAY_TEXT_ALIGN_LEFT;
+	}
+}
+
+static Clay_Dimensions measure_clay_text(Clay_StringSlice text, Clay_TextElementConfig *config, void * /*userData*/) {
+	auto *font = static_cast<Text::FontAtlas *>(config->userData);
+	if (font == nullptr || text.length <= 0) {
+		return { 0.F, 0.F };
+	}
+	const std::string_view slice(text.chars, static_cast<size_t>(text.length));
+	const Vec2 dims = font->measure_text(slice, static_cast<F32>(config->fontSize));
+	return { dims.x, dims.y };
 }
 
 static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 flex_grow = 0.F) {
@@ -131,7 +153,10 @@ LayoutEngine::LayoutEngine(Uint32 width, Uint32 height) : m_width(width), m_heig
 	const Uint32 mem_size = Clay_MinMemorySize();
 	m_clay_memory.resize(mem_size);
 	const Clay_Arena arena = Clay_CreateArenaWithCapacityAndMemory(mem_size, m_clay_memory.data());
-	m_clay_ctx = Clay_Initialize(arena, { static_cast<F32>(width), static_cast<F32>(height) }, {});
+	Clay_Context *ctx = Clay_Initialize(arena, { static_cast<F32>(width), static_cast<F32>(height) }, {});
+	m_clay_ctx = ctx;
+	Clay_SetCurrentContext(ctx);
+	Clay_SetMeasureTextFunction(measure_clay_text, nullptr);
 }
 
 void LayoutEngine::set_dimensions(Uint32 width, Uint32 height) {
@@ -213,19 +238,39 @@ void LayoutEngine::layout_pass(View *node) {
 	const Clay_ElementId clay_id = make_element_id(node);
 	node->set_clay_id(clay_id.id);
 
-	auto emit_children = [&]() {
+	ClayTextRun text_run;
+	const bool is_text = node->get_clay_text_run(text_run);
+
+	auto emit_content = [&]() {
+		if (is_text) {
+			text_run.font->ensure_glyphs(text_run.text);
+			const Clay_String text_string{
+				.isStaticallyAllocated = false,
+				.length = static_cast<Int32>(text_run.text.size()),
+				.chars = text_run.text.data(),
+			};
+			Clay_TextElementConfig text_config{};
+			text_config.userData = text_run.font;
+			text_config.fontSize = static_cast<uint16_t>(text_run.font_size);
+			text_config.wrapMode = CLAY_TEXT_WRAP_WORDS;
+			text_config.textAlignment = to_clay_text_align(text_run.align);
+			Clay__OpenTextElement(text_string, text_config);
+			return;
+		}
 		for (const auto &child : node->get_children()) {
 			layout_pass(child.get());
 		}
 	};
 
 	Clay_LayoutConfig layout = to_clay_layout(cs);
-	const Vec2 intrinsic = node->get_intrinsic_size();
-	if (intrinsic.x >= 0.F && cs.width.unit == LengthUnit::Auto) {
-		layout.sizing.width = CLAY_SIZING_FIXED(intrinsic.x);
-	}
-	if (intrinsic.y >= 0.F && cs.height.unit == LengthUnit::Auto) {
-		layout.sizing.height = CLAY_SIZING_FIXED(intrinsic.y);
+	if (!is_text) {
+		const Vec2 intrinsic = node->get_intrinsic_size();
+		if (intrinsic.x >= 0.F && cs.width.unit == LengthUnit::Auto) {
+			layout.sizing.width = CLAY_SIZING_FIXED(intrinsic.x);
+		}
+		if (intrinsic.y >= 0.F && cs.height.unit == LengthUnit::Auto) {
+			layout.sizing.height = CLAY_SIZING_FIXED(intrinsic.y);
+		}
 	}
 
 	const Clay_AspectRatioElementConfig aspect_cfg = { cs.aspect_ratio };
@@ -272,7 +317,7 @@ void LayoutEngine::layout_pass(View *node) {
 				   .aspectRatio = aspect_cfg,
 				   .floating = float_cfg,
 				   .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
-				emit_children();
+				emit_content();
 			}
 			break;
 		case Overflow::Hidden:
@@ -281,12 +326,12 @@ void LayoutEngine::layout_pass(View *node) {
 				   .aspectRatio = aspect_cfg,
 				   .floating = float_cfg,
 				   .clip = { .horizontal = true, .vertical = false } }) {
-				emit_children();
+				emit_content();
 			}
 			break;
 		default:
 			CLAY(clay_id, { .layout = layout, .aspectRatio = aspect_cfg, .floating = float_cfg }) {
-				emit_children();
+				emit_content();
 			}
 			break;
 		}
@@ -301,7 +346,7 @@ void LayoutEngine::layout_pass(View *node) {
 				 .aspectRatio = aspect_cfg,
 				 .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() },
 			 }) {
-			emit_children();
+			emit_content();
 		}
 		break;
 
@@ -312,13 +357,13 @@ void LayoutEngine::layout_pass(View *node) {
 				 .aspectRatio = aspect_cfg,
 				 .clip = { .horizontal = true, .vertical = false },
 			 }) {
-			emit_children();
+			emit_content();
 		}
 		break;
 
 	default:
 		CLAY(clay_id, { .layout = layout, .aspectRatio = aspect_cfg }) {
-			emit_children();
+			emit_content();
 		}
 		break;
 	}

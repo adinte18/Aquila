@@ -16,6 +16,13 @@ namespace Aquila::UI::Core {
 class Canvas;
 class IResourceResolver;
 
+struct ClayTextRun {
+	std::string_view text;
+	Text::FontAtlas *font = nullptr;
+	F32 font_size = 0.F;
+	TextAlign align = TextAlign::Left;
+};
+
 class View {
   public:
 	View();
@@ -63,6 +70,10 @@ class View {
 
 	void set_id(std::string id) { m_id = std::move(id); }
 	void set_style(StyleProperties props) { m_style = std::move(props); }
+
+	// Optional hover tooltip. Empty (the default) means this view has no tooltip.
+	void set_tooltip(std::string text) { m_tooltip = std::move(text); }
+	[[nodiscard]] const std::string &get_tooltip() const { return m_tooltip; }
 
 	void merge_style(const StyleProperties &overlay);
 	void set_computed_style(ComputedStyle style);
@@ -112,6 +123,7 @@ class View {
 
 	Signal<void(Vec2)> on_context_menu;
 	Signal<void(Vec2)> on_pressed;
+	Signal<void()> on_mouse_entered;
 	bool is_animation_finished() const { return m_is_animation_finished; }
 
 	[[nodiscard]] bool is_hovered() const { return m_is_hovered; }
@@ -125,6 +137,11 @@ class View {
 	[[nodiscard]] Uint32 get_stable_id() const { return m_stable_id; }
 
 	virtual Vec2 get_intrinsic_size() const { return { -1.F, -1.F }; }
+
+	// When true, the layout engine emits a Clay text element for this node (so Clay
+	// performs word wrapping and computes multi-line height) instead of pinning a
+	// fixed intrinsic box. out is only valid when this returns true.
+	virtual bool get_clay_text_run(ClayTextRun & /*out*/) const { return false; }
 
 	virtual void on_draw_self(Rendering::DrawList &draw_list);
 	virtual void on_mouse_enter();
@@ -195,6 +212,7 @@ class View {
 	bool m_display_style_initialized = false;
 
 	std::string m_id;
+	std::string m_tooltip;
 	std::vector<std::string> m_classes;
 	StyleProperties m_style;
 	ComputedStyle m_computed_style;

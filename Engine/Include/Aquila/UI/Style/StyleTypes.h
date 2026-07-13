@@ -30,6 +30,8 @@ struct BoxShadow {
 
 enum class TextAlign : Uint8 { Left, Center, Right };
 
+enum class WhiteSpace : Uint8 { Normal, Nowrap };
+
 enum class FloatingAttachTo : Uint8 { Parent, Root };
 enum class FloatingAttachPoint : Uint8 {
 	LeftTop,

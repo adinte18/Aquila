@@ -52,6 +52,7 @@ struct TextCmd {
 	Text::FontAtlas *font = nullptr;
 	float font_size = 0.F;
 	TextAlign align = TextAlign::Left;
+	bool wrap = false; // word-wrap within rect.size.x across multiple lines
 	Int32 z_order = 0;
 };
 

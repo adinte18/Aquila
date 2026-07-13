@@ -50,6 +50,7 @@ struct ComputedStyle {
 	F32 font_size = StyleDefaults::FONT_SIZE; // 0 = unset / inherit from parent
 	std::string font_family; // "" = unset / inherit from parent
 	TextAlign text_align = TextAlign::Left;
+	WhiteSpace white_space = StyleDefaults::WHITE_SPACE;
 
 	std::vector<BoxShadow> box_shadows;
 

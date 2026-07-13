@@ -45,6 +45,7 @@
 	AQ_STYLE_PROP("font-size",          font_size,         font_size,         1, 0, 1) \
 	AQ_STYLE_PROP("font-family",        font_family,       font_family,       1, 0, 1) \
 	AQ_STYLE_PROP("text-align",         text_align,        text_align,        0, 0, 0) \
+	AQ_STYLE_PROP("white-space",        white_space,       white_space,       1, 0, 1) \
 	AQ_STYLE_PROP("box-shadow",         box_shadows,       box_shadows,       0, 0, 0) \
 	AQ_STYLE_PROP("transition-duration",transition_duration,transition_duration,0,0,0) \
 	AQ_STYLE_PROP("transition-easing",  transition_easing, transition_easing, 0, 0, 0)
