@@ -157,12 +157,6 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 	btn->add_class("dock-tab-btn");
 	DockTabButton *btn_raw = static_cast<DockTabButton *>(wrapper_raw->add_child(std::move(btn)));
 
-	auto close_btn = std::make_unique<DockCloseButton>();
-	close_btn->set_text("x");
-	close_btn->add_class("dock-tab-close-btn");
-	close_btn->set_close_info(this, panel);
-	wrapper_raw->add_child(std::move(close_btn));
-
 	btn_raw->set_drag_info(m_drag_ctx, panel, this);
 	btn_raw->on_click.connect([this, panel] { set_active_panel_by_ptr(panel); });
 

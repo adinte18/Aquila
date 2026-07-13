@@ -7,6 +7,7 @@
 #include "Aquila/UI/Widgets/DockNode.h"
 #include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockSplitter.h"
+#include "Aquila/UI/Widgets/IconLabel.h"
 
 namespace Aquila::UI::Core {
 
@@ -26,6 +27,19 @@ DockSpace::DockSpace() {
 	preview->set_hidden(true);
 	m_drop_preview = add_child(std::move(preview));
 
+	auto ghost = std::make_unique<IconLabel>();
+	ghost->add_class("dock-drag-ghost");
+	{
+		FloatingConfig cfg;
+		cfg.attach_to = FloatingAttachTo::Root;
+		cfg.element_point = FloatingAttachPoint::LeftTop;
+		cfg.parent_point = FloatingAttachPoint::LeftTop;
+		cfg.z_index = 60;
+		ghost->set_floating(cfg);
+	}
+	ghost->set_hidden(true);
+	m_drag_ghost = dynamic_cast<IconLabel *>(add_child(std::move(ghost)));
+
 	m_drag_ctx.on_node_emptied = [this](DockNode *node) {
 		collapse_node(node);
 		if (!has_any_panels() && m_on_emptied) {
@@ -34,6 +48,8 @@ DockSpace::DockSpace() {
 	};
 
 	m_drag_ctx.on_move = [this](Vec2 pos) {
+		update_drag_ghost(pos);
+
 		if (is_outside_canvas(pos)) {
 			if (m_drop_target) {
 				m_drop_target->show_drop_zones(false);
@@ -98,6 +114,8 @@ DockSpace::DockSpace() {
 	};
 
 	m_drag_ctx.on_release = [this](Vec2 pos) {
+		hide_drag_ghost();
+
 		if (m_drag_left_canvas) {
 			m_drag_left_canvas = false;
 			if (m_on_external_drag_clear) {
@@ -140,14 +158,14 @@ DockSpace::DockSpace() {
 	};
 
 	auto root = std::make_unique<DockNode>(&m_drag_ctx);
-	m_root = static_cast<DockNode *>(add_child(std::move(root)));
+	m_root = dynamic_cast<DockNode *>(add_child(std::move(root)));
 }
 
 namespace {
 
 std::vector<View *> declared_dock_children(View *node) {
 	std::vector<View *> out;
-	for (auto &child : node->get_children()) {
+	for (const auto &child : node->get_children()) {
 		View *c = child.get();
 		if (dynamic_cast<DockNode *>(c) != nullptr || dynamic_cast<DockPanel *>(c) != nullptr) {
 			out.push_back(c);
@@ -160,7 +178,7 @@ std::vector<View *> declared_dock_children(View *node) {
 
 void DockSpace::on_xml_loaded() {
 	DockNode *decl_root = nullptr;
-	for (auto &child : get_children()) {
+	for (const auto &child : get_children()) {
 		auto *dn = dynamic_cast<DockNode *>(child.get());
 		if (dn != nullptr && dn != m_root) {
 			decl_root = dn;
@@ -243,7 +261,7 @@ static DockNode *find_leaf_with_tabs(View *view) {
 			return node;
 		}
 	}
-	for (auto &child : view->get_children()) {
+	for (const auto &child : view->get_children()) {
 		if (DockNode *found = find_leaf_with_tabs(child.get())) {
 			return found;
 		}
@@ -252,19 +270,19 @@ static DockNode *find_leaf_with_tabs(View *view) {
 }
 
 bool DockSpace::has_any_panels() const {
-	return m_root && find_leaf_with_tabs(m_root) != nullptr;
+	return (m_root != nullptr) && find_leaf_with_tabs(m_root) != nullptr;
 }
 
 DockNode *DockSpace::first_leaf_with_tabs() const {
-	return m_root ? find_leaf_with_tabs(m_root) : nullptr;
+	return (m_root != nullptr) ? find_leaf_with_tabs(m_root) : nullptr;
 }
 
 void DockSpace::update_preview(DockNode *target, DropZone zone) {
-	if (!m_drop_preview) {
+	if (m_drop_preview == nullptr) {
 		return;
 	}
 
-	if (!target || zone == DropZone::None) {
+	if ((target == nullptr) || zone == DropZone::None) {
 		m_drop_preview->set_hidden(true);
 		return;
 	}
@@ -277,18 +295,18 @@ void DockSpace::update_preview(DockNode *target, DropZone zone) {
 
 		break;
 	case DropZone::Left:
-		preview.size.x *= 0.5f;
+		preview.size.x *= 0.5F;
 		break;
 	case DropZone::Right:
-		preview.position.x += r.size.x * 0.5f;
-		preview.size.x *= 0.5f;
+		preview.position.x += r.size.x * 0.5F;
+		preview.size.x *= 0.5F;
 		break;
 	case DropZone::Top:
-		preview.size.y *= 0.5f;
+		preview.size.y *= 0.5F;
 		break;
 	case DropZone::Bottom:
-		preview.position.y += r.size.y * 0.5f;
-		preview.size.y *= 0.5f;
+		preview.position.y += r.size.y * 0.5F;
+		preview.size.y *= 0.5F;
 		break;
 	default:
 		break;
@@ -310,15 +328,44 @@ void DockSpace::update_preview(DockNode *target, DropZone zone) {
 	m_drop_preview->set_hidden(false);
 }
 
+void DockSpace::update_drag_ghost(Vec2 pos) {
+	if ((m_drag_ghost == nullptr) || !m_drag_ctx.active) {
+		return;
+	}
+
+	if (!m_drag_ghost_active) {
+		m_drag_ghost->set_text((m_drag_ctx.panel != nullptr) ? m_drag_ctx.panel->get_title() : m_drag_ctx.title);
+		m_drag_ghost->set_icon_texture((m_drag_ctx.panel != nullptr) ? m_drag_ctx.panel->get_tab_icon() : nullptr);
+		m_drag_ghost->set_hidden(false);
+		m_drag_ghost_active = true;
+	}
+
+	FloatingConfig cfg;
+	cfg.attach_to = FloatingAttachTo::Root;
+	cfg.element_point = FloatingAttachPoint::LeftTop;
+	cfg.parent_point = FloatingAttachPoint::LeftTop;
+	cfg.z_index = 60;
+	cfg.offset = pos + Vec2(14.F, 14.F);
+	m_drag_ghost->set_floating(cfg);
+	m_drag_ghost->invalidate_layout();
+}
+
+void DockSpace::hide_drag_ghost() {
+	if (m_drag_ghost == nullptr) {
+		return;
+	}
+	m_drag_ghost->set_hidden(true);
+	m_drag_ghost_active = false;
+}
+
 void DockSpace::execute_drop(DockNode *target, DropZone zone, Vec2 release_pos) {
-	if (!target) {
+	if (target == nullptr) {
 		return;
 	}
 
 	DockNode *source = m_drag_ctx.source_node;
 
-	// External drag: no source node — the panel subtree travels in the drag context.
-	if (!source) {
+	if (source == nullptr) {
 		if (!m_drag_ctx.external_view) {
 			return;
 		}
@@ -328,7 +375,7 @@ void DockSpace::execute_drop(DockNode *target, DropZone zone, Vec2 release_pos) 
 	}
 
 	DockPanel *panel = m_drag_ctx.panel;
-	if (!panel) {
+	if (panel == nullptr) {
 		return;
 	}
 
@@ -363,15 +410,15 @@ void DockSpace::collapse_node(DockNode *node) {
 	}
 
 	auto *parent = dynamic_cast<DockNode *>(node->get_parent());
-	if (!parent) {
+	if (parent == nullptr) {
 		return;
 	}
 
 	DockSplitter *left_split = nullptr;
 	DockSplitter *right_split = nullptr;
-	for (auto &child : parent->get_children()) {
+	for (const auto &child : parent->get_children()) {
 		auto *ds = dynamic_cast<DockSplitter *>(child.get());
-		if (!ds) {
+		if (ds == nullptr) {
 			continue;
 		}
 		if (ds->get_after() == node) {
@@ -383,20 +430,20 @@ void DockSpace::collapse_node(DockNode *node) {
 	}
 
 	DockNode *survivor = nullptr;
-	if (left_split && right_split) {
+	if ((left_split != nullptr) && (right_split != nullptr)) {
 		left_split->set_siblings(left_split->get_before(), right_split->get_after());
 		parent->remove_child(right_split);
-	} else if (left_split) {
+	} else if (left_split != nullptr) {
 		survivor = dynamic_cast<DockNode *>(left_split->get_before());
 		parent->remove_child(left_split);
-	} else if (right_split) {
+	} else if (right_split != nullptr) {
 		survivor = dynamic_cast<DockNode *>(right_split->get_after());
 		parent->remove_child(right_split);
 	}
 
 	parent->remove_child(node);
 
-	if (survivor) {
+	if (survivor != nullptr) {
 		StyleProperties sp;
 		sp.width = StyleLength::grow();
 		sp.height = StyleLength::grow();
@@ -404,16 +451,15 @@ void DockSpace::collapse_node(DockNode *node) {
 		survivor->merge_style(sp);
 	}
 
-	// A container reduced to a single node is redundant — hoist that node into the container's slot
 	DockNode *only_child = nullptr;
 	int node_count = 0;
-	for (auto &child : parent->get_children()) {
+	for (const auto &child : parent->get_children()) {
 		if (auto *dn = dynamic_cast<DockNode *>(child.get())) {
 			++node_count;
 			only_child = dn;
 		}
 	}
-	if (node_count == 1 && only_child) {
+	if (node_count == 1 && (only_child != nullptr)) {
 		hoist_single_child(parent, only_child);
 	} else {
 		parent->invalidate_layout();
@@ -437,24 +483,24 @@ void DockSpace::hoist_single_child(DockNode *container, DockNode *only) {
 		replace_child(container, std::move(owned));
 		m_root = only;
 	} else if (auto *gp_node = dynamic_cast<DockNode *>(grandparent)) {
-		for (auto &child : gp_node->get_children()) {
+		for (const auto &child : gp_node->get_children()) {
 			if (auto *ds = dynamic_cast<DockSplitter *>(child.get())) {
 				ds->update_sibling_ref(container, only);
 			}
 		}
 		gp_node->replace_child(container, std::move(owned));
-	} else if (grandparent) {
+	} else if (grandparent != nullptr) {
 		grandparent->replace_child(container, std::move(owned));
 	}
 
-	if (grandparent) {
+	if (grandparent != nullptr) {
 		grandparent->invalidate_layout();
 	}
 }
 
 bool DockSpace::is_outside_canvas(Vec2 pos) const {
 	const Canvas *canvas = get_canvas();
-	if (!canvas) {
+	if (canvas == nullptr) {
 		return false;
 	}
 	const auto w = static_cast<float>(canvas->get_width());
@@ -465,19 +511,19 @@ bool DockSpace::is_outside_canvas(Vec2 pos) const {
 void DockSpace::preview_external_drag(Vec2 local_pos) {
 	DockNode *hovered = m_root->hit_test_node(local_pos);
 	if (hovered != m_drop_target) {
-		if (m_drop_target) {
+		if (m_drop_target != nullptr) {
 			m_drop_target->show_drop_zones(false);
 			m_drop_target->highlight_drop_zone(DropZone::None);
 		}
 		update_preview(nullptr, DropZone::None);
 		m_drop_target = hovered;
-		if (m_drop_target) {
+		if (m_drop_target != nullptr) {
 			m_drop_target->show_drop_zones(true);
 		}
 		m_current_zone = DropZone::None;
 	}
 
-	if (!m_drop_target) {
+	if (m_drop_target == nullptr) {
 		return;
 	}
 
@@ -490,7 +536,7 @@ void DockSpace::preview_external_drag(Vec2 local_pos) {
 }
 
 void DockSpace::clear_external_drag() {
-	if (m_drop_target) {
+	if (m_drop_target != nullptr) {
 		m_drop_target->show_drop_zones(false);
 		m_drop_target->highlight_drop_zone(DropZone::None);
 	}

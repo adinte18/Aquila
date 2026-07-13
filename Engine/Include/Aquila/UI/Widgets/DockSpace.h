@@ -9,6 +9,7 @@ namespace Aquila::UI::Core {
 class DockNode;
 class DockPanel;
 class DockSplitter;
+class IconLabel;
 
 class DockSpace : public View {
   public:
@@ -44,6 +45,8 @@ class DockSpace : public View {
 	void collapse_node(DockNode *node);
 	void hoist_single_child(DockNode *container, DockNode *only);
 	void update_preview(DockNode *target, DropZone zone);
+	void update_drag_ghost(Vec2 pos);
+	void hide_drag_ghost();
 
 	[[nodiscard]] bool is_outside_canvas(Vec2 pos) const;
 
@@ -52,6 +55,8 @@ class DockSpace : public View {
 	DockNode *m_drop_target = nullptr;
 	DropZone m_current_zone = DropZone::None;
 	View *m_drop_preview = nullptr;
+	IconLabel *m_drag_ghost = nullptr;
+	bool m_drag_ghost_active = false;
 	Delegate<void(Unique<View>, std::string, Vec2)> m_on_tear_off;
 	Delegate<void()> m_on_emptied;
 	Delegate<void(Vec2)> m_on_external_drag_move;
