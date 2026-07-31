@@ -70,17 +70,19 @@ void MaterialComponentUI::build(UI::Core::Collapsible *section, UI::Core::Proper
 	m_roughness = grid->add_row<DragFloat>("Roughness",
 										   DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01f, .precision = 3 });
 
-	m_texture_area = section->add_content<UI::Core::PropertyGrid>();
+	m_texture_area = section->add_child<UI::Core::PropertyGrid>();
 }
 
 void MaterialComponentUI::show(Entity entity) {
 	auto &mat = entity.get_component<MaterialComponent>();
 
-	ComponentBinder<MaterialComponent> bind(entity);
+	ComponentBinder<MaterialComponent> bind(entity, &MaterialComponent::on_changed);
 
 	m_type->set_value(material_type_to_string(mat.type));
 	m_type->on_changed.set([entity](const std::string &v) mutable {
-		entity.get_component<MaterialComponent>().type = string_to_material_type(v);
+		auto &component = entity.get_component<MaterialComponent>();
+		component.type = string_to_material_type(v);
+		component.on_changed();
 	});
 
 	bind.bind(m_albedo, [](auto &m) -> Vec4 & { return m.surface_properties.albedo; });
@@ -98,6 +100,10 @@ void MaterialComponentUI::show(Entity entity) {
 			m_texture_area->add_row<UI::Core::AssetSlot>(param.name, "Texture2D");
 		}
 	}
+}
+
+std::vector<ComponentSignal> MaterialComponentUI::signals(Entity entity) const {
+	return { { "changed", &entity.get_component<MaterialComponent>().on_changed } };
 }
 
 } // namespace Editor

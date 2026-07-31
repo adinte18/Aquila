@@ -67,7 +67,6 @@ void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 	}
 
 	m_scroll_view = panel->find_by_id<UI::Core::ScrollView>("console-scroll");
-	m_detail_label = panel->find_by_id<UI::Core::Label>("console-detail-text");
 
 	UI::Core::View *toolbar_ptr = panel->find_by_id("console-toolbar");
 	if (toolbar_ptr == nullptr) {
@@ -119,6 +118,7 @@ void ConsolePanel::flush_pending() {
 	}
 	m_pending.clear();
 	update_filter_buttons();
+	m_scroll_view->scroll_to_bottom();
 }
 
 void ConsolePanel::append_entry(LogEntry entry) {
@@ -137,14 +137,6 @@ void ConsolePanel::append_entry(LogEntry entry) {
 		}
 		m_entries.erase(m_entries.begin());
 		m_rows.erase(m_rows.begin());
-		if (m_selected_index == 0) {
-			m_selected_index = -1;
-			if (m_detail_label) {
-				m_detail_label->set_text("");
-			}
-		} else if (m_selected_index > 0) {
-			--m_selected_index;
-		}
 		m_scroll_view->remove_oldest_content();
 	}
 
@@ -162,44 +154,15 @@ void ConsolePanel::append_entry(LogEntry entry) {
 		break;
 	}
 
-	auto row = std::make_unique<ClickableView>();
-	row->add_class("console-row");
-	row->add_class(level_class(entry.level));
-	row->add_class((row_index % 2 == 0) ? "console-row-even" : "console-row-odd");
+	auto line = std::make_unique<UI::Core::Label>(entry.message);
+	line->add_class("console-line");
+	line->add_class(level_class(entry.level));
 
-	auto icon = std::make_unique<UI::Core::Image>(level_icon(entry.level), level_icon_tint(entry.level));
-	icon->add_class("console-row-icon");
-	row->add_child(std::move(icon));
-
-	auto text = std::make_unique<UI::Core::Label>(entry.message);
-	text->add_class("console-row-text");
-	row->add_child(std::move(text));
-
-	ClickableView *row_ptr = static_cast<ClickableView *>(m_scroll_view->add_content(std::move(row)));
-	row_ptr->on_click.connect([this, row_ptr]() {
-		auto it = std::find(m_rows.begin(), m_rows.end(), static_cast<UI::Core::View *>(row_ptr));
-		if (it != m_rows.end()) {
-			select_row((int)(it - m_rows.begin()));
-		}
-	});
-
-	m_rows.push_back(row_ptr);
+	UI::Core::View *line_ptr = m_scroll_view->add_child(std::move(line));
+	m_rows.push_back(line_ptr);
 	m_entries.push_back(std::move(entry));
 
 	apply_row_visibility(row_index);
-}
-
-void ConsolePanel::select_row(int index) {
-	if (m_selected_index >= 0 && m_selected_index < (int)m_rows.size()) {
-		m_rows[m_selected_index]->remove_class("console-row-selected");
-	}
-	m_selected_index = index;
-	if (index >= 0 && index < (int)m_rows.size()) {
-		m_rows[index]->add_class("console-row-selected");
-		if (m_detail_label) {
-			m_detail_label->set_text(m_entries[index].message);
-		}
-	}
 }
 
 void ConsolePanel::clear_all() {
@@ -211,10 +174,6 @@ void ConsolePanel::clear_all() {
 	m_info_count = 0;
 	m_warning_count = 0;
 	m_error_count = 0;
-	m_selected_index = -1;
-	if (m_detail_label) {
-		m_detail_label->set_text("");
-	}
 	update_filter_buttons();
 }
 
@@ -325,23 +284,6 @@ const char *ConsolePanel::level_class(LogLevel level) {
 	}
 }
 
-const char *ConsolePanel::level_icon_class(LogLevel level) {
-	switch (level) {
-	case LogLevel::Critical:
-		return "console-icon-critical";
-	case LogLevel::Error:
-		return "console-icon-error";
-	case LogLevel::Warning:
-		return "console-icon-warning";
-	case LogLevel::Debug:
-		return "console-icon-debug";
-	case LogLevel::Trace:
-		return "console-icon-trace";
-	default:
-		return "console-icon-info";
-	}
-}
-
 Vec4 ConsolePanel::level_icon_tint(LogLevel level) {
 	switch (level) {
 	case LogLevel::Warning:
@@ -356,17 +298,6 @@ Vec4 ConsolePanel::level_icon_tint(LogLevel level) {
 		return { 0.53f, 0.53f, 0.53f, 1.F };
 	default:
 		return { 0.42f, 0.69f, 0.86f, 1.F };
-	}
-}
-
-GfxTexture *ConsolePanel::level_icon(LogLevel level) const {
-	switch (level_to_group(level)) {
-	case FilterGroup::Warning:
-		return m_alert_icon;
-	case FilterGroup::Error:
-		return m_error_icon;
-	default:
-		return m_info_icon;
 	}
 }
 

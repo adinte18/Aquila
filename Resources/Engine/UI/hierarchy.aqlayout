@@ -1,3 +1,6 @@
-<View class="hierarchy-toolbar">
-    <Button class="hierarchy-toolbar-btn" on-click="entity.create" tooltip="Add a new empty entity to the scene" src="Engine/UI/Icons/plus.png"> New entity</Button>
+<View id="hierarchy-root">
+    <View class="hierarchy-toolbar">
+        <Button class="hierarchy-toolbar-btn" on-click="entity.create" tooltip="Add a new empty entity to the scene" src="Engine/UI/Icons/plus.png"> New entity</Button>
+    </View>
+    <ScrollView id="hierarchy-scroll"/>
 </View>

@@ -20,6 +20,7 @@ class MaterialComponentUI : public IComponentUI {
 	bool matches(Aquila::SceneManagement::Entity entity) const override;
 	void build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
 	void show(Aquila::SceneManagement::Entity entity) override;
+	std::vector<ComponentSignal> signals(Aquila::SceneManagement::Entity entity) const override;
 
   private:
 	Aquila::GFX::GfxContext &m_context;

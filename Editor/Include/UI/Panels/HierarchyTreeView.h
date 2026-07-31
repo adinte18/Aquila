@@ -16,7 +16,10 @@ class HierarchyTreeView : public Aquila::UI::Core::TreeView {
   public:
 	explicit HierarchyTreeView(Aquila::SceneManagement::EntityManager &entity_manager);
 
-	HierarchyTreeNode *add_entity_node(std::string label, Aquila::SceneManagement::Entity entity);
+	HierarchyTreeNode *add_entity_node(std::string label, Aquila::SceneManagement::Entity entity,
+	                                   HierarchyTreeNode *parent = nullptr);
+	void populate_from_entity(Aquila::SceneManagement::Entity entity, HierarchyTreeNode *parent = nullptr);
+	void clear();
 	[[nodiscard]] HierarchyTreeNode *find_node_for_entity(Aquila::SceneManagement::Entity entity) const;
 	[[nodiscard]] Aquila::SceneManagement::EntityManager &get_entity_manager() { return m_entity_manager; }
 

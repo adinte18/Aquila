@@ -30,12 +30,16 @@ void CameraComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *g
 }
 
 void CameraComponentUI::show(Entity entity) {
-	ComponentBinder<CameraComponent> bind(entity);
+	ComponentBinder<CameraComponent> bind(entity, &CameraComponent::on_changed);
 	bind.bind(m_fov, [](auto &c) -> float & { return c.fov; });
 	bind.bind(m_near, [](auto &c) -> float & { return c.near_plane; });
 	bind.bind(m_far, [](auto &c) -> float & { return c.far_plane; });
 	bind.bind(m_primary, [](auto &c) -> bool & { return c.primary; });
 	bind.bind(m_ortho, [](auto &c) -> bool & { return c.is_orthographic; });
+}
+
+std::vector<ComponentSignal> CameraComponentUI::signals(Entity entity) const {
+	return { { "changed", &entity.get_component<CameraComponent>().on_changed } };
 }
 
 } // namespace Editor

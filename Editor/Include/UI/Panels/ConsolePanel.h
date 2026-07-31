@@ -49,16 +49,13 @@ class ConsolePanel : public IEditorPanel {
 	enum class FilterGroup { Info, Warning, Error };
 
 	void append_entry(LogEntry entry);
-	void select_row(int index);
 	void toggle_filter(FilterGroup group);
 	void apply_row_visibility(int index);
 	void update_filter_buttons();
 	static LogLevel parse_level(const std::string &line);
 	static FilterGroup level_to_group(LogLevel level);
 	static const char *level_class(LogLevel level);
-	static const char *level_icon_class(LogLevel level);
 	static Vec4 level_icon_tint(LogLevel level);
-	Aquila::GFX::GfxTexture *level_icon(LogLevel level) const;
 	static constexpr int K_MAX_MESSAGES = 500;
 
 	Aquila::UI::Core::TextureCache *m_texture_cache = nullptr;
@@ -78,10 +75,8 @@ class ConsolePanel : public IEditorPanel {
 	bool m_show_info = true;
 	bool m_show_warning = true;
 	bool m_show_error = true;
-	int m_selected_index = -1;
 
 	Aquila::UI::Core::ScrollView *m_scroll_view = nullptr;
-	Aquila::UI::Core::Label *m_detail_label = nullptr;
 	std::vector<Aquila::UI::Core::View *> m_rows;
 
 	Aquila::UI::Core::Label *m_info_count_label = nullptr;

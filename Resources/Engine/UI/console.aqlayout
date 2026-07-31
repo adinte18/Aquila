@@ -4,8 +4,4 @@
         <View class="console-toolbar-sep"/>
     </View>
     <ScrollView id="console-scroll"/>
-    <View id="console-divider"/>
-    <View id="console-detail">
-        <Label id="console-detail-text"></Label>
-    </View>
 </View>

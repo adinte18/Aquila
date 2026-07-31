@@ -16,7 +16,7 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 	m_is_draggable = false;
 
 	on_selected.connect([this](Aquila::UI::Core::TreeNode *node) {
-		auto *hierarchy_node = dynamic_cast<HierarchyTreeNode *>(node);
+		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
 		auto it = m_node_entity_map.find(hierarchy_node);
 		if (it != m_node_entity_map.end()) {
 			on_entity_selected(it->second);
@@ -24,7 +24,7 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 	});
 
 	on_node_right_clicked.connect([this](Aquila::UI::Core::TreeNode *node, Vec2 pos) {
-		auto *hierarchy_node = dynamic_cast<HierarchyTreeNode *>(node);
+		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
 		auto it = m_node_entity_map.find(hierarchy_node);
 		if (it != m_node_entity_map.end()) {
 			on_entity_right_clicked(it->second, pos);
@@ -32,11 +32,38 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 	});
 }
 
-HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity entity) {
-	auto node = std::make_unique<HierarchyTreeNode>(std::move(label), *this, 0, entity, m_entity_manager);
-	auto *raw = dynamic_cast<HierarchyTreeNode *>(add_child(std::move(node)));
+HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity entity, HierarchyTreeNode *parent) {
+	const int depth = parent != nullptr ? parent->get_depth() + 1 : 0;
+	auto node = std::make_unique<HierarchyTreeNode>(std::move(label), *this, depth, entity, m_entity_manager);
+
+	HierarchyTreeNode *raw = nullptr;
+	if (parent != nullptr) {
+		raw = static_cast<HierarchyTreeNode *>(parent->add_child(std::move(node)));
+	} else {
+		raw = static_cast<HierarchyTreeNode *>(add_child(std::move(node)));
+	}
+
 	m_node_entity_map[raw] = entity;
 	return raw;
+}
+
+void HierarchyTreeView::populate_from_entity(Entity entity, HierarchyTreeNode *parent) {
+	auto *node = add_entity_node(entity.get_name(), entity, parent);
+	if (auto *scene_node = entity.try_get_component<SceneNodeComponent>()) {
+		for (auto child : scene_node->children) {
+			populate_from_entity(child, node);
+		}
+	}
+}
+
+void HierarchyTreeView::clear() {
+	deselect();
+	if (m_content != nullptr) {
+		while (!m_content->get_children().empty()) {
+			m_content->remove_child(m_content->get_children().front().get());
+		}
+	}
+	m_node_entity_map.clear();
 }
 
 HierarchyTreeNode *HierarchyTreeView::find_node_for_entity(Entity entity) const {
@@ -75,11 +102,12 @@ void HierarchyTreeView::on_drop(DragState &state) {
 
 	View *old_parent_container = source_node->get_parent();
 	auto *old_parent_node =
-		dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
+		view_cast<TreeNode>(old_parent_container ? old_parent_container->get_parent() : nullptr);
 
 	auto detached = old_parent_container->detach_child(source_node);
 
 	if (old_parent_node) {
+		old_parent_node->refresh_indicator();
 		old_parent_node->queue_redraw();
 	}
 

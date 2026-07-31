@@ -1,7 +1,15 @@
-<View id="inspector-scroll">
-    <TextInput id="inspector-name" class="inspector-entity-name"/>
-    <Collapsible id="section-transform" src="Engine/UI/Icons/move-3d.png">Transform</Collapsible>
-    <Collapsible id="section-material" src="Engine/UI/Icons/eclipse.png">Material</Collapsible>
-    <Collapsible id="section-light" src="Engine/UI/Icons/lightbulb.png">Light</Collapsible>
-    <Collapsible id="section-camera" src="Engine/UI/Icons/video.png">Camera</Collapsible>
+<View id="inspector-root">
+    <View id="inspector-empty">
+        <Label class="inspector-empty-text">Select an actor in the Hierarchy panel to inspect and edit its components.</Label>
+    </View>
+    <ScrollView id="inspector-scroll">
+        <View id="inspector-list">
+            <TextInput id="inspector-name" class="inspector-entity-name"/>
+            <Button id="inspector-add-component" class="inspector-add-component" src="Engine/UI/Icons/plus.png"> Add Component</Button>
+            <Collapsible id="section-transform" src="Engine/UI/Icons/move-3d.png">Transform</Collapsible>
+            <Collapsible id="section-material" src="Engine/UI/Icons/eclipse.png">Material</Collapsible>
+            <Collapsible id="section-light" src="Engine/UI/Icons/lightbulb.png">Light</Collapsible>
+            <Collapsible id="section-camera" src="Engine/UI/Icons/video.png">Camera</Collapsible>
+        </View>
+    </ScrollView>
 </View>

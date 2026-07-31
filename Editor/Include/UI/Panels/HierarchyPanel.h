@@ -7,6 +7,10 @@ namespace Aquila::SceneManagement {
 class EntityManager;
 }
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Editor {
 
 class HierarchyTreeView;
@@ -19,8 +23,13 @@ class HierarchyPanel : public IEditorPanel {
 	Signal<void(Aquila::SceneManagement::Entity)> on_entity_selected;
 	Signal<void()> on_entity_deselected;
 	void add_entity(Aquila::SceneManagement::Entity entity);
+	void refresh_entity(Aquila::SceneManagement::Entity entity);
+	void rebuild();
+	void set_tree_icons(Aquila::GFX::GfxTexture *collapsed, Aquila::GFX::GfxTexture *expanded);
 
   private:
+	void populate_tree();
+
 	Aquila::SceneManagement::EntityManager &m_entity_manager;
 	HierarchyTreeView *m_tree_view = nullptr;
 	HierarchyTreeNode *m_selected_node = nullptr;

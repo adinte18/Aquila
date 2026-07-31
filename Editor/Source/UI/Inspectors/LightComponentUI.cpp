@@ -32,10 +32,14 @@ void LightComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *gr
 
 void LightComponentUI::show(Entity entity) {
 	auto &light = entity.get_component<LightComponent>();
-	ComponentBinder<LightComponent> bind(entity);
+	ComponentBinder<LightComponent> bind(entity, &LightComponent::on_changed);
 
 	m_color->set_value(Vec4(light.get_color(), 1.F));
-	m_color->on_changed.set([entity](Vec4 c) mutable { entity.get_component<LightComponent>().set_color(Vec3(c)); });
+	m_color->on_changed.set([entity](Vec4 c) mutable {
+		auto &component = entity.get_component<LightComponent>();
+		component.set_color(Vec3(c));
+		component.on_changed();
+	});
 
 	bind.bind(m_intensity, &LightComponent::get_intensity, &LightComponent::set_intensity);
 	bind.bind(m_active, &LightComponent::is_active, &LightComponent::set_active);
@@ -45,6 +49,10 @@ void LightComponentUI::show(Entity entity) {
 	if (is_point) {
 		bind.bind(m_range, &LightComponent::get_range, &LightComponent::set_range);
 	}
+}
+
+std::vector<ComponentSignal> LightComponentUI::signals(Entity entity) const {
+	return { { "changed", &entity.get_component<LightComponent>().on_changed } };
 }
 
 } // namespace Editor

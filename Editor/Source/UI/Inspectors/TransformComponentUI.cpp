@@ -24,9 +24,13 @@ void TransformComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid
 }
 
 void TransformComponentUI::show(Entity entity) {
-	ComponentBinder<TransformComponent> bind(entity);
+	ComponentBinder<TransformComponent> bind(entity, &TransformComponent::on_changed);
 	bind.bind(m_position, &TransformComponent::get_local_position, &TransformComponent::set_local_position);
 	bind.bind(m_scale, &TransformComponent::get_local_scale, &TransformComponent::set_local_scale);
+}
+
+std::vector<ComponentSignal> TransformComponentUI::signals(Entity entity) const {
+	return { { "changed", &entity.get_component<TransformComponent>().on_changed } };
 }
 
 } // namespace Editor

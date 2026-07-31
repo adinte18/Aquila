@@ -19,6 +19,7 @@ HierarchyTreeNode::HierarchyTreeNode(std::string label, HierarchyTreeView &owner
 
 void HierarchyTreeNode::on_drag_start(DragState &state) {
 	state.payload = m_entity;
+	state.label = get_label();
 }
 
 void HierarchyTreeNode::on_drop(DragState &state) {
@@ -38,11 +39,12 @@ void HierarchyTreeNode::on_drop(DragState &state) {
 	m_entity_manager.add_child(m_entity, dragged_entity);
 
 	View *old_parent_container = source_node->get_parent();
-	auto *old_parent_node = dynamic_cast<TreeNode *>(old_parent_container ? old_parent_container->get_parent() : nullptr);
+	auto *old_parent_node = view_cast<TreeNode>(old_parent_container ? old_parent_container->get_parent() : nullptr);
 
 	auto detached = old_parent_container->detach_child(source_node);
 
 	if (old_parent_node) {
+		old_parent_node->refresh_indicator();
 		old_parent_node->queue_redraw();
 	}
 
