@@ -10,22 +10,25 @@ class DockSplitter : public View {
 	explicit DockSplitter(SplitDirection dir);
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "DockSplitter"; }
+	static constexpr ViewKind k_kind = ViewKind::DockSplitter;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
-	void set_siblings(View *before, View *after);
-	void update_sibling_ref(View *old, View *new_ptr);
 	void set_resize_before(bool v) { m_resize_before = v; }
-
-	[[nodiscard]] View *get_before() const { return m_before; }
-	[[nodiscard]] View *get_after() const { return m_after; }
 
 	void on_mouse_press(Platform::MouseButton btn, Vec2 pos) override;
 	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
 	void on_mouse_move(Vec2 pos) override;
+	void on_mouse_enter() override;
+	void on_mouse_leave() override;
 
   private:
+	void set_grabber_visible(bool visible);
+
+	[[nodiscard]] View *resolve_after() const;
+	[[nodiscard]] View *resolve_before() const;
+
 	SplitDirection m_dir;
-	View *m_before = nullptr;
-	View *m_after = nullptr;
+	View *m_grabber = nullptr;
 	bool m_resize_before = true;
 	Vec2 m_drag_start_pos{};
 	float m_before_grow_start = 0.F;

@@ -23,6 +23,7 @@ class InputRouter {
 	[[nodiscard]] Vec2 mouse_pos() const { return m_mouse_pos; }
 	[[nodiscard]] bool mouse_down() const { return m_mouse_down; }
 	[[nodiscard]] View *hovered_view() const { return m_hovered_view; }
+	[[nodiscard]] View *focused_view() const { return m_focused_view; }
 
 	Vec2 take_scroll_delta() {
 		const Vec2 delta = m_scroll_delta;

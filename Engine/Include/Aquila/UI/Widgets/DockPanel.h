@@ -14,6 +14,8 @@ class DockPanel : public View {
 	explicit DockPanel(std::string title = "");
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "DockPanel"; }
+	static constexpr ViewKind k_kind = ViewKind::DockPanel;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 	[[nodiscard]] const std::string &get_title() const { return m_title; }
 	void set_title(std::string title);
 

@@ -9,7 +9,7 @@ namespace Aquila::UI::Core {
 class DockNode;
 class DockPanel;
 class DockSplitter;
-class IconLabel;
+struct DockLayoutDesc;
 
 class DockSpace : public View {
   public:
@@ -20,6 +20,8 @@ class DockSpace : public View {
 
 	// Compiles a declared <DockNode>/<DockPanel> child tree into the runtime dock structure.
 	void on_xml_loaded() override;
+
+	bool apply_layout(const DockLayoutDesc &desc);
 
 	[[nodiscard]] bool has_any_panels() const;
 	[[nodiscard]] DockNode *first_leaf_with_tabs() const;
@@ -55,7 +57,6 @@ class DockSpace : public View {
 	DockNode *m_drop_target = nullptr;
 	DropZone m_current_zone = DropZone::None;
 	View *m_drop_preview = nullptr;
-	IconLabel *m_drag_ghost = nullptr;
 	bool m_drag_ghost_active = false;
 	Delegate<void(Unique<View>, std::string, Vec2)> m_on_tear_off;
 	Delegate<void()> m_on_emptied;

@@ -21,6 +21,8 @@ class DockNode : public View {
 	explicit DockNode(DockDragContext *drag_ctx = nullptr);
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "DockNode"; }
+	static constexpr ViewKind k_kind = ViewKind::DockNode;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
 	std::pair<DockNode *, DockNode *> split(SplitDirection dir, bool anchor_first = true);
 	DockNode *append_leaf(SplitDirection dir);
@@ -34,6 +36,8 @@ class DockNode : public View {
 	void set_active_panel_by_ptr(DockPanel *panel);
 	[[nodiscard]] int get_active_panel() const { return m_active_panel; }
 	[[nodiscard]] bool is_empty() const { return m_is_leaf && m_tabs.empty(); }
+	[[nodiscard]] bool is_leaf() const { return m_is_leaf; }
+	[[nodiscard]] std::vector<DockPanel *> get_ordered_panels() const;
 	[[nodiscard]] int get_tab_count() const { return static_cast<int>(m_tabs.size()); }
 	[[nodiscard]] DockPanel *get_active_panel_ptr() const;
 	[[nodiscard]] View *get_tab_bar() const { return m_tab_bar; }

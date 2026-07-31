@@ -100,10 +100,8 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 	}
 
 	DockNode *first_raw = static_cast<DockNode *>(add_child(std::move(first)));
-	DockSplitter *split_raw = static_cast<DockSplitter *>(add_child(std::move(splitter)));
 	DockNode *second_raw = static_cast<DockNode *>(add_child(std::move(second)));
-
-	split_raw->set_siblings(first_raw, second_raw);
+	second_raw->add_child(std::move(splitter));
 
 	return { first_raw, second_raw };
 }
@@ -111,7 +109,7 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 DockNode *DockNode::append_leaf(SplitDirection dir) {
 	DockNode *prev_last = nullptr;
 	for (auto &child : get_children()) {
-		if (auto *dn = dynamic_cast<DockNode *>(child.get())) {
+		if (auto *dn = view_cast<DockNode>(child.get())) {
 			prev_last = dn;
 		}
 	}
@@ -136,10 +134,8 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 		leaf->merge_style(lp);
 	}
 
-	DockSplitter *split_raw = static_cast<DockSplitter *>(add_child(std::move(splitter)));
 	DockNode *leaf_raw = static_cast<DockNode *>(add_child(std::move(leaf)));
-
-	split_raw->set_siblings(prev_last, leaf_raw);
+	leaf_raw->add_child(std::move(splitter));
 
 	return leaf_raw;
 }
@@ -220,6 +216,15 @@ void DockNode::apply_active_panel() {
 			m_tabs[i].button->remove_class("dock-tab-btn-active");
 		}
 	}
+}
+
+std::vector<DockPanel *> DockNode::get_ordered_panels() const {
+	std::vector<DockPanel *> panels;
+	panels.reserve(m_tabs.size());
+	for (const auto &tab : m_tabs) {
+		panels.push_back(tab.panel);
+	}
+	return panels;
 }
 
 DockPanel *DockNode::get_active_panel_ptr() const {
@@ -358,7 +363,7 @@ DockNode *DockNode::hit_test_node(Vec2 abs_pos) {
 		return get_absolute_rect().contains(abs_pos) ? this : nullptr;
 	}
 	for (auto &child : get_children()) {
-		if (auto *dn = dynamic_cast<DockNode *>(child.get())) {
+		if (auto *dn = view_cast<DockNode>(child.get())) {
 			if (auto *hit = dn->hit_test_node(abs_pos)) {
 				return hit;
 			}

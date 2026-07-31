@@ -35,7 +35,9 @@ void InputRouter::on_view_removed(View *view) {
 	if (m_drag_source_candidate == view) {
 		m_drag_source_candidate = nullptr;
 		m_drag_state.payload.reset();
+		m_drag_state.label.clear();
 		m_drag_state.is_dragging = false;
+		m_canvas.hide_drag_ghost();
 	}
 }
 
@@ -44,6 +46,10 @@ void InputRouter::on_event(Application::Events::Event &e) {
 
 	dispatcher.dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {
 		m_mouse_pos = { e.get_x(), e.get_y() };
+
+		if (m_drag_state.is_dragging) {
+			m_canvas.move_drag_ghost(m_mouse_pos);
+		}
 
 		if (Platform::Input::is_mouse_button_pressed(MouseButton::Left) && !m_drag_state.is_dragging &&
 			m_drag_source_candidate != nullptr) {
@@ -55,6 +61,7 @@ void InputRouter::on_event(Application::Events::Event &e) {
 				if (m_drag_target) {
 					m_drag_target->on_drag_enter(m_drag_state);
 				}
+				m_canvas.show_drag_ghost(m_drag_state.label, m_mouse_pos);
 				m_canvas.mark_dirty();
 			}
 		}
@@ -126,7 +133,9 @@ void InputRouter::on_event(Application::Events::Event &e) {
 				m_drag_target->on_drag_leave(m_drag_state);
 				m_drag_target = nullptr;
 			}
+			m_canvas.hide_drag_ghost();
 			m_drag_state.payload.reset();
+			m_drag_state.label.clear();
 			m_drag_state.is_dragging = false;
 			m_drag_source_candidate = nullptr;
 		}
@@ -141,7 +150,19 @@ void InputRouter::on_event(Application::Events::Event &e) {
 	});
 
 	dispatcher.dispatch<MouseScrolledEvent>([this](MouseScrolledEvent &e) {
-		m_scroll_delta += Vec2(e.get_x_offset(), e.get_y_offset());
+		const Vec2 delta(e.get_x_offset(), e.get_y_offset());
+
+		bool consumed = false;
+		for (View *view = m_hovered_view; view != nullptr; view = view->get_parent()) {
+			if (view->on_scroll(delta)) {
+				consumed = true;
+				break;
+			}
+		}
+
+		if (!consumed) {
+			m_scroll_delta += delta;
+		}
 		m_canvas.request_layout();
 		return m_hovered_view != nullptr && !m_hovered_view->get_pass_through_scroll();
 	});
