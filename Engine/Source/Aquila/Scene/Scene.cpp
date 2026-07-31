@@ -108,6 +108,12 @@ Foundation::UUID Scene::get_handle() const {
 	return m_scene_id;
 }
 
+void Scene::clear() {
+	m_entity_manager->clear();
+	m_active_camera_entity = entt::null;
+	m_dirty_transforms.clear();
+}
+
 void Scene::update_transform_hierarchy() {
 	if (m_dirty_transforms.is_empty()) {
 		return;

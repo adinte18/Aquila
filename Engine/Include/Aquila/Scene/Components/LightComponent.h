@@ -3,6 +3,7 @@
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Signal.h"
 
 namespace Aquila::SceneManagement::Components {
 
@@ -36,6 +37,8 @@ struct LightComponent {
 	bool m_is_active = true;
 
   public:
+	Signal<void()> on_changed;
+
 	bool is_active() const { return m_is_active; }
 	void set_active(bool active) { m_is_active = active; }
 

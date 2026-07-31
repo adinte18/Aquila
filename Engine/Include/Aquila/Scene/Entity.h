@@ -56,15 +56,15 @@ class Entity {
 	}
 
 	template <typename T> const T *try_get_component() const {
-		if (HasComponent<T>()) {
-			return &GetComponent<T>();
+		if (has_component<T>()) {
+			return &get_component<T>();
 		}
 		return nullptr;
 	}
 
 	template <typename T> void try_remove_component() const {
-		if (HasComponent<T>()) {
-			RemoveComponent<T>();
+		if (has_component<T>()) {
+			remove_component<T>();
 		}
 	}
 
@@ -132,6 +132,7 @@ class Entity {
 
 	[[nodiscard]] const Foundation::UUID &get_uuid() const;
 	[[nodiscard]] const std::string &get_name() const;
+	void set_name(const std::string &new_name);
 
 	void kill() const;
 

@@ -28,6 +28,7 @@ class Scene final {
 	~Scene();
 
 	void on_start();
+	void clear();
 
 	[[nodiscard]] entt::registry &get_registry() const;
 	[[nodiscard]] EntityManager *get_entity_manager() const;

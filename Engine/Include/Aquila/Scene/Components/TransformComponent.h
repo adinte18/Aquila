@@ -3,10 +3,13 @@
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Signal.h"
 #include <functional>
 namespace Aquila::SceneManagement::Components {
 struct TransformComponent {
   public:
+	Signal<void()> on_changed;
+
 	TransformComponent(const Vec3 &position = Vec3{ 0.F }, const glm::quat &rotation = glm::quat{ 1.F, 0.F, 0.F, 0.F },
 					   const Vec3 &scale = Vec3{ 1.F })
 		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0f),

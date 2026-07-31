@@ -1,6 +1,8 @@
 #ifndef CAMERA_COMPONENT_H
 #define CAMERA_COMPONENT_H
 
+#include "Aquila/Foundation/Signal.h"
+
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -21,6 +23,8 @@ struct CameraComponent {
 	F32 ortho_bottom = -1.0f;
 
 	bool primary = false;
+
+	Signal<void()> on_changed;
 
 	Mat4 get_view_matrix(const Vec3 &position, const quat &rotation) const {
 		Vec3 forward = rotation * Vec3(0.0f, 0.0f, 1.0f);

@@ -6,11 +6,15 @@ namespace Aquila::SceneManagement {
 
 // by design both are set on entity creation
 const Foundation::UUID &Entity::get_uuid() const {
-	return get_component<Components::MetadataComponent>().get_id();
+	return try_get_component<Components::MetadataComponent>()->get_id();
 }
 
 const std::string &Entity::get_name() const {
-	return get_component<Components::MetadataComponent>().get_name();
+	return try_get_component<Components::MetadataComponent>()->get_name();
+}
+
+void Entity::set_name(const std::string &new_name) {
+	try_get_component<Components::MetadataComponent>()->set_name(new_name);
 }
 
 bool Entity::is_null() const {

@@ -1,4 +1,5 @@
 #pragma once
+#include "Aquila/Foundation/Signal.h"
 #include "Aquila/Graphics/Material/Material.h"
 #include "Aquila/Graphics/Material/MaterialDefinition.h"
 #include "Aquila/Graphics/SurfaceData.h"
@@ -13,6 +14,8 @@ struct MaterialComponent {
 	Graphics::GpuSurfaceData surface_properties;
 
 	Uint32 material_index = UINT32_MAX;
+
+	Signal<void()> on_changed;
 
 	MaterialComponent() = default;
 	explicit MaterialComponent(Graphics::MaterialType t) : type(t) {}
