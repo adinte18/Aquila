@@ -17,6 +17,7 @@ class FontManager {
 	static FontManager &get();
 
 	void initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings);
+	void reload(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings);
 	void shutdown();
 
 	[[nodiscard]] bool is_initialized() const { return m_initialized; }
