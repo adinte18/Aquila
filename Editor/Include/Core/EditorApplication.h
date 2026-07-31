@@ -3,6 +3,7 @@
 #include "Aquila/Application/ApplicationNew.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Core/ProjectManager.h"
 
 #include <vector>
 
@@ -22,8 +23,11 @@ class ConsolePanel;
 class UIDebugPanel;
 class UIDebugWindow;
 class WidgetGalleryWindow;
+class SettingsWindow;
+class ProjectLauncher;
 class FloatingPanelWindow;
 class PickerOverlay;
+class ProjectManager;
 
 class EditorApplication : public Aquila::Application::Application {
   public:
@@ -38,11 +42,19 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_resize(Uint32 width, Uint32 height) override;
 
   private:
-	void setup_scene();
+	void populate_demo_scene();
+	void spawn_default_camera();
+	void new_empty_scene();
+	void reset_to_demo_scene();
+	void refresh_scene_panels();
 	void setup_editor_ui();
 	void wire_menubar(Aquila::UI::Core::View *layout_root);
 	void open_ui_inspector_window();
 	void open_widget_gallery_window();
+	void open_settings_window();
+	void open_project_launcher();
+	void enter_editor(const ProjectInfo &project);
+	void apply_font_settings();
 	void start_pick();
 
 	void wire_dock_space(Aquila::UI::Core::DockSpace *dock_space, GLFWwindow *source_native);
@@ -56,6 +68,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_floating_closed(FloatingPanelWindow *panel);
 	void dock_back_to_center(Unique<Aquila::UI::Core::View> content, const std::string &title);
 
+	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
 
 	Unique<ViewportPanel> m_viewport_panel;
@@ -65,6 +78,11 @@ class EditorApplication : public Aquila::Application::Application {
 	Unique<UIDebugPanel> m_ui_debug_panel;
 	Unique<UIDebugWindow> m_ui_debug_window;
 	Unique<WidgetGalleryWindow> m_widget_gallery_window;
+	Unique<SettingsWindow> m_settings_window;
+	Unique<ProjectLauncher> m_project_launcher;
+	GLFWwindow *m_launcher_native = nullptr;
+	bool m_editor_entered = false;
+	Option<ProjectInfo> m_pending_project;
 
 	PickerOverlay *m_picker = nullptr;
 	bool m_pick_mode = false;

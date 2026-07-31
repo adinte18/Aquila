@@ -25,5 +25,6 @@ std::vector<std::string> dir_list(const std::string &path, bool recursive = fals
 // Helpers
 std::string path_to_absolute(const std::string &path);
 std::string path_extension(const std::string &path);
+std::string path_executable_dir();
 } // namespace Aquila::Platform::Filesystem
 #endif // FILESYSTEM_H

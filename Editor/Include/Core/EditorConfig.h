@@ -21,10 +21,8 @@ struct WindowSettings {
 };
 
 struct FontSettings {
-	std::string regular_path = "/resources/Engine/Fonts/Lexend/Lexend-Regular.ttf";
-	std::string thin_path = "/resources/Engine/Fonts/Lexend/Lexend-Thin.ttf";
-	std::string medium_path = "/resources/Engine/Fonts/Lexend/Lexend-Medium.ttf";
-	std::string bold_path = "/resources/Engine/Fonts/Lexend/Lexend-Bold.ttf";
+	std::string main_family = "Lexend";
+	std::string mono_family = "Inconsolata";
 	F32 size = 16.F;
 };
 
@@ -42,6 +40,8 @@ struct EditorPreferences {
 	UISettings ui;
 	Theme current_theme = Theme::Aquila2;
 
+	F32 ui_scale = 1.0f;
+
 	bool show_grid = true;
 	bool show_gizmos = true;
 	bool auto_save = false;
@@ -54,7 +54,7 @@ struct EditorPreferences {
 	F32 thumbnail_size = 64.0f;
 	bool show_file_extensions = true;
 
-	std::string preference_file_path = "editor_preferences.json";
+	std::string preference_file_path = "/app/editor_preferences.json";
 
 	void load_from_file();
 	void save_to_file() const;

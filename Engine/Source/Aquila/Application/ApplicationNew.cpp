@@ -18,6 +18,7 @@
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
 #include "Aquila/Rendering/FrameScheduler.h"
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
+#include "Aquila/Platform/Filesystem/Filesystem.h"
 
 namespace Aquila::Application {
 
@@ -25,7 +26,7 @@ using namespace SceneManagement;
 
 Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	m_timer = std::make_unique<Foundation::Stopwatch>();
-	m_window = std::make_unique<Window>(spec.width, spec.height, spec.name);
+	m_window = std::make_unique<Window>(spec.width, spec.height, spec.name, true, spec.start_hidden);
 	Foundation::Profiler::Profiler::init();
 	Platform::Filesystem::VirtualFileSystem::init();
 
@@ -44,7 +45,7 @@ void Application::route_window_event(Events::Event &event) {
 
 	auto *source = event.get_source();
 
-	if (!source) {
+	if (source == nullptr) {
 		return;
 	}
 
@@ -152,6 +153,8 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	using namespace Platform::Filesystem;
 	VirtualFileSystem::get()->mount("/resources", std::make_shared<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
 	VirtualFileSystem::get()->mount("/shaders", std::make_shared<NativeFileSystem>(SharedConstants::SHADERS_DIR));
+	VirtualFileSystem::get()->mount("/app",
+									std::make_shared<NativeFileSystem>(Platform::Filesystem::path_executable_dir()));
 
 	m_ctx = GFX::GfxContext::create(*get_window().get_native_window());
 

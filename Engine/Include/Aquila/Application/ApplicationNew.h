@@ -20,6 +20,7 @@ struct ApplicationSpec {
 	std::string name = "Aquila";
 	Uint32 width = 1920;
 	Uint32 height = 1080;
+	bool start_hidden = false;
 };
 
 namespace Aquila::Graphics {

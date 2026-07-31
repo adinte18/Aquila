@@ -1,4 +1,5 @@
 #include "Core/EditorApplication.h"
+#include "Core/ProjectManager.h"
 
 #include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
@@ -7,6 +8,8 @@
 #include "UI/Debug/UIDebugPanel.h"
 #include "UI/Debug/UIDebugWindow.h"
 #include "UI/Debug/WidgetGalleryWindow.h"
+#include "UI/Windows/SettingsWindow.h"
+#include "UI/Windows/ProjectLauncher.h"
 #include "UI/Debug/PickerOverlay.h"
 #include "UI/Panels/InspectorPanel.h"
 #include "UI/Panels/ViewportPanel.h"
@@ -22,6 +25,7 @@
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Core/Clipboard.h"
+#include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/CanvasManager.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
@@ -33,8 +37,11 @@
 #include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockSpace.h"
 #include "Aquila/UI/Widgets/DockTypes.h"
+#include "Aquila/UI/Core/DockLayoutSerializer.h"
 #include "Aquila/UI/Widgets/Menubar.h"
+#include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Input.h"
 
 #include <algorithm>
 
@@ -44,6 +51,10 @@ using namespace Aquila;
 using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 using namespace Aquila::Application;
+
+namespace {
+const std::string k_layout_path = "/app/layout.aqdl";
+}
 
 EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(spec) {}
 
@@ -65,14 +76,61 @@ void EditorApplication::on_init() {
 
 	Graphics::MaterialFactory::get()->enable_hot_reload(true);
 
+	Config::get_preferences().load_from_file();
+	Aquila::UI::Core::FontRegistry::set_ui_scale(Config::get_preferences().ui_scale);
+
 	UI::FontManager::get().initialize(get_context(), Config::get_preferences().fonts);
 
-	setup_scene();
+	m_project_manager = std::make_unique<ProjectManager>();
+
+	open_project_launcher();
+}
+
+void EditorApplication::open_project_launcher() {
+	RenderWindow &rw = create_secondary_window(720, 520, "Aquila - Projects");
+	m_launcher_native = rw.window->get_native_window();
+
+	m_project_launcher = std::make_unique<ProjectLauncher>();
+	m_project_launcher->build(m_project_manager.get(), 720, 520, Config::get_preferences().ui.style_path);
+	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
+
+	ProjectLauncher *win = m_project_launcher.get();
+	rw.on_update = [win](F32 dt) { win->update(dt); };
+	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
+	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
+	rw.on_close = [this] {
+		m_project_launcher.reset();
+		m_launcher_native = nullptr;
+		if (!m_editor_entered) {
+			close();
+		}
+	};
+}
+
+void EditorApplication::enter_editor(const ProjectInfo &project) {
+	AQUILA_LOG_INFO("EditorApplication: opening project '{}' ({})", project.name, project.directory);
+
+	m_editor_entered = true;
+	if (m_launcher_native != nullptr) {
+		glfwSetWindowShouldClose(m_launcher_native, GLFW_TRUE);
+	}
+
+	glfwShowWindow(get_window().get_native_window());
+	spawn_default_camera();
 	setup_editor_ui();
 }
 
 void EditorApplication::on_shutdown() {
+	if (m_dock_space != nullptr) {
+		const Aquila::UI::Core::DockLayoutDesc layout = Aquila::UI::Core::DockLayoutSerializer::capture(*m_dock_space);
+		if (Aquila::UI::Core::DockLayoutSerializer::save_to_file(k_layout_path, layout)) {
+			AQUILA_LOG_INFO("Editor dock layout saved to {}", k_layout_path);
+		}
+	}
+
 	m_floating_panels.clear();
+	m_settings_window.reset();
+	m_project_launcher.reset();
 	m_widget_gallery_window.reset();
 	m_ui_debug_window.reset();
 	m_ui_debug_panel.reset();
@@ -87,11 +145,19 @@ void EditorApplication::on_shutdown() {
 }
 
 void EditorApplication::on_pre_render(F32 delta_time) {
+	if (m_pending_project) {
+		const ProjectInfo project = *m_pending_project;
+		m_pending_project.reset();
+		enter_editor(project);
+	}
+
 	if (m_console_panel) {
 		m_console_panel->flush_pending();
 	}
 	Aquila::UI::Core::CanvasManager::get()->update(delta_time);
 	Aquila::UI::Core::CanvasManager::get()->compute();
+
+	get_window().set_cursor(Aquila::UI::Core::CanvasManager::get()->get_active_cursor());
 }
 
 void EditorApplication::on_event(Events::Event &event) {
@@ -154,6 +220,21 @@ void EditorApplication::on_event(Events::Event &event) {
 	});
 
 	Aquila::UI::Core::CanvasManager::get()->on_event(event);
+
+	Events::EventDispatcher post(event);
+	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
+		if (e.get_key_code() != Events::KeyCode::S || (e.get_mods() & Events::MODIFIER_SHIFT) == 0) {
+			return false;
+		}
+		auto &canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
+			return false;
+		}
+		if (m_inspector_panel != nullptr) {
+			m_inspector_panel->open_add_search(Aquila::Platform::Input::get_mouse_position());
+		}
+		return true;
+	});
 }
 
 void EditorApplication::on_resize(Uint32 width, Uint32 height) {
@@ -162,9 +243,8 @@ void EditorApplication::on_resize(Uint32 width, Uint32 height) {
 	}
 }
 
-void EditorApplication::setup_scene() {
+void EditorApplication::spawn_default_camera() {
 	auto *em = get_scene().get_entity_manager();
-
 	auto cam = em->create_entity("Camera");
 	auto &cam_comp = cam.add_component<CameraComponent>();
 	cam_comp.fov = 60.F;
@@ -174,6 +254,11 @@ void EditorApplication::setup_scene() {
 	cam_comp.primary = true;
 	cam.get_component<TransformComponent>().set_local_position({ 0.F, 1.5f, -5.F });
 	get_scene().set_active_camera(cam);
+}
+
+void EditorApplication::populate_demo_scene() {
+	auto *em = get_scene().get_entity_manager();
+	spawn_default_camera();
 
 	auto lit_mat = Graphics::MaterialFactory::get()->create(get_context(), SharedConstants::SHADERS_DIR + "Basic.slang",
 															{
@@ -215,6 +300,29 @@ void EditorApplication::setup_scene() {
 		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(0.2f, 0.5f, 1.0f), 5.0f);
 		light.set_range(6.0f);
 	}
+}
+
+void EditorApplication::refresh_scene_panels() {
+	if (m_hierarchy_panel) {
+		m_hierarchy_panel->rebuild();
+	}
+	if (m_inspector_panel) {
+		m_inspector_panel->clear();
+	}
+}
+
+void EditorApplication::new_empty_scene() {
+	get_scene().clear();
+	spawn_default_camera();
+	refresh_scene_panels();
+	AQUILA_LOG_INFO("EditorApplication: new empty scene");
+}
+
+void EditorApplication::reset_to_demo_scene() {
+	get_scene().clear();
+	populate_demo_scene();
+	refresh_scene_panels();
+	AQUILA_LOG_INFO("EditorApplication: reset to demo scene");
 }
 
 void EditorApplication::setup_editor_ui() {
@@ -267,43 +375,32 @@ void EditorApplication::setup_editor_ui() {
 
 	m_hierarchy_panel = std::make_unique<HierarchyPanel>(*get_scene().get_entity_manager());
 	m_viewport_panel = std::make_unique<ViewportPanel>(get_render_output());
-	m_inspector_panel = std::make_unique<InspectorPanel>(get_context());
+	m_inspector_panel = std::make_unique<InspectorPanel>(get_context(), m_texture_cache.get());
 	m_console_panel = std::make_unique<ConsolePanel>(m_texture_cache.get());
 
 	m_hierarchy_panel->build(hierarchy_panel, layout_root);
+	m_hierarchy_panel->set_tree_icons(m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-right.png"),
+									  m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-down.png"));
 	m_viewport_panel->build(viewport_panel, layout_root);
 	m_inspector_panel->build(inspector_panel, layout_root);
 	m_console_panel->build(console_panel, layout_root);
 
 	m_hierarchy_panel->on_entity_selected.connect([this](Entity entity) { m_inspector_panel->show_entity(entity); });
 	m_hierarchy_panel->on_entity_deselected.connect([this] { m_inspector_panel->clear(); });
+	m_inspector_panel->on_entity_renamed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
 
 	wire_menubar(layout_root);
 
 	m_ui_debug_panel = std::make_unique<UIDebugPanel>();
 	m_ui_debug_panel->build(layout_root, &editor_canvas);
 
-	auto ctx_uniq = std::make_unique<Aquila::UI::Core::PopupMenu>();
-
-	auto *ctx = dynamic_cast<Aquila::UI::Core::PopupMenu *>(layout_root->add_child(std::move(ctx_uniq)));
-
-	// set the submenu icon to all submenus in this context
-	ctx->set_submenu_icon(m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-right.png"));
-
-	ctx->add_item("Open UI Inspector", [this] { open_ui_inspector_window(); });
-	ctx->add_item("Open Widget Gallery", [this] { open_widget_gallery_window(); });
-
-	auto *windows_submenu = ctx->add_submenu("Windows");
-	windows_submenu->add_item("UI Inspector", [this] { open_ui_inspector_window(); });
-	windows_submenu->add_item("Widget Gallery", [this] { open_widget_gallery_window(); });
-
-	auto *more_submenu = windows_submenu->add_submenu("More");
-	more_submenu->add_item("Nested action", [] { AQUILA_LOG_INFO("ContextMenu: nested action"); });
-
-	layout_root->on_context_menu.connect([ctx](Vec2 pos) { ctx->open_at(pos); });
-	viewport_panel->on_context_menu.connect([ctx](Vec2 pos) { ctx->open_at(pos); });
-
 	m_picker = editor_canvas.get_root()->add_child<PickerOverlay>();
+
+	if (Option<Aquila::UI::Core::DockLayoutDesc> saved =
+			Aquila::UI::Core::DockLayoutSerializer::load_from_file(k_layout_path)) {
+		m_dock_space->apply_layout(*saved);
+		AQUILA_LOG_INFO("Editor dock layout restored from {}", k_layout_path);
+	}
 
 	editor_canvas.reload_styles();
 }
@@ -360,6 +457,34 @@ void EditorApplication::open_widget_gallery_window() {
 	rw.on_close = [this] { m_widget_gallery_window.reset(); };
 }
 
+void EditorApplication::open_settings_window() {
+	if (m_settings_window) {
+		return;
+	}
+
+	RenderWindow &rw = create_secondary_window(560, 640, "Aquila - Settings");
+	GLFWwindow *native = rw.window->get_native_window();
+
+	m_settings_window = std::make_unique<SettingsWindow>();
+	m_settings_window->build(m_texture_cache.get(), 560, 640, Config::get_preferences().ui.style_path);
+	m_settings_window->on_request_close = [native] { glfwSetWindowShouldClose(native, GLFW_TRUE); };
+	m_settings_window->on_applied = [this] { apply_font_settings(); };
+
+	SettingsWindow *win = m_settings_window.get();
+	rw.on_update = [win](F32 dt) { win->update(dt); };
+	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
+	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
+	rw.on_close = [this] { m_settings_window.reset(); };
+}
+
+void EditorApplication::apply_font_settings() {
+	const auto &prefs = Config::get_preferences();
+
+	UI::FontManager::get().reload(get_context(), prefs.fonts);
+	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
+	Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor).reload_styles();
+}
+
 void EditorApplication::wire_dock_space(Aquila::UI::Core::DockSpace *dock_space, GLFWwindow *source_native) {
 	dock_space->set_tear_off_callback(
 		[this, source_native](Unique<Aquila::UI::Core::View> sub, std::string title, Vec2 pos) {
@@ -389,6 +514,7 @@ Aquila::UI::Core::DockSpace *EditorApplication::find_dock_target_at_screen(Vec2 
 		float height;
 	};
 	std::vector<Candidate> candidates;
+	candidates.reserve(m_floating_panels.size());
 	for (auto &entry : m_floating_panels) {
 		candidates.push_back({ entry.panel->get_dock_space(), entry.window->window->get_native_window(),
 							   static_cast<float>(entry.window->window->get_width()),
@@ -521,18 +647,15 @@ void EditorApplication::dock_back_to_center(Unique<Aquila::UI::Core::View> conte
 
 void EditorApplication::wire_menubar(Aquila::UI::Core::View *layout_root) {
 	auto wire_btn = [&](const char *id, const char *action) {
-		if (auto *v = layout_root->find_by_id(id)) {
-			if (auto *btn = dynamic_cast<Aquila::UI::Core::Button *>(v)) {
-				btn->on_click.connect([action] { AQUILA_LOG_INFO("EditorApplication: {}", action); });
-			}
+		if (auto *btn = layout_root->find_by_id<Aquila::UI::Core::Button>(id)) {
+			btn->on_click.connect([action] { AQUILA_LOG_INFO("EditorApplication: {}", action); });
 		}
 	};
 	wire_btn("btn-play", "Play");
 	wire_btn("btn-pause", "Pause");
 	wire_btn("btn-stop", "Stop");
 
-	auto *menu_bar_view = layout_root->find_by_id("main-menubar");
-	auto *menu_bar = dynamic_cast<Aquila::UI::Core::MenuBar *>(menu_bar_view);
+	auto *menu_bar = layout_root->find_by_id<Aquila::UI::Core::MenuBar>("main-menubar");
 	if (menu_bar == nullptr) {
 		return;
 	}
@@ -547,6 +670,12 @@ void EditorApplication::wire_menubar(Aquila::UI::Core::View *layout_root) {
 	file_menu->add_separator();
 	file_menu->add_item("Quit", "Ctrl+X", m_layout_loader.resolve_texture("Engine/UI/Icons/ban.png"),
 						[this] { close(); });
+
+	auto *edit_menu = menu_bar->add_menu("Edit");
+	edit_menu->add_item("Preferences", "Ctrl+,", nullptr, [this] { open_settings_window(); });
+	edit_menu->add_separator();
+	edit_menu->add_item("New Empty Scene", {}, nullptr, [this] { new_empty_scene(); });
+	edit_menu->add_item("Reset Demo Scene", {}, nullptr, [this] { reset_to_demo_scene(); });
 
 	auto *window_menu = menu_bar->add_menu("Window");
 	window_menu->add_item("UI Inspector", {}, m_layout_loader.resolve_texture("Engine/UI/Icons/bug.png"),

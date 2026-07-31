@@ -5,6 +5,7 @@ int main() {
 	spec.name = std::string("Aquila Studio | ") + AQUILA_VERSION_STRING;
 	spec.width = 1920;
 	spec.height = 1080;
+	spec.start_hidden = true;
 
 	Editor::EditorApplication editor(spec);
 	editor.run();

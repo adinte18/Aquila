@@ -8,6 +8,8 @@
 #include <dirent.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <climits>
 #endif
 
 namespace Aquila::Platform::Filesystem {
@@ -120,6 +122,28 @@ std::string dir_get_current() {
 	}
 	return {};
 #endif
+}
+
+std::string path_executable_dir() {
+	std::string full;
+#ifdef AQUILA_PLATFORM_WINDOWS
+	char buffer[MAX_PATH] = {};
+	const DWORD length = GetModuleFileNameA(nullptr, buffer, MAX_PATH);
+	if (length == 0 || length >= MAX_PATH) {
+		return dir_get_current();
+	}
+	full.assign(buffer, length);
+#elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)
+	char buffer[PATH_MAX] = {};
+	const ssize_t length = ::readlink("/proc/self/exe", buffer, sizeof(buffer) - 1);
+	if (length <= 0) {
+		return dir_get_current();
+	}
+	full.assign(buffer, static_cast<std::size_t>(length));
+#endif
+	const std::string normalized = path_normalize(full);
+	const std::size_t slash = normalized.find_last_of('/');
+	return (slash == std::string::npos) ? normalized : normalized.substr(0, slash);
 }
 
 bool dir_set_current(const std::string &path) {
