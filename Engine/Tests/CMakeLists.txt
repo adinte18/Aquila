@@ -1,6 +1,7 @@
 add_subdirectory(Platform)
 add_subdirectory(Foundation)
 add_subdirectory(RHI)
+add_subdirectory(UI)
 
 set(TEST_COMMANDS "")
 list(LENGTH ALL_TEST_TARGETS TARGET_COUNT)
