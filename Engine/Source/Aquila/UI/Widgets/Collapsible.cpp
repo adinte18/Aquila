@@ -54,7 +54,7 @@ class CollapsibleGrip : public View {
 Collapsible::Collapsible(std::string title) {
 	auto bar = std::make_unique<View>();
 	bar->add_class("collapsible-header");
-	m_header_bar = add_child(std::move(bar));
+	m_header_bar = View::add_child(std::move(bar));
 
 	auto button = std::make_unique<Button>();
 	button->set_text(std::move(title));
@@ -63,7 +63,7 @@ Collapsible::Collapsible(std::string title) {
 		set_expanded(!m_expanded);
 		on_toggled(m_expanded);
 	});
-	m_title_button = dynamic_cast<Button *>(m_header_bar->add_child(std::move(button)));
+	m_title_button = static_cast<Button *>(m_header_bar->add_child(std::move(button)));
 
 	auto grip = std::make_unique<CollapsibleGrip>(this);
 	grip->add_class("collapsible-grip");
@@ -71,7 +71,7 @@ Collapsible::Collapsible(std::string title) {
 
 	auto content = std::make_unique<View>();
 	content->add_class("collapsible-content");
-	m_content = add_child(std::move(content));
+	m_content = View::add_child(std::move(content));
 	apply_state();
 }
 
@@ -95,8 +95,8 @@ void Collapsible::set_expanded(bool expanded) {
 	apply_state();
 }
 
-View *Collapsible::add_content(Unique<View> child) {
-	return m_content->add_child(std::move(child));
+View *Collapsible::add_child(Unique<View> child) {
+	return m_content->View::add_child(std::move(child));
 }
 
 void Collapsible::apply_state() {
@@ -150,11 +150,12 @@ void Collapsible::seed_flip_homes() {
 	}
 }
 
-void Collapsible::on_update(F32 delta_time) {
+bool Collapsible::on_update(F32 delta_time) {
 	if (m_dragging) {
 		update_drag();
 	}
 	tick_flip(delta_time);
+	return m_ticking;
 }
 
 void Collapsible::update_drag() {
@@ -187,7 +188,7 @@ void Collapsible::update_drop_target() {
 		if (view == this || view == m_placeholder) {
 			continue;
 		}
-		if (dynamic_cast<Collapsible *>(view) == nullptr) {
+		if (!view_is<Collapsible>(view)) {
 			continue;
 		}
 		const Rect rect = view->get_absolute_rect();

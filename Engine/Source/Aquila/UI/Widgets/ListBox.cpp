@@ -15,7 +15,7 @@ void ListBox::add_item(std::string id, std::string display) {
 	btn->add_class("list-item");
 	btn->on_click.connect([this, id] { select_item(id); });
 
-	Button *btn_ptr = static_cast<Button *>(m_scroll->add_content(std::move(btn)));
+	Button *btn_ptr = static_cast<Button *>(m_scroll->add_child(std::move(btn)));
 	m_items.push_back({ std::move(id), std::move(display), btn_ptr });
 }
 

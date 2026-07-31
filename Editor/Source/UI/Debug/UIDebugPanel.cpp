@@ -55,7 +55,7 @@ void UIDebugPanel::build(View *overlay_root, Canvas *target) {
 
 	auto *scroll = m_window->add_child<ScrollView>();
 	scroll->add_class("ui-debug-body");
-	m_tree_host = scroll->add_content<View>();
+	m_tree_host = scroll->add_child<View>();
 	m_tree_host->add_class("ui-debug-tree-host");
 
 	m_window->set_hidden(true);

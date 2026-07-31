@@ -1,5 +1,6 @@
 #include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/Separator.h"
+#include "Aquila/UI/Widgets/TextInput.h"
 
 #include <utility>
 
@@ -29,6 +30,16 @@ void PopupMenu::add_separator() {
 	m_items.push_back({ {}, {}, nullptr, {}, nullptr, true });
 }
 
+TextInput *PopupMenu::enable_search(std::string placeholder) {
+	if (m_search_input != nullptr) {
+		return m_search_input;
+	}
+	auto input = std::make_unique<TextInput>(std::move(placeholder));
+	input->add_class("menu-search");
+	m_search_input = static_cast<TextInput *>(add_child(std::move(input)));
+	return m_search_input;
+}
+
 PopupMenu *PopupMenu::add_submenu(std::string text, GFX::GfxTexture *icon) {
 	auto submenu_uniq = std::make_unique<PopupMenu>();
 	auto *submenu = static_cast<PopupMenu *>(add_child(std::move(submenu_uniq)));
@@ -43,10 +54,16 @@ PopupMenu *PopupMenu::add_submenu(std::string text, GFX::GfxTexture *icon) {
 }
 
 void PopupMenu::clear_items() {
+	close_submenu();
 	for (View *v : m_item_views) {
 		remove_child(v);
 	}
 	m_item_views.clear();
+	for (auto &item : m_items) {
+		if (item.submenu != nullptr) {
+			remove_child(item.submenu);
+		}
+	}
 	m_items.clear();
 	invalidate_layout();
 }
@@ -143,6 +160,10 @@ void PopupMenu::rebuild() {
 	}
 
 	invalidate_layout();
+}
+
+void PopupMenu::refresh() {
+	rebuild();
 }
 
 void PopupMenu::open_at(Vec2 canvas_pos) {

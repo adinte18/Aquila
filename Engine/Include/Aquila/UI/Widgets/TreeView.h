@@ -5,6 +5,10 @@
 #include <string>
 #include <vector>
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Aquila::UI::Core {
 
 class TreeNode;
@@ -31,6 +35,8 @@ class TreeView : public View {
 	void deselect();
 	[[nodiscard]] TreeNode *get_selected() const { return m_selected; }
 
+	void set_expand_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded);
+
   protected:
 	View *m_content = nullptr;
 
@@ -38,8 +44,11 @@ class TreeView : public View {
 	friend class TreeNode;
 	void notify_selected(TreeNode *node);
 	void notify_right_clicked(TreeNode *node, Vec2 pos);
+	void refresh_indicators(View *node);
 
 	TreeNode *m_selected = nullptr;
+	GFX::GfxTexture *m_icon_collapsed = nullptr;
+	GFX::GfxTexture *m_icon_expanded = nullptr;
 };
 
 class TreeNode : public View {
@@ -47,6 +56,8 @@ class TreeNode : public View {
 	TreeNode(std::string label, TreeView &owner, int depth);
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "TreeNode"; }
+	static constexpr ViewKind k_kind = ViewKind::TreeNode;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
 	TreeNode *add_child_node(std::string label);
 	View *add_child(Unique<View> node) override;
@@ -61,6 +72,7 @@ class TreeNode : public View {
 	[[nodiscard]] int get_depth() const { return m_depth; }
 
 	void set_selected(bool selected);
+	void refresh_indicator();
 
   protected:
 	TreeView &m_owner;

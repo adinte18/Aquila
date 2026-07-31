@@ -153,7 +153,7 @@ void UIDebugWindow::build(Canvas *target, Uint32 width, Uint32 height, const std
 
 	auto *detail_scroll = root->add_child<ScrollView>();
 	detail_scroll->add_class("ui-debug-detail-pane");
-	m_details_host = detail_scroll->add_content<View>();
+	m_details_host = detail_scroll->add_child<View>();
 	m_details_host->add_class("ui-debug-details");
 
 	m_canvas->reload_styles();

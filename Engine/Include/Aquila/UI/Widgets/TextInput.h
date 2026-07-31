@@ -13,10 +13,13 @@ class TextInput : public Control {
 	explicit TextInput(std::string placeholder);
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "TextInput"; }
+	static constexpr ViewKind k_kind = ViewKind::TextInput;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
 	void set_text(const std::string &text);
 	void set_font(Text::FontAtlas *font) override;
 	void set_placeholder(std::string text);
+	void ignore_next_char() { m_ignore_next_char = true; }
 	Signal<void(const std::string &)> on_changed;
 	Signal<void(const std::string &)> on_submit;
 
@@ -29,7 +32,7 @@ class TextInput : public Control {
 	void on_char_input(Uint32 codepoint) override;
 	void on_focus_gained() override;
 	void on_focus_lost() override;
-	void on_update(F32 delta_time) override;
+	bool on_update(F32 delta_time) override;
 	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   protected:
@@ -44,6 +47,7 @@ class TextInput : public Control {
 	float m_scroll_offset_x = 0.F; // horizontal scroll offset in pixels
 	float m_blink_timer = 0.F;
 	bool m_caret_visible = true;
+	bool m_ignore_next_char = false;
 };
 
 } // namespace Aquila::UI::Core

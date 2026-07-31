@@ -9,6 +9,8 @@ class GfxTexture;
 
 namespace Aquila::UI::Core {
 
+class TextInput;
+
 class PopupMenu : public FloatingOverlay {
   public:
 	PopupMenu();
@@ -20,10 +22,13 @@ class PopupMenu : public FloatingOverlay {
 	void add_separator();
 	PopupMenu *add_submenu(std::string text, GFX::GfxTexture *icon = nullptr);
 
+	TextInput *enable_search(std::string placeholder);
+
 	void set_submenu_icon(GFX::GfxTexture *texture) { m_submenu_icon = texture; }
 	void set_on_activate(Delegate<void()> callback) { m_on_activate = std::move(callback); }
 
 	void clear_items();
+	void refresh();
 	void open_at(Vec2 canvas_pos);
 	void open_below(Vec2 anchor_pos, float anchor_height);
 	void dismiss();
@@ -48,6 +53,7 @@ class PopupMenu : public FloatingOverlay {
 	PopupMenu *m_parent_menu = nullptr;
 	PopupMenu *m_open_submenu = nullptr;
 	GFX::GfxTexture *m_submenu_icon = nullptr;
+	TextInput *m_search_input = nullptr;
 	Delegate<void()> m_on_activate;
 };
 

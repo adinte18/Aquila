@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/Tooltip.h"
+#include "Aquila/UI/Style/ComputedStyle.h"
 
 namespace Aquila::UI::Core {
 
@@ -27,6 +28,15 @@ void Tooltip::show_at(Vec2 canvas_pos, std::string text) {
 
 void Tooltip::hide() {
 	close();
+}
+
+Vec2 Tooltip::measure(const std::string &text) {
+	m_label->set_text(text);
+	const Vec2 text_size = m_label->measure();
+	const ComputedStyle &cs = get_computed_style();
+	const float pad_x = cs.padding.left.resolve(0.F) + cs.padding.right.resolve(0.F);
+	const float pad_y = cs.padding.top.resolve(0.F) + cs.padding.bottom.resolve(0.F);
+	return { text_size.x + pad_x, text_size.y + pad_y };
 }
 
 } // namespace Aquila::UI::Core

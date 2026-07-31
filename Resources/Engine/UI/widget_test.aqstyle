@@ -84,6 +84,8 @@ TabView {
 .tab-button {
     padding: 0px 14px;
     height: 100%;
+    min-width: 0px;
+    overflow: hidden;
     align-items: center;
     justify-content: center;
     font-family: regular;
@@ -233,6 +235,28 @@ ScrollView {
     width: grow;
 }
 
+.scroll-bar-track {
+    width: 12px;
+    flex-direction: column;
+    align-items: center;
+    padding: 0px 3px;
+    background-color: transparent;
+}
+
+.scroll-bar-thumb {
+    width: 100%;
+    background-color: var(--bg-lit);
+    border-radius: 3px;
+}
+
+.scroll-bar-thumb:hover {
+    background-color: var(--text-muted);
+}
+
+.scroll-bar-thumb:pressed {
+    background-color: var(--text-dim);
+}
+
 MenuBar {
     flex-direction: row;
     align-items: center;
@@ -286,7 +310,6 @@ AssetCard {
     border-radius: 2px;
     padding: 10px;
     gap: 8px;
-    box-shadow: var(--shadow-sm);
     transition: 80ms ease-out;
 }
 
@@ -296,7 +319,7 @@ AssetCard:hover {
 }
 
 .asset-card-name {
-    font-family: medium;
+    font-family: regular;
     font-size: 16px;
     color: var(--text-bright);
 }
@@ -321,6 +344,17 @@ AssetCard:hover {
     background-color: var(--bg-base);
 }
 
+#hierarchy-root {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+}
+
+#hierarchy-scroll {
+    width: 100%;
+    height: grow;
+}
+
 .hierarchy-toolbar{
     width: 100%;
     border-width: 0px;
@@ -328,7 +362,6 @@ AssetCard:hover {
 }
 
 #toolbar {
-    box-shadow: var(--shadow-sm);
     width: 100%;
     height: 40px;
     flex-direction: row;
@@ -389,7 +422,6 @@ AssetCard:hover {
 ContextMenu {
     flex-direction: column;
     min-width: 140px;
-    box-shadow: var(--shadow-pop);
     background-color: var(--bg-deep);
     padding: 6px 6px;
     gap: 4px;
@@ -429,6 +461,28 @@ ContextMenu {
     background-color: var(--border-dim);
 }
 
+.drag-ghost {
+    flex-direction: row;
+    align-items: center;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-bright);
+    background-color: var(--bg-surface);
+    border-width: 1px;
+    border-color: var(--border-lit);
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+
+.menu-search {
+    width: grow;
+    height: 26px;
+    font-family: regular;
+    font-size: 14px;
+    selection-color: var(--selection);
+    placeholder-color: var(--text-muted);
+}
+
 
 
 
@@ -455,17 +509,22 @@ ContextMenu {
 }
 
 .dock-side-left {
-    width: 220px;
+    width: 14vw;
+    min-width: 160px;
+    max-width: 420px;
     height: 100%;
 }
 
 .dock-center {
     width: grow;
+    min-width: 320px;
     height: 100%;
 }
 
 .dock-side-right {
-    width: 280px;
+    width: 18vw;
+    min-width: 200px;
+    max-width: 480px;
     height: 100%;
 }
 
@@ -479,7 +538,9 @@ ContextMenu {
 
 .dock-side-bottom {
     width: 100%;
-    height: 200px;
+    height: 22vh;
+    min-height: 120px;
+    max-height: 480px;
 }
 
 .dock-tab-bar {
@@ -510,6 +571,8 @@ ContextMenu {
     padding: 0px 10px;
     height: 100%;
     flex-grow: 1;
+    min-width: 0px;
+    overflow: hidden;
     border-radius: 2px;
     align-items: center;
     justify-content: center;
@@ -562,26 +625,36 @@ ContextMenu {
 }
 
 .dock-splitter {
-    background-color: var(--bg-base);
-    transition: 80ms ease-out;
+    background-color: transparent;
+    align-items: center;
+    justify-content: center;
 }
 
 .dock-splitter-h {
-    width: 2px;
+    width: 10px;
     height: 100%;
+    cursor: resize-h;
 }
 
 .dock-splitter-v {
     width: 100%;
-    height: 2px;
+    height: 10px;
+    cursor: resize-v;
 }
 
-.dock-splitter:hover {
-    background-color: var(--bg-lit);
+.dock-grabber {
+    background-color: var(--text-muted);
+    border-radius: 3px;
 }
 
-.dock-splitter:pressed {
-    background-color: var(--accent);
+.dock-grabber-h {
+    width: 4px;
+    height: 36px;
+}
+
+.dock-grabber-v {
+    width: 36px;
+    height: 4px;
 }
 
 
@@ -650,6 +723,7 @@ ContextMenu {
     flex-direction: column;
     width: 100%;
     height: grow;
+    background-color: var(--bg-deep);
 }
 
 #console-toolbar {
@@ -719,93 +793,101 @@ ContextMenu {
 #console-scroll {
     flex-direction: column;
     width: 100%;
+    padding: 4px 0px;
 }
 
-.console-row {
-    flex-direction: row;
-    align-items: center;
+.console-line {
     width: 100%;
-    height: 22px;
-    padding: 0px 6px;
-    gap: 6px;
-    transition: 60ms ease-out;
+    font-family: mono;
+    font-size: 16px;
+    color: var(--text-dim);
+    padding: 1px 8px;
+    white-space: nowrap;
+    overflow: hidden;
 }
 
-.console-row-even {
-    background-color: var(--bg-panel);
+.console-info {
+    color: var(--text-dim);
 }
 
-.console-row-odd {
-    background-color: var(--bg-base);
+.console-debug {
+    color: var(--text-muted);
 }
 
-.console-row:hover {
-    background-color: var(--bg-hover);
-}
-
-.console-row-selected {
-    background-color: var(--accent-press);
-    border-color: var(--accent-muted);
-    border-width: 1px;
+.console-trace {
+    color: var(--text-muted);
 }
 
 .console-warning {
-    background-color: var(--row-warning);
+    color: #c9a24a;
 }
 
 .console-error {
-    background-color: var(--row-error);
+    color: var(--danger);
 }
 
 .console-critical {
-    background-color: var(--row-critical);
+    color: #ff5555;
 }
 
-.console-row-icon {
-    width: 14px;
-    height: 14px;
-}
-
-.console-row-text {
-    font-family: regular;
-    font-size: 14px;
-    color: var(--text);
-    flex-grow: 1;
-}
-
-#console-divider {
-    width: 100%;
-    height: 1px;
-    background-color: var(--border-dim);
-}
-
-#console-detail {
+#inspector-root {
     flex-direction: column;
     width: 100%;
-    height: 60px;
-    padding: 6px 8px;
-    background-color: var(--bg-panel);
-    border-color: var(--border);
-    border-width: 1px;
+    height: grow;
 }
 
-#console-detail-text {
+#inspector-empty {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.inspector-empty-text {
     font-family: regular;
     font-size: 14px;
     color: var(--text-dim);
-    width: 100%;
+    max-width: 240px;
+    text-align: center;
     white-space: normal;
 }
 
 #inspector-scroll {
+    width: 100%;
+    height: grow;
+}
+
+#inspector-list {
     flex-direction: column;
     width: 100%;
     padding: 8px;
     gap: 6px;
 }
 
+.inspector-add-component {
+    width: 100%;
+    height: 28px;
+    justify-content: center;
+    gap: 6px;
+    border-radius: 4px;
+    background-color: var(--bg-surface);
+    color: var(--text);
+    transition: 60ms ease-out;
+}
+
+.inspector-add-component:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.inspector-add-component:pressed {
+    background-color: var(--bg-lit);
+}
+
 .inspector-entity-name {
-    font-family: medium;
+    font-family: regular;
     font-size: 18px;
     color: var(--text-bright);
     width: 100%;
@@ -853,7 +935,7 @@ IconLabel {
 .collapsible-title {
     width: grow;
     height: 100%;
-    font-family: medium;
+    font-family: regular;
     font-size: 14px;
     color: var(--text);
     background-color: var(--bg-surface);
@@ -1123,7 +1205,7 @@ Vec4Field {
 }
 
 .vec-label {
-    font-family: bold;
+    font-family: regular;
     font-size: 14px;
     color: var(--text-bright);
     width: auto;
@@ -1173,8 +1255,7 @@ Vec4Field {
 .tree-view {
     flex-direction: column;
     width: grow;
-    height: grow;
-    overflow: scroll;
+    height: auto;
     padding: 6px;
 }
 
@@ -1236,7 +1317,6 @@ Vec4Field {
 }
 
 .cp-popup {
-    box-shadow: var(--shadow-pop);
     flex-direction: column;
     gap: 6px;
     padding: 8px;
@@ -1386,6 +1466,229 @@ Vec4Field {
     border-color: var(--accent);
 }
 
+.settings-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+.settings-header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 36px;
+    padding: 0px 14px;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.settings-title {
+    font-family: regular;
+    font-size: 16px;
+    color: var(--text-bright);
+    width: grow;
+}
+
+.settings-scroll {
+    width: 100%;
+    height: grow;
+}
+
+.settings-content {
+    flex-direction: column;
+    width: 100%;
+    padding: 10px;
+    gap: 8px;
+}
+
+.settings-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    gap: 10px;
+}
+
+.settings-label {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    width: grow;
+    min-width: 0px;
+}
+
+.settings-field {
+    width: 180px;
+    min-width: 0px;
+}
+
+.settings-help {
+    width: 15px;
+    height: 15px;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    transition: 80ms ease-out;
+}
+
+.settings-help:hover {
+    opacity: 1;
+}
+
+.settings-help-icon {
+    width: 15px;
+    height: 15px;
+}
+
+.launcher-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+.launcher-header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 48px;
+    padding: 0px 16px;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.launcher-title {
+    font-family: medium;
+    font-size: 18px;
+    color: var(--text-bright);
+    width: grow;
+}
+
+.launcher-body {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    padding: 14px;
+    gap: 8px;
+}
+
+.launcher-section {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    padding: 4px 0px;
+}
+
+.launcher-list {
+    width: 100%;
+    height: grow;
+    background-color: var(--bg-panel);
+    border-color: var(--border-ui);
+    border-width: 1px;
+    border-radius: 2px;
+}
+
+.launcher-list-inner {
+    flex-direction: column;
+    width: 100%;
+    padding: 4px;
+    gap: 2px;
+}
+
+.launcher-project {
+    width: grow;
+    justify-content: start;
+    padding: 8px 12px;
+    background-color: transparent;
+    color: var(--text);
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.launcher-project:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.launcher-new-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+.launcher-name-input {
+    width: grow;
+    min-width: 0px;
+}
+
+.launcher-create-btn {
+    padding: 6px 16px;
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+    border-color: var(--accent-muted);
+    border-width: 1px;
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.launcher-create-btn:hover {
+    background-color: var(--accent-muted);
+}
+
+.settings-footer {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 46px;
+    padding: 0px 12px;
+    gap: 8px;
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.settings-footer-spacer {
+    width: grow;
+    height: 1px;
+    min-width: 0px;
+}
+
+.settings-btn {
+    padding: 6px 16px;
+    background-color: var(--bg-widget);
+    color: var(--text);
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.settings-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.settings-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.settings-btn-primary {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+    border-color: var(--accent-muted);
+    border-width: 1px;
+}
+
+.settings-btn-primary:hover {
+    background-color: var(--accent-muted);
+}
+
 .ui-debug-root {
     width: 100%;
     height: 100%;
@@ -1415,7 +1718,7 @@ Vec4Field {
 }
 
 .gallery-title {
-    font-family: medium;
+    font-family: regular;
     font-size: 14px;
     color: var(--text-bright);
     width: grow;
@@ -1440,7 +1743,7 @@ Vec4Field {
 }
 
 .gallery-heading {
-    font-family: medium;
+    font-family: regular;
     font-size: 14px;
     color: var(--accent-muted);
 }
@@ -1484,7 +1787,6 @@ Vec4Field {
     border-width: 1px;
     border-color: var(--border-dim);
     border-radius: 2px;
-    box-shadow: var(--shadow-pop);
     overflow: hidden;
 }
 
@@ -1501,7 +1803,7 @@ Vec4Field {
 }
 
 .ui-debug-title {
-    font-family: medium;
+    font-family: regular;
     font-size: 14px;
     color: var(--text-bright);
     width: grow;
@@ -1558,7 +1860,7 @@ Vec4Field {
 }
 
 .ui-debug-section {
-    font-family: medium;
+    font-family: regular;
     font-size: 14px;
     color: var(--accent-muted);
     width: 100%;
@@ -1585,25 +1887,10 @@ Vec4Field {
     flex-grow: 1;
 }
 
-@media (max-width: 1100px) {
-    .dock-side-left {
-        width: 190px;
-    }
-
-    .dock-side-right {
-        width: 240px;
-    }
-}
-
 @media (max-width: 850px) {
     .dock-side-left {
         display: none;
     }
-
-    .dock-side-right {
-        width: 220px;
-    }
-
 }
 
 @media (max-width: 600px) {
@@ -1634,13 +1921,16 @@ Vec4Field {
 @container (max-width: 220px) {
     .dock-tab-btn {
         padding: 0px 8px;
-        font-size: 14px;
     }
 }
 
-@container (max-width: 100px) {
-    .dock-tab-bar {
-        display: none;
+@container (max-width: 130px) {
+    .dock-tab-btn {
+        padding: 0px 4px;
+    }
+
+    .dock-tab-close-btn {
+        width: 12px;
     }
 }
 

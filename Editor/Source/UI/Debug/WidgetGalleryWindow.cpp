@@ -65,7 +65,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 
 	auto *scroll = root->add_child<ScrollView>();
 	scroll->add_class("gallery-scroll");
-	auto *content = scroll->add_content<View>();
+	auto *content = scroll->add_child<View>();
 	content->add_class("gallery-content");
 
 	m_tooltip = root->add_child<Tooltip>();
@@ -105,7 +105,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 	add_group(content, "Separator")->add_child<Separator>();
 
 	auto *collapsible = add_group(content, "Collapsible")->add_child<Collapsible>(std::string("Expandable section"));
-	collapsible->add_content<Label>(std::string("Hidden content revealed on expand"));
+	collapsible->add_child<Label>(std::string("Hidden content revealed on expand"));
 
 	auto *tabs = add_group(content, "TabView")->add_child<TabView>();
 	tabs->add_class("gallery-tabview");

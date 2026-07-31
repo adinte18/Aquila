@@ -11,6 +11,8 @@ class Collapsible : public View {
 	explicit Collapsible(std::string title = "");
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "Collapsible"; }
+	static constexpr ViewKind k_kind = ViewKind::Collapsible;
+	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
 	void set_title(std::string title);
 	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
@@ -20,14 +22,11 @@ class Collapsible : public View {
 	Signal<void(bool)> on_toggled;
 	Signal<void()> on_reordered;
 
-	View *add_content(Unique<View> child);
-
-	template <typename T, typename... Args> T *add_content(Args &&...args) {
-		return static_cast<T *>(add_content(std::make_unique<T>(std::forward<Args>(args)...)));
-	}
+	using View::add_child;
+	View *add_child(Unique<View> child) override;
 
 	void begin_drag();
-	void on_update(F32 delta_time) override;
+	bool on_update(F32 delta_time) override;
 
   private:
 	void apply_state();

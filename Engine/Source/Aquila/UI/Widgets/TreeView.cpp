@@ -53,7 +53,11 @@ void TreeView::remove_node(TreeNode *node) {
 		m_selected = nullptr;
 	}
 
-	node->get_parent()->remove_child(node);
+	View *container = node->get_parent();
+	container->remove_child(node);
+	if (auto *owner_node = view_cast<TreeNode>(container->get_parent())) {
+		owner_node->refresh_indicator();
+	}
 }
 
 void TreeView::set_on_background_right_clicked(Delegate<void(Vec2)> callback) {
@@ -150,7 +154,7 @@ void TreeNode::update_depth(int new_depth) {
 	m_header->merge_style(hp);
 
 	for (const auto &child : m_children->get_children()) {
-		if (auto *child_node = dynamic_cast<TreeNode *>(child.get())) {
+		if (auto *child_node = view_cast<TreeNode>(child.get())) {
 			child_node->update_depth(m_depth + 1);
 		}
 	}
@@ -198,10 +202,43 @@ void TreeNode::update_header_text() {
 	if (!m_header || !m_children) {
 		return;
 	}
-	if (m_children->get_children().empty()) {
+	const bool has_children = !m_children->get_children().empty();
+	const bool use_icons = (m_owner.m_icon_collapsed != nullptr) || (m_owner.m_icon_expanded != nullptr);
+
+	if (use_icons) {
+		m_header->set_reserve_icon_space(true);
+		m_header->set_icon(has_children ? (m_expanded ? m_owner.m_icon_expanded : m_owner.m_icon_collapsed) : nullptr);
 		m_header->set_text(m_label);
+		return;
+	}
+
+	m_header->set_reserve_icon_space(false);
+	m_header->set_icon(nullptr);
+	if (has_children) {
+		m_header->set_text(std::string(m_expanded ? "v " : "> ") + m_label);
 	} else {
-		m_header->set_text(std::string(m_expanded ? "> " : "v ") + m_label);
+		m_header->set_text(m_label);
+	}
+}
+
+void TreeNode::refresh_indicator() {
+	update_header_text();
+}
+
+void TreeView::set_expand_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded) {
+	m_icon_collapsed = collapsed;
+	m_icon_expanded = expanded;
+	if (m_content != nullptr) {
+		refresh_indicators(m_content);
+	}
+}
+
+void TreeView::refresh_indicators(View *node) {
+	for (const auto &child : node->get_children()) {
+		if (auto *tree_node = view_cast<TreeNode>(child.get())) {
+			tree_node->refresh_indicator();
+		}
+		refresh_indicators(child.get());
 	}
 }
 

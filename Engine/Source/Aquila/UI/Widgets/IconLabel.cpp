@@ -8,14 +8,14 @@ namespace Aquila::UI::Core {
 IconLabel::IconLabel() {
 	m_should_skip_hit_test = true;
 
-	m_icon = dynamic_cast<Image *>(add_child(std::make_unique<Image>()));
+	m_icon = add_child<Image>();
 	m_icon->add_class("icon");
-	m_label = dynamic_cast<Label *>(add_child(std::make_unique<Label>(std::string())));
+	m_label = add_child<Label>(std::string());
 	m_spacer = add_child(std::make_unique<View>());
 	m_spacer->add_class("icon-label-spacer");
-	m_shortcut = dynamic_cast<Label *>(add_child(std::make_unique<Label>(std::string())));
+	m_shortcut = add_child<Label>(std::string());
 	m_shortcut->add_class("shortcut");
-	m_trailing = dynamic_cast<Image *>(add_child(std::make_unique<Image>()));
+	m_trailing = add_child<Image>();
 	m_trailing->add_class("trailing-icon");
 
 	update_icon_visibility();

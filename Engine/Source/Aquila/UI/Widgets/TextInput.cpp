@@ -58,7 +58,7 @@ void TextInput::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 	}
 
 	Text::FontAtlas *font = resolve_font();
-	if (!font) {
+	if (font == nullptr) {
 		return;
 	}
 
@@ -90,7 +90,7 @@ void TextInput::on_mouse_move(Vec2 pos) {
 		return;
 	}
 	Text::FontAtlas *font = resolve_font();
-	if (!font) {
+	if (font == nullptr) {
 		return;
 	}
 
@@ -132,6 +132,10 @@ void TextInput::on_key_press(Platform::KeyCode key, int mods) {
 }
 
 void TextInput::on_char_input(Uint32 codepoint) {
+	if (m_ignore_next_char) {
+		m_ignore_next_char = false;
+		return;
+	}
 	if (m_state.handle_char_input(codepoint)) {
 		on_changed(m_state.text);
 		reset_blink();
@@ -158,7 +162,7 @@ void TextInput::on_focus_lost() {
 	queue_redraw();
 }
 
-void TextInput::on_update(F32 delta_time) {
+bool TextInput::on_update(F32 delta_time) {
 	constexpr float k_blink_period = 0.53f;
 	m_blink_timer += delta_time;
 	if (m_blink_timer >= k_blink_period) {
@@ -166,6 +170,7 @@ void TextInput::on_update(F32 delta_time) {
 		m_caret_visible = !m_caret_visible;
 		queue_redraw();
 	}
+	return is_focused();
 }
 
 void TextInput::reset_blink() {
@@ -231,7 +236,7 @@ void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
 
 	if (!m_state.text.empty()) {
 		draw_list.DrawText(text_rect, m_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
-	} else if (!m_placeholder.empty() && !m_is_focused) {
+	} else if (!m_placeholder.empty()) {
 		const Vec4 muted = style.effective_placeholder_color();
 		draw_list.DrawText(text_rect, m_placeholder, font, muted, font_size, TextAlign::Left, z + 1);
 	}
