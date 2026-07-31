@@ -29,6 +29,15 @@ class CanvasManager : public Foundation::Singleton<CanvasManager> {
 	bool is_any_layer_dirty(UILayer from, UILayer to) const;
 	void clear_layer_dirty_flags(UILayer from, UILayer to);
 
+	[[nodiscard]] Platform::CursorType get_active_cursor() const {
+		for (size_t i = static_cast<size_t>(UILayer::Count); i-- > 0;) {
+			if (View *hovered = m_layers[i]->get_hovered_view()) {
+				return hovered->get_cursor();
+			}
+		}
+		return Platform::CursorType::Arrow;
+	}
+
   private:
 	friend class Foundation::Singleton<CanvasManager>;
 	CanvasManager(Uint32 width, Uint32 height);

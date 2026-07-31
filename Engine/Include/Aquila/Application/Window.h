@@ -5,6 +5,9 @@
 #include "Aquila/Foundation/Math/MathTypes.h"
 
 #include "Aquila/Platform/Platform.h"
+#include "Aquila/Platform/Cursor.h"
+
+#include <array>
 
 #include "Aquila/Application/Events/Event.h"
 #include "Aquila/Application/Events/WindowEvent.h"
@@ -19,7 +22,7 @@ class Window {
   public:
 	using EventCallbackFn = std::function<void(Events::Event &)>;
 
-	Window(Uint32 width, Uint32 height, const std::string &title, bool maximized = true);
+	Window(Uint32 width, Uint32 height, const std::string &title, bool maximized = true, bool start_hidden = false);
 	~Window();
 
 	void poll_events();
@@ -30,6 +33,7 @@ class Window {
 	Uint32 get_width() const { return m_data.width; }
 	Uint32 get_height() const { return m_data.height; }
 	void set_title(const std::string &text) const;
+	void set_cursor(Platform::CursorType type);
 
 	void set_event_callback(const EventCallbackFn &callback) { m_data.event_callback = callback; }
 
@@ -49,6 +53,9 @@ class Window {
 	void setup_callbacks();
 	GLFWwindow *m_window;
 
+	std::array<GLFWcursor *, static_cast<size_t>(Platform::CursorType::Count)> m_cursors{};
+	Platform::CursorType m_current_cursor = Platform::CursorType::Arrow;
+
 	struct WindowData {
 		Window *owner = nullptr;
 		std::string title;
@@ -62,6 +69,7 @@ class Window {
 
 	WindowData m_data;
 	bool m_start_maximized = true;
+	bool m_start_hidden = false;
 };
 
 } // namespace Aquila::Application

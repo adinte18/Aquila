@@ -10,8 +10,8 @@ static void glfw_error_callback(int error, const char *description) {
 	AQUILA_LOG_ERROR("GLFW Error ({}): {}", error, description);
 }
 
-Window::Window(const Uint32 width, const Uint32 height, const std::string &title, bool maximized)
-	: m_start_maximized(maximized) {
+Window::Window(const Uint32 width, const Uint32 height, const std::string &title, bool maximized, bool start_hidden)
+	: m_start_maximized(maximized), m_start_hidden(start_hidden) {
 	m_data.title = title;
 	m_data.width = width;
 	m_data.height = height;
@@ -34,6 +34,7 @@ void Window::initialize() {
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+	glfwWindowHint(GLFW_VISIBLE, m_start_hidden ? GLFW_FALSE : GLFW_TRUE);
 
 	m_window = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
 
@@ -193,7 +194,50 @@ bool Window::should_close() const {
 	return glfwWindowShouldClose(m_window) != 0;
 }
 
+static int to_glfw_cursor(Platform::CursorType type) {
+	switch (type) {
+	case Platform::CursorType::Text:
+		return GLFW_IBEAM_CURSOR;
+	case Platform::CursorType::Hand:
+		return GLFW_POINTING_HAND_CURSOR;
+	case Platform::CursorType::Crosshair:
+		return GLFW_CROSSHAIR_CURSOR;
+	case Platform::CursorType::ResizeHorizontal:
+		return GLFW_RESIZE_EW_CURSOR;
+	case Platform::CursorType::ResizeVertical:
+		return GLFW_RESIZE_NS_CURSOR;
+	case Platform::CursorType::ResizeDiagonalTLBR:
+		return GLFW_RESIZE_NWSE_CURSOR;
+	case Platform::CursorType::ResizeDiagonalBLTR:
+		return GLFW_RESIZE_NESW_CURSOR;
+	case Platform::CursorType::ResizeAll:
+		return GLFW_RESIZE_ALL_CURSOR;
+	case Platform::CursorType::NotAllowed:
+		return GLFW_NOT_ALLOWED_CURSOR;
+	default:
+		return GLFW_ARROW_CURSOR;
+	}
+}
+
+void Window::set_cursor(Platform::CursorType type) {
+	if (type == m_current_cursor) {
+		return;
+	}
+	m_current_cursor = type;
+
+	const size_t index = static_cast<size_t>(type);
+	if (m_cursors[index] == nullptr) {
+		m_cursors[index] = glfwCreateStandardCursor(to_glfw_cursor(type));
+	}
+	glfwSetCursor(m_window, m_cursors[index]);
+}
+
 void Window::shutdown() const {
+	for (GLFWcursor *cursor : m_cursors) {
+		if (cursor != nullptr) {
+			glfwDestroyCursor(cursor);
+		}
+	}
 	glfwDestroyWindow(m_window);
 }
 
