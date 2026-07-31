@@ -8,7 +8,7 @@
 namespace Aquila::Graphics {
 
 Ref<GFX::GfxPipeline> MaterialFactory::build_pipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
-													 const MaterialCreateInfo &info) {
+													  const MaterialCreateInfo &info) {
 	auto *scene_layout = &Rendering::SceneFrameData::get()->get_layout().get_rhi();
 
 	if (!program.get_stage_desc(RHI::ShaderStageFlags::Vertex).spirv.empty() == false &&
@@ -54,7 +54,7 @@ Ref<GFX::GfxPipeline> MaterialFactory::build_pipeline(GFX::GfxContext &ctx, Shad
 	}
 
 	desc.push_constants = { { RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment, 0,
-							 info.push_constant_size } };
+							  info.push_constant_size } };
 
 	desc.debug_name = program.m_name;
 	return ctx.create_graphics_pipeline(desc);

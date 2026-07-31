@@ -46,7 +46,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		}
 
 		auto *mat = registry.try_get<MaterialComponent>(entity);
-		if (!mat || mat->type != MaterialType::Lit || !mat->material) {
+		if ((mat == nullptr) || mat->type != MaterialType::Lit || !mat->material) {
 			continue;
 		}
 
@@ -55,10 +55,6 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			.model = transform.get_world_matrix(),
 			.material_index = mat->material_index,
 		});
-	}
-
-	if (batches.empty()) {
-		return;
 	}
 
 	auto *frame_data = ctx.frame_data;
@@ -76,10 +72,10 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 
 			builder.set_depth_attachment(ctx.h_depth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
 										 RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
-										 /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
+										 /*read_only=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
 		[batches = std::move(batches), frame_data, frame_slot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
-			for (auto &[material, drawCalls] : batches) {
+			for (const auto &[material, drawCalls] : batches) {
 				material->flush(frame_slot);
 				material->bind(cmd, 1, frame_slot);
 				cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));

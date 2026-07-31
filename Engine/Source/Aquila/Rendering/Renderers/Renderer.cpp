@@ -56,12 +56,12 @@ void Renderer::on_init(GFX::GfxContext &ctx) {
 
 	// create swapchain pass
 	m_swapchain_pass = ctx.create_render_pass({ .color_attachments = { {
-												 .load_op = RHI::AttachmentLoadOp::DontCare,
-												 .store_op = RHI::AttachmentStoreOp::Store,
-											 } },
-											 .depth_attachment = {},
-											 .use_swapchain = true,
-											 .debug_name = "SwapchainBlit" });
+													.load_op = RHI::AttachmentLoadOp::DontCare,
+													.store_op = RHI::AttachmentStoreOp::Store,
+												} },
+												.depth_attachment = {},
+												.use_swapchain = true,
+												.debug_name = "SwapchainBlit" });
 }
 
 void Renderer::on_shutdown() {
@@ -107,7 +107,7 @@ void Renderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext 
 			builder.mark_as_side_effect();
 		},
 		[h_src, swapchain, image_index, set, pipeline, render_pass](GFX::GfxCommandList &cmd,
-																 Graphics::RG::RGRegistry &reg) {
+																	Graphics::RG::RGRegistry &reg) {
 			auto &src_tex = reg.get_texture(h_src);
 			render_pass->begin(cmd, swapchain, image_index);
 			cmd.bind_pipeline(*pipeline);
