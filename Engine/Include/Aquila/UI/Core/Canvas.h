@@ -8,11 +8,16 @@
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleSheet.h"
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Aquila::UI::Core {
 
 using namespace Aquila::UI::Rendering;
 
 class Tooltip;
+class DragGhost;
 
 class Canvas {
 	friend class InputRouter; // calls MarkDirty()/RequestLayout() on input
@@ -29,7 +34,10 @@ class Canvas {
 	StyleSheet &get_style_sheet();
 	View *get_root();
 	View *hit_test(Vec2 pos);
+	[[nodiscard]] View *get_focused_view() const { return m_input_router.focused_view(); }
+	[[nodiscard]] View *get_hovered_view() const { return m_input_router.hovered_view(); }
 	void scroll_into_view(View *target);
+	void set_scroll_offset(View *target, float offset_y);
 	Uint32 get_width() const { return m_width; }
 	Uint32 get_height() const { return m_height; }
 	void notify_style_dirty(View *view);
@@ -47,6 +55,10 @@ class Canvas {
 	void register_tick(View *view);
 	void unregister_tick(View *view);
 
+	void show_drag_ghost(std::string label, Vec2 pos, GFX::GfxTexture *icon = nullptr);
+	void move_drag_ghost(Vec2 pos);
+	void hide_drag_ghost();
+
 	bool is_draw_list_dirty() const { return m_draw_list_dirty; }
 	void clear_draw_list_dirty() { m_draw_list_dirty = false; }
 
@@ -61,6 +73,8 @@ class Canvas {
 	std::vector<OpenPopup> m_open_popups;
 	std::vector<View *> m_ticking;
 	View *m_scroll_target = nullptr;
+	View *m_scroll_offset_target = nullptr;
+	float m_scroll_offset_y = 0.F;
 
 	Unique<View> m_root;
 	StyleEngine m_style_engine;
@@ -82,6 +96,8 @@ class Canvas {
 	void style_pass();
 	void animation_pass(F32 dt);
 	void update_tooltip(F32 dt);
+
+	DragGhost *m_drag_ghost = nullptr;
 
 	Tooltip *m_tooltip = nullptr;
 	View *m_tooltip_target = nullptr;

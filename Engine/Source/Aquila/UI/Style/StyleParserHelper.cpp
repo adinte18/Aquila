@@ -136,6 +136,12 @@ Option<StyleLength> parse_length(std::string_view raw) {
 	if (s.ends_with("%")) {
 		return StyleLength::percent(parse_float(std::string_view(s).substr(0, s.size() - 1)));
 	}
+	if (s.ends_with("vw")) {
+		return StyleLength::vw(parse_float(std::string_view(s).substr(0, s.size() - 2)));
+	}
+	if (s.ends_with("vh")) {
+		return StyleLength::vh(parse_float(std::string_view(s).substr(0, s.size() - 2)));
+	}
 	if (!s.empty() && (std::isdigit(static_cast<unsigned char>(s[0])) || s[0] == '-' || s[0] == '.')) {
 		return StyleLength::pixel(parse_float(s));
 	}
@@ -353,6 +359,29 @@ void apply_declaration(StyleProperties &props, std::string_view prop_raw, std::s
 			props.border_style = BorderStyle::Dashed;
 		} else if (value_lower == "dotted") {
 			props.border_style = BorderStyle::Dotted;
+		}
+
+	} else if (prop == "cursor") {
+		if (value_lower == "text" || value_lower == "ibeam") {
+			props.cursor = Platform::CursorType::Text;
+		} else if (value_lower == "pointer" || value_lower == "hand") {
+			props.cursor = Platform::CursorType::Hand;
+		} else if (value_lower == "crosshair") {
+			props.cursor = Platform::CursorType::Crosshair;
+		} else if (value_lower == "resize-h" || value_lower == "ew-resize" || value_lower == "col-resize") {
+			props.cursor = Platform::CursorType::ResizeHorizontal;
+		} else if (value_lower == "resize-v" || value_lower == "ns-resize" || value_lower == "row-resize") {
+			props.cursor = Platform::CursorType::ResizeVertical;
+		} else if (value_lower == "nwse-resize" || value_lower == "resize-nwse") {
+			props.cursor = Platform::CursorType::ResizeDiagonalTLBR;
+		} else if (value_lower == "nesw-resize" || value_lower == "resize-nesw") {
+			props.cursor = Platform::CursorType::ResizeDiagonalBLTR;
+		} else if (value_lower == "move" || value_lower == "all-scroll") {
+			props.cursor = Platform::CursorType::ResizeAll;
+		} else if (value_lower == "not-allowed") {
+			props.cursor = Platform::CursorType::NotAllowed;
+		} else {
+			props.cursor = Platform::CursorType::Arrow;
 		}
 
 		// ── opacity / display / overflow ──

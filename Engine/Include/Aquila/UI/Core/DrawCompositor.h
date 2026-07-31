@@ -17,7 +17,7 @@ class DrawCompositor {
   public:
 	void set_canvas_size(Uint32 width, Uint32 height);
 
-	void invalidate_all(View *root);
+	void recull(View *root);
 
 	bool rebuild_dirty(View *root);
 
@@ -27,6 +27,7 @@ class DrawCompositor {
 
   private:
 	void rebuild_lists(View *root);
+	void compose_draw_list();
 	void cull(View *node, Int32 parent_effective_z, const Rect *clip_rect);
 	void collect_layer(View *node);
 	void collect_layer_subtree(View *node);
@@ -38,6 +39,7 @@ class DrawCompositor {
 	std::vector<View *> m_canvas_layers;
 	std::vector<View *> m_float_roots;
 	DrawList m_draw_list;
+	bool m_compose_needed = false;
 	Uint32 m_width = 0;
 	Uint32 m_height = 0;
 };

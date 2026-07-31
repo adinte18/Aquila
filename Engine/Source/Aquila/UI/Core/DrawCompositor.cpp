@@ -53,17 +53,23 @@ void DrawCompositor::rebuild_lists(View *root) {
 	for (View *float_root : m_float_roots) {
 		collect_layer(float_root);
 	}
+	m_compose_needed = true;
 }
 
-void DrawCompositor::invalidate_all(View *root) {
-	m_per_node_cmds.clear();
+void DrawCompositor::compose_draw_list() {
+	m_draw_list.clear();
+	for (const auto &b : m_z_buckets) {
+		for (const DrawCmd &cmd : b) {
+			m_draw_list.append_cmd(cmd);
+		}
+	}
+	for (View *float_root : m_float_roots) {
+		emit_floating_layer(float_root, nullptr);
+	}
+}
+
+void DrawCompositor::recull(View *root) {
 	rebuild_lists(root);
-	for (View *v : m_canvas_items) {
-		v->set_draw_dirty();
-	}
-	for (View *v : m_canvas_layers) {
-		v->set_draw_dirty();
-	}
 }
 
 bool DrawCompositor::rebuild_dirty(View *root) {
@@ -91,19 +97,15 @@ bool DrawCompositor::rebuild_dirty(View *root) {
 
 	if (any_rebuilt) {
 		rebuild_lists(root);
-
-		m_draw_list.clear();
-		for (const auto &b : m_z_buckets) {
-			for (const DrawCmd &cmd : b) {
-				m_draw_list.append_cmd(cmd);
-			}
-		}
-		for (View *float_root : m_float_roots) {
-			emit_floating_layer(float_root, nullptr);
-		}
 	}
 
-	return any_rebuilt;
+	if (m_compose_needed) {
+		compose_draw_list();
+		m_compose_needed = false;
+		return true;
+	}
+
+	return false;
 }
 
 void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip_rect) {

@@ -76,10 +76,27 @@ static Clay_Dimensions measure_clay_text(Clay_StringSlice text, Clay_TextElement
 	return { dims.x, dims.y };
 }
 
-static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 flex_grow = 0.F) {
+static F32 to_absolute_px(const StyleLength &len, F32 vw_px, F32 vh_px) {
+	switch (len.unit) {
+	case LengthUnit::Pixel:
+		return len.value;
+	case LengthUnit::Vw:
+		return len.value * vw_px;
+	case LengthUnit::Vh:
+		return len.value * vh_px;
+	default:
+		return 0.F;
+	}
+}
+
+static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 vw_px, F32 vh_px, F32 flex_grow = 0.F) {
 	switch (len.unit) {
 	case LengthUnit::Pixel:
 		return CLAY_SIZING_FIXED(len.value);
+	case LengthUnit::Vw:
+		return CLAY_SIZING_FIXED(len.value * vw_px);
+	case LengthUnit::Vh:
+		return CLAY_SIZING_FIXED(len.value * vh_px);
 	case LengthUnit::Percent:
 		return CLAY_SIZING_PERCENT(len.value / 100.F);
 	case LengthUnit::Grow:
@@ -97,39 +114,48 @@ static Clay_Padding to_clay_padding(const StyleEdges &edges) {
 	return { .left = px(edges.left), .right = px(edges.right), .top = px(edges.top), .bottom = px(edges.bottom) };
 }
 
-static Clay_LayoutConfig to_clay_layout(const ComputedStyle &cs) {
+static Clay_SizingAxis to_c_sizing_axis(const StyleLength &len, const StyleLength &min_len, const StyleLength &max_len,
+										F32 vw_px, F32 vh_px, F32 flex_grow) {
+	if (len.unit == LengthUnit::Vw || len.unit == LengthUnit::Vh) {
+		F32 value = to_absolute_px(len, vw_px, vh_px);
+		const F32 min_px = to_absolute_px(min_len, vw_px, vh_px);
+		const F32 max_px = to_absolute_px(max_len, vw_px, vh_px);
+		if (max_px > 0.F && value > max_px) {
+			value = max_px;
+		}
+		if (min_px > 0.F && value < min_px) {
+			value = min_px;
+		}
+		return CLAY_SIZING_FIXED(value);
+	}
+
+	Clay_SizingAxis axis = to_c_sizing(len, vw_px, vh_px, flex_grow);
+	if (len.unit == LengthUnit::Auto || len.unit == LengthUnit::Grow) {
+		const F32 min_px = to_absolute_px(min_len, vw_px, vh_px);
+		const F32 max_px = to_absolute_px(max_len, vw_px, vh_px);
+		if (min_px > 0.F) {
+			axis.size.minMax.min = min_px;
+		}
+		if (max_px > 0.F) {
+			axis.size.minMax.max = max_px;
+		}
+	}
+	return axis;
+}
+
+static Clay_LayoutConfig to_clay_layout(const ComputedStyle &cs, F32 vw_px, F32 vh_px) {
 	const bool is_row = (cs.flex_direction == FlexDirection::Row || cs.flex_direction == FlexDirection::RowReverse);
 	const Clay_LayoutAlignmentX align_x = is_row ? justify_to_align_x(cs.justify) : align_to_align_x(cs.align);
 	const Clay_LayoutAlignmentY align_y = is_row ? align_to_align_y(cs.align) : justify_to_align_y(cs.justify);
 
 	Clay_LayoutConfig layout = {
-		.sizing = { .width = to_c_sizing(cs.width, cs.flex_grow), .height = to_c_sizing(cs.height, cs.flex_grow) },
+		.sizing = { .width = to_c_sizing_axis(cs.width, cs.min_width, cs.max_width, vw_px, vh_px, cs.flex_grow),
+					.height = to_c_sizing_axis(cs.height, cs.min_height, cs.max_height, vw_px, vh_px, cs.flex_grow) },
 		.padding = to_clay_padding(cs.padding),
 		.childGap = static_cast<uint16_t>(cs.gap),
 		.childAlignment = { .x = align_x, .y = align_y },
 		.layoutDirection = is_row ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
 	};
-
-	if (cs.width.unit == LengthUnit::Auto || cs.width.unit == LengthUnit::Grow) {
-		const F32 min_w = cs.min_width.resolve(0.F);
-		const F32 max_w = cs.max_width.resolve(0.F);
-		if (min_w > 0.F) {
-			layout.sizing.width.size.minMax.min = min_w;
-		}
-		if (max_w > 0.F) {
-			layout.sizing.width.size.minMax.max = max_w;
-		}
-	}
-	if (cs.height.unit == LengthUnit::Auto || cs.height.unit == LengthUnit::Grow) {
-		const F32 min_h = cs.min_height.resolve(0.F);
-		const F32 max_h = cs.max_height.resolve(0.F);
-		if (min_h > 0.F) {
-			layout.sizing.height.size.minMax.min = min_h;
-		}
-		if (max_h > 0.F) {
-			layout.sizing.height.size.minMax.max = max_h;
-		}
-	}
 
 	return layout;
 }
@@ -177,6 +203,7 @@ void LayoutEngine::run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 
 	//
 	Clay_EndLayout(delta_time);
 	m_size_changed = false;
+	m_resized_nodes.clear();
 	update_rects(root);
 }
 
@@ -228,6 +255,30 @@ void LayoutEngine::scroll_into_view(View *target) {
 	data.scrollPosition->y = sy;
 }
 
+void LayoutEngine::set_scroll_offset(View *target, float offset_y) {
+	if (target == nullptr) {
+		return;
+	}
+
+	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_clay_ctx));
+	Clay_ElementId id = {};
+	id.id = target->get_clay_id();
+	Clay_ScrollContainerData data = Clay_GetScrollContainerData(id);
+	if (!data.found || data.scrollPosition == nullptr) {
+		return;
+	}
+
+	const float view_h = target->get_absolute_rect().size.y;
+	const float max_scroll = data.contentDimensions.height - view_h;
+	float clamped = offset_y;
+	if (max_scroll <= 0.F || clamped < 0.F) {
+		clamped = 0.F;
+	} else if (clamped > max_scroll) {
+		clamped = max_scroll;
+	}
+	data.scrollPosition->y = -clamped;
+}
+
 void LayoutEngine::layout_pass(View *node) {
 	const ComputedStyle &cs = node->get_display_style();
 
@@ -262,7 +313,9 @@ void LayoutEngine::layout_pass(View *node) {
 		}
 	};
 
-	Clay_LayoutConfig layout = to_clay_layout(cs);
+	const F32 vw_px = static_cast<F32>(m_width) / 100.F;
+	const F32 vh_px = static_cast<F32>(m_height) / 100.F;
+	Clay_LayoutConfig layout = to_clay_layout(cs, vw_px, vh_px);
 	if (!is_text) {
 		const Vec2 intrinsic = node->get_intrinsic_size();
 		if (intrinsic.x >= 0.F && cs.width.unit == LengthUnit::Auto) {
@@ -390,6 +443,8 @@ void LayoutEngine::update_rects(View *node, Vec2 parent_clay_pos, Vec2 accumulat
 		if (new_rect != node->get_layout_rect()) {
 			if (new_rect.size != old_size) {
 				m_size_changed = true;
+				m_resized_nodes.push_back(node);
+				node->queue_redraw();
 			}
 			node->set_layout_rect(new_rect);
 			node->mark_subtree_bounds_dirty();

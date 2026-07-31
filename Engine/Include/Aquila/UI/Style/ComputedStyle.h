@@ -13,6 +13,7 @@ struct ComputedStyle {
 	Vec4 border_radius = StyleDefaults::BORDER_RADIUS;
 	F32 border_width = StyleDefaults::BORDER_WIDTH;
 	BorderStyle border_style = StyleDefaults::BORDER_STYLE;
+	Platform::CursorType cursor = StyleDefaults::CURSOR;
 	F32 opacity = StyleDefaults::OPACITY;
 
 	StyleLength width = StyleDefaults::WIDTH;

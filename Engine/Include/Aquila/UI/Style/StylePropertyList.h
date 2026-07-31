@@ -15,6 +15,7 @@
 	AQ_STYLE_PROP("border-width",       border_width,      border_width,      0, 1, 0) \
 	AQ_STYLE_PROP("border-radius",      border_radius,     border_radius,     0, 1, 0) \
 	AQ_STYLE_PROP("border-style",       border_style,      border_style,      0, 0, 0) \
+	AQ_STYLE_PROP("cursor",             cursor,           cursor,           0, 0, 0) \
 	AQ_STYLE_PROP("opacity",            opacity,          opacity,          0, 1, 0) \
 	AQ_STYLE_PROP("overflow",           overflow,         overflow,         1, 0, 0) \
 	AQ_STYLE_PROP("display",            display,          display,          1, 0, 0) \

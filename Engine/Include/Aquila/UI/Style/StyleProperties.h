@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/UI/Style/StyleLength.h"
+#include "Aquila/Platform/Cursor.h"
 #include <vector>
 
 namespace Aquila::UI {
@@ -11,6 +12,7 @@ struct StyleProperties {
 	Option<F32> border_width;
 	Option<Vec4> border_radius;
 	Option<BorderStyle> border_style;
+	Option<Platform::CursorType> cursor;
 	Option<F32> opacity;
 	Option<Overflow> overflow;
 	Option<Display> display;

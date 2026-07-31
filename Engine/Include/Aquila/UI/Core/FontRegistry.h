@@ -14,10 +14,18 @@ class FontRegistry {
 		return it != map.end() ? it->second : nullptr;
 	}
 
+	static void set_ui_scale(float scale) { get_scale() = scale; }
+	static float ui_scale() { return get_scale(); }
+
   private:
 	static std::unordered_map<std::string, Text::FontAtlas *> &get_map() {
 		static std::unordered_map<std::string, Text::FontAtlas *> map;
 		return map;
+	}
+
+	static float &get_scale() {
+		static float scale = 1.0f;
+		return scale;
 	}
 };
 

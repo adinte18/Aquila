@@ -16,6 +16,16 @@ namespace Aquila::UI::Core {
 class Canvas;
 class IResourceResolver;
 
+enum class ViewKind : Uint8 {
+	Generic,
+	TextInput,
+	Collapsible,
+	TreeNode,
+	DockNode,
+	DockPanel,
+	DockSplitter,
+};
+
 struct ClayTextRun {
 	std::string_view text;
 	Text::FontAtlas *font = nullptr;
@@ -54,11 +64,13 @@ class View {
 	[[nodiscard]] Canvas *get_canvas() const { return m_canvas; }
 
 	[[nodiscard]] virtual std::string_view get_type_name() const { return "View"; }
+	[[nodiscard]] virtual ViewKind get_kind() const { return ViewKind::Generic; }
 	[[nodiscard]] const std::string &get_id() const { return m_id; }
 	[[nodiscard]] const std::vector<std::string> &get_classes() const { return m_classes; }
 	[[nodiscard]] const StyleProperties &get_style() const { return m_style; }
 	[[nodiscard]] const ComputedStyle &get_computed_style() const { return m_computed_style; }
 	[[nodiscard]] const ComputedStyle &get_display_style() const { return m_display_style; }
+	[[nodiscard]] Platform::CursorType get_cursor() const { return m_computed_style.cursor; }
 	[[nodiscard]] const Rect &get_layout_rect() const { return m_layout_rect; }
 	[[nodiscard]] Vec2 get_absolute_position() const { return m_absolute_position; }
 
@@ -151,6 +163,7 @@ class View {
 	virtual void on_key_press(Platform::KeyCode key, int mods = 0) {}
 	virtual void on_key_release(Platform::KeyCode key) {}
 	virtual void on_mouse_move(Vec2 pos) {}
+	virtual bool on_scroll(Vec2 delta) { return false; }
 	virtual void on_char_input(Uint32 codepoint) {}
 	virtual void on_focus_gained();
 	virtual void on_focus_lost();
@@ -161,7 +174,10 @@ class View {
 
 	virtual void on_style_resolved();
 
-	virtual void on_update(F32 delta_time) { (void)delta_time; }
+	virtual bool on_update(F32 delta_time) {
+		(void)delta_time;
+		return false;
+	}
 
 	virtual void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr);
 
@@ -237,4 +253,12 @@ class View {
 	Canvas *m_canvas = nullptr;
 	Uint32 m_stable_id = 0;
 };
+
+template <typename T> [[nodiscard]] bool view_is(const View *view) {
+	return view != nullptr && view->get_kind() == T::k_kind;
+}
+
+template <typename T> [[nodiscard]] T *view_cast(View *view) {
+	return view_is<T>(view) ? static_cast<T *>(view) : nullptr;
+}
 } // namespace Aquila::UI::Core

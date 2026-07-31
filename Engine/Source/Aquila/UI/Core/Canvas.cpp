@@ -1,5 +1,6 @@
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/UI/Widgets/DragGhost.h"
 #include "Aquila/UI/Widgets/Tooltip.h"
 
 namespace Aquila::UI::Core {
@@ -21,6 +22,7 @@ Canvas::Canvas(Uint32 width, Uint32 height)
 	style_pass();
 
 	m_tooltip = static_cast<Tooltip *>(m_root->add_child(std::make_unique<Tooltip>()));
+	m_drag_ghost = static_cast<DragGhost *>(m_root->add_child(std::make_unique<DragGhost>()));
 }
 
 void Canvas::mark_dirty() {
@@ -80,6 +82,33 @@ void Canvas::notify_view_removed(View *view) {
 		m_tooltip = nullptr;
 		m_tooltip_shown = false;
 	}
+	if (m_drag_ghost == view) {
+		m_drag_ghost = nullptr;
+	}
+}
+
+void Canvas::show_drag_ghost(std::string label, Vec2 pos, GFX::GfxTexture *icon) {
+	if (m_drag_ghost == nullptr) {
+		return;
+	}
+	m_drag_ghost->show(std::move(label), pos, icon);
+	mark_dirty();
+}
+
+void Canvas::move_drag_ghost(Vec2 pos) {
+	if (m_drag_ghost == nullptr) {
+		return;
+	}
+	m_drag_ghost->move_to(pos);
+	mark_dirty();
+}
+
+void Canvas::hide_drag_ghost() {
+	if (m_drag_ghost == nullptr) {
+		return;
+	}
+	m_drag_ghost->hide();
+	mark_dirty();
 }
 
 void Canvas::register_popup(View *popup, Delegate<void()> on_dismiss) {
@@ -176,7 +205,11 @@ void Canvas::compute() {
 		for (int pass = 0;
 			 has_container_rules && m_layout_engine.did_layout_resize() && pass < k_max_container_resolve_passes;
 			 ++pass) {
-			mark_subtree_dirty(m_root.get());
+			for (View *resized : m_layout_engine.get_resized_nodes()) {
+				for (const auto &child : resized->get_children()) {
+					notify_style_dirty(child.get());
+				}
+			}
 			style_pass();
 			if (!m_layout_dirty) {
 				break;
@@ -186,7 +219,7 @@ void Canvas::compute() {
 			m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {}, 0.F);
 		}
 
-		m_draw_compositor.invalidate_all(m_root.get());
+		m_draw_compositor.recull(m_root.get());
 	}
 
 	if (m_scroll_target) {
@@ -194,7 +227,15 @@ void Canvas::compute() {
 		m_scroll_target = nullptr;
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {},
 								   m_delta_time);
-		m_draw_compositor.invalidate_all(m_root.get());
+		m_draw_compositor.recull(m_root.get());
+	}
+
+	if (m_scroll_offset_target) {
+		m_layout_engine.set_scroll_offset(m_scroll_offset_target, m_scroll_offset_y);
+		m_scroll_offset_target = nullptr;
+		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {},
+								   m_delta_time);
+		m_draw_compositor.recull(m_root.get());
 	}
 
 	if (m_draw_compositor.rebuild_dirty(m_root.get())) {
@@ -223,6 +264,13 @@ View *Canvas::hit_test(Vec2 pos) {
 	return m_draw_compositor.hit_test(pos);
 }
 
+void Canvas::set_scroll_offset(View *target, float offset_y) {
+	m_scroll_offset_target = target;
+	m_scroll_offset_y = offset_y;
+	m_layout_dirty = true;
+	mark_dirty();
+}
+
 void Canvas::scroll_into_view(View *target) {
 	m_scroll_target = target;
 	m_layout_dirty = true;
@@ -232,15 +280,20 @@ void Canvas::scroll_into_view(View *target) {
 void Canvas::update(F32 delta_time) {
 	m_delta_time = delta_time;
 	update_tooltip(delta_time);
+	bool needs_frame = false;
 	if (!m_ticking.empty()) {
 		std::vector<View *> ticking_snapshot = m_ticking;
 		for (View *view : ticking_snapshot) {
-			view->on_update(delta_time);
+			if (view->on_update(delta_time)) {
+				needs_frame = true;
+			}
 		}
-		Aquila::Rendering::FrameScheduler::get()->request_frame();
 	}
 	style_pass();
 	animation_pass(delta_time);
+	if (needs_frame || !m_active_anims.empty()) {
+		Aquila::Rendering::FrameScheduler::get()->request_frame();
+	}
 }
 
 void Canvas::update_tooltip(F32 dt) {
@@ -289,7 +342,28 @@ void Canvas::update_tooltip(F32 dt) {
 	m_tooltip_timer += dt;
 	if (m_tooltip_timer >= K_TOOLTIP_DELAY) {
 		const Rect rect = owner->get_absolute_rect();
-		m_tooltip->show_at({ rect.position.x, rect.position.y + rect.size.y + K_TOOLTIP_GAP }, owner->get_tooltip());
+		const Vec2 size = m_tooltip->measure(owner->get_tooltip());
+		const F32 canvas_w = static_cast<F32>(m_width);
+		const F32 canvas_h = static_cast<F32>(m_height);
+
+		Vec2 pos = { rect.position.x, rect.position.y + rect.size.y + K_TOOLTIP_GAP };
+
+		if (pos.x + size.x > canvas_w) {
+			pos.x = canvas_w - size.x;
+		}
+		if (pos.x < 0.F) {
+			pos.x = 0.F;
+		}
+
+		if (pos.y + size.y > canvas_h) {
+			const F32 above = rect.position.y - K_TOOLTIP_GAP - size.y;
+			pos.y = (above >= 0.F) ? above : (canvas_h - size.y);
+		}
+		if (pos.y < 0.F) {
+			pos.y = 0.F;
+		}
+
+		m_tooltip->show_at(pos, owner->get_tooltip());
 		m_tooltip_shown = true;
 		mark_dirty();
 	} else {

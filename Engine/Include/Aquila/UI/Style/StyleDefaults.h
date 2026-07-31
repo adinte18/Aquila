@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/UI/Style/StyleLength.h"
+#include "Aquila/Platform/Cursor.h"
 
 namespace Aquila::UI::StyleDefaults {
 
@@ -9,6 +10,7 @@ AQUILA_INLINE constexpr Vec4 BORDER_COLOR = Vec4(0, 0, 0, 0);
 AQUILA_INLINE constexpr Vec4 BORDER_RADIUS = Vec4(0.F);
 AQUILA_INLINE constexpr F32 BORDER_WIDTH = 0.F;
 AQUILA_INLINE constexpr BorderStyle BORDER_STYLE = BorderStyle::Solid;
+AQUILA_INLINE constexpr Platform::CursorType CURSOR = Platform::CursorType::Arrow;
 AQUILA_INLINE constexpr F32 OPACITY = 1.F;
 
 AQUILA_INLINE constexpr StyleLength WIDTH = StyleLength::Auto();

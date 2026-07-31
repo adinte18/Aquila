@@ -4,7 +4,7 @@
 
 namespace Aquila::UI {
 
-enum class LengthUnit : Uint8 { Pixel, Percent, Auto, Grow };
+enum class LengthUnit : Uint8 { Pixel, Percent, Auto, Grow, Vw, Vh };
 
 enum class FlexDirection : Uint8 { Row, Column, RowReverse, ColumnReverse };
 enum class JustifyContent : Uint8 { Start, End, Center };

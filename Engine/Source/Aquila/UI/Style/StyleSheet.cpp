@@ -1,4 +1,5 @@
 #include "Aquila/UI/Style/StyleSheet.h"
+#include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StylePropertyList.h"
 #include <cmath>
@@ -177,6 +178,10 @@ void StyleSheet::apply_properties(ComputedStyle &out, const StyleProperties &pro
 	}
 	AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
+
+	if (props.font_size) {
+		out.font_size = *props.font_size * Core::FontRegistry::ui_scale();
+	}
 
 	if (props.padding_left) {
 		out.padding.left = *props.padding_left;

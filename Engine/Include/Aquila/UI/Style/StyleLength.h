@@ -12,11 +12,14 @@ struct StyleLength {
 	constexpr static StyleLength percent(float percent) { return { .unit = LengthUnit::Percent, .value = percent }; }
 	constexpr static StyleLength Auto() { return { .unit = LengthUnit::Auto, .value = 0.F }; }
 	constexpr static StyleLength grow() { return { .unit = LengthUnit::Grow, .value = 0.F }; }
+	constexpr static StyleLength vw(float viewport_width_percent) { return { .unit = LengthUnit::Vw, .value = viewport_width_percent }; }
+	constexpr static StyleLength vh(float viewport_height_percent) { return { .unit = LengthUnit::Vh, .value = viewport_height_percent }; }
 
 	[[nodiscard]] bool is_auto() const { return unit == LengthUnit::Auto; }
 	[[nodiscard]] bool is_grow() const { return unit == LengthUnit::Grow; }
 	[[nodiscard]] bool is_pixel() const { return unit == LengthUnit::Pixel; }
 	[[nodiscard]] bool is_percent() const { return unit == LengthUnit::Percent; }
+	[[nodiscard]] bool is_viewport() const { return unit == LengthUnit::Vw || unit == LengthUnit::Vh; }
 
 	[[nodiscard]] float resolve(float parent_size) const {
 		switch (unit) {

@@ -66,6 +66,12 @@ static std::string fmt_length(const StyleLength &l) {
 	case LengthUnit::Percent:
 		std::snprintf(buf, sizeof(buf), "%.4g%%", l.value);
 		return buf;
+	case LengthUnit::Vw:
+		std::snprintf(buf, sizeof(buf), "%.4gvw", l.value);
+		return buf;
+	case LengthUnit::Vh:
+		std::snprintf(buf, sizeof(buf), "%.4gvh", l.value);
+		return buf;
 	default:
 		std::snprintf(buf, sizeof(buf), "%.4gpx", l.value);
 		return buf;

@@ -17,7 +17,11 @@ class LayoutEngine {
 	// Must be called after RunLayout so rects and Clay scroll state are current.
 	void scroll_into_view(View *target);
 
+	void set_scroll_offset(View *target, float offset_y);
+
 	[[nodiscard]] bool did_layout_resize() const { return m_size_changed; }
+
+	[[nodiscard]] const std::vector<View *> &get_resized_nodes() const { return m_resized_nodes; }
 
   private:
 	void layout_pass(View *node);
@@ -28,6 +32,7 @@ class LayoutEngine {
 	Uint32 m_width;
 	Uint32 m_height;
 	bool m_size_changed = false;
+	std::vector<View *> m_resized_nodes;
 };
 
 } // namespace Aquila::UI::Core
