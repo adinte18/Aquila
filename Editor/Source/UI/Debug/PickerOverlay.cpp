@@ -86,7 +86,7 @@ void PickerOverlay::on_draw_self(Aquila::UI::Rendering::DrawList &draw_list) {
 
 	const Rect text_rect = { { badge_pos.x + k_badge_pad_x, badge_pos.y + k_badge_pad_y }, measured };
 	const Vec4 text_color = { 0.94F, 0.94F, 0.94F, 1.F };
-	draw_list.DrawText(text_rect, text, m_font, text_color, k_badge_font, Aquila::UI::TextAlign::Left, 2);
+	draw_list.draw_text(text_rect, text, m_font, text_color, k_badge_font, Aquila::UI::TextAlign::Left, 2);
 }
 
 } // namespace Editor

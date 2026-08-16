@@ -190,7 +190,7 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 		}
 
 		if (!m_edit_state.text.empty()) {
-			draw_list.DrawText(text_rect, m_edit_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
+			draw_list.draw_text(text_rect, m_edit_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
 		}
 
 		if (m_is_focused && !m_edit_state.has_selection()) {
@@ -201,7 +201,7 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 	} else {
 		// Drag mode: show the formatted value, optionally a subtle drag indicator.
 		const std::string display = format_value();
-		draw_list.DrawText(text_rect, display, font, style.color, font_size, TextAlign::Center, z + 1);
+		draw_list.draw_text(text_rect, display, font, style.color, font_size, TextAlign::Center, z + 1);
 
 		// Small arrows hint that the field is draggable.
 		constexpr float k_arrow_size = 4.F;

@@ -235,10 +235,10 @@ void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
 	}
 
 	if (!m_state.text.empty()) {
-		draw_list.DrawText(text_rect, m_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
+		draw_list.draw_text(text_rect, m_state.text, font, style.color, font_size, TextAlign::Left, z + 1);
 	} else if (!m_placeholder.empty()) {
 		const Vec4 muted = style.effective_placeholder_color();
-		draw_list.DrawText(text_rect, m_placeholder, font, muted, font_size, TextAlign::Left, z + 1);
+		draw_list.draw_text(text_rect, m_placeholder, font, muted, font_size, TextAlign::Left, z + 1);
 	}
 
 	if (m_is_focused && !m_state.has_selection() && m_caret_visible) {

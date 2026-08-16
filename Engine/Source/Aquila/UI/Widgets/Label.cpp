@@ -84,7 +84,7 @@ void Label::on_draw_self(Rendering::DrawList &draw_list) {
 	const Int32 z = 3;
 	const bool wrap = get_display_style().white_space == WhiteSpace::Normal;
 
-	draw_list.DrawText(world_rect, m_text, font, color, font_size, get_display_style().text_align, z, wrap);
+	draw_list.draw_text(world_rect, m_text, font, color, font_size, get_display_style().text_align, z, wrap);
 }
 
 } // namespace Aquila::UI::Core

@@ -15,7 +15,7 @@ class DrawList {
 	void draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spread, Vec4 color, Vec4 radius, Int32 z = 0);
 	void draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint = Vec4(1.F), Vec2 uv_min = Vec2(0.F),
 					Vec2 uv_max = Vec2(1.F), Int32 z = 0);
-	void DrawText(Rect bounds, std::string_view text, Text::FontAtlas *font, Vec4 color, float font_size = 0.F,
+	void draw_text(Rect bounds, std::string_view text, Text::FontAtlas *font, Vec4 color, float font_size = 0.F,
 				  TextAlign align = TextAlign::Left, Int32 z = 0, bool wrap = false);
 	void push_clip(Rect clip_rect);
 	void pop_clip();
