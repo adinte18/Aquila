@@ -18,13 +18,6 @@ using Aquila::SharedConstants::SHADERS_DIR;
 void LightCullingSystem::on_init(GFX::GfxContext &ctx) {
 	RenderingSystemBase::on_init(ctx);
 
-	std::vector<RHI::VulkanCompiledStage> stages;
-	std::string err;
-	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "LightCullCompute.slang", stages, err)) {
-		AQUILA_LOG_ERROR("LightCullingSystem: shader compile failed: {}", err);
-		return;
-	}
-
 	m_storage_layout = ctx.create_descriptor_set_layout({
 		.bindings = {
 			{ .binding = 0, .type = RHI::DescriptorType::StorageBuffer, .stages = RHI::ShaderStageFlags::Compute, .count = 1 },
@@ -34,15 +27,25 @@ void LightCullingSystem::on_init(GFX::GfxContext &ctx) {
 		},
 	});
 
-	RHI::ComputePipelineDesc pipeline_desc{};
-	pipeline_desc.compute_shader = {
-		.stage = RHI::ShaderStageFlags::Compute,
-		.spirv = stages[0].spirv,
-		.entry_point = stages[0].entry_point_name,
-	};
-	pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
-	pipeline_desc.debug_name = "LightCull";
-	m_pipeline = ctx.create_compute_pipeline(pipeline_desc);
+	m_pipeline = Graphics::Shader::ReloadablePipeline::create(
+		ctx, SHADERS_DIR + "LightCullCompute.slang", [this](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
+			std::vector<RHI::VulkanCompiledStage> stages;
+			std::string err;
+			if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "LightCullCompute.slang", stages, err)) {
+				AQUILA_LOG_ERROR("LightCullingSystem: shader compile failed: {}", err);
+				return nullptr;
+			}
+
+			RHI::ComputePipelineDesc pipeline_desc{};
+			pipeline_desc.compute_shader = {
+				.stage = RHI::ShaderStageFlags::Compute,
+				.spirv = stages[0].spirv,
+				.entry_point = stages[0].entry_point_name,
+			};
+			pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
+			pipeline_desc.debug_name = "LightCull";
+			return build_ctx.create_compute_pipeline(pipeline_desc);
+		});
 
 	m_global_index_counter = ctx.create_buffer({
 		.size = sizeof(Uint32),
@@ -60,7 +63,7 @@ void LightCullingSystem::on_init(GFX::GfxContext &ctx) {
 }
 
 void LightCullingSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_pipeline) {
+	if (!m_pipeline || !m_pipeline->is_valid()) {
 		return;
 	}
 
@@ -91,7 +94,7 @@ void LightCullingSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameConte
 		},
 		[this, frame_data, frame_slot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
 			cmd.fill_buffer(*m_global_index_counter, 0u);
-			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_pipeline(m_pipeline->get());
 			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 			cmd.bind_descriptor_set(1, *m_storage_set);
 			cmd.dispatch(4, 3, 6);

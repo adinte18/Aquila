@@ -1,7 +1,7 @@
 #pragma once
 #include "Aquila/Rendering/Systems/RenderingSystemBase.h"
+#include "Aquila/Graphics/Shader/ReloadablePipeline.h"
 #include "Aquila/GFX/GfxBuffer.h"
-#include "Aquila/GFX/GfxPipeline.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
 
 namespace Aquila::Rendering {
@@ -15,7 +15,7 @@ class LightCullingSystem : public RenderingSystemBase {
 	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 
   private:
-	Ref<GFX::GfxPipeline> m_pipeline;
+	Ref<Graphics::Shader::ReloadablePipeline> m_pipeline;
 	Ref<GFX::GfxDescriptorSetLayout> m_storage_layout;
 	Ref<GFX::GfxBuffer> m_global_index_counter; // atomic counter reset each frame before dispatch
 	Ref<GFX::GfxDescriptorSet> m_storage_set;

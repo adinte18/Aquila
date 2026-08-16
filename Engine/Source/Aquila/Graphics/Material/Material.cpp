@@ -99,6 +99,9 @@ Ref<Material> Material::create_from_shader(GFX::GfxContext &ctx, Shader::ShaderP
 	Uint32 ubo_size = 0;
 
 	for (const auto &binding : shader.get_reflected_bindings()) {
+		if (binding.set != 1) {
+			continue;
+		}
 		if (binding.type == RBType::UniformBuffer) {
 			Uint32 offset = 0;
 			for (const auto &field : binding.ubo_fields) {

@@ -8,8 +8,10 @@
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/GFX/GfxPipeline.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
+#include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include <array>
+#include <vector>
 
 namespace Aquila::Graphics {
 
@@ -100,7 +102,7 @@ struct GlyphSpec {
 class QuadBatcher {
   public:
 	explicit QuadBatcher(GFX::GfxContext &ctx);
-	~QuadBatcher() = default;
+	~QuadBatcher();
 	AQUILA_NONCOPYABLE(QuadBatcher);
 	AQUILA_NONMOVEABLE(QuadBatcher);
 
@@ -172,6 +174,7 @@ class QuadBatcher {
 	};
 
 	void start_batch();
+	void register_shader_hot_reload();
 	[[nodiscard]] Mat4 build_quad_transform(Vec2 position, Vec2 size, float rotation, float depth) const;
 	GFX::GfxDescriptorSet &get_or_create_texture_set(GFX::GfxTexture &texture);
 	GFX::GfxDescriptorSet &get_or_create_text_data_set(GFX::GfxTexture &curve_texture, GFX::GfxTexture &band_texture);
@@ -202,6 +205,8 @@ class QuadBatcher {
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_gui_pipelines;
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_text_pipelines;
 	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_shadow_pipelines;
+
+	std::vector<Uint64> m_watch_ids;
 
 	GFX::GfxCommandList *m_active_cmd = nullptr;
 	RHI::TextureFormat m_active_color_format = RHI::TextureFormat::None;

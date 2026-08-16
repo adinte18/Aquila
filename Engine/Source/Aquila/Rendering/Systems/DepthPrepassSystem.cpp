@@ -25,39 +25,42 @@ struct DepthPushConstants {
 void DepthPrepassSystem::on_init(GFX::GfxContext &ctx) {
 	RenderingSystemBase::on_init(ctx);
 
-	std::vector<RHI::VulkanCompiledStage> stages;
-	std::string err;
-	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "DepthOnly.slang", stages, err)) {
-		AQUILA_LOG_ERROR("DepthPrepassSystem: shader compile failed: {}", err);
-		return;
-	}
+	m_pipeline = Shader::ReloadablePipeline::create(
+		ctx, SHADERS_DIR + "DepthOnly.slang", [](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
+			std::vector<RHI::VulkanCompiledStage> stages;
+			std::string err;
+			if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "DepthOnly.slang", stages, err)) {
+				AQUILA_LOG_ERROR("DepthPrepassSystem: shader compile failed: {}", err);
+				return nullptr;
+			}
 
-	RHI::GraphicsPipelineDesc pipeline_descriptor{};
-	for (auto &stage : stages) {
-		RHI::ShaderStageDesc shader_descriptor{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
-		if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			shader_descriptor.stage = RHI::ShaderStageFlags::Vertex;
-			pipeline_descriptor.vertex_shader = shader_descriptor;
-		} else {
-			shader_descriptor.stage = RHI::ShaderStageFlags::Fragment;
-			pipeline_descriptor.fragment_shader = shader_descriptor;
-		}
-	}
+			RHI::GraphicsPipelineDesc pipeline_descriptor{};
+			for (auto &stage : stages) {
+				RHI::ShaderStageDesc shader_descriptor{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
+				if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
+					shader_descriptor.stage = RHI::ShaderStageFlags::Vertex;
+					pipeline_descriptor.vertex_shader = shader_descriptor;
+				} else {
+					shader_descriptor.stage = RHI::ShaderStageFlags::Fragment;
+					pipeline_descriptor.fragment_shader = shader_descriptor;
+				}
+			}
 
-	pipeline_descriptor.color_formats = {}; // depth-only
-	pipeline_descriptor.depth_format = RHI::TextureFormat::Depth32;
-	pipeline_descriptor.topology = RHI::PrimitiveTopology::TriangleList;
-	pipeline_descriptor.raster.cull_mode = RHI::CullMode::Back;
-	pipeline_descriptor.raster.front_face = RHI::FrontFace::Clockwise;
-	pipeline_descriptor.depth_stencil.depth_test = true;
-	pipeline_descriptor.depth_stencil.depth_write = true;
-	pipeline_descriptor.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi() };
-	pipeline_descriptor.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
-	m_pipeline = ctx.create_graphics_pipeline(pipeline_descriptor);
+			pipeline_descriptor.color_formats = {};
+			pipeline_descriptor.depth_format = RHI::TextureFormat::Depth32;
+			pipeline_descriptor.topology = RHI::PrimitiveTopology::TriangleList;
+			pipeline_descriptor.raster.cull_mode = RHI::CullMode::Back;
+			pipeline_descriptor.raster.front_face = RHI::FrontFace::Clockwise;
+			pipeline_descriptor.depth_stencil.depth_test = true;
+			pipeline_descriptor.depth_stencil.depth_write = true;
+			pipeline_descriptor.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi() };
+			pipeline_descriptor.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, sizeof(DepthPushConstants) } };
+			return build_ctx.create_graphics_pipeline(pipeline_descriptor);
+		});
 }
 
 void DepthPrepassSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_pipeline) {
+	if (!m_pipeline || !m_pipeline->is_valid()) {
 		return;
 	}
 
@@ -100,7 +103,7 @@ void DepthPrepassSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			if (draw_calls.empty()) {
 				return;
 			}
-			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_pipeline(m_pipeline->get());
 			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 			for (const auto &draw_call : draw_calls) {
 				DepthPushConstants push_constants{ .model = draw_call.model };

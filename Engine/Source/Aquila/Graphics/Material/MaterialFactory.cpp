@@ -1,11 +1,22 @@
 ﻿#include "Aquila/Graphics/Material/MaterialFactory.h"
-#include "Aquila/Rendering/FrameScheduler.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
+#include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::Graphics {
+
+MaterialFactory::~MaterialFactory() {
+	if (!Shader::ShaderHotReload::is_alive()) {
+		return;
+	}
+	for (auto &[path, entry] : m_entries) {
+		if (entry.watch_id != 0) {
+			Shader::ShaderHotReload::get()->unregister(entry.watch_id);
+		}
+	}
+}
 
 Ref<GFX::GfxPipeline> MaterialFactory::build_pipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
 													  const MaterialCreateInfo &info) {
@@ -79,7 +90,12 @@ Ref<Material> MaterialFactory::create(GFX::GfxContext &ctx, const std::string &s
 			return nullptr;
 		}
 
-		m_watcher.watch_slang_file(shader_path, shader_path);
+		entry.watch_id = Shader::ShaderHotReload::get()->register_reloadable(shader_path, [this, &ctx, shader_path]() {
+			auto it = m_entries.find(shader_path);
+			if (it != m_entries.end()) {
+				rebuild_entry(ctx, it->second, shader_path);
+			}
+		});
 	}
 
 	auto pipeline = build_pipeline(ctx, *entry.program, info);
@@ -126,17 +142,6 @@ void MaterialFactory::rebuild_entry(GFX::GfxContext &ctx, Entry &entry, const st
 	}
 
 	AQUILA_LOG_INFO("MaterialFactory: hot-reloaded '{}' ({} instances)", shader_path, entry.instances.size());
-}
-
-void MaterialFactory::tick(GFX::GfxContext &ctx) {
-	auto changed = m_watcher.check_for_changes();
-	for (const auto &path : changed) {
-		auto it = m_entries.find(path);
-		if (it != m_entries.end()) {
-			rebuild_entry(ctx, it->second, path);
-			Rendering::FrameScheduler::get()->request_frame();
-		}
-	}
 }
 
 } // namespace Aquila::Graphics

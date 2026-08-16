@@ -14,6 +14,10 @@
 #include "Aquila/RHI/Vulkan/VulkanSwapchain.h"
 #include "Aquila/RHI/Vulkan/VulkanTexture.h"
 #include "Aquila/RHI/Vulkan/VulkanVertex.h"
+#include "Aquila/Platform/Filesystem/Filesystem.h"
+
+#include <cstring>
+#include <fstream>
 
 namespace Aquila::RHI {
 
@@ -26,6 +30,8 @@ VulkanDevice::VulkanDevice(GLFWwindow &native_window) : m_window_handle(native_w
 	initialize_vma();
 
 	m_deletion_queue = std::make_unique<RHI::DeletionQueue>(*this);
+
+	create_pipeline_cache();
 
 	create_graphics_command_pool();
 	create_compute_command_pool();
@@ -52,6 +58,12 @@ VulkanDevice::~VulkanDevice() {
 			vkFreeCommandBuffers(m_device, p.pool, 1, &p.cmd);
 		}
 		vkDestroyFence(m_device, m_offscreen_fences[i], nullptr);
+	}
+
+	save_pipeline_cache();
+	if (m_pipeline_cache != VK_NULL_HANDLE) {
+		vkDestroyPipelineCache(m_device, m_pipeline_cache, nullptr);
+		m_pipeline_cache = VK_NULL_HANDLE;
 	}
 
 	m_deletion_queue.reset();
@@ -85,6 +97,73 @@ VulkanDevice::~VulkanDevice() {
 	vkDestroyInstance(m_vulkan_instance, nullptr);
 
 	AQUILA_LOG_DEBUG("VulkanDevice destroyed!");
+}
+
+std::string VulkanDevice::pipeline_cache_path() const {
+	return Platform::Filesystem::path_executable_dir() + "/aquila_pipeline_cache.bin";
+}
+
+void VulkanDevice::create_pipeline_cache() {
+	VkPhysicalDeviceProperties props{};
+	vkGetPhysicalDeviceProperties(m_physical_device, &props);
+
+	std::vector<char> initial_data;
+	std::ifstream file(pipeline_cache_path(), std::ios::binary | std::ios::ate);
+	if (file.is_open()) {
+		std::streamsize size = file.tellg();
+		file.seekg(0, std::ios::beg);
+		if (size >= 32) {
+			std::vector<char> blob(static_cast<size_t>(size));
+			if (file.read(blob.data(), size)) {
+				Uint32 header_version = 0;
+				Uint32 vendor_id = 0;
+				Uint32 device_id = 0;
+				std::memcpy(&header_version, blob.data() + 4, sizeof(Uint32));
+				std::memcpy(&vendor_id, blob.data() + 8, sizeof(Uint32));
+				std::memcpy(&device_id, blob.data() + 12, sizeof(Uint32));
+
+				bool matches = header_version == VK_PIPELINE_CACHE_HEADER_VERSION_ONE &&
+							   vendor_id == props.vendorID && device_id == props.deviceID &&
+							   std::memcmp(blob.data() + 16, props.pipelineCacheUUID, VK_UUID_SIZE) == 0;
+				if (matches) {
+					initial_data = std::move(blob);
+				} else {
+					AQUILA_LOG_INFO("VulkanDevice: pipeline cache on disk is stale, discarding");
+				}
+			}
+		}
+	}
+
+	VkPipelineCacheCreateInfo cache_info{};
+	cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
+	cache_info.initialDataSize = initial_data.size();
+	cache_info.pInitialData = initial_data.empty() ? nullptr : initial_data.data();
+	AQUILA_VULKAN_CHECK(vkCreatePipelineCache(m_device, &cache_info, nullptr, &m_pipeline_cache));
+
+	if (!initial_data.empty()) {
+		AQUILA_LOG_INFO("VulkanDevice: loaded pipeline cache ({} bytes)", initial_data.size());
+	}
+}
+
+void VulkanDevice::save_pipeline_cache() const {
+	if (m_pipeline_cache == VK_NULL_HANDLE) {
+		return;
+	}
+
+	size_t size = 0;
+	if (vkGetPipelineCacheData(m_device, m_pipeline_cache, &size, nullptr) != VK_SUCCESS || size == 0) {
+		return;
+	}
+
+	std::vector<char> blob(size);
+	if (vkGetPipelineCacheData(m_device, m_pipeline_cache, &size, blob.data()) != VK_SUCCESS) {
+		return;
+	}
+
+	std::ofstream file(pipeline_cache_path(), std::ios::binary | std::ios::trunc);
+	if (file.is_open()) {
+		file.write(blob.data(), static_cast<std::streamsize>(size));
+	}
 }
 
 Unique<IRHIBuffer> VulkanDevice::create_buffer(const BufferDesc &desc) {

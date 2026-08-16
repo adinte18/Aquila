@@ -2,6 +2,7 @@
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
+#include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 
@@ -171,6 +172,48 @@ QuadBatcher::QuadBatcher(GFX::GfxContext &ctx) : m_ctx(ctx) {
 	}
 
 	get_or_create_text_pipeline(RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, RHI::TextureFormat::None);
+
+#ifdef AQUILA_HOT_RELOAD_ALL_SHADERS
+	register_shader_hot_reload();
+#endif
+}
+
+QuadBatcher::~QuadBatcher() {
+	if (Shader::ShaderHotReload::is_alive()) {
+		for (Uint64 id : m_watch_ids) {
+			Shader::ShaderHotReload::get()->unregister(id);
+		}
+	}
+}
+
+void QuadBatcher::register_shader_hot_reload() {
+	auto *hot_reload = Shader::ShaderHotReload::get();
+
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_FLAT_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_flat_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_TEXTURE_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_texture_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_GUI_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_gui_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_TEXT_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_text_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_SHADOW_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_shadow_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
 }
 
 void QuadBatcher::begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format, RHI::SampleCount sample_count,

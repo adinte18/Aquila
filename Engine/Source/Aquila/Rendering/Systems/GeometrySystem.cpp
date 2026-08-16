@@ -66,13 +66,20 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			builder.read_buffer(ctx.h_light_list, RG::ResourceState::ShaderRead);
 			builder.read_buffer(ctx.h_cluster_light_info, RG::ResourceState::ShaderRead);
 
+			for (auto &shadow_handle : ctx.h_shadow_maps) {
+				if (shadow_handle.is_valid()) {
+					builder.read_texture(shadow_handle, RG::ResourceState::ShaderRead);
+				}
+			}
+
 			ctx.h_scene_color =
 				builder.set_color_attachment(0, ctx.h_scene_color, RG::AttachmentLoadOp::Clear,
 											 RG::AttachmentStoreOp::Store, { Foundation::Color::RGBA::DARK_GRAY });
 
-			builder.set_depth_attachment(ctx.h_depth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
-										 RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
-										 /*read_only=*/false, RG::ClearDepth{ .depth = 1.F });
+			ctx.h_depth =
+				builder.set_depth_attachment(ctx.h_depth, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
+											 RG::AttachmentLoadOp::DontCare, RG::AttachmentStoreOp::DontCare,
+											 /*read_only=*/false, RG::ClearDepth{ .depth = 1.F });
 		},
 		[batches = std::move(batches), frame_data, frame_slot](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 			for (const auto &[material, drawCalls] : batches) {

@@ -2,7 +2,6 @@
 #include "Aquila/Foundation/Singleton.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Graphics/Material/Material.h"
-#include "Aquila/Graphics/Shader/ShaderWatcher.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include <string>
 #include <unordered_map>
@@ -37,22 +36,19 @@ struct MaterialCreateInfo {
 
 class MaterialFactory : public Foundation::Singleton<MaterialFactory> {
   public:
+	~MaterialFactory();
+
 	Ref<Material> create(GFX::GfxContext &ctx, const std::string &shader_path, MaterialCreateInfo info);
-
-	void tick(GFX::GfxContext &ctx);
-
-	void enable_hot_reload(bool enable) { m_watcher.enable(enable); }
-	[[nodiscard]] bool is_hot_reload_enabled() const { return m_watcher.is_enabled(); }
 
   private:
 	struct Entry {
 		Ref<Shader::ShaderProgram> program;
 		MaterialCreateInfo info;
 		std::vector<WeakRef<Material>> instances;
+		Uint64 watch_id = 0;
 	};
 
 	std::unordered_map<std::string, Entry> m_entries;
-	Shader::ShaderWatcher m_watcher;
 
 	static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
 											   const MaterialCreateInfo &info);

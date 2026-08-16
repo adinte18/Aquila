@@ -227,6 +227,7 @@ class VulkanDevice final : public IRHIDevice {
 	[[nodiscard]] VkPhysicalDevice get_physical_device() const { return m_physical_device; }
 	[[nodiscard]] VkSurfaceKHR get_surface() const { return m_surface; }
 	[[nodiscard]] VmaAllocator get_allocator() const { return m_allocator; }
+	[[nodiscard]] VkPipelineCache get_pipeline_cache() const { return m_pipeline_cache; }
 	[[nodiscard]] VkQueueFamilyIndices find_physical_qf() const { return find_queue_families(m_physical_device); }
 	[[nodiscard]] VkSwapChainSupportDetails get_swap_chain_support() const {
 		return query_swap_chain_support(m_physical_device, m_surface);
@@ -344,6 +345,11 @@ class VulkanDevice final : public IRHIDevice {
 	Unique<VulkanDescriptorPool> m_global_pool;
 	void create_global_descriptor_pool();
 	void destroy_global_descriptor_pool();
+
+	VkPipelineCache m_pipeline_cache = VK_NULL_HANDLE;
+	void create_pipeline_cache();
+	void save_pipeline_cache() const;
+	[[nodiscard]] std::string pipeline_cache_path() const;
 
 	struct ThreadLocalPool {
 		VkCommandPool pool = VK_NULL_HANDLE;

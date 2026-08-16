@@ -12,18 +12,12 @@
 namespace Aquila::Rendering {
 
 using Aquila::SharedConstants::SHADERS_DIR;
+using AABB = Math::Geometry::AABB::AABB;
 
 static constexpr Uint32 K_ELEMENT_COUNT = 3456; // cluster size so 16x9x24
 
 void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 	RenderingSystemBase::on_init(ctx);
-
-	std::vector<RHI::VulkanCompiledStage> stages;
-	std::string err;
-	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "ClusterCompute.slang", stages, err)) {
-		AQUILA_LOG_ERROR("ClusterComputeSystem: shader compile failed: {}", err);
-		return;
-	}
 
 	m_grid_data.grid.x = 16;
 	m_grid_data.grid.y = 9;
@@ -44,15 +38,25 @@ void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 					  } },
 	});
 
-	RHI::ComputePipelineDesc pipeline_desc{};
-	pipeline_desc.compute_shader = {
-		.stage = RHI::ShaderStageFlags::Compute,
-		.spirv = stages[0].spirv,
-		.entry_point = stages[0].entry_point_name,
-	};
-	pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
-	pipeline_desc.debug_name = "ClusterCompute";
-	m_pipeline = ctx.create_compute_pipeline(pipeline_desc);
+	m_pipeline = Graphics::Shader::ReloadablePipeline::create(
+		ctx, SHADERS_DIR + "ClusterCompute.slang", [this](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
+			std::vector<RHI::VulkanCompiledStage> stages;
+			std::string err;
+			if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "ClusterCompute.slang", stages, err)) {
+				AQUILA_LOG_ERROR("ClusterComputeSystem: shader compile failed: {}", err);
+				return nullptr;
+			}
+
+			RHI::ComputePipelineDesc pipeline_desc{};
+			pipeline_desc.compute_shader = {
+				.stage = RHI::ShaderStageFlags::Compute,
+				.spirv = stages[0].spirv,
+				.entry_point = stages[0].entry_point_name,
+			};
+			pipeline_desc.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi(), &m_storage_layout->get_rhi() };
+			pipeline_desc.debug_name = "ClusterCompute";
+			return build_ctx.create_compute_pipeline(pipeline_desc);
+		});
 
 	m_output_buffer = ctx.create_buffer({
 		.size = sizeof(AABB) * K_ELEMENT_COUNT,
@@ -76,7 +80,7 @@ void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 }
 
 void ClusterComputeSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_pipeline) {
+	if (!m_pipeline || !m_pipeline->is_valid()) {
 		return;
 	}
 
@@ -89,7 +93,7 @@ void ClusterComputeSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameCon
 	graph.add_pass(
 		"ClusterCompute", [&h_aab_bs](Graphics::RG::RGPassBuilder &builder) { h_aab_bs = builder.write_buffer(h_aab_bs); },
 		[this, frame_data, frame_slot](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
-			cmd.bind_pipeline(*m_pipeline);
+			cmd.bind_pipeline(m_pipeline->get());
 			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 			cmd.bind_descriptor_set(1, *m_storage_set);
 			cmd.dispatch((m_grid_data.grid.x + 4 - 1) / 4, (m_grid_data.grid.y + 4 - 1) / 4,
