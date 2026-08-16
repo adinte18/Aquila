@@ -50,7 +50,7 @@ StyleEngine::ResolveResult StyleEngine::resolve(Uint32 viewport_width, Uint32 vi
 		const ComputedStyle *parent_style = nullptr;
 		if (View *parent = node->get_parent()) {
 			parent_style = m_style_cache.peek(parent);
-			if (!parent_style) {
+			if (parent_style == nullptr) {
 				parent_style = &parent->get_computed_style();
 			}
 			m_style_cache.register_dependency(node, parent);

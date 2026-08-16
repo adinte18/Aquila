@@ -24,7 +24,7 @@ class FontRegistry {
 	}
 
 	static float &get_scale() {
-		static float scale = 1.0f;
+		static float scale = 1.0F;
 		return scale;
 	}
 };

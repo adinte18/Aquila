@@ -30,14 +30,14 @@ struct SkyLightComponent {
 
 	SkySource m_source = SkySource::Procedural;
 
-	F32 m_sun_elevation = 45.0f;
-	F32 m_sun_azimuth = 180.0f;
-	F32 m_turbidity = 3.0f;
-	Vec3 m_ground_albedo = Vec3(0.3f);
+	F32 m_sun_elevation = 45.0F;
+	F32 m_sun_azimuth = 180.0F;
+	F32 m_turbidity = 3.0F;
+	Vec3 m_ground_albedo = Vec3(0.3F);
 
-	F32 m_intensity = 1.0f;
+	F32 m_intensity = 1.0F;
 	F32 m_skybox_lod = 0;
-	Vec3 m_tint = Vec3(1.0f);
+	Vec3 m_tint = Vec3(1.0F);
 	bool m_is_active = true;
 	bool m_is_dirty = true;
 	bool m_render_skybox = true;
@@ -56,8 +56,8 @@ struct SkyLightComponent {
 	[[nodiscard]] bool should_render_skybox() const noexcept { return m_render_skybox && m_is_active; }
 
 	[[nodiscard]] Vec3 get_sun_direction() const noexcept {
-		const F32 elevation = m_sun_elevation * (3.14159265359f / 180.0f);
-		const F32 azimuth = m_sun_azimuth * (3.14159265359f / 180.0f);
+		const F32 elevation = m_sun_elevation * (3.14159265359F / 180.0F);
+		const F32 azimuth = m_sun_azimuth * (3.14159265359F / 180.0F);
 		const F32 cos_elevation = std::cos(elevation);
 		return Vec3(cos_elevation * std::sin(azimuth), std::sin(elevation), cos_elevation * std::cos(azimuth));
 	}
@@ -103,7 +103,7 @@ struct SkyLightComponent {
 	}
 
 	SkyLightComponent() = default;
-	explicit SkyLightComponent(const Ref<GFX::GfxTexture> &texture, F32 intensity = 1.0f, int lod = 0.0f)
+	explicit SkyLightComponent(const Ref<GFX::GfxTexture> &texture, F32 intensity = 1.0F, int lod = 0.0F)
 		: m_hdr_texture(texture), m_source(SkySource::HdrImage), m_intensity(intensity), m_skybox_lod(lod) {}
 };
 

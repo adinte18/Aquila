@@ -156,16 +156,16 @@ struct SamplerDesc {
 	AddressMode address_v = AddressMode::ClampToEdge;
 	AddressMode address_w = AddressMode::ClampToEdge;
 	BorderColor border_color = BorderColor::TransparentBlack;
-	float min_lod = 0.0f;
-	float max_lod = 0.0f;
-	float mip_lod_bias = 0.0f;
+	float min_lod = 0.0F;
+	float max_lod = 0.0F;
+	float mip_lod_bias = 0.0F;
 	bool anisotropy = false;
 	bool compare_enable = false;
 	CompareOp compare_op = CompareOp::Always;
 
 	bool operator==(const SamplerDesc &) const = default;
 
-	static SamplerDesc texture2_d(float max_lod = 1000.0f) {
+	static SamplerDesc texture2_d(float max_lod = 1000.0F) {
 		SamplerDesc d{};
 		d.address_u = AddressMode::Repeat;
 		d.address_v = AddressMode::Repeat;
@@ -217,8 +217,8 @@ struct SamplerDesc {
 		d.address_w = AddressMode::ClampToEdge;
 
 		d.anisotropy = false;
-		d.min_lod = 0.0f;
-		d.max_lod = 0.0f;
+		d.min_lod = 0.0F;
+		d.max_lod = 0.0F;
 
 		return d;
 	}
@@ -351,7 +351,7 @@ struct RasterStateDesc {
 	FillMode fill_mode = FillMode::Solid;
 	FrontFace front_face = FrontFace::CounterClockwise;
 	bool depth_clamp = false;
-	float line_width = 1.0f;
+	float line_width = 1.0F;
 };
 
 struct DepthStencilStateDesc {
@@ -403,7 +403,7 @@ enum class AttachmentStoreOp : Uint8 { Store, DontCare };
 struct RenderPassColorAttachmentDesc {
 	IRHITexture *texture = nullptr; // null = use swapchain image
 	IRHITexture *resolve_texture = nullptr; // MSAA resolve target
-	Vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	Vec4 clear_color = { 0.0F, 0.0F, 0.0F, 1.0F };
 	AttachmentLoadOp load_op = AttachmentLoadOp::Clear;
 	AttachmentStoreOp store_op = AttachmentStoreOp::Store;
 	Uint32 mip_level = 0; // target mip level (for rendering into a mip)
@@ -412,7 +412,7 @@ struct RenderPassColorAttachmentDesc {
 
 struct RenderPassDepthAttachmentDesc {
 	IRHITexture *texture = nullptr; // null = use swapchain depth
-	float clear_depth = 1.0f;
+	float clear_depth = 1.0F;
 	Uint8 clear_stencil = 0;
 	AttachmentLoadOp depth_load_op = AttachmentLoadOp::Clear;
 	AttachmentStoreOp depth_store_op = AttachmentStoreOp::DontCare;

@@ -21,8 +21,8 @@ Canvas::Canvas(Uint32 width, Uint32 height)
 	notify_style_dirty(m_root.get());
 	style_pass();
 
-	m_tooltip = static_cast<Tooltip *>(m_root->add_child(std::make_unique<Tooltip>()));
-	m_drag_ghost = static_cast<DragGhost *>(m_root->add_child(std::make_unique<DragGhost>()));
+	m_tooltip = dynamic_cast<Tooltip *>(m_root->add_child(std::make_unique<Tooltip>()));
+	m_drag_ghost = dynamic_cast<DragGhost *>(m_root->add_child(std::make_unique<DragGhost>()));
 
 	register_internal_observers();
 }
@@ -135,7 +135,7 @@ void Canvas::unregister_tick(View *view) {
 }
 
 static bool is_within(View *node, View *root) {
-	for (View *v = node; v; v = v->get_parent()) {
+	for (View *v = node; v != nullptr; v = v->get_parent()) {
 		if (v == root) {
 			return true;
 		}
@@ -226,7 +226,7 @@ void Canvas::compute() {
 		m_draw_compositor.recull(m_root.get());
 	}
 
-	if (m_scroll_target) {
+	if (m_scroll_target != nullptr) {
 		m_layout_engine.scroll_into_view(m_scroll_target);
 		m_scroll_target = nullptr;
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {},
@@ -234,7 +234,7 @@ void Canvas::compute() {
 		m_draw_compositor.recull(m_root.get());
 	}
 
-	if (m_scroll_offset_target) {
+	if (m_scroll_offset_target != nullptr) {
 		m_layout_engine.set_scroll_offset(m_scroll_offset_target, m_scroll_offset_y);
 		m_scroll_offset_target = nullptr;
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(), {},

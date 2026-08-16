@@ -22,7 +22,7 @@ struct BoxShadow {
 	Vec2 offset = { 0.F, 0.F };
 	float blur = 0.F;
 	float spread = 0.F;
-	Vec4 color = { 0.F, 0.F, 0.F, 0.75f };
+	Vec4 color = { 0.F, 0.F, 0.F, 0.75F };
 	bool inset = false;
 
 	bool operator==(const BoxShadow &) const = default;

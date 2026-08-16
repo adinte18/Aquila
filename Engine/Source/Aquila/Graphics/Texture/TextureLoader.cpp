@@ -48,7 +48,7 @@ TextureLoader::RawImageData TextureLoader::load_from_vfs(const std::string &file
 }
 
 TextureLoader::RawHDRData TextureLoader::load_hdr_from_file(const std::string &filepath) {
-	stbi_set_flip_vertically_on_load(false);
+	stbi_set_flip_vertically_on_load(0);
 
 	RawHDRData data{};
 
@@ -93,8 +93,8 @@ TextureLoader::RawHDRData TextureLoader::load_hdr_from_file(const std::string &f
 }
 
 std::array<Uint8, 4> TextureLoader::color_to_pixel(Vec4 color) {
-	return { static_cast<Uint8>(color.r * 255.0f), static_cast<Uint8>(color.g * 255.0f),
-			 static_cast<Uint8>(color.b * 255.0f), static_cast<Uint8>(color.a * 255.0f) };
+	return { static_cast<Uint8>(color.r * 255.0F), static_cast<Uint8>(color.g * 255.0F),
+			 static_cast<Uint8>(color.b * 255.0F), static_cast<Uint8>(color.a * 255.0F) };
 }
 
 } // namespace Aquila::Graphics::Texture

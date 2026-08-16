@@ -422,7 +422,7 @@ AQUILA_FORCE_INLINE VkSamplerCreateInfo to_vk_sampler_create_info(const SamplerD
 	info.maxLod = desc.max_lod;
 	info.unnormalizedCoordinates = VK_FALSE;
 	info.anisotropyEnable = desc.anisotropy ? VK_TRUE : VK_FALSE;
-	info.maxAnisotropy = desc.anisotropy ? max_anisotropy_limit : 1.0f;
+	info.maxAnisotropy = desc.anisotropy ? max_anisotropy_limit : 1.0F;
 	info.compareEnable = desc.compare_enable ? VK_TRUE : VK_FALSE;
 	info.compareOp = to_vk_compare_op(desc.compare_op);
 	return info;

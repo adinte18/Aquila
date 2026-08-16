@@ -92,7 +92,7 @@ void SceneManager::enqueue_scene(Unique<Scene> scene, const Delegate<void(Scene 
 
 void SceneManager::change_scene(const Foundation::UUID &handle) {
 	if (auto it = m_scenes.find(handle); it != m_scenes.end()) {
-		if (m_active_scene && m_on_scene_unloaded) {
+		if ((m_active_scene != nullptr) && m_on_scene_unloaded) {
 			m_on_scene_unloaded(m_active_scene);
 		}
 
@@ -215,7 +215,7 @@ bool SceneManager::is_scene_active(const Foundation::UUID &handle) const {
 
 bool SceneManager::save_scene(const Foundation::UUID &handle, const std::string &filepath) {
 	Scene *scene = get_scene(handle);
-	if (!scene) {
+	if (scene == nullptr) {
 		AQUILA_LOG_ERROR("Scene not found with handle: {}", handle.to_string());
 		return false;
 	}
@@ -230,7 +230,7 @@ bool SceneManager::save_scene(const Foundation::UUID &handle, const std::string 
 }
 
 bool SceneManager::save_active_scene(const std::string &filepath) {
-	if (!m_active_scene) {
+	if (m_active_scene == nullptr) {
 		AQUILA_LOG_ERROR("No active scene to save");
 		return false;
 	}
@@ -241,7 +241,7 @@ bool SceneManager::save_active_scene(const std::string &filepath) {
 Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, Assets::AssetManager &asset_manager,
 									 const std::string &new_name) {
 	Scene *source_scene = get_scene(handle);
-	if (!source_scene) {
+	if (source_scene == nullptr) {
 		AQUILA_LOG_ERROR("Source scene not found with handle: {}", handle.to_string());
 		return nullptr;
 	}
@@ -307,7 +307,7 @@ void SceneManager::process_scene_change() {
 	m_pending_scene_change_handle = Foundation::UUID::null();
 	m_has_pending_scene_change = false;
 
-	if (m_on_scene_activated && m_active_scene) {
+	if (m_on_scene_activated && (m_active_scene != nullptr)) {
 		m_on_scene_activated(m_active_scene);
 	}
 

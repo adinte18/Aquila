@@ -4,7 +4,7 @@ namespace Aquila::UI::Core {
 
 static constexpr float K_TRACK_HEIGHT = 4.F;
 static constexpr float K_HANDLE_SIZE = 12.F;
-static constexpr float K_HANDLE_PAD = K_HANDLE_SIZE * 0.5f;
+static constexpr float K_HANDLE_PAD = K_HANDLE_SIZE * 0.5F;
 
 Slider::Slider() {
 	set_input_leaf(true);
@@ -60,13 +60,13 @@ void Slider::on_draw_self(Rendering::DrawList &draw_list) {
 	using namespace Rendering;
 	const auto &style = get_display_style();
 	const Int32 z = 0;
-	const float cy = rect.position.y + rect.size.y * 0.5f;
+	const float cy = rect.position.y + rect.size.y * 0.5F;
 
 	const float t = (m_max > m_min) ? (get_value() - m_min) / (m_max - m_min) : 0.F;
 
 	const Vec4 accent_color = style.effective_accent_color();
 
-	if (m_track_tex) {
+	if (m_track_tex != nullptr) {
 		const float track_h = rect.size.y;
 		const Rect track = {
 			.position = { rect.position.x, rect.position.y },
@@ -74,29 +74,29 @@ void Slider::on_draw_self(Rendering::DrawList &draw_list) {
 		};
 		draw_list.draw_image(track, m_track_tex, Vec4(1.F), Vec2(0.F), Vec2(1.F), z + 1);
 
-		const float hx = rect.position.x + t * rect.size.x - K_HANDLE_SIZE * 0.5f;
-		const float hy = cy - K_HANDLE_SIZE * 0.5f;
+		const float hx = rect.position.x + t * rect.size.x - K_HANDLE_SIZE * 0.5F;
+		const float hy = cy - K_HANDLE_SIZE * 0.5F;
 		const Rect handle = { .position = { hx, hy }, .size = { K_HANDLE_SIZE, K_HANDLE_SIZE } };
-		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5f), style.border_width, style.border_color,
+		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5F), style.border_width, style.border_color,
 							z + 2);
 	} else {
 		const Rect track = {
-			.position = { rect.position.x + K_HANDLE_PAD, cy - K_TRACK_HEIGHT * 0.5f },
+			.position = { rect.position.x + K_HANDLE_PAD, cy - K_TRACK_HEIGHT * 0.5F },
 			.size = { rect.size.x - K_HANDLE_PAD * 2.F, K_TRACK_HEIGHT },
 		};
-		const Vec4 track_color = Vec4(accent_color.r, accent_color.g, accent_color.b, accent_color.a * 0.3f);
-		draw_list.draw_rect(track, track_color, Vec4(K_TRACK_HEIGHT * 0.5f), 0.F, Vec4(0.F), z + 1);
+		const Vec4 track_color = Vec4(accent_color.r, accent_color.g, accent_color.b, accent_color.a * 0.3F);
+		draw_list.draw_rect(track, track_color, Vec4(K_TRACK_HEIGHT * 0.5F), 0.F, Vec4(0.F), z + 1);
 
 		const float fill_w = track.size.x * t;
 		if (fill_w > 0.F) {
 			const Rect fill = { .position = track.position, .size = { fill_w, K_TRACK_HEIGHT } };
-			draw_list.draw_rect(fill, accent_color, Vec4(K_TRACK_HEIGHT * 0.5f), 0.F, Vec4(0.F), z + 1);
+			draw_list.draw_rect(fill, accent_color, Vec4(K_TRACK_HEIGHT * 0.5F), 0.F, Vec4(0.F), z + 1);
 		}
 
-		const float hx = track.position.x + fill_w - K_HANDLE_SIZE * 0.5f;
-		const float hy = cy - K_HANDLE_SIZE * 0.5f;
+		const float hx = track.position.x + fill_w - K_HANDLE_SIZE * 0.5F;
+		const float hy = cy - K_HANDLE_SIZE * 0.5F;
 		const Rect handle = { .position = { hx, hy }, .size = { K_HANDLE_SIZE, K_HANDLE_SIZE } };
-		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5f), 0.F, Vec4(0.F), z + 2);
+		draw_list.draw_rect(handle, accent_color, Vec4(K_HANDLE_SIZE * 0.5F), 0.F, Vec4(0.F), z + 2);
 	}
 }
 

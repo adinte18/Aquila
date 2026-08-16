@@ -7,7 +7,7 @@ ListBox::ListBox() {
 
 	auto scroll = std::make_unique<ScrollView>();
 	scroll->add_class("list-box-scroll");
-	m_scroll = static_cast<ScrollView *>(add_child(std::move(scroll)));
+	m_scroll = dynamic_cast<ScrollView *>(add_child(std::move(scroll)));
 }
 
 void ListBox::add_item(std::string id, std::string display) {
@@ -15,7 +15,7 @@ void ListBox::add_item(std::string id, std::string display) {
 	btn->add_class("list-item");
 	btn->on_click.connect([this, id] { select_item(id); });
 
-	Button *btn_ptr = static_cast<Button *>(m_scroll->add_child(std::move(btn)));
+	Button *btn_ptr = dynamic_cast<Button *>(m_scroll->add_child(std::move(btn)));
 	m_items.push_back({ std::move(id), std::move(display), btn_ptr });
 }
 
@@ -25,7 +25,7 @@ void ListBox::remove_item(const std::string &id) {
 		return;
 	}
 
-	if (it->button->get_parent()) {
+	if (it->button->get_parent() != nullptr) {
 		it->button->get_parent()->remove_child(it->button);
 	}
 
@@ -38,7 +38,7 @@ void ListBox::remove_item(const std::string &id) {
 void ListBox::clear_items() {
 	for (auto &item : m_items) {
 		View *parent = item.button->get_parent();
-		if (parent) {
+		if (parent != nullptr) {
 			parent->remove_child(item.button);
 		}
 	}

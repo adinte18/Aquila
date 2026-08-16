@@ -22,7 +22,7 @@ View *TabView::add_tab(std::string title, GFX::GfxTexture *icon) {
 	}
 	btn->add_class("tab-button");
 	btn->on_click.connect([this, idx] { set_active_tab(idx); });
-	Button *btn_raw = static_cast<Button *>(m_tab_bar->add_child(std::move(btn)));
+	Button *btn_raw = dynamic_cast<Button *>(m_tab_bar->add_child(std::move(btn)));
 
 	auto panel = std::make_unique<View>();
 	panel->add_class("tab-panel");

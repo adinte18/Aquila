@@ -11,11 +11,11 @@
 namespace Aquila::Math {
 
 constexpr F32 PI = std::numbers::pi_v<float>;
-constexpr F32 TAU = 2.0f * PI;
-constexpr F32 HALF_PI = PI / 2.0f;
-constexpr F32 EPSILON = 1e-6f;
-constexpr F32 DEG_TO_RAD = PI / 180.0f;
-constexpr F32 RAD_TO_DEG = 180.0f / PI;
+constexpr F32 TAU = 2.0F * PI;
+constexpr F32 HALF_PI = PI / 2.0F;
+constexpr F32 EPSILON = 1e-6F;
+constexpr F32 DEG_TO_RAD = PI / 180.0F;
+constexpr F32 RAD_TO_DEG = 180.0F / PI;
 
 // Scalar / generic
 
@@ -49,7 +49,7 @@ AQUILA_FORCE_INLINE F32 mod(const F32 a, const F32 b) {
 
 AQUILA_FORCE_INLINE F32 normalize_angle(F32 angle) {
 	angle = mod(angle, TAU);
-	if (angle < 0.0f) {
+	if (angle < 0.0F) {
 		angle += TAU;
 	}
 	return angle;
@@ -161,10 +161,10 @@ AQUILA_FORCE_INLINE Mat4 transpose(const Mat4 &m) {
 // Projection matrices (Vulkan)
 
 inline Mat4 ortho_vulkan(F32 left, F32 right, F32 bottom, F32 top, F32 z_near, F32 z_far) {
-	Mat4 result(1.0f);
-	result[0][0] = 2.0f / (right - left);
-	result[1][1] = 2.0f / (top - bottom);
-	result[2][2] = 1.0f / (z_far - z_near);
+	Mat4 result(1.0F);
+	result[0][0] = 2.0F / (right - left);
+	result[1][1] = 2.0F / (top - bottom);
+	result[2][2] = 1.0F / (z_far - z_near);
 	result[3][0] = -(right + left) / (right - left);
 	result[3][1] = -(top + bottom) / (top - bottom);
 	result[3][2] = -z_near / (z_far - z_near);
@@ -172,23 +172,23 @@ inline Mat4 ortho_vulkan(F32 left, F32 right, F32 bottom, F32 top, F32 z_near, F
 }
 
 inline Mat4 perspective_vulkan(const F32 fov_y, const F32 aspect, const F32 z_near, const F32 z_far) {
-	const F32 tan_half_fovy = std::tan(fov_y / 2.0f);
-	Mat4 result(0.0f);
-	result[0][0] = 1.0f / (aspect * tan_half_fovy);
-	result[1][1] = 1.0f / tan_half_fovy;
+	const F32 tan_half_fovy = std::tan(fov_y / 2.0F);
+	Mat4 result(0.0F);
+	result[0][0] = 1.0F / (aspect * tan_half_fovy);
+	result[1][1] = 1.0F / tan_half_fovy;
 	result[2][2] = z_far / (z_far - z_near);
-	result[2][3] = 1.0f;
+	result[2][3] = 1.0F;
 	result[3][2] = -(z_far * z_near) / (z_far - z_near);
 	return result;
 }
 
 inline Mat4 infinite_perspective_vulkan(const F32 fov_y, const F32 aspect, const F32 z_near) {
-	const F32 tan_half_fovy = std::tan(fov_y / 2.0f);
-	Mat4 result(0.0f);
-	result[0][0] = 1.0f / (aspect * tan_half_fovy);
-	result[1][1] = 1.0f / tan_half_fovy;
-	result[2][2] = 1.0f;
-	result[2][3] = 1.0f;
+	const F32 tan_half_fovy = std::tan(fov_y / 2.0F);
+	Mat4 result(0.0F);
+	result[0][0] = 1.0F / (aspect * tan_half_fovy);
+	result[1][1] = 1.0F / tan_half_fovy;
+	result[2][2] = 1.0F;
+	result[2][3] = 1.0F;
 	result[3][2] = -z_near;
 	return result;
 }
@@ -200,7 +200,7 @@ inline Mat4 look_at(const Vec3 &position, const Vec3 &target, const Vec3 &up) {
 	const Vec3 u = normalize(cross(w, up));
 	const Vec3 v = cross(w, u);
 
-	Mat4 result(1.0f);
+	Mat4 result(1.0F);
 	result[0][0] = u.x;
 	result[1][0] = u.y;
 	result[2][0] = u.z;
@@ -221,7 +221,7 @@ inline Mat4 look_in_direction(const Vec3 &position, const Vec3 &direction, const
 	const Vec3 u = normalize(cross(w, world_up));
 	const Vec3 v = cross(w, u);
 
-	Mat4 result(1.0f);
+	Mat4 result(1.0F);
 	result[0][0] = u.x;
 	result[1][0] = u.y;
 	result[2][0] = u.z;
@@ -304,7 +304,7 @@ inline void compute_light_space_aabb(const std::array<Vec4, 8> &corners, const M
 	}
 }
 
-inline Mat4 build_light_view_matrix(const Vec3 &light_direction, const Vec3 &focus_point, const F32 distance = 100.0f) {
+inline Mat4 build_light_view_matrix(const Vec3 &light_direction, const Vec3 &focus_point, const F32 distance = 100.0F) {
 	const Vec3 light_dir = normalize(light_direction);
 	Vec3 world_up = Vec3(0.F, 1.F, 0.F);
 	if (std::abs(dot(light_dir, world_up)) > 0.99F) {
@@ -338,17 +338,17 @@ inline void snap_to_texel_grid(F32 &min, F32 &max, const F32 world_units_per_tex
 }
 
 inline F32 fix_z_bounds_for_shadows(const F32 min_z, const F32 max_z, F32 &out_near, F32 &out_far) {
-	F32 z_translation = 0.0f;
-	if (min_z < 0.0f) {
+	F32 z_translation = 0.0F;
+	if (min_z < 0.0F) {
 		z_translation = -min_z;
-		out_near = 0.0f;
+		out_near = 0.0F;
 		out_far = max_z - min_z;
 	} else {
 		out_near = min_z;
 		out_far = max_z;
 	}
 	if (out_far <= out_near) {
-		out_far = out_near + 1.0f;
+		out_far = out_near + 1.0F;
 	}
 	return z_translation;
 }
@@ -371,11 +371,11 @@ AQUILA_FORCE_INLINE Vec3 barycentric(const Vec3 &p, const Vec3 &a, const Vec3 &b
 	}
 	const F32 vv = (d11 * d20 - d01 * d21) / denom;
 	const F32 ww = (d00 * d21 - d01 * d20) / denom;
-	return Vec3(1.0f - vv - ww, vv, ww);
+	return Vec3(1.0F - vv - ww, vv, ww);
 }
 
 AQUILA_FORCE_INLINE F32 signed_volume(const Vec3 &a, const Vec3 &b, const Vec3 &c, const Vec3 &d) {
-	return dot(cross(b - a, c - a), d - a) / 6.0f;
+	return dot(cross(b - a, c - a), d - a) / 6.0F;
 }
 
 } // namespace Aquila::Math

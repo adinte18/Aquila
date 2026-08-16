@@ -212,7 +212,7 @@ void EntityManager::on_scene_node_destroy(entt::registry &registry, entt::entity
 	Entity entity(entity_handle, m_scene);
 
 	auto *node = entity.try_get_component<Components::SceneNodeComponent>();
-	if (!node) {
+	if (node == nullptr) {
 		return;
 	}
 
@@ -225,7 +225,7 @@ void EntityManager::on_scene_node_destroy(entt::registry &registry, entt::entity
 
 	if (!node->parent.is_null()) {
 		auto *parent_node = node->parent.try_get_component<Components::SceneNodeComponent>();
-		if (parent_node) {
+		if (parent_node != nullptr) {
 			auto &siblings = parent_node->children;
 			if (!siblings.empty()) {
 				std::erase(siblings, entity);
@@ -247,7 +247,7 @@ void EntityManager::add_child(Entity parent, Entity child) {
 
 	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
 	auto *child_node = child.try_get_component<Components::SceneNodeComponent>();
-	if (!parent_node || !child_node) {
+	if ((parent_node == nullptr) || (child_node == nullptr)) {
 		return;
 	}
 
@@ -271,13 +271,13 @@ void EntityManager::attach_to(Entity parent, Entity node) {
 
 	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
 	auto *node_to_attach = node.try_get_component<Components::SceneNodeComponent>();
-	if (!parent_node || !node_to_attach) {
+	if ((parent_node == nullptr) || (node_to_attach == nullptr)) {
 		return;
 	}
 
 	auto *node_transform = node.try_get_component<Components::TransformComponent>();
 	auto *parent_transform = parent.try_get_component<Components::TransformComponent>();
-	if (!node_transform || !parent_transform) {
+	if ((node_transform == nullptr) || (parent_transform == nullptr)) {
 		return;
 	}
 
@@ -300,7 +300,7 @@ void EntityManager::attach_to(Entity parent, Entity node) {
 	Mat4 parent_inverse = inverse(parent_world);
 
 	// Calculate local position
-	Vec4 local_pos4 = parent_inverse * Vec4(world_pos, 1.0f);
+	Vec4 local_pos4 = parent_inverse * Vec4(world_pos, 1.0F);
 	Vec3 local_pos = Vec3(local_pos4);
 
 	// Calculate local rotation
@@ -329,7 +329,7 @@ void EntityManager::attach_to(Entity parent, Entity node) {
  */
 bool EntityManager::is_descendant(Entity potential_parent, Entity entity_to_check) {
 	auto *node = potential_parent.try_get_component<Components::SceneNodeComponent>();
-	if (!node) {
+	if (node == nullptr) {
 		return false;
 	}
 
@@ -357,7 +357,7 @@ void EntityManager::remove_child(Entity parent, Entity child) {
 
 	auto *parent_node = parent.try_get_component<Components::SceneNodeComponent>();
 	auto *child_node = child.try_get_component<Components::SceneNodeComponent>();
-	if (!parent_node || !child_node) {
+	if ((parent_node == nullptr) || (child_node == nullptr)) {
 		return;
 	}
 

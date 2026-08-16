@@ -393,10 +393,10 @@ void VulkanCommandList::push_debug_group(const char *name) {
 		VkDebugUtilsLabelEXT label{};
 		label.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
 		label.pLabelName = name;
-		label.color[0] = 0.2f;
-		label.color[1] = 0.6f;
-		label.color[2] = 1.0f;
-		label.color[3] = 1.0f;
+		label.color[0] = 0.2F;
+		label.color[1] = 0.6F;
+		label.color[2] = 1.0F;
+		label.color[3] = 1.0F;
 		fn(m_command_buffer, &label);
 	}
 }

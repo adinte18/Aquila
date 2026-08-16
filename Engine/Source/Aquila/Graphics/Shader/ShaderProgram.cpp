@@ -126,11 +126,11 @@ RHI::ShaderStageDesc ShaderProgram::get_stage_desc(RHI::ShaderStageFlags stage) 
 
 bool ShaderProgram::slang_type_to_descriptor(slang::TypeLayoutReflection *type_layout, RHI::DescriptorType &out_type,
 										  ReflectedBindingType &out_reflected_type) {
-	if (!type_layout) {
+	if (type_layout == nullptr) {
 		return false;
 	}
 	slang::TypeReflection *type = type_layout->getType();
-	if (!type) {
+	if (type == nullptr) {
 		return false;
 	}
 
@@ -170,7 +170,7 @@ bool ShaderProgram::slang_type_to_descriptor(slang::TypeLayoutReflection *type_l
 
 void ShaderProgram::process_binding(slang::VariableLayoutReflection *var, RHI::ShaderStageFlags stage_flags,
 								   std::map<Uint32, std::map<Uint32, BindingInfo>> &sets) {
-	if (!var) {
+	if (var == nullptr) {
 		return;
 	}
 
@@ -178,7 +178,7 @@ void ShaderProgram::process_binding(slang::VariableLayoutReflection *var, RHI::S
 	Uint32 set = (Uint32)var->getBindingSpace();
 
 	slang::TypeLayoutReflection *type_layout = var->getTypeLayout();
-	if (!type_layout) {
+	if (type_layout == nullptr) {
 		return;
 	}
 
@@ -195,7 +195,7 @@ void ShaderProgram::process_binding(slang::VariableLayoutReflection *var, RHI::S
 	bi.occupied = true;
 
 	ReflectedBinding rb{};
-	rb.name = var->getName() ? var->getName() : "";
+	rb.name = (var->getName() != nullptr) ? var->getName() : "";
 	rb.set = set;
 	rb.binding_index = binding_index;
 	rb.descriptor_count = 1;
@@ -204,14 +204,14 @@ void ShaderProgram::process_binding(slang::VariableLayoutReflection *var, RHI::S
 
 	if (refl_type == ReflectedBindingType::UniformBuffer) {
 		slang::TypeLayoutReflection *inner = type_layout->getElementTypeLayout();
-		if (inner) {
+		if (inner != nullptr) {
 			for (Uint32 f = 0; f < (Uint32)inner->getFieldCount(); ++f) {
 				slang::VariableLayoutReflection *field = inner->getFieldByIndex(f);
-				if (!field || !field->getName()) {
+				if ((field == nullptr) || (field->getName() == nullptr)) {
 					continue;
 				}
-				slang::TypeReflection *ft = field->getTypeLayout() ? field->getTypeLayout()->getType() : nullptr;
-				if (!ft) {
+				slang::TypeReflection *ft = (field->getTypeLayout() != nullptr) ? field->getTypeLayout()->getType() : nullptr;
+				if (ft == nullptr) {
 					continue;
 				}
 				ReflectedBinding::UBOField uf{};
@@ -234,13 +234,13 @@ bool ShaderProgram::reflect_into(Ref<GFX::GfxDescriptorSetLayout> &out_layout) {
 	std::map<Uint32, std::map<Uint32, BindingInfo>> sets;
 
 	const auto &primary = m_stages[0];
-	if (!primary.linked_component) {
+	if (primary.linked_component == nullptr) {
 		out_layout = nullptr;
 		return true;
 	}
 
 	slang::ProgramLayout *pl = primary.linked_component->getLayout();
-	if (!pl) {
+	if (pl == nullptr) {
 		out_layout = nullptr;
 		return true;
 	}
@@ -251,21 +251,21 @@ bool ShaderProgram::reflect_into(Ref<GFX::GfxDescriptorSetLayout> &out_layout) {
 
 	for (size_t si = 1; si < m_stages.size(); ++si) {
 		const auto &stage = m_stages[si];
-		if (!stage.linked_component) {
+		if (stage.linked_component == nullptr) {
 			continue;
 		}
 		slang::ProgramLayout *spl = stage.linked_component->getLayout();
-		if (!spl) {
+		if (spl == nullptr) {
 			continue;
 		}
 		for (Uint32 i = 0; i < (Uint32)spl->getParameterCount(); ++i) {
 			auto *var = spl->getParameterByIndex(i);
-			if (!var) {
+			if (var == nullptr) {
 				continue;
 			}
 			Uint32 b = (Uint32)var->getBindingIndex();
 			Uint32 s = (Uint32)var->getBindingSpace();
-			if (sets.count(s) && sets[s].count(b)) {
+			if ((sets.count(s) != 0u) && (sets[s].count(b) != 0u)) {
 				sets[s][b].stage_flags = sets[s][b].stage_flags | stage.stage;
 			}
 		}

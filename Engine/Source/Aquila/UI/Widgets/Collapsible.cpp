@@ -63,7 +63,7 @@ Collapsible::Collapsible(std::string title) {
 		set_expanded(!m_expanded);
 		on_toggled(m_expanded);
 	});
-	m_title_button = static_cast<Button *>(m_header_bar->add_child(std::move(button)));
+	m_title_button = dynamic_cast<Button *>(m_header_bar->add_child(std::move(button)));
 
 	auto grip = std::make_unique<CollapsibleGrip>(this);
 	grip->add_class("collapsible-grip");

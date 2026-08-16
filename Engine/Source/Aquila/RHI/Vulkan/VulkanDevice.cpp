@@ -476,7 +476,7 @@ Unique<IRHIPipeline> VulkanDevice::create_graphics_pipeline(const GraphicsPipeli
 
 	config.multisample_info.rasterizationSamples = to_vk_sample_count(desc.sample_count);
 	config.multisample_info.sampleShadingEnable = desc.min_sample_shading ? VK_TRUE : VK_FALSE;
-	config.multisample_info.minSampleShading = desc.min_sample_shading ? 1.0f : 0.0f;
+	config.multisample_info.minSampleShading = desc.min_sample_shading ? 1.0F : 0.0F;
 
 	config.input_assembly_info.topology = to_vk_primitive_topology(desc.topology);
 

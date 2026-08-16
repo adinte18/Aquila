@@ -59,7 +59,7 @@ void ViewRenderingSystem::add_passes(Graphics::RG::RenderGraph &graph, Aquila::R
 }
 
 void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) {
-	if (!ctx.swapchain) {
+	if (ctx.swapchain == nullptr) {
 		return;
 	}
 

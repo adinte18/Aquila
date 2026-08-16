@@ -9,8 +9,8 @@ namespace Aquila::UI::Core {
 class DragFloat : public Control {
   public:
 	struct Config {
-		float min = -1e18f;
-		float max = 1e18f;
+		float min = -1e18F;
+		float max = 1e18F;
 		float step = 0.F;
 		float speed = 1.F;
 		int precision = 3;
@@ -46,10 +46,10 @@ class DragFloat : public Control {
 	virtual void on_value_committed() {}
 
 	float m_value = 0.F;
-	float m_min = -1e18f;
-	float m_max = 1e18f;
+	float m_min = -1e18F;
+	float m_max = 1e18F;
 	float m_step = 0.F;
-	float m_speed = 1.0f;
+	float m_speed = 1.0F;
 	int m_precision = 3;
 	std::string m_prefix;
 

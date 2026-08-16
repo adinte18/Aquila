@@ -71,25 +71,25 @@ class Camera {
 	Mat4 m_view_matrix{ 1.F };
 	Mat4 m_inverse_view_matrix{ 1.F };
 
-	Vec3 m_position{ 0.0f };
-	Vec3 m_rotation{ 0.0f };
+	Vec3 m_position{ 0.0F };
+	Vec3 m_rotation{ 0.0F };
 
-	F32 m_movement_speed{ 5.0f };
-	F32 m_rotation_speed{ 0.001f };
+	F32 m_movement_speed{ 5.0F };
+	F32 m_rotation_speed{ 0.001F };
 
-	Vec3 m_direction{ 0.0f, 0.0f, -1.0f };
+	Vec3 m_direction{ 0.0F, 0.0F, -1.0F };
 
-	F32 m_fov{ 80.0f };
-	F32 m_near{ 0.1f };
+	F32 m_fov{ 80.0F };
+	F32 m_near{ 0.1F };
 	F32 m_far{ 100.F };
 	F32 m_aspect_ratio{ 0.F };
 
 	bool m_is_sped_up{ false };
 
-	Vec3 m_orbit_target{ 0.0f, 0.0f, 0.0f };
-	F32 m_orbit_radius{ 10.0f };
-	F32 m_orbit_yaw{ 0.0f };
-	F32 m_orbit_pitch{ 0.0f };
+	Vec3 m_orbit_target{ 0.0F, 0.0F, 0.0F };
+	F32 m_orbit_radius{ 10.0F };
+	F32 m_orbit_yaw{ 0.0F };
+	F32 m_orbit_pitch{ 0.0F };
 
 	bool m_orbit_around_entity{ false };
 };

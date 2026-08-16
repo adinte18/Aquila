@@ -17,19 +17,19 @@ class Input {
 	Input() = delete;
 
 	[[nodiscard]] static bool is_key_pressed(KeyCode key) {
-		if (!s_ActiveWindow) {
+		if (s_ActiveWindow == nullptr) {
 			return false;
 		}
 		return s_States[s_ActiveWindow].key_states.at((Uint8)key);
 	}
 	[[nodiscard]] static bool is_mouse_button_pressed(MouseButton button) {
-		if (!s_ActiveWindow) {
+		if (s_ActiveWindow == nullptr) {
 			return false;
 		}
 		return s_States[s_ActiveWindow].mouse_button_states.at((Uint8)button);
 	}
 	[[nodiscard]] static Vec2 get_mouse_position() {
-		if (!s_ActiveWindow) {
+		if (s_ActiveWindow == nullptr) {
 			return {};
 		}
 		auto &state = s_States[s_ActiveWindow];
@@ -38,7 +38,7 @@ class Input {
 
 	static void on_event(Event &event) {
 		auto *window = event.get_source();
-		if (!window) {
+		if (window == nullptr) {
 			return;
 		}
 
@@ -85,8 +85,8 @@ class Input {
 	struct InputState {
 		std::array<bool, SharedConstants::MAX_KEY_STATES> key_states{};
 		std::array<bool, SharedConstants::MAX_MOUSE_STATES> mouse_button_states{};
-		F32 mouse_x = 0.0f;
-		F32 mouse_y = 0.0f;
+		F32 mouse_x = 0.0F;
+		F32 mouse_y = 0.0F;
 	};
 
 	inline static std::unordered_map<Application::Window *, InputState> s_States;

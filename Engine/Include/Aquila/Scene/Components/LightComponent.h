@@ -8,11 +8,11 @@
 namespace Aquila::SceneManagement::Components {
 
 struct ShadowQualitySettings {
-	F32 light_size = 8.0f;
-	F32 shadow_bias = 0.0035f;
-	F32 normal_bias = 1.0f;
+	F32 light_size = 8.0F;
+	F32 shadow_bias = 0.0035F;
+	F32 normal_bias = 1.0F;
 	int pcf_samples = 9;
-	F32 cascade_split_lambda = 0.95f;
+	F32 cascade_split_lambda = 0.95F;
 	int blocker_search_samples = 16;
 };
 
@@ -21,16 +21,16 @@ struct LightComponent {
 
 	Type m_type = Type::Directional;
 
-	Vec3 m_color = Vec3(1.0f);
-	F32 m_intensity = 1.0f;
-	F32 m_range = 100.0f;
+	Vec3 m_color = Vec3(1.0F);
+	F32 m_intensity = 1.0F;
+	F32 m_range = 100.0F;
 
-	F32 m_inner_cone_angle = 0.0f;
-	F32 m_outer_cone_angle = 45.0f;
+	F32 m_inner_cone_angle = 0.0F;
+	F32 m_outer_cone_angle = 45.0F;
 
-	Vec3 m_direction = Vec3(0.0f, -1.0f, 0.0f);
+	Vec3 m_direction = Vec3(0.0F, -1.0F, 0.0F);
 
-	Vec2 m_area_size = Vec2(1.0f, 1.0f);
+	Vec2 m_area_size = Vec2(1.0F, 1.0F);
 
 	ShadowQualitySettings m_shadow_settings;
 

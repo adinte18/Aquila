@@ -40,7 +40,7 @@ class IRHIDevice {
 	virtual void submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain = nullptr, Uint32 image_index = 0) = 0;
 	virtual void submit_and_wait(IRHICommandList &cmd) = 0;
 	virtual void present_frame(IRHISwapchain &swapchain, Uint32 image_index,
-							  Vec4 clear_color = { 0.0f, 0.0f, 0.0f, 1.0f }) = 0;
+							  Vec4 clear_color = { 0.0F, 0.0F, 0.0F, 1.0F }) = 0;
 	virtual void wait_idle() = 0;
 
 	template <typename Func> void execute_immediate(CommandListType type, Func &&func) {

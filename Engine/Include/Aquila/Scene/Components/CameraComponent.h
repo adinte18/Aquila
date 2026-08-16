@@ -11,24 +11,24 @@ namespace Aquila::SceneManagement::Components {
 using namespace glm;
 
 struct CameraComponent {
-	F32 fov = 80.0f;
-	F32 near_plane = 0.1f;
+	F32 fov = 80.0F;
+	F32 near_plane = 0.1F;
 	F32 far_plane = 100.F;
-	F32 aspect_ratio = 1.778f;
+	F32 aspect_ratio = 1.778F;
 	bool is_orthographic = false;
 
-	F32 ortho_left = -1.0f;
-	F32 ortho_right = 1.0f;
-	F32 ortho_top = 1.0f;
-	F32 ortho_bottom = -1.0f;
+	F32 ortho_left = -1.0F;
+	F32 ortho_right = 1.0F;
+	F32 ortho_top = 1.0F;
+	F32 ortho_bottom = -1.0F;
 
 	bool primary = false;
 
 	Signal<void()> on_changed;
 
 	Mat4 get_view_matrix(const Vec3 &position, const quat &rotation) const {
-		Vec3 forward = rotation * Vec3(0.0f, 0.0f, 1.0f);
-		Vec3 up = rotation * Vec3(0.0f, -1.0f, 0.0f);
+		Vec3 forward = rotation * Vec3(0.0F, 0.0F, 1.0F);
+		Vec3 up = rotation * Vec3(0.0F, -1.0F, 0.0F);
 
 		return get_view_matrix_from_direction(position, forward, up);
 	}
@@ -48,7 +48,7 @@ struct CameraComponent {
 		const Vec3 u{ glm::normalize(glm::cross(w, up)) };
 		const Vec3 v{ glm::cross(w, u) };
 
-		Mat4 view_matrix = Mat4{ 1.0f };
+		Mat4 view_matrix = Mat4{ 1.0F };
 		view_matrix[0][0] = u.x;
 		view_matrix[1][0] = u.y;
 		view_matrix[2][0] = u.z;
@@ -66,11 +66,11 @@ struct CameraComponent {
 	}
 
 	Mat4 get_inverse_view_matrix(const Vec3 &position, const quat &rotation) const {
-		Vec3 forward = rotation * Vec3(0.0f, 0.0f, 1.0f);
-		Vec3 up = rotation * Vec3(0.0f, -1.0f, 0.0f);
+		Vec3 forward = rotation * Vec3(0.0F, 0.0F, 1.0F);
+		Vec3 up = rotation * Vec3(0.0F, -1.0F, 0.0F);
 		Vec3 right = glm::cross(forward, up);
 
-		Mat4 inverse_view_matrix = Mat4{ 1.0f };
+		Mat4 inverse_view_matrix = Mat4{ 1.0F };
 		inverse_view_matrix[0][0] = right.x;
 		inverse_view_matrix[0][1] = right.y;
 		inverse_view_matrix[0][2] = right.z;
@@ -89,31 +89,31 @@ struct CameraComponent {
 
 	Mat4 get_view_matrix_from_quaternion(const Vec3 &position, const quat &rotation) const {
 		Mat4 rotation_matrix = mat4_cast(conjugate(rotation));
-		Mat4 translation_matrix = Mat4(1.0f);
-		translation_matrix[3] = Vec4(-position, 1.0f);
+		Mat4 translation_matrix = Mat4(1.0F);
+		translation_matrix[3] = Vec4(-position, 1.0F);
 		return rotation_matrix * translation_matrix;
 	}
 
 	Mat4 get_projection_matrix() const {
 		if (is_orthographic) {
-			Mat4 proj_matrix = Mat4{ 1.0f };
-			proj_matrix[0][0] = 2.0f / (ortho_right - ortho_left);
-			proj_matrix[1][1] = 2.0f / (ortho_top - ortho_bottom);
-			proj_matrix[2][2] = 1.0f / (far_plane - near_plane);
+			Mat4 proj_matrix = Mat4{ 1.0F };
+			proj_matrix[0][0] = 2.0F / (ortho_right - ortho_left);
+			proj_matrix[1][1] = 2.0F / (ortho_top - ortho_bottom);
+			proj_matrix[2][2] = 1.0F / (far_plane - near_plane);
 			proj_matrix[3][0] = -(ortho_right + ortho_left) / (ortho_right - ortho_left);
 			proj_matrix[3][1] = -(ortho_top + ortho_bottom) / (ortho_top - ortho_bottom);
 			proj_matrix[3][2] = -near_plane / (far_plane - near_plane);
 			return proj_matrix;
 		} else {
-			const F32 tan_half_fovy = tan(glm::radians(fov) / 2.0f);
-			Mat4 proj_matrix = Mat4{ 0.0f };
-			proj_matrix[0][0] = 1.0f / (aspect_ratio * tan_half_fovy);
-			proj_matrix[1][1] = 1.0f / (tan_half_fovy);
+			const F32 tan_half_fovy = tan(glm::radians(fov) / 2.0F);
+			Mat4 proj_matrix = Mat4{ 0.0F };
+			proj_matrix[0][0] = 1.0F / (aspect_ratio * tan_half_fovy);
+			proj_matrix[1][1] = 1.0F / (tan_half_fovy);
 			proj_matrix[2][2] = far_plane / (far_plane - near_plane);
-			proj_matrix[2][3] = 1.0f;
+			proj_matrix[2][3] = 1.0F;
 			proj_matrix[3][2] = -(far_plane * near_plane) / (far_plane - near_plane);
 
-			proj_matrix[1][1] *= -1.0f;
+			proj_matrix[1][1] *= -1.0F;
 
 			return proj_matrix;
 		}
@@ -139,15 +139,15 @@ struct CameraComponent {
 		}
 	}
 
-	Vec3 get_forward_direction(const quat &rotation) const { return rotation * Vec3(0.0f, 0.0f, 1.0f); }
+	Vec3 get_forward_direction(const quat &rotation) const { return rotation * Vec3(0.0F, 0.0F, 1.0F); }
 
-	Vec3 get_right_direction(const quat &rotation) const { return rotation * Vec3(1.0f, 0.0f, 0.0f); }
+	Vec3 get_right_direction(const quat &rotation) const { return rotation * Vec3(1.0F, 0.0F, 0.0F); }
 
-	Vec3 get_up_direction(const quat &rotation) const { return rotation * Vec3(0.0f, -1.0f, 0.0f); }
+	Vec3 get_up_direction(const quat &rotation) const { return rotation * Vec3(0.0F, -1.0F, 0.0F); }
 
 	void on_resize(F32 width, F32 height) { aspect_ratio = width / height; }
 
-	void set_fov(F32 new_fov) { fov = glm::clamp(new_fov, 1.0f, 179.0f); }
+	void set_fov(F32 new_fov) { fov = glm::clamp(new_fov, 1.0F, 179.0F); }
 
 	void zoom(F32 offset) { set_fov(fov - offset); }
 

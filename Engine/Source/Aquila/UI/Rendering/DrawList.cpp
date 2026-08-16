@@ -25,15 +25,15 @@ void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, V
 void DrawList::draw_line(Vec2 from, Vec2 to, float width, Vec4 color, Int32 z) {
 	Vec2 delta = to - from;
 	float length = glm::length(delta);
-	if (length < 0.5f) {
+	if (length < 0.5F) {
 		return;
 	}
 
-	Vec2 center = (from + to) * 0.5f;
+	Vec2 center = (from + to) * 0.5F;
 	float angle = std::atan2(delta.y, delta.x);
 
 	RectCmd command;
-	command.rect = { center - Vec2(length * 0.5f, width * 0.5f), { length, width } };
+	command.rect = { center - Vec2(length * 0.5F, width * 0.5F), { length, width } };
 	command.color = color;
 	command.rotation = angle;
 	command.z_order = z;
@@ -47,7 +47,7 @@ void DrawList::draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spre
 	command.color = color;
 	command.radius = radius;
 	command.offset = offset;
-	command.original_half_size = { widget_rect.size.x * 0.5f + spread, widget_rect.size.y * 0.5f + spread };
+	command.original_half_size = { widget_rect.size.x * 0.5F + spread, widget_rect.size.y * 0.5F + spread };
 	command.blur = blur;
 	command.z_order = z;
 
@@ -131,10 +131,10 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					const Vec2 offset = c.offset;
 					const Vec2 sdf_half_size = c.original_half_size;
 					const float blur = c.blur;
-					spec.position = c.rect.position + offset - Vec2(blur + (sdf_half_size.x - c.rect.size.x * 0.5f));
+					spec.position = c.rect.position + offset - Vec2(blur + (sdf_half_size.x - c.rect.size.x * 0.5F));
 					spec.size = c.rect.size +
-						Vec2(2.F * (blur + (sdf_half_size.x - c.rect.size.x * 0.5f)),
-							 2.F * (blur + (sdf_half_size.y - c.rect.size.y * 0.5f)));
+						Vec2(2.F * (blur + (sdf_half_size.x - c.rect.size.x * 0.5F)),
+							 2.F * (blur + (sdf_half_size.y - c.rect.size.y * 0.5F)));
 					spec.color = c.color;
 					spec.offset = offset;
 					spec.original_half_size = sdf_half_size;
@@ -182,7 +182,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 
 						F32 cursor_x = c.rect.position.x;
 						if (c.align == TextAlign::Center) {
-							cursor_x += (c.rect.size.x - text_width) * 0.5f;
+							cursor_x += (c.rect.size.x - text_width) * 0.5F;
 						} else if (c.align == TextAlign::Right) {
 							cursor_x += c.rect.size.x - text_width;
 						} else {

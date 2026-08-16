@@ -17,7 +17,7 @@ void DockTabButton::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 }
 
 void DockTabButton::on_mouse_move(Vec2 pos) {
-	if (!m_is_pressed || !m_drag_ctx) {
+	if (!m_is_pressed || (m_drag_ctx == nullptr)) {
 		return;
 	}
 
@@ -43,7 +43,7 @@ void DockTabButton::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
 		// Copy pointer to local: onRelease may destroy `this` via DetachPanel.
 		// Do not access any member after this call.
 		auto *ctx = m_drag_ctx;
-		if (ctx && ctx->on_release) {
+		if ((ctx != nullptr) && ctx->on_release) {
 			ctx->on_release(pos);
 		}
 	} else {

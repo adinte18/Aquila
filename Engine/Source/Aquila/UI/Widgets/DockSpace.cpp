@@ -148,7 +148,7 @@ DockSpace::DockSpace() {
 	};
 
 	auto root = std::make_unique<DockNode>(&m_drag_ctx);
-	m_root = static_cast<DockNode *>(add_child(std::move(root)));
+	m_root = dynamic_cast<DockNode *>(add_child(std::move(root)));
 }
 
 namespace {
@@ -683,7 +683,7 @@ bool DockSpace::apply_layout(const DockLayoutDesc &desc) {
 	harvest_panels(m_root, by_id, extras);
 
 	auto fresh = std::make_unique<DockNode>(&m_drag_ctx);
-	m_root = static_cast<DockNode *>(replace_child(m_root, std::move(fresh)));
+	m_root = dynamic_cast<DockNode *>(replace_child(m_root, std::move(fresh)));
 
 	realize_desc(m_root, desc.root, by_id);
 

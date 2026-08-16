@@ -41,17 +41,17 @@ void Toggle::on_draw_self(Rendering::DrawList &draw_list) {
 	const Vec4 thumb_color = style.color;
 
 	// Track
-	const float track_h = rect.size.y * 0.55f;
-	const float track_y = rect.position.y + (rect.size.y - track_h) * 0.5f;
+	const float track_h = rect.size.y * 0.55F;
+	const float track_y = rect.position.y + (rect.size.y - track_h) * 0.5F;
 	const Rect track = { .position = { rect.position.x, track_y }, .size = { rect.size.x, track_h } };
-	draw_list.draw_rect(track, track_color, Vec4(track_h * 0.5f), 0.F, Vec4(0.F), z + 2);
+	draw_list.draw_rect(track, track_color, Vec4(track_h * 0.5F), 0.F, Vec4(0.F), z + 2);
 
 	// Thumb — drawn on top of track
 	const float thumb_diam = rect.size.y - 4.F;
 	const float thumb_y = rect.position.y + 2.F;
 	const float thumb_x = get_value() ? rect.position.x + rect.size.x - thumb_diam - 2.F : rect.position.x + 2.F;
 	const Rect thumb = { .position = { thumb_x, thumb_y }, .size = { thumb_diam, thumb_diam } };
-	draw_list.draw_rect(thumb, thumb_color, Vec4(thumb_diam * 0.5f), 0.F, Vec4(0.F), z + 3);
+	draw_list.draw_rect(thumb, thumb_color, Vec4(thumb_diam * 0.5F), 0.F, Vec4(0.F), z + 3);
 }
 
 } // namespace Aquila::UI::Core

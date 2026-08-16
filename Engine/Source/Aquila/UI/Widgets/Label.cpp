@@ -34,7 +34,7 @@ Text::FontAtlas *Label::resolve_font() const {
 
 Vec2 Label::measure(float override_font_size) const {
 	Text::FontAtlas *font = resolve_font();
-	if (!font || m_text.empty()) {
+	if ((font == nullptr) || m_text.empty()) {
 		return {};
 	}
 

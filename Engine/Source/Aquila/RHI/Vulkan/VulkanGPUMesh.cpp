@@ -6,16 +6,16 @@ namespace Aquila::RHI {
 
 VulkanGPUMesh::VulkanGPUMesh(VulkanDevice &device, const GPUMeshDesc &desc)
 	: m_device(device), m_debug_name(desc.debug_name) {
-	if (desc.primitives) {
+	if (desc.primitives != nullptr) {
 		m_primitives = *desc.primitives;
 	}
 
-	if (desc.vertices && !desc.vertices->empty()) {
+	if ((desc.vertices != nullptr) && !desc.vertices->empty()) {
 		m_vertex_count = static_cast<Uint32>(desc.vertices->size());
 		upload_vertex_buffer(*desc.vertices);
 	}
 
-	if (desc.indices && !desc.indices->empty()) {
+	if ((desc.indices != nullptr) && !desc.indices->empty()) {
 		m_index_count = static_cast<Uint32>(desc.indices->size());
 		m_has_index_buffer = true;
 		upload_index_buffer(*desc.indices);

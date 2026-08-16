@@ -164,14 +164,14 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 	const float font_size = style.font_size > 0.F ? style.font_size : 14.F;
 
 	Text::FontAtlas *font = resolve_font();
-	if (!font) {
+	if (font == nullptr) {
 		return;
 	}
 
 	const float bake_size = font->get_bake_size();
 	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
 	const float line_h = font->get_line_height() * scale;
-	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5f;
+	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5F;
 	constexpr float k_pad_x = 4.F;
 	const Rect text_rect = {
 		.position = { rect.position.x + k_pad_x, text_y },
@@ -195,7 +195,7 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 
 		if (m_is_focused && !m_edit_state.has_selection()) {
 			const float cx = text_rect.position.x + m_edit_state.measure_to_pos(*font, scale, m_edit_state.cursor);
-			const Rect cursor = { .position = { cx - 0.75f, text_y }, .size = { 1.5f, line_h } };
+			const Rect cursor = { .position = { cx - 0.75F, text_y }, .size = { 1.5F, line_h } };
 			draw_list.draw_rect(cursor, style.color, Vec4(0.F), 0.F, Vec4(0.F), z);
 		}
 	} else {
@@ -205,14 +205,14 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 
 		// Small arrows hint that the field is draggable.
 		constexpr float k_arrow_size = 4.F;
-		const float cy = rect.position.y + rect.size.y * 0.5f;
-		const Vec4 arrow_color = Vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.4f);
+		const float cy = rect.position.y + rect.size.y * 0.5F;
+		const Vec4 arrow_color = Vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.4F);
 		const Rect left_arrow = {
-			.position = { rect.position.x + 3.F, cy - k_arrow_size * 0.5f },
+			.position = { rect.position.x + 3.F, cy - k_arrow_size * 0.5F },
 			.size = { k_arrow_size, k_arrow_size },
 		};
 		const Rect right_arrow = {
-			.position = { rect.position.x + rect.size.x - k_arrow_size - 3.F, cy - k_arrow_size * 0.5f },
+			.position = { rect.position.x + rect.size.x - k_arrow_size - 3.F, cy - k_arrow_size * 0.5F },
 			.size = { k_arrow_size, k_arrow_size },
 		};
 		draw_list.draw_rect(left_arrow, arrow_color, Vec4(1.F), 0.F, Vec4(0.F), z + 2);

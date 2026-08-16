@@ -163,7 +163,7 @@ void TextInput::on_focus_lost() {
 }
 
 bool TextInput::on_update(F32 delta_time) {
-	constexpr float k_blink_period = 0.53f;
+	constexpr float k_blink_period = 0.53F;
 	m_blink_timer += delta_time;
 	if (m_blink_timer >= k_blink_period) {
 		m_blink_timer -= k_blink_period;

@@ -85,11 +85,11 @@ void VulkanRenderPass::issue_pre_barriers(VulkanCommandList &cmd, const VulkanSw
 		VkImage depth_image = VK_NULL_HANDLE;
 		VkImageAspectFlags aspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 
-		if (d.texture) {
+		if (d.texture != nullptr) {
 			auto &vk_depth = static_cast<VulkanTexture &>(*d.texture);
 			depth_image = vk_depth.get_image();
 			aspect = depth_aspect(vk_depth.get_format());
-		} else if (m_desc.use_swapchain && swapchain) {
+		} else if (m_desc.use_swapchain && (swapchain != nullptr)) {
 			depth_image = swapchain->get_depth_image(image_index);
 		}
 
@@ -157,7 +157,7 @@ void VulkanRenderPass::issue_post_barriers(VulkanCommandList &cmd) const {
 
 	if (m_desc.depth_attachment.has_value()) {
 		const auto &d = *m_desc.depth_attachment;
-		if (d.texture && d.depth_store_op == AttachmentStoreOp::Store) {
+		if ((d.texture != nullptr) && d.depth_store_op == AttachmentStoreOp::Store) {
 			auto &vk_depth = static_cast<VulkanTexture &>(*d.texture);
 			VkImageAspectFlags aspect = depth_aspect(vk_depth.get_format());
 			VkImageLayout old_layout =
@@ -207,7 +207,7 @@ void VulkanRenderPass::begin(IRHICommandList &cmd, IRHISwapchain *swapchain, Uin
 		});
 		m_color_format = TextureFormat::BGRA8;
 	} else {
-		if (m_desc.use_swapchain_as_resolve && m_active_swapchain) {
+		if (m_desc.use_swapchain_as_resolve && (m_active_swapchain != nullptr)) {
 			width = m_active_swapchain->get_extent().width;
 			height = m_active_swapchain->get_extent().height;
 		}
@@ -219,7 +219,7 @@ void VulkanRenderPass::begin(IRHICommandList &cmd, IRHISwapchain *swapchain, Uin
 			VkImageView resolve_view = VK_NULL_HANDLE;
 			if (att.resolve_texture != nullptr) {
 				resolve_view = static_cast<VulkanTexture &>(*att.resolve_texture).get_image_view();
-			} else if (m_desc.use_swapchain_as_resolve && m_active_swapchain) {
+			} else if (m_desc.use_swapchain_as_resolve && (m_active_swapchain != nullptr)) {
 				resolve_view = m_active_swapchain->get_image_view(image_index);
 			}
 
@@ -240,9 +240,9 @@ void VulkanRenderPass::begin(IRHICommandList &cmd, IRHISwapchain *swapchain, Uin
 		const auto &d = *m_desc.depth_attachment;
 
 		VkImageView depth_view = VK_NULL_HANDLE;
-		if (d.texture) {
+		if (d.texture != nullptr) {
 			depth_view = static_cast<VulkanTexture &>(*d.texture).get_image_view();
-		} else if (m_desc.use_swapchain && m_active_swapchain) {
+		} else if (m_desc.use_swapchain && (m_active_swapchain != nullptr)) {
 			depth_view = m_active_swapchain->get_depth_image_view(image_index);
 		}
 
@@ -271,7 +271,7 @@ void VulkanRenderPass::begin(IRHICommandList &cmd, IRHISwapchain *swapchain, Uin
 
 	// Default full-attachment viewport and scissor — caller can override via
 	// cmd.SetViewport / cmd.SetScissor after Begin() returns.
-	VkViewport viewport{ 0.0f, 0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, 1.0f };
+	VkViewport viewport{ 0.0F, 0.0F, static_cast<float>(width), static_cast<float>(height), 0.0F, 1.0F };
 	vkCmdSetViewport(vk_cmd.get_handle(), 0, 1, &viewport);
 
 	VkRect2D scissor{ { 0, 0 }, { width, height } };

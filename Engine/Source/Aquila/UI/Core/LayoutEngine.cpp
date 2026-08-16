@@ -213,7 +213,7 @@ void LayoutEngine::scroll_into_view(View *target) {
 	}
 
 	View *container = nullptr;
-	for (View *v = target->get_parent(); v; v = v->get_parent()) {
+	for (View *v = target->get_parent(); v != nullptr; v = v->get_parent()) {
 		if (v->get_display_style().overflow == Overflow::Scroll) {
 			container = v;
 			break;

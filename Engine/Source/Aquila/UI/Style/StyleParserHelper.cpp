@@ -4,10 +4,10 @@
 namespace Aquila::UI::ParserHelper {
 
 std::string_view trim_sv(std::string_view s) {
-	while (!s.empty() && std::isspace(static_cast<unsigned char>(s.front()))) {
+	while (!s.empty() && (std::isspace(static_cast<unsigned char>(s.front())) != 0)) {
 		s.remove_prefix(1);
 	}
-	while (!s.empty() && std::isspace(static_cast<unsigned char>(s.back()))) {
+	while (!s.empty() && (std::isspace(static_cast<unsigned char>(s.back())) != 0)) {
 		s.remove_suffix(1);
 	}
 	return s;
@@ -46,11 +46,11 @@ std::vector<std::string> split_ws(std::string_view s) {
 	std::vector<std::string> result;
 	size_t i = 0;
 	while (i < s.size()) {
-		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) {
+		while (i < s.size() && (std::isspace(static_cast<unsigned char>(s[i])) != 0)) {
 			++i;
 		}
 		size_t start = i;
-		while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) {
+		while (i < s.size() && (std::isspace(static_cast<unsigned char>(s[i])) == 0)) {
 			++i;
 		}
 		if (i > start) {
@@ -142,7 +142,7 @@ Option<StyleLength> parse_length(std::string_view raw) {
 	if (s.ends_with("vh")) {
 		return StyleLength::vh(parse_float(std::string_view(s).substr(0, s.size() - 2)));
 	}
-	if (!s.empty() && (std::isdigit(static_cast<unsigned char>(s[0])) || s[0] == '-' || s[0] == '.')) {
+	if (!s.empty() && ((std::isdigit(static_cast<unsigned char>(s[0])) != 0) || s[0] == '-' || s[0] == '.')) {
 		return StyleLength::pixel(parse_float(s));
 	}
 	return std::nullopt;
@@ -251,7 +251,7 @@ Option<BoxShadow> parse_one_shadow(std::string_view raw) {
 	size_t i = 0;
 	std::string s = trim(raw);
 	while (i < s.size()) {
-		while (i < s.size() && std::isspace(static_cast<unsigned char>(s[i]))) {
+		while (i < s.size() && (std::isspace(static_cast<unsigned char>(s[i])) != 0)) {
 			++i;
 		}
 		if (i >= s.size()) {
@@ -266,7 +266,7 @@ Option<BoxShadow> parse_one_shadow(std::string_view raw) {
 				++i;
 			}
 		} else {
-			while (i < s.size() && !std::isspace(static_cast<unsigned char>(s[i]))) {
+			while (i < s.size() && (std::isspace(static_cast<unsigned char>(s[i])) == 0)) {
 				++i;
 			}
 		}
@@ -620,7 +620,7 @@ void apply_declaration(StyleProperties &props, std::string_view prop_raw, std::s
 				props.transition_easing = easing;
 			} else {
 				if (token.ends_with("ms") || token.ends_with('s') ||
-					std::isdigit(static_cast<unsigned char>(token.front()))) {
+					(std::isdigit(static_cast<unsigned char>(token.front())) != 0)) {
 					props.transition_duration = parse_duration_ms(token);
 				}
 			}

@@ -132,7 +132,7 @@ float TextInputState::measure_to_pos(const Text::FontAtlas &font, float scale, s
 	for (size_t i = 0; i < end;) {
 		const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(text, i);
 		const Text::GlyphInfo *g = font.get_glyph(d.codepoint);
-		if (g) {
+		if (g != nullptr) {
 			x += g->advance * scale;
 		}
 		i += (d.size > 0 ? d.size : 1u);
@@ -146,8 +146,8 @@ size_t TextInputState::hit_test_pos(const Text::FontAtlas &font, float scale, fl
 		const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(text, i);
 		const size_t step = (d.size > 0 ? d.size : 1u);
 		const Text::GlyphInfo *g = font.get_glyph(d.codepoint);
-		if (g) {
-			if (local_x < acc + g->advance * scale * 0.5f) {
+		if (g != nullptr) {
+			if (local_x < acc + g->advance * scale * 0.5F) {
 				return i;
 			}
 			acc += g->advance * scale;

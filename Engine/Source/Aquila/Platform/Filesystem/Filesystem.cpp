@@ -195,12 +195,12 @@ std::vector<std::string> dir_list(const std::string &path, bool recursive) {
 		do {
 			if (strcmp(find_data.cFileName, ".") != 0 && strcmp(find_data.cFileName, "..") != 0) {
 				entries.push_back(find_data.cFileName);
-				if (recursive && (find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
+				if (recursive && ((find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0u)) {
 					auto sub = dir_list(path + "\\" + find_data.cFileName, true);
 					entries.insert(entries.end(), sub.begin(), sub.end());
 				}
 			}
-		} while (FindNextFileA(h_find, &find_data));
+		} while (FindNextFileA(h_find, &find_data) != 0);
 		FindClose(h_find);
 	}
 #elif defined(AQUILA_PLATFORM_LINUX) || defined(AQUILA_PLATFORM_MACOS)

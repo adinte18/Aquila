@@ -174,7 +174,7 @@ void Profiler::reset() {
 	m_frame_count = 0;
 	m_frame_number = 0;
 	m_frame_time_history_index = 0;
-	m_frame_time_history.fill(0.0f);
+	m_frame_time_history.fill(0.0F);
 }
 
 F64 Profiler::get_frame_duration() const {

@@ -4,14 +4,14 @@ namespace Aquila::Rendering {
 
 void Camera::speed_up() {
 	if (!m_is_sped_up) {
-		m_movement_speed *= 5.0f;
+		m_movement_speed *= 5.0F;
 		m_is_sped_up = true;
 	}
 }
 
 void Camera::reset_speed() {
 	if (m_is_sped_up) {
-		m_movement_speed /= 5.0f;
+		m_movement_speed /= 5.0F;
 		m_is_sped_up = false;
 	}
 }
@@ -69,7 +69,7 @@ void Camera::move_left(F32 delta) {
 void Camera::rotate(const double yaw, const double pitch) {
 	m_rotation.x += pitch;
 	m_rotation.y += yaw;
-	m_rotation.x = Math::clamp(m_rotation.x, -89.0f, 89.0f);
+	m_rotation.x = Math::clamp(m_rotation.x, -89.0F, 89.0F);
 
 	set_view_yxz(m_position, m_rotation);
 
@@ -90,7 +90,7 @@ void Camera::update_free_mode_look_direction() {
 
 void Camera::zoom(const F32 offset, const F32 aspect_ratio) {
 	m_fov -= offset;
-	m_fov = Math::clamp(m_fov, 1.0f, 90.0f);
+	m_fov = Math::clamp(m_fov, 1.0F, 90.0F);
 	set_perspective_projection(Math::radians(m_fov), aspect_ratio, m_near, m_far);
 }
 
@@ -103,7 +103,7 @@ void Camera::set_orthographic_projection(F32 left, F32 right, F32 top, F32 botto
 }
 
 void Camera::set_perspective_projection(F32 fov_y, F32 aspect, F32 near_plane, F32 far_plane) {
-	AQUILA_ASSERT(std::abs(aspect - Math::EPSILON) > 0.0f, "Aspect ratio must not be zero");
+	AQUILA_ASSERT(std::abs(aspect - Math::EPSILON) > 0.0F, "Aspect ratio must not be zero");
 
 	this->m_aspect_ratio = aspect;
 	this->m_fov = fov_y;
@@ -189,8 +189,8 @@ void Camera::set_orbit_target(const Vec3 &target) {
 	Vec3 offset = m_position - m_orbit_target;
 
 	m_orbit_radius = Math::length(offset);
-	if (m_orbit_radius < 0.1f) {
-		m_orbit_radius = 5.0f;
+	if (m_orbit_radius < 0.1F) {
+		m_orbit_radius = 5.0F;
 	}
 
 	m_orbit_pitch = std::asin(offset.y / m_orbit_radius);
@@ -202,12 +202,12 @@ void Camera::set_orbit_target(const Vec3 &target) {
 void Camera::orbit_rotate(const F32 delta_yaw, const F32 delta_pitch) {
 	m_orbit_yaw += delta_yaw;
 	m_orbit_pitch += delta_pitch;
-	m_orbit_pitch = std::clamp(m_orbit_pitch, -Math::HALF_PI + 0.01f, Math::HALF_PI - 0.01f);
+	m_orbit_pitch = std::clamp(m_orbit_pitch, -Math::HALF_PI + 0.01F, Math::HALF_PI - 0.01F);
 	update_orbit_position();
 }
 
 void Camera::orbit_zoom(const F32 delta_radius) {
-	m_orbit_radius = std::max(m_orbit_radius + delta_radius, 0.1f);
+	m_orbit_radius = std::max(m_orbit_radius + delta_radius, 0.1F);
 	update_orbit_position();
 }
 
@@ -226,7 +226,7 @@ void Camera::recalculate_view() {
 	Vec3 forward = m_direction;
 	m_rotation.x = std::asin(-forward.y);
 	m_rotation.y = std::atan2(forward.x, forward.z);
-	m_rotation.z = 0.0f;
+	m_rotation.z = 0.0F;
 }
 
 void Camera::switch_to_type(const CameraType new_type, const Vec3 target_pos) {

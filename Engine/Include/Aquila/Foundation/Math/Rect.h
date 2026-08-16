@@ -13,7 +13,7 @@ struct Rect {
 	[[nodiscard]] AQUILA_FORCE_INLINE float bottom() const { return position.y + size.y; }
 	[[nodiscard]] AQUILA_FORCE_INLINE float width() const { return size.x; }
 	[[nodiscard]] AQUILA_FORCE_INLINE float height() const { return size.y; }
-	[[nodiscard]] AQUILA_FORCE_INLINE Vec2 center() const { return position + size * 0.5f; }
+	[[nodiscard]] AQUILA_FORCE_INLINE Vec2 center() const { return position + size * 0.5F; }
 
 	[[nodiscard]] AQUILA_FORCE_INLINE bool contains(Vec2 p) const {
 		return p.x >= left() && p.x < right() && p.y >= top() && p.y < bottom();

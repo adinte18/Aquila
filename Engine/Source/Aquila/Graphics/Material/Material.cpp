@@ -214,7 +214,7 @@ template <typename T> void Material::write_ubo(Uint32 offset, const T &v) {
 }
 
 void Material::ensure_uniform_buffers() {
-	if (m_uniform_buffers[0] || m_ubo_data.empty() || !m_context || !m_sets[0]) {
+	if (m_uniform_buffers[0] || m_ubo_data.empty() || (m_context == nullptr) || !m_sets[0]) {
 		return;
 	}
 	Uint32 size = static_cast<Uint32>(m_ubo_data.size());
@@ -229,7 +229,7 @@ void Material::ensure_uniform_buffers() {
 }
 
 Material &Material::set(const std::string &param_name, F32 v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		write_ubo(p->ubo_offset, v);
 		m_dirty_slot_mask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
@@ -238,7 +238,7 @@ Material &Material::set(const std::string &param_name, F32 v) {
 }
 
 Material &Material::set(const std::string &param_name, int v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		write_ubo(p->ubo_offset, v);
 		m_dirty_slot_mask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
@@ -247,7 +247,7 @@ Material &Material::set(const std::string &param_name, int v) {
 }
 
 Material &Material::set(const std::string &param_name, bool v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		int as_int = v ? 1 : 0;
 		write_ubo(p->ubo_offset, as_int);
@@ -257,7 +257,7 @@ Material &Material::set(const std::string &param_name, bool v) {
 }
 
 Material &Material::set(const std::string &param_name, const Vec2 &v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		write_ubo(p->ubo_offset, v);
 		m_dirty_slot_mask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
@@ -266,7 +266,7 @@ Material &Material::set(const std::string &param_name, const Vec2 &v) {
 }
 
 Material &Material::set(const std::string &param_name, const Vec3 &v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		// Only copy 12 bytes; the 4-byte pad is left as zero.
 		if (p->ubo_offset + value_size(ParameterType::Vec3) <= m_ubo_data.size()) {
@@ -278,7 +278,7 @@ Material &Material::set(const std::string &param_name, const Vec3 &v) {
 }
 
 Material &Material::set(const std::string &param_name, const Vec4 &v) {
-	if (auto *p = find_parameter(param_name); p && p->ubo_offset != UINT32_MAX) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->ubo_offset != UINT32_MAX) {
 		p->value = v;
 		write_ubo(p->ubo_offset, v);
 		m_dirty_slot_mask = (1u << SharedConstants::MAX_FRAMES_IN_FLIGHT) - 1u;
@@ -287,7 +287,7 @@ Material &Material::set(const std::string &param_name, const Vec4 &v) {
 }
 
 Material &Material::set(const std::string &param_name, Ref<GFX::GfxTexture> tex) {
-	if (auto *p = find_parameter(param_name); p && p->texture_binding != UINT32_MAX && tex) {
+	if (auto *p = find_parameter(param_name); (p != nullptr) && p->texture_binding != UINT32_MAX && tex) {
 		p->value = tex;
 		m_pending_textures.push_back({ p->texture_binding, tex.get() });
 	}
@@ -347,7 +347,7 @@ void Material::bind(GFX::GfxCommandList &cmd, Uint32 set_index, Uint32 frame_slo
 void Material::replace_pipeline(Ref<GFX::GfxPipeline> new_pipeline, Ref<GFX::GfxDescriptorSetLayout> new_layout) {
 	m_pipeline = std::move(new_pipeline);
 
-	if (new_layout && m_context) {
+	if (new_layout && (m_context != nullptr)) {
 		m_layout = std::move(new_layout);
 		for (Uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
 			m_sets[i] = m_context->allocate_descriptor_set(*m_layout);

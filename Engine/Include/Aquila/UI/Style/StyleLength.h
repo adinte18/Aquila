@@ -6,7 +6,7 @@ namespace Aquila::UI {
 
 struct StyleLength {
 	LengthUnit unit = LengthUnit::Auto;
-	float value = 0.0f;
+	float value = 0.0F;
 
 	constexpr static StyleLength pixel(float pixels) { return { .unit = LengthUnit::Pixel, .value = pixels }; }
 	constexpr static StyleLength percent(float percent) { return { .unit = LengthUnit::Percent, .value = percent }; }
@@ -26,7 +26,7 @@ struct StyleLength {
 		case LengthUnit::Pixel:
 			return value;
 		case LengthUnit::Percent:
-			return parent_size * (value / 100.0f);
+			return parent_size * (value / 100.0F);
 		default:
 			return 0.F;
 		}

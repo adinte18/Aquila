@@ -29,7 +29,7 @@ class GfxCommandList {
 	void transition_buffer(GfxBuffer &buffer, RHI::ResourceState old_state, RHI::ResourceState new_state);
 
 	void bind_pipeline(GfxPipeline &pipeline);
-	void set_viewport(float x, float y, float width, float height, float min_depth = 0.0f, float max_depth = 1.0f);
+	void set_viewport(float x, float y, float width, float height, float min_depth = 0.0F, float max_depth = 1.0F);
 	void set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height);
 
 	void bind_descriptor_set(Uint32 set, GfxDescriptorSet &descriptor_set);

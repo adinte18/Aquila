@@ -224,7 +224,7 @@ View *DrawCompositor::hit_test(Vec2 pos) const {
 		}
 
 		View *p = v->get_parent();
-		while (p) {
+		while (p != nullptr) {
 			if (p->is_input_leaf() && p->get_absolute_rect().contains(pos)) {
 				v = p;
 			}
@@ -248,7 +248,7 @@ View *DrawCompositor::hit_test(Vec2 pos) const {
 			continue;
 		}
 		View *p = v->get_parent();
-		while (p) {
+		while (p != nullptr) {
 			if (p->is_input_leaf() && p->get_absolute_rect().contains(pos)) {
 				v = p;
 			}

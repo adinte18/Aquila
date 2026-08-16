@@ -26,7 +26,7 @@ inline EventCategory operator|(EventCategory a, EventCategory b) {
 	return static_cast<EventCategory>(static_cast<int>(a) | static_cast<int>(b));
 }
 inline bool operator&(EventCategory a, EventCategory b) {
-	return static_cast<int>(a) & static_cast<int>(b);
+	return (static_cast<int>(a) & static_cast<int>(b)) != 0;
 }
 
 class Event {

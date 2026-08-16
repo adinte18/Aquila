@@ -80,11 +80,11 @@ AQUILA_FORCE_INLINE BezierExtrema find_extrema(const QuadraticBezier &curve) {
 	BezierCoefficients coefficients = compute_coefficients(curve);
 	BezierExtrema extrema{};
 	if (Math::abs(coefficients.a.x) > Math::EPSILON) {
-		extrema.t_x = -coefficients.b.x / (2.0f * coefficients.a.x);
+		extrema.t_x = -coefficients.b.x / (2.0F * coefficients.a.x);
 	}
 
 	if (Math::abs(coefficients.a.y) > Math::EPSILON) {
-		extrema.t_y = -coefficients.b.y / (2.0f * coefficients.a.y);
+		extrema.t_y = -coefficients.b.y / (2.0F * coefficients.a.y);
 	}
 	return extrema;
 }
@@ -105,7 +105,7 @@ AQUILA_FORCE_INLINE BezierSplit split_at_y_extrema(const QuadraticBezier &curve)
 	BezierExtrema extrema = find_extrema(curve);
 	if (extrema.t_y.has_value()) {
 		F32 t = extrema.t_y.value();
-		if (t > 0.0f && t < 1.0f) {
+		if (t > 0.0F && t < 1.0F) {
 			return split(curve, t);
 		}
 	}
@@ -116,7 +116,7 @@ AQUILA_FORCE_INLINE BezierSplit split_at_x_extrema(const QuadraticBezier &curve)
 	BezierExtrema extrema = find_extrema(curve);
 	if (extrema.t_x.has_value()) {
 		F32 t = extrema.t_x.value();
-		if (t > 0.0f && t < 1.0f) {
+		if (t > 0.0F && t < 1.0F) {
 			return split(curve, t);
 		}
 	}

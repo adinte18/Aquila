@@ -4,7 +4,7 @@
 
 namespace Aquila::Rendering {
 
-inline constexpr F32 kSkyBaseExposure = 0.05f;
+inline constexpr F32 kSkyBaseExposure = 0.05F;
 
 struct alignas(16) GpuSkyData {
 	Vec4 config_a[3];

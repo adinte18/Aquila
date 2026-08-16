@@ -92,7 +92,7 @@ void DockSplitter::on_mouse_release(Platform::MouseButton btn, Vec2 pos) {
 void DockSplitter::on_mouse_move(Vec2 pos) {
 	View *before = resolve_before();
 	View *after = resolve_after();
-	View *container = before ? before->get_parent() : nullptr;
+	View *container = (before != nullptr) ? before->get_parent() : nullptr;
 	if (!m_is_pressed || before == nullptr || after == nullptr || container == nullptr) {
 		return;
 	}

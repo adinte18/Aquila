@@ -55,7 +55,7 @@ void Scene::mark_transform_dirty(entt::entity entity) {
 bool Scene::has_dirty_ancestor(entt::entity e) const {
 	Entity entity(e, const_cast<Scene *>(this));
 	auto *node = entity.try_get_component<Components::SceneNodeComponent>();
-	while (node && !node->parent.is_null()) {
+	while ((node != nullptr) && !node->parent.is_null()) {
 		if (m_dirty_transforms.is_dirty(node->parent.get_handle())) {
 			return true;
 		}
@@ -68,7 +68,7 @@ int Scene::get_entity_depth(entt::entity e) const {
 	int depth = 0;
 	Entity entity(e, const_cast<Scene *>(this));
 	auto *node = entity.try_get_component<Components::SceneNodeComponent>();
-	while (node && !node->parent.is_null()) {
+	while ((node != nullptr) && !node->parent.is_null()) {
 		depth++;
 		node = node->parent.try_get_component<Components::SceneNodeComponent>();
 	}
@@ -132,11 +132,11 @@ void Scene::update_transform_hierarchy() {
 		}
 
 		Entity entity(e, this);
-		glm::mat4 parent_world(1.0f);
+		glm::mat4 parent_world(1.0F);
 		auto *node = entity.try_get_component<Components::SceneNodeComponent>();
-		if (node && !node->parent.is_null()) {
+		if ((node != nullptr) && !node->parent.is_null()) {
 			auto *parent_transform = node->parent.try_get_component<Components::TransformComponent>();
-			if (parent_transform) {
+			if (parent_transform != nullptr) {
 				parent_world = parent_transform->get_world_matrix_lazy();
 			}
 		}
@@ -152,7 +152,7 @@ void Scene::update_transform_recursive(Entity entity, const glm::mat4 &parent_wo
 	}
 
 	auto *transform = entity.try_get_component<Components::TransformComponent>();
-	if (!transform) {
+	if (transform == nullptr) {
 		return;
 	}
 
@@ -499,11 +499,11 @@ bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset
 				light_json.contains("ShadowSettings")) {
 				const auto &shadow_json = light_json["ShadowSettings"];
 
-				light.m_shadow_settings.light_size = shadow_json.value("LightSize", 8.0f);
-				light.m_shadow_settings.shadow_bias = shadow_json.value("ShadowBias", 0.0005f);
-				light.m_shadow_settings.normal_bias = shadow_json.value("NormalBias", 1.0f);
+				light.m_shadow_settings.light_size = shadow_json.value("LightSize", 8.0F);
+				light.m_shadow_settings.shadow_bias = shadow_json.value("ShadowBias", 0.0005F);
+				light.m_shadow_settings.normal_bias = shadow_json.value("NormalBias", 1.0F);
 				light.m_shadow_settings.pcf_samples = shadow_json.value("PCFSamples", 32);
-				light.m_shadow_settings.cascade_split_lambda = shadow_json.value("CascadeSplitLambda", 0.95f);
+				light.m_shadow_settings.cascade_split_lambda = shadow_json.value("CascadeSplitLambda", 0.95F);
 				light.m_shadow_settings.blocker_search_samples = shadow_json.value("BlockerSearchSamples", 16);
 			}
 
@@ -517,14 +517,14 @@ bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset
 
 			cam.primary = cam_json.value("Primary", false);
 			cam.is_orthographic = cam_json.value("IsOrthographic", false);
-			cam.fov = cam_json.value("FOV", 45.0f);
-			cam.aspect_ratio = cam_json.value("AspectRatio", 16.0f / 9.0f);
-			cam.near_plane = cam_json.value("NearPlane", 0.1f);
-			cam.far_plane = cam_json.value("FarPlane", 1000.0f);
-			cam.ortho_left = cam_json.value("OrthoLeft", -10.0f);
-			cam.ortho_right = cam_json.value("OrthoRight", 10.0f);
-			cam.ortho_top = cam_json.value("OrthoTop", 10.0f);
-			cam.ortho_bottom = cam_json.value("OrthoBottom", -10.0f);
+			cam.fov = cam_json.value("FOV", 45.0F);
+			cam.aspect_ratio = cam_json.value("AspectRatio", 16.0F / 9.0F);
+			cam.near_plane = cam_json.value("NearPlane", 0.1F);
+			cam.far_plane = cam_json.value("FarPlane", 1000.0F);
+			cam.ortho_left = cam_json.value("OrthoLeft", -10.0F);
+			cam.ortho_right = cam_json.value("OrthoRight", 10.0F);
+			cam.ortho_top = cam_json.value("OrthoTop", 10.0F);
+			cam.ortho_bottom = cam_json.value("OrthoBottom", -10.0F);
 
 			entity.add_or_replace_component<Components::CameraComponent>(cam);
 		}
@@ -535,7 +535,7 @@ bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset
 			auto &sky_light = entity.get_or_emplace<Components::SkyLightComponent>();
 
 			sky_light.set_active(sky_light_json.value("Active", true));
-			sky_light.set_intensity(sky_light_json.value("Intensity", 1.0f));
+			sky_light.set_intensity(sky_light_json.value("Intensity", 1.0F));
 
 			if (sky_light_json.contains("Tint")) {
 				Vec3 tint = Vec3(sky_light_json["Tint"][0].get<F32>(), sky_light_json["Tint"][1].get<F32>(),

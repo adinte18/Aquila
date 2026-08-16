@@ -8,11 +8,11 @@ Dropdown::Dropdown() {
 	auto header = std::make_unique<Button>();
 	header->add_class("dropdown-header");
 	header->on_click.connect([this] { toggle_popup(); });
-	m_header = static_cast<Button *>(add_child(std::move(header)));
+	m_header = dynamic_cast<Button *>(add_child(std::move(header)));
 
 	auto popup = std::make_unique<Popup>();
 	popup->add_class("dropdown-popup");
-	m_popup = static_cast<Popup *>(add_child(std::move(popup)));
+	m_popup = dynamic_cast<Popup *>(add_child(std::move(popup)));
 
 	update_header_text();
 }

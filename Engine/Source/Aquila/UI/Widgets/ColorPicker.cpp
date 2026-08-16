@@ -37,22 +37,22 @@ class ColorPicker::PickerArea : public View {
 		const Rect r = { get_absolute_position(), get_layout_rect().size };
 		const Int32 z = 0;
 
-		if (m_tex) {
+		if (m_tex != nullptr) {
 			dl.draw_image(r, m_tex, Vec4(1.F), Vec2(0.F), Vec2(1.F), z + 1);
 		}
 
 		if (m_is1_d) {
 			const float ix = r.position.x + m_indicator.x * r.size.x;
 			const Rect ind = { .position = { ix - 3.F, r.position.y - 2.F }, .size = { 6.F, r.size.y + 4.F } };
-			dl.draw_rect(ind, Vec4(1.F), Vec4(3.F), 1.5f, Vec4(0.1f, 0.1f, 0.1f, 0.9f), z + 2);
+			dl.draw_rect(ind, Vec4(1.F), Vec4(3.F), 1.5F, Vec4(0.1F, 0.1F, 0.1F, 0.9F), z + 2);
 		} else {
 			const Vec2 ic = r.position + m_indicator * r.size;
 			const float rd = 6.F;
 			const Rect ind = { .position = { ic.x - rd, ic.y - rd }, .size = { rd * 2.F, rd * 2.F } };
-			dl.draw_rect(ind, Vec4(0.F, 0.F, 0.F, 0.F), Vec4(rd), 2.F, Vec4(0.F, 0.F, 0.F, 0.9f), z + 2);
+			dl.draw_rect(ind, Vec4(0.F, 0.F, 0.F, 0.F), Vec4(rd), 2.F, Vec4(0.F, 0.F, 0.F, 0.9F), z + 2);
 			const float ri = 4.F;
 			const Rect i2 = { .position = { ic.x - ri, ic.y - ri }, .size = { ri * 2.F, ri * 2.F } };
-			dl.draw_rect(i2, Vec4(0.F), Vec4(ri), 1.5f, Vec4(1.F, 1.F, 1.F, 0.85f), z + 3);
+			dl.draw_rect(i2, Vec4(0.F), Vec4(ri), 1.5F, Vec4(1.F, 1.F, 1.F, 0.85F), z + 3);
 		}
 	}
 
@@ -155,7 +155,7 @@ void ColorPicker::rebuild_sv_texture() {
 	} else {
 		m_ctx.upload_texture_data(*m_sv_tex, px.data(), static_cast<Uint64>(px.size()));
 	}
-	if (m_sv_area) {
+	if (m_sv_area != nullptr) {
 		m_sv_area->m_tex = m_sv_tex.get();
 		m_sv_area->queue_redraw();
 	}
@@ -168,7 +168,7 @@ void ColorPicker::rebuild_alpha_texture() {
 	} else {
 		m_ctx.upload_texture_data(*m_alpha_tex, px.data(), static_cast<Uint64>(px.size()));
 	}
-	if (m_alpha_bar) {
+	if (m_alpha_bar != nullptr) {
 		m_alpha_bar->m_tex = m_alpha_tex.get();
 		m_alpha_bar->queue_redraw();
 	}
@@ -184,14 +184,14 @@ void ColorPicker::rebuild_channel_textures() {
 		} else {
 			m_ctx.upload_texture_data(*m_ch_tex[i], px.data(), static_cast<Uint64>(px.size()));
 		}
-		if (m_ch[i].slider) {
+		if (m_ch[i].slider != nullptr) {
 			m_ch[i].slider->set_track_texture(m_ch_tex[i].get());
 		}
 	}
 }
 
 void ColorPicker::sync_channel_displays() {
-	if (!m_ch[0].slider) {
+	if (m_ch[0].slider == nullptr) {
 		return;
 	}
 
@@ -221,30 +221,30 @@ void ColorPicker::sync_channel_displays() {
 }
 
 void ColorPicker::sync_hex_display() {
-	if (m_hex_input) {
+	if (m_hex_input != nullptr) {
 		m_hex_input->set_text(fmt_hex(m_color));
 	}
 }
 
 void ColorPicker::sync_all() {
-	if (m_sv_area) {
+	if (m_sv_area != nullptr) {
 		m_sv_area->m_indicator = { m_s, 1.F - m_v };
 		m_sv_area->queue_redraw();
 	}
-	if (m_hue_bar) {
+	if (m_hue_bar != nullptr) {
 		m_hue_bar->m_indicator = { m_h, 0.F };
 		m_hue_bar->queue_redraw();
 	}
-	if (m_alpha_bar) {
+	if (m_alpha_bar != nullptr) {
 		m_alpha_bar->m_indicator = { m_color.a, 0.F };
 		m_alpha_bar->queue_redraw();
 	}
-	if (m_preview) {
+	if (m_preview != nullptr) {
 		StyleProperties p;
 		p.background_color = m_color;
 		m_preview->merge_style(p);
 	}
-	if (m_swatch) {
+	if (m_swatch != nullptr) {
 		StyleProperties p;
 		p.background_color = m_color;
 		m_swatch->merge_style(p);
@@ -311,13 +311,13 @@ void ColorPicker::apply_channel_value(int idx, float raw_value) {
 }
 
 void ColorPicker::toggle_popup() {
-	if (!m_popup) {
+	if (m_popup == nullptr) {
 		return;
 	}
 	if (!m_popup->is_open()) {
 		const Rect swatch_rect = m_swatch->get_absolute_rect();
 		FloatingConfig fc = m_popup->get_floating();
-		if (swatch_rect.position.x > m_popup->get_parent()->get_layout_rect().width() * 0.5f) {
+		if (swatch_rect.position.x > m_popup->get_parent()->get_layout_rect().width() * 0.5F) {
 			fc.element_point = FloatingAttachPoint::RightTop;
 			fc.parent_point = FloatingAttachPoint::RightBottom;
 		} else {
@@ -409,7 +409,7 @@ void ColorPicker::init() {
 		auto popup = std::make_unique<Popup>();
 		popup->add_class("cp-popup");
 		popup->set_floating(fc);
-		m_popup = static_cast<Popup *>(add_child(std::move(popup)));
+		m_popup = dynamic_cast<Popup *>(add_child(std::move(popup)));
 	}
 
 	{
@@ -429,7 +429,7 @@ void ColorPicker::init() {
 			sync_all();
 			on_changed(m_color);
 		};
-		m_sv_area = static_cast<PickerArea *>(m_popup->add_child(std::move(sv)));
+		m_sv_area = dynamic_cast<PickerArea *>(m_popup->add_child(std::move(sv)));
 	}
 
 	{
@@ -444,7 +444,7 @@ void ColorPicker::init() {
 			hue->m_is1_d = true;
 			hue->m_indicator = { m_h, 0.F };
 			hue->m_on_pick = [this](Vec2 n) {
-				const bool changed = std::abs(n.x - m_h) > 1e-4f;
+				const bool changed = std::abs(n.x - m_h) > 1e-4F;
 				m_h = n.x;
 				const Vec3 rgb = hsv_to_rgb(m_h, m_s, m_v);
 				m_color.r = rgb.r;
@@ -457,7 +457,7 @@ void ColorPicker::init() {
 				sync_all();
 				on_changed(m_color);
 			};
-			m_hue_bar = static_cast<PickerArea *>(row_raw->add_child(std::move(hue)));
+			m_hue_bar = dynamic_cast<PickerArea *>(row_raw->add_child(std::move(hue)));
 		}
 
 		{
@@ -478,7 +478,7 @@ void ColorPicker::init() {
 			sync_all();
 			on_changed(m_color);
 		};
-		m_alpha_bar = static_cast<PickerArea *>(m_popup->add_child(std::move(alpha)));
+		m_alpha_bar = dynamic_cast<PickerArea *>(m_popup->add_child(std::move(alpha)));
 	}
 
 	{
@@ -489,7 +489,7 @@ void ColorPicker::init() {
 		auto make_btn = [&](const char *text) -> Button * {
 			auto btn = std::make_unique<Button>(text);
 			btn->add_class("cp-mode-btn");
-			return static_cast<Button *>(row_raw->add_child(std::move(btn)));
+			return dynamic_cast<Button *>(row_raw->add_child(std::move(btn)));
 		};
 		m_rgb_btn = make_btn("RGB");
 		m_hsv_btn = make_btn("HSV");
@@ -508,19 +508,19 @@ void ColorPicker::init() {
 		{
 			auto lbl = std::make_unique<Label>(labels[i]);
 			lbl->add_class("cp-ch-lbl");
-			m_ch[i].label = static_cast<Label *>(m_ch[i].row->add_child(std::move(lbl)));
+			m_ch[i].label = dynamic_cast<Label *>(m_ch[i].row->add_child(std::move(lbl)));
 		}
 		{
 			auto sl = std::make_unique<Slider>();
 			sl->set_range(0.F, 255.F);
 			sl->set_step(1.F);
 			sl->add_class("cp-ch-slider");
-			m_ch[i].slider = static_cast<Slider *>(m_ch[i].row->add_child(std::move(sl)));
+			m_ch[i].slider = dynamic_cast<Slider *>(m_ch[i].row->add_child(std::move(sl)));
 		}
 		{
 			auto ti = std::make_unique<TextInput>();
 			ti->add_class("cp-ch-input");
-			m_ch[i].input = static_cast<TextInput *>(m_ch[i].row->add_child(std::move(ti)));
+			m_ch[i].input = dynamic_cast<TextInput *>(m_ch[i].row->add_child(std::move(ti)));
 		}
 
 		const int idx = i;
@@ -565,7 +565,7 @@ void ColorPicker::init() {
 					on_changed(m_color);
 				}
 			});
-			m_hex_input = static_cast<TextInput *>(m_hex_row->add_child(std::move(ti)));
+			m_hex_input = dynamic_cast<TextInput *>(m_hex_row->add_child(std::move(ti)));
 		}
 	}
 

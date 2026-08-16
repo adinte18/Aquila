@@ -36,7 +36,7 @@ void View::set_computed_style(UI::ComputedStyle style) {
 		m_animation_from = m_display_style;
 		m_transition_timer = 0.F;
 		m_is_animation_finished = false;
-		if (m_canvas) {
+		if (m_canvas != nullptr) {
 			m_canvas->notify_animation_started(this);
 		}
 	}
@@ -111,7 +111,7 @@ void View::set_enabled(bool enabled) {
 }
 
 void View::request_focus() {
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_focus_request(this);
 	}
 }
@@ -182,7 +182,7 @@ View *View::add_child(Unique<View> child) {
 	m_children.push_back(std::move(child));
 	mark_subtree_bounds_dirty();
 	raw->set_draw_dirty();
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_style_dirty(raw);
 		m_canvas->notify_draw_dirty(raw);
 	}
@@ -190,19 +190,19 @@ View *View::add_child(Unique<View> child) {
 }
 
 void View::queue_redraw() {
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_draw_dirty(this);
 	}
 }
 
 void View::invalidate_layout() {
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_layout_dirty(this);
 	}
 }
 
 void View::mark_style_dirty() {
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_style_dirty(this);
 	}
 }
@@ -223,7 +223,7 @@ void View::notify_removed(View *node) {
 	for (const auto &child : node->m_children) {
 		notify_removed(child.get());
 	}
-	if (node->m_canvas) {
+	if (node->m_canvas != nullptr) {
 		node->m_canvas->notify_view_removed(node);
 	}
 	node->m_canvas = nullptr;
@@ -262,7 +262,7 @@ View *View::replace_child(View *old, Unique<View> new_child) {
 	raw->m_parent = this;
 	raw->set_canvas(m_canvas);
 	raw->set_draw_dirty();
-	if (m_canvas) {
+	if (m_canvas != nullptr) {
 		m_canvas->notify_style_dirty(raw);
 		m_canvas->notify_draw_dirty(raw);
 	}

@@ -7,7 +7,7 @@ struct alignas(16) GpuSurfaceData {
 	Vec4 albedo{ 1.F, 1.F, 1.F, 1.F };
 	Vec4 emissive{ 0.F, 0.F, 0.F, 0.F };
 	F32 metallic = 0.F;
-	F32 roughness = 0.5f;
+	F32 roughness = 0.5F;
 	F32 normal_strength = 1.F;
 	F32 ao_strength = 1.F;
 	Vec4 extra0{ 0.F };

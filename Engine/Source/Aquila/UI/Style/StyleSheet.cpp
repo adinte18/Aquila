@@ -18,7 +18,7 @@ bool MediaCondition::evaluate(float w, float h) const {
 	case Op::GreaterEq:
 		return v >= value;
 	case Op::Equal:
-		return std::abs(v - value) < 0.5f;
+		return std::abs(v - value) < 0.5F;
 	}
 	return false;
 }
@@ -88,7 +88,7 @@ ComputedStyle StyleSheet::resolve(const Core::View &view, const ComputedStyle *p
 								  const ResolveContext &ctx) const {
 	ComputedStyle result;
 
-	if (parent_computed) {
+	if (parent_computed != nullptr) {
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
 	AQ_STYLE_WHEN(inherit, result.cs = parent_computed->cs;)
 		AQ_STYLE_PROPERTY_LIST

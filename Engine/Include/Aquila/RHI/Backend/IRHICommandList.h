@@ -31,8 +31,8 @@ class IRHICommandList {
 	// subsequent BindDescriptorSet and PushConstants calls.
 
 	virtual void bind_pipeline(IRHIPipeline &pipeline) = 0;
-	virtual void set_viewport(float x, float y, float width, float height, float min_depth = 0.0f,
-							 float max_depth = 1.0f) = 0;
+	virtual void set_viewport(float x, float y, float width, float height, float min_depth = 0.0F,
+							 float max_depth = 1.0F) = 0;
 	virtual void set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height) = 0;
 
 	virtual void bind_descriptor_set(Uint32 set, IRHIDescriptorSet &descriptor_set) = 0;

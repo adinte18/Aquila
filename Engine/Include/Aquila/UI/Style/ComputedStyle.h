@@ -62,10 +62,10 @@ struct ComputedStyle {
 
 	[[nodiscard]] Vec4 effective_accent_color() const { return accent_color.a > 0.F ? accent_color : color; }
 	[[nodiscard]] Vec4 effective_selection_color() const {
-		return selection_color.a > 0.F ? selection_color : Vec4(color.r, color.g, color.b, 0.3f);
+		return selection_color.a > 0.F ? selection_color : Vec4(color.r, color.g, color.b, 0.3F);
 	}
 	[[nodiscard]] Vec4 effective_placeholder_color() const {
-		return placeholder_color.a > 0.F ? placeholder_color : Vec4(color.r, color.g, color.b, color.a * 0.45f);
+		return placeholder_color.a > 0.F ? placeholder_color : Vec4(color.r, color.g, color.b, color.a * 0.45F);
 	}
 };
 

@@ -13,11 +13,11 @@ void InputRouter::set_focus(View *view) {
 	if (m_focused_view == view) {
 		return;
 	}
-	if (m_focused_view) {
+	if (m_focused_view != nullptr) {
 		m_focused_view->on_focus_lost();
 	}
 	m_focused_view = view;
-	if (m_focused_view) {
+	if (m_focused_view != nullptr) {
 		m_focused_view->on_focus_gained();
 	}
 }

@@ -50,17 +50,17 @@ DockNode::DockNode(DockDragContext *drag_ctx) : m_drag_ctx(drag_ctx) {
 
 std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool anchor_first) {
 	for (View *z : { m_zone_center, m_zone_left, m_zone_right, m_zone_top, m_zone_bottom }) {
-		if (z) {
+		if (z != nullptr) {
 			remove_child(z);
 		}
 	}
 	m_zone_center = m_zone_left = m_zone_right = m_zone_top = m_zone_bottom = nullptr;
 
-	if (m_tab_bar) {
+	if (m_tab_bar != nullptr) {
 		remove_child(m_tab_bar);
 		m_tab_bar = nullptr;
 	}
-	if (m_panel_area) {
+	if (m_panel_area != nullptr) {
 		remove_child(m_panel_area);
 		m_panel_area = nullptr;
 	}
@@ -99,8 +99,8 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 		second->merge_style(sp2);
 	}
 
-	DockNode *first_raw = static_cast<DockNode *>(add_child(std::move(first)));
-	DockNode *second_raw = static_cast<DockNode *>(add_child(std::move(second)));
+	DockNode *first_raw = dynamic_cast<DockNode *>(add_child(std::move(first)));
+	DockNode *second_raw = dynamic_cast<DockNode *>(add_child(std::move(second)));
 	second_raw->add_child(std::move(splitter));
 
 	return { first_raw, second_raw };
@@ -113,7 +113,7 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 			prev_last = dn;
 		}
 	}
-	if (!prev_last) {
+	if (prev_last == nullptr) {
 		return nullptr;
 	}
 
@@ -134,7 +134,7 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 		leaf->merge_style(lp);
 	}
 
-	DockNode *leaf_raw = static_cast<DockNode *>(add_child(std::move(leaf)));
+	DockNode *leaf_raw = dynamic_cast<DockNode *>(add_child(std::move(leaf)));
 	leaf_raw->add_child(std::move(splitter));
 
 	return leaf_raw;
@@ -151,7 +151,7 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 		btn->set_icon(panel->get_tab_icon());
 	}
 	btn->add_class("dock-tab-btn");
-	DockTabButton *btn_raw = static_cast<DockTabButton *>(wrapper_raw->add_child(std::move(btn)));
+	DockTabButton *btn_raw = dynamic_cast<DockTabButton *>(wrapper_raw->add_child(std::move(btn)));
 
 	btn_raw->set_drag_info(m_drag_ctx, panel, this);
 	btn_raw->on_click.connect([this, panel] { set_active_panel_by_ptr(panel); });
@@ -161,7 +161,7 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 
 DockPanel *DockNode::add_panel(std::string title, GFX::GfxTexture *tab_icon) {
 	auto panel = std::make_unique<DockPanel>(title);
-	DockPanel *panel_raw = static_cast<DockPanel *>(m_panel_area->add_child(std::move(panel)));
+	DockPanel *panel_raw = dynamic_cast<DockPanel *>(m_panel_area->add_child(std::move(panel)));
 	panel_raw->set_tab_icon(tab_icon);
 
 	append_tab(panel_raw, std::move(title));
@@ -260,7 +260,7 @@ void DockNode::close_panel(DockPanel *panel) {
 	auto owned = detach_panel(panel);
 	// `owned` destroyed at end of scope — panel is gone.
 
-	if (m_tabs.empty() && m_drag_ctx && m_drag_ctx->on_node_emptied) {
+	if (m_tabs.empty() && (m_drag_ctx != nullptr) && m_drag_ctx->on_node_emptied) {
 		m_drag_ctx->on_node_emptied(this);
 	}
 }
@@ -274,7 +274,7 @@ void DockNode::reorder_panel(DockPanel *panel, Vec2 cursor_pos) {
 	int target_index = static_cast<int>(m_tabs.size()) - 1;
 	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {
 		const Rect r = m_tabs[i].wrapper->get_absolute_rect();
-		if (cursor_pos.x <= r.position.x + r.size.x * 0.5f) {
+		if (cursor_pos.x <= r.position.x + r.size.x * 0.5F) {
 			target_index = i;
 			break;
 		}
@@ -322,7 +322,7 @@ void DockNode::accept_panel(Unique<View> panel_view, std::string title, DropZone
 	}
 
 	if (zone == DropZone::Center) {
-		DockPanel *panel_raw = static_cast<DockPanel *>(m_panel_area->add_child(std::move(panel_view)));
+		DockPanel *panel_raw = dynamic_cast<DockPanel *>(m_panel_area->add_child(std::move(panel_view)));
 		append_tab(panel_raw, std::move(title));
 		set_active_panel(static_cast<int>(m_tabs.size()) - 1);
 		remove_class("dock-node-empty");
@@ -421,19 +421,19 @@ void DockNode::highlight_drop_zone(DropZone zone) {
 
 DropZone DockNode::hit_test_drop_zone(Vec2 abs_pos) const {
 	// Precise: explicit indicator boxes take priority.
-	if (m_zone_center && m_zone_center->get_absolute_rect().contains(abs_pos)) {
+	if ((m_zone_center != nullptr) && m_zone_center->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Center;
 	}
-	if (m_zone_left && m_zone_left->get_absolute_rect().contains(abs_pos)) {
+	if ((m_zone_left != nullptr) && m_zone_left->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Left;
 	}
-	if (m_zone_right && m_zone_right->get_absolute_rect().contains(abs_pos)) {
+	if ((m_zone_right != nullptr) && m_zone_right->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Right;
 	}
-	if (m_zone_top && m_zone_top->get_absolute_rect().contains(abs_pos)) {
+	if ((m_zone_top != nullptr) && m_zone_top->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Top;
 	}
-	if (m_zone_bottom && m_zone_bottom->get_absolute_rect().contains(abs_pos)) {
+	if ((m_zone_bottom != nullptr) && m_zone_bottom->get_absolute_rect().contains(abs_pos)) {
 		return DropZone::Bottom;
 	}
 
@@ -445,7 +445,7 @@ DropZone DockNode::hit_test_drop_zone(Vec2 abs_pos) const {
 
 	const float rel_x = (abs_pos.x - r.position.x) / r.size.x;
 	const float rel_y = (abs_pos.y - r.position.y) / r.size.y;
-	constexpr float k_edge = 0.25f;
+	constexpr float k_edge = 0.25F;
 
 	if (rel_x < k_edge) {
 		return DropZone::Left;

@@ -240,13 +240,13 @@ static GpuLightData build_light_data(const LightComponent &light, const Transfor
 		const Vec3 up = rot[1];
 		data.m_right_and_width = Vec4(right, light.m_area_size.x);
 		data.m_up_and_height = Vec4(up, light.m_area_size.y);
-		data.m_cos_inner_angle = 1.0f;
-		data.m_cos_outer_angle = 1.0f;
+		data.m_cos_inner_angle = 1.0F;
+		data.m_cos_outer_angle = 1.0F;
 		break;
 	}
 	default:
-		data.m_cos_inner_angle = 1.0f;
-		data.m_cos_outer_angle = 1.0f;
+		data.m_cos_inner_angle = 1.0F;
+		data.m_cos_outer_angle = 1.0F;
 		break;
 	}
 

@@ -33,7 +33,7 @@ void Mesh::load(const std::string &filepath) {
 	}
 
 	const aiScene *scene = importer.ReadFileFromMemory(buffer.data(), buffer.size(), flags);
-	if ((scene == nullptr) || (scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) || (scene->mRootNode == nullptr)) {
+	if ((scene == nullptr) || ((scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE) != 0u) || (scene->mRootNode == nullptr)) {
 		throw std::runtime_error("Assimp failed: " + std::string(importer.GetErrorString()));
 	}
 
@@ -154,7 +154,7 @@ void Mesh::center_mesh_at_origin() {
 		min_b = glm::min(min_b, p);
 		max_b = glm::max(max_b, p);
 	}
-	Vec3 center = (min_b + max_b) * 0.5f;
+	Vec3 center = (min_b + max_b) * 0.5F;
 	for (auto &v : m_vertices) {
 		v.pos = Vec4(Vec3(v.pos) - center, 1.F);
 	}
@@ -205,7 +205,7 @@ MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 	data.path = "procedural://sphere";
 	constexpr Vec3 white = { 1, 1, 1 };
 
-	data.vertices.push_back({ { 0, radius, 0 }, white, { 0, 1, 0 }, { 0.5f, 1.F }, { 1, 0, 0, 1 } });
+	data.vertices.push_back({ { 0, radius, 0 }, white, { 0, 1, 0 }, { 0.5F, 1.F }, { 1, 0, 0, 1 } });
 	for (Uint32 stack = 1; stack < rings; ++stack) {
 		F32 phi = Math::PI * F32(stack) / F32(rings);
 		for (Uint32 slice = 0; slice < segments; ++slice) {
@@ -218,7 +218,7 @@ MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 									  glm::normalize(Vec4(-sin(theta), 0, cos(theta), 1)) });
 		}
 	}
-	data.vertices.push_back({ { 0, -radius, 0 }, white, { 0, -1, 0 }, { 0.5f, 0.F }, { 1, 0, 0, 1 } });
+	data.vertices.push_back({ { 0, -radius, 0 }, white, { 0, -1, 0 }, { 0.5F, 0.F }, { 1, 0, 0, 1 } });
 
 	Uint32 top = 0;
 	Uint32 bottom = static_cast<Uint32>(data.vertices.size() - 1);
@@ -250,10 +250,10 @@ MeshData Mesh::generate_cylinder(F32 radius, F32 height, Uint32 segments) {
 	MeshData data;
 	data.path = "procedural://cylinder";
 	constexpr Vec3 white = { 1, 1, 1 };
-	F32 half = height * 0.5f;
+	F32 half = height * 0.5F;
 
-	data.vertices.push_back({ { 0, half, 0 }, white, { 0, 1, 0 }, { 0.5f, 0.5f }, { 1, 0, 0, 1 } });
-	data.vertices.push_back({ { 0, -half, 0 }, white, { 0, -1, 0 }, { 0.5f, 0.5f }, { 1, 0, 0, 1 } });
+	data.vertices.push_back({ { 0, half, 0 }, white, { 0, 1, 0 }, { 0.5F, 0.5F }, { 1, 0, 0, 1 } });
+	data.vertices.push_back({ { 0, -half, 0 }, white, { 0, -1, 0 }, { 0.5F, 0.5F }, { 1, 0, 0, 1 } });
 
 	constexpr Uint32 side_start = 2;
 	for (Uint32 i = 0; i <= segments; i++) {
@@ -289,7 +289,7 @@ MeshData Mesh::generate_plane(F32 width, F32 height, Uint32 w_segs, Uint32 h_seg
 		for (Uint32 x = 0; x <= w_segs; x++) {
 			F32 u = F32(x) / w_segs, v = F32(y) / h_segs;
 			data.vertices.push_back(
-				{ { (u - 0.5f) * width, 0, (v - 0.5f) * height }, white, { 0, 1, 0 }, { u, v }, { 1, 0, 0, 1 } });
+				{ { (u - 0.5F) * width, 0, (v - 0.5F) * height }, white, { 0, 1, 0 }, { u, v }, { 1, 0, 0, 1 } });
 		}
 	}
 	for (Uint32 y = 0; y < h_segs; y++) {

@@ -12,7 +12,7 @@ struct TransformComponent {
 
 	TransformComponent(const Vec3 &position = Vec3{ 0.F }, const glm::quat &rotation = glm::quat{ 1.F, 0.F, 0.F, 0.F },
 					   const Vec3 &scale = Vec3{ 1.F })
-		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0f),
+		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0F),
 		  m_world_matrix_dirty(true) {}
 
 	void set_local_position(const Vec3 &position) {
@@ -49,13 +49,13 @@ struct TransformComponent {
 	}
 
 	[[nodiscard]] glm::mat4 get_local_transform_matrix() const {
-		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0f), m_local_position);
+		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0F), m_local_position);
 		glm::mat4 rotation_matrix = glm::toMat4(m_local_rotation);
-		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0f), m_local_scale);
+		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0F), m_local_scale);
 		return translation_matrix * rotation_matrix * scale_matrix;
 	}
 
-	void update_world_matrix(const glm::mat4 &parent_matrix = glm::mat4(1.0f)) {
+	void update_world_matrix(const glm::mat4 &parent_matrix = glm::mat4(1.0F)) {
 		m_world_matrix = parent_matrix * get_local_transform_matrix();
 		m_world_matrix_dirty = false;
 	}
