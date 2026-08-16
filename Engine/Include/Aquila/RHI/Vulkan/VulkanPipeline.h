@@ -58,12 +58,10 @@ class VulkanPipeline final : public IRHIPipeline {
   private:
 	void create_pipeline_from_stages(const std::vector<VkPipelineShaderStageCreateInfo> &stages,
 								  const VulkanPipelineConfig &config_info);
-	void create_pipeline_cache();
 
 	VulkanDevice &m_device;
 	VkPipeline m_graphics_pipeline = VK_NULL_HANDLE;
 	VkPipelineLayout m_layout = VK_NULL_HANDLE;
-	VkPipelineCache m_pipeline_cache = VK_NULL_HANDLE;
 };
 
 } // namespace Aquila::RHI

@@ -18,6 +18,7 @@ class Dropdown : public Control {
 	void clear_options();
 
 	void set_value(const std::string &value);
+	void clear_selection();
 	[[nodiscard]] const std::string &get_value() const { return m_value; }
 
 	void set_placeholder(std::string text);

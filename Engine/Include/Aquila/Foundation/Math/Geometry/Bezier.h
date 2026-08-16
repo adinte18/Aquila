@@ -3,7 +3,7 @@
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/Math/Math.h"
 
-namespace Aquila::Math::Bezier {
+namespace Aquila::Math::Geometry::Bezier {
 struct QuadraticBezier {
 	Vec2 p0;
 	Vec2 p1;

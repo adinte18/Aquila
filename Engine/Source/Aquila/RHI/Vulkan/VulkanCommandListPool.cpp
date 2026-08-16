@@ -59,8 +59,7 @@ IRHICommandList *VulkanCommandListPool::allocate(CommandListType type, const std
 }
 
 void VulkanCommandListPool::free(IRHICommandList *cmd) {
-	auto it = std::find_if(m_allocated.begin(), m_allocated.end(),
-						   [cmd](const Unique<VulkanCommandList> &c) { return c.get() == cmd; });
+	auto it = std::ranges::find_if(m_allocated, [cmd](const Unique<VulkanCommandList> &c) { return c.get() == cmd; });
 	if (it == m_allocated.end()) {
 		return;
 	}

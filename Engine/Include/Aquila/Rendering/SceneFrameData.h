@@ -3,7 +3,10 @@
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Singleton.h"
 #include "Aquila/GFX/GfxBuffer.h"
+#include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
+#include "Aquila/Rendering/LightData.h"
+#include "Aquila/Rendering/RenderView.h"
 
 namespace Aquila::GFX {
 class GfxContext;
@@ -13,13 +16,21 @@ namespace Aquila::SceneManagement {
 class Scene;
 }
 
+namespace Aquila::SceneManagement::Components {
+struct CameraComponent;
+struct TransformComponent;
+} // namespace Aquila::SceneManagement::Components
+
 namespace Aquila::Rendering {
+
+RenderView render_view_from_entity(const SceneManagement::Components::CameraComponent &cam,
+								   const SceneManagement::Components::TransformComponent &transform);
 
 class SceneFrameData : public Foundation::Singleton<SceneFrameData> {
   public:
 	SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height);
 
-	void update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot);
+	void update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot, const RenderView &primary_view);
 
 	void on_resize(Uint32 width, Uint32 height);
 
@@ -28,6 +39,16 @@ class SceneFrameData : public Foundation::Singleton<SceneFrameData> {
 
 	[[nodiscard]] GFX::GfxBuffer &get_light_index_list_buffer() const { return *m_light_index_list_buffer; }
 	[[nodiscard]] GFX::GfxBuffer &get_cluster_light_info_buffer() const { return *m_cluster_light_info_buffer; }
+
+	static constexpr Uint32 kShadowMapSize = 2048;
+
+	[[nodiscard]] GFX::GfxTexture &get_shadow_map(Uint32 frame_slot, Uint32 cascade) const {
+		return *m_shadow_maps[frame_slot][cascade];
+	}
+	[[nodiscard]] const std::array<Mat4, SHADOW_CASCADE_COUNT> &get_cascade_view_proj() const {
+		return m_cascade_view_proj;
+	}
+	[[nodiscard]] bool shadows_enabled() const { return m_shadows_enabled; }
 
   private:
 	GFX::GfxContext &m_ctx;
@@ -49,6 +70,15 @@ class SceneFrameData : public Foundation::Singleton<SceneFrameData> {
 	Ref<GFX::GfxBuffer> m_light_index_list_buffer;
 
 	Ref<GFX::GfxBuffer> m_cluster_light_info_buffer;
+
+	std::array<Ref<GFX::GfxBuffer>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_shadow_buffers;
+
+	std::array<std::array<Ref<GFX::GfxTexture>, SHADOW_CASCADE_COUNT>, SharedConstants::MAX_FRAMES_IN_FLIGHT>
+		m_shadow_maps;
+
+	std::array<Mat4, SHADOW_CASCADE_COUNT> m_cascade_view_proj{};
+
+	bool m_shadows_enabled = false;
 
 	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_sets;
 };

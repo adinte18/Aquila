@@ -238,15 +238,18 @@ inline Mat4 look_in_direction(const Vec3 &position, const Vec3 &direction, const
 }
 
 inline Mat4 view_from_euler(const Vec3 &position, const Vec3 &rotation) {
-	const F32 c3 = std::cos(rotation.z), s3 = std::sin(rotation.z);
-	const F32 c2 = std::cos(rotation.x), s2 = std::sin(rotation.x);
-	const F32 c1 = std::cos(rotation.y), s1 = std::sin(rotation.y);
+	const F32 c3 = std::cos(rotation.z);
+	const F32 s3 = std::sin(rotation.z);
+	const F32 c2 = std::cos(rotation.x);
+	const F32 s2 = std::sin(rotation.x);
+	const F32 c1 = std::cos(rotation.y);
+	const F32 s1 = std::sin(rotation.y);
 
-	const Vec3 u = { c1 * c3 + s1 * s2 * s3, c2 * s3, c1 * s2 * s3 - c3 * s1 };
-	const Vec3 v = { c3 * s1 * s2 - c1 * s3, c2 * c3, c1 * c3 * s2 + s1 * s3 };
+	const Vec3 u = { (c1 * c3) + (s1 * s2 * s3), c2 * s3, (c1 * s2 * s3) - (c3 * s1) };
+	const Vec3 v = { (c3 * s1 * s2) - (c1 * s3), c2 * c3, (c1 * c3 * s2) + (s1 * s3) };
 	const Vec3 w = { c2 * s1, -s2, c1 * c2 };
 
-	Mat4 result(1.0f);
+	Mat4 result(1.0F);
 	result[0][0] = u.x;
 	result[1][0] = u.y;
 	result[2][0] = u.z;
@@ -266,12 +269,13 @@ inline Mat4 view_from_euler(const Vec3 &position, const Vec3 &rotation) {
 
 inline std::array<Vec4, 8> extract_frustum_corners(const Mat4 &proj_view) {
 	const Mat4 inv = inverse(proj_view);
-	std::array<Vec4, 8> corners;
+	std::array<Vec4, 8> corners{};
 	int idx = 0;
 	for (int z = 0; z < 2; ++z) {
 		for (int y = 0; y < 2; ++y) {
 			for (int x = 0; x < 2; ++x) {
-				Vec4 pt = mat_mul_vec(inv, Vec4(x ? 1.F : -1.F, y ? 1.F : -1.F, z ? 1.F : 0.F, 1.F));
+				Vec4 pt =
+					mat_mul_vec(inv, Vec4((x != 0) ? 1.F : -1.F, (y != 0) ? 1.F : -1.F, (z != 0) ? 1.F : 0.F, 1.F));
 				corners[idx++] = pt / pt.w;
 			}
 		}
@@ -303,7 +307,7 @@ inline void compute_light_space_aabb(const std::array<Vec4, 8> &corners, const M
 inline Mat4 build_light_view_matrix(const Vec3 &light_direction, const Vec3 &focus_point, const F32 distance = 100.0f) {
 	const Vec3 light_dir = normalize(light_direction);
 	Vec3 world_up = Vec3(0.F, 1.F, 0.F);
-	if (std::abs(dot(light_dir, world_up)) > 0.99f) {
+	if (std::abs(dot(light_dir, world_up)) > 0.99F) {
 		world_up = Vec3(0.F, 0.F, 1.F);
 	}
 
@@ -312,7 +316,7 @@ inline Mat4 build_light_view_matrix(const Vec3 &light_direction, const Vec3 &foc
 	const Vec3 v = cross(w, u);
 	const Vec3 light_pos = focus_point - light_dir * distance;
 
-	Mat4 result(1.0f);
+	Mat4 result(1.0F);
 	result[0][0] = u.x;
 	result[1][0] = u.y;
 	result[2][0] = u.z;

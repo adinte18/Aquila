@@ -16,20 +16,6 @@ static void gather_floating_roots(View *node, std::vector<View *> &roots) {
 	}
 }
 
-static bool within_all_clip_ancestors(View *node, Vec2 pos) {
-	View *p = node->get_parent();
-	while (p != nullptr) {
-		const Overflow overflow = p->get_display_style().overflow;
-		if (overflow == Overflow::Scroll || overflow == Overflow::Hidden) {
-			if (!p->get_absolute_rect().contains(pos)) {
-				return false;
-			}
-		}
-		p = p->get_parent();
-	}
-	return true;
-}
-
 void DrawCompositor::set_canvas_size(Uint32 width, Uint32 height) {
 	m_width = width;
 	m_height = height;
@@ -51,7 +37,7 @@ void DrawCompositor::rebuild_lists(View *root) {
 	std::ranges::stable_sort(m_float_roots.begin(), m_float_roots.end(),
 							 [](View *a, View *b) { return a->get_floating().z_index < b->get_floating().z_index; });
 	for (View *float_root : m_float_roots) {
-		collect_layer(float_root);
+		collect_layer_subtree(float_root);
 	}
 	m_compose_needed = true;
 }
@@ -88,8 +74,8 @@ bool DrawCompositor::rebuild_dirty(View *root) {
 			any_rebuilt = true;
 		}
 	};
-	for (View *v : m_canvas_items) {
-		rebuild_node(v);
+	for (const HitTestItem &item : m_canvas_items) {
+		rebuild_node(item.view);
 	}
 	for (View *v : m_canvas_layers) {
 		rebuild_node(v);
@@ -133,7 +119,10 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 				m_z_buckets[bucket_idx].push_back(cmd);
 			}
 		}
-		m_canvas_items.push_back(node);
+		const Rect item_clip =
+			clip_rect != nullptr ? *clip_rect
+								 : Rect{ { 0.F, 0.F }, { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
+		m_canvas_items.push_back({ node, item_clip });
 	}
 
 	const Rect *child_clip = clip_rect;
@@ -164,13 +153,6 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 		ClipPopCmd clip_pop;
 		clip_pop.rect = clip_rect != nullptr ? *clip_rect : Rect{};
 		m_z_buckets[bucket_idx].push_back(clip_pop);
-	}
-}
-
-void DrawCompositor::collect_layer(View *node) {
-	m_canvas_layers.push_back(node);
-	for (const auto &child : node->get_children()) {
-		collect_layer_subtree(child.get());
 	}
 }
 
@@ -252,7 +234,8 @@ View *DrawCompositor::hit_test(Vec2 pos) const {
 	}
 
 	for (int i = static_cast<int>(m_canvas_items.size()) - 1; i >= 0; --i) {
-		View *v = m_canvas_items[i];
+		const HitTestItem &item = m_canvas_items[i];
+		View *v = item.view;
 
 		if (v->is_skipping_hit_test()) {
 			continue;
@@ -261,7 +244,7 @@ View *DrawCompositor::hit_test(Vec2 pos) const {
 		if (!v->get_absolute_rect().contains(pos)) {
 			continue;
 		}
-		if (!within_all_clip_ancestors(v, pos)) {
+		if (!item.clip.contains(pos)) {
 			continue;
 		}
 		View *p = v->get_parent();
@@ -274,6 +257,13 @@ View *DrawCompositor::hit_test(Vec2 pos) const {
 		return v;
 	}
 	return nullptr;
+}
+
+void DrawCompositor::forget_view(View *view) {
+	std::erase_if(m_canvas_items, [view](const HitTestItem &item) { return item.view == view; });
+	std::erase(m_canvas_layers, view);
+	std::erase(m_float_roots, view);
+	m_per_node_cmds.erase(view);
 }
 
 void DrawCompositor::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {

@@ -11,7 +11,7 @@ namespace Aquila::UI::Text {
 
 // GlyphBuild accumulates the quadratic bezier curves for one glyph/icon during baking.
 struct GlyphBuild {
-	std::vector<Math::Bezier::QuadraticBezier> curves;
+	std::vector<Math::Geometry::Bezier::QuadraticBezier> curves;
 	Vec2 em_min{ 0.F, 0.F };
 	Vec2 em_max{ 0.F, 0.F };
 };

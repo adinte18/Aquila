@@ -23,15 +23,6 @@ void InputRouter::set_focus(View *view) {
 }
 
 void InputRouter::on_view_removed(View *view) {
-	if (m_hovered_view == view) {
-		m_hovered_view = nullptr;
-	}
-	if (m_focused_view == view) {
-		m_focused_view = nullptr;
-	}
-	if (m_drag_target == view) {
-		m_drag_target = nullptr;
-	}
 	if (m_drag_source_candidate == view) {
 		m_drag_source_candidate = nullptr;
 		m_drag_state.payload.reset();
@@ -112,7 +103,7 @@ void InputRouter::on_event(Application::Events::Event &e) {
 		m_drag_start_pos = Platform::Input::get_mouse_position();
 		m_drag_source_candidate = m_hovered_view->get_first_draggable_parent();
 
-		return false;
+		return true;
 	});
 
 	dispatcher.dispatch<MouseButtonReleasedEvent>([this](MouseButtonReleasedEvent &e) {
@@ -146,7 +137,7 @@ void InputRouter::on_event(Application::Events::Event &e) {
 		if (m_focused_view && m_focused_view != m_hovered_view) {
 			m_focused_view->on_mouse_release(e.get_mouse_button(), m_mouse_pos);
 		}
-		return false;
+		return m_hovered_view != nullptr;
 	});
 
 	dispatcher.dispatch<MouseScrolledEvent>([this](MouseScrolledEvent &e) {

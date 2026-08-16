@@ -62,6 +62,11 @@ class Application {
 	virtual void on_pre_render(F32 delta_time) {}
 	virtual void on_event(Events::Event &event) {}
 	virtual void on_resize(Uint32 width, Uint32 height) {}
+	virtual void on_render_resize(Uint32 width, Uint32 height) {}
+
+	// Request the 3D scene render target to change size, applied before the next frame.
+	// Independent of the window/swapchain size so an editor can render at its viewport size.
+	void request_render_resize(Uint32 width, Uint32 height);
 
 	GFX::GfxContext &get_context() { return *m_ctx; }
 	GFX::GfxTexture &get_render_output() { return m_render_pipeline->get_output(); }
@@ -89,6 +94,12 @@ class Application {
 	Unique<Foundation::Stopwatch> m_timer;
 	bool m_running = true;
 	bool m_pending_resize = false;
+
+	Uint32 m_render_width = 0;
+	Uint32 m_render_height = 0;
+	bool m_render_resize_pending = false;
+	Uint32 m_next_render_width = 0;
+	Uint32 m_next_render_height = 0;
 
 	Unique<GFX::GfxContext> m_ctx;
 	Ref<GFX::GfxSwapchain> m_swapchain;

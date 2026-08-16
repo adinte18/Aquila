@@ -121,8 +121,8 @@ void Scene::update_transform_hierarchy() {
 
 	// Sort dirty entities parent-first so ancestors are always processed before descendants.
 	std::vector<entt::entity> sorted = m_dirty_transforms.get_ordered();
-	std::stable_sort(sorted.begin(), sorted.end(),
-					 [this](entt::entity a, entt::entity b) { return get_entity_depth(a) < get_entity_depth(b); });
+	std::ranges::stable_sort(
+		sorted, [this](entt::entity a, entt::entity b) { return get_entity_depth(a) < get_entity_depth(b); });
 
 	for (entt::entity e : sorted) {
 		// If a dirty ancestor is also in the set, it was (or will be) processed first and its

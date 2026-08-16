@@ -236,7 +236,7 @@ DockPanel *DockNode::get_active_panel_ptr() const {
 }
 
 Unique<View> DockNode::detach_panel(DockPanel *panel) {
-	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
+	auto it = std::ranges::find_if(m_tabs, [panel](const Tab &t) { return t.panel == panel; });
 	if (it == m_tabs.end()) {
 		return nullptr;
 	}
@@ -266,7 +266,7 @@ void DockNode::close_panel(DockPanel *panel) {
 }
 
 void DockNode::reorder_panel(DockPanel *panel, Vec2 cursor_pos) {
-	auto it = std::find_if(m_tabs.begin(), m_tabs.end(), [panel](const Tab &t) { return t.panel == panel; });
+	auto it = std::ranges::find_if(m_tabs, [panel](const Tab &t) { return t.panel == panel; });
 	if (it == m_tabs.end()) {
 		return;
 	}

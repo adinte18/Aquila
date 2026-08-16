@@ -21,8 +21,8 @@ void Profiler::end_frame() {
 
 	// Sort by startTime so parents appear before their children throughout the rest of EndFrame,
 	// PrintLastFrame, and the stored frame history.
-	std::sort(m_current_frame_entries.begin(), m_current_frame_entries.end(),
-			  [](const ProfilerEntry &a, const ProfilerEntry &b) { return a.start_time < b.start_time; });
+	std::ranges::sort(m_current_frame_entries,
+					  [](const ProfilerEntry &a, const ProfilerEntry &b) { return a.start_time < b.start_time; });
 	m_frame_count++;
 	m_fps = 1000.0 / m_frame_duration;
 

@@ -9,7 +9,6 @@ namespace Aquila::RHI {
 VulkanPipeline::VulkanPipeline(VulkanDevice &device, const std::vector<VkPipelineShaderStageCreateInfo> &stages,
 							   const VulkanPipelineConfig &config_info)
 	: m_device(device), m_layout(config_info.pipeline_layout) {
-	create_pipeline_cache();
 	create_pipeline_from_stages(stages, config_info);
 }
 
@@ -22,10 +21,6 @@ VulkanPipeline::~VulkanPipeline() {
 	if (m_layout != VK_NULL_HANDLE) {
 		dq.queue_deletion(m_layout);
 		m_layout = VK_NULL_HANDLE;
-	}
-	if (m_pipeline_cache != VK_NULL_HANDLE) {
-		dq.queue_deletion(m_pipeline_cache);
-		m_pipeline_cache = VK_NULL_HANDLE;
 	}
 }
 
@@ -92,14 +87,8 @@ void VulkanPipeline::create_pipeline_from_stages(const std::vector<VkPipelineSha
 	pipeline_info.basePipelineHandle = VK_NULL_HANDLE;
 	pipeline_info.basePipelineIndex = -1;
 
-	AQUILA_VULKAN_CHECK(vkCreateGraphicsPipelines(m_device.get_device(), m_pipeline_cache, 1, &pipeline_info, nullptr,
-												  &m_graphics_pipeline));
-}
-
-void VulkanPipeline::create_pipeline_cache() {
-	VkPipelineCacheCreateInfo cache_info{};
-	cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	AQUILA_VULKAN_CHECK(vkCreatePipelineCache(m_device.get_device(), &cache_info, nullptr, &m_pipeline_cache));
+	AQUILA_VULKAN_CHECK(vkCreateGraphicsPipelines(m_device.get_device(), m_device.get_pipeline_cache(), 1, &pipeline_info,
+												  nullptr, &m_graphics_pipeline));
 }
 
 void VulkanPipeline::default_pipeline_config(VulkanPipelineConfig &config_info) {

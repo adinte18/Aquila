@@ -1,6 +1,9 @@
 #pragma once
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Graphics/RenderGraph/RGTypes.h"
+#include "Aquila/Rendering/LightData.h"
+
+#include <array>
 
 namespace Aquila::SceneManagement {
 class Scene;
@@ -24,6 +27,8 @@ struct FrameContext {
 
 	Graphics::RG::RGTextureHandle h_scene_color;
 	Graphics::RG::RGTextureHandle h_depth;
+
+	std::array<Graphics::RG::RGTextureHandle, SHADOW_CASCADE_COUNT> h_shadow_maps;
 
 	Graphics::RG::RGBufferHandle h_cluster_aab_bs;
 	Graphics::RG::RGBufferHandle h_light_list;

@@ -2,8 +2,8 @@
 #include "Aquila/Rendering/Renderers/IRenderer.h"
 #include "Aquila/Rendering/Systems/Base/IRenderingSystem.h"
 #include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Graphics/Shader/ReloadablePipeline.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
-#include "Aquila/GFX/GfxPipeline.h"
 #include "Aquila/GFX/GfxRenderpass.h"
 
 namespace Aquila::GFX {
@@ -42,7 +42,7 @@ class Renderer : public IRenderer {
 
 	// Swapchain blit resources
 	Ref<GFX::GfxDescriptorSetLayout> m_blit_layout;
-	Ref<GFX::GfxPipeline> m_blit_pipeline;
+	Ref<Graphics::Shader::ReloadablePipeline> m_blit_pipeline;
 	// One descriptor set per frame-in-flight so the GPU can read set[N-1] while the CPU updates set[N].
 	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_blit_sets;
 	Ref<GFX::GfxRenderPass> m_swapchain_pass;

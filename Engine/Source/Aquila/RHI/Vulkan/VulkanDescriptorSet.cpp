@@ -3,6 +3,7 @@
 #include "Aquila/RHI/Vulkan/VulkanDescriptors.h"
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
 #include "Aquila/RHI/Vulkan/VulkanTexture.h"
+#include "Aquila/RHI/FormatUtils.h"
 
 namespace Aquila::RHI {
 
@@ -44,10 +45,13 @@ void VulkanDescriptorSet::set_texture(Uint32 binding, IRHITexture &texture) {
 	auto &vk_tex = static_cast<VulkanTexture &>(texture);
 
 	VkSampler sampler = m_device.get_or_create_sampler(vk_tex.get_desc().sampler);
+	const VkImageLayout layout = is_depth_format(vk_tex.get_desc().format)
+									 ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL
+									 : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 	m_image_infos.push_back({
 		.sampler = sampler,
 		.imageView = vk_tex.get_image_view(),
-		.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+		.imageLayout = layout,
 	});
 
 	VkWriteDescriptorSet write{};

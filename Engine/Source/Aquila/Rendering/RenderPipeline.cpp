@@ -32,13 +32,15 @@ void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 	}
 
 	m_frame_slot = (m_frame_slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+
+	const RenderView primary = resolve_primary_view(scene);
 	{
 		PROFILE_SCOPE("RenderPipeline::FrameDataUpdate");
-		SceneFrameData::get()->update(scene, delta_time, m_frame_slot);
+		SceneFrameData::get()->update(scene, delta_time, m_frame_slot, primary);
 	}
 
 	FrameContext ctx;
-	build_frame_context(scene, delta_time, ctx);
+	build_frame_context(scene, delta_time, primary, ctx);
 
 	{
 		PROFILE_SCOPE("RenderPipeline::AddPasses");
@@ -83,7 +85,23 @@ void RenderPipeline::resize(Uint32 width, Uint32 height) {
 	}
 }
 
-void RenderPipeline::build_frame_context(SceneManagement::Scene &scene, F32 delta_time, FrameContext &out) {
+RenderView RenderPipeline::resolve_primary_view(SceneManagement::Scene &scene) const {
+	if (m_primary_view) {
+		return *m_primary_view;
+	}
+
+	if (scene.has_active_camera()) {
+		auto cam = scene.get_active_camera_entity();
+		if (cam.has_all_components<CameraComponent, TransformComponent>()) {
+			return render_view_from_entity(cam.get_component<CameraComponent>(), cam.get_component<TransformComponent>());
+		}
+	}
+
+	return RenderView{};
+}
+
+void RenderPipeline::build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary,
+										 FrameContext &out) {
 	out.scene = &scene;
 	out.width = m_width;
 	out.height = m_height;
@@ -94,21 +112,10 @@ void RenderPipeline::build_frame_context(SceneManagement::Scene &scene, F32 delt
 	out.h_scene_color = m_graph.import_texture(m_scene_color.get(), "SceneColor");
 	out.h_depth = m_graph.import_texture(m_depth_tex.get(), "Depth");
 
-	if (scene.has_active_camera()) {
-		auto cam = scene.get_active_camera_entity();
-		if (cam.has_all_components<CameraComponent, TransformComponent>()) {
-			auto &cam_comp = cam.get_component<CameraComponent>();
-			auto &transform = cam.get_component<TransformComponent>();
-
-			out.camera_position = transform.get_world_position();
-			out.view = cam_comp.get_view_matrix(out.camera_position, transform.get_local_rotation());
-			out.projection = cam_comp.get_projection_matrix();
-			out.view_projection = out.projection * out.view;
-			return;
-		}
-	}
-
-	out.view = out.projection = out.view_projection = Mat4(1.F);
+	out.camera_position = primary.position;
+	out.view = primary.view;
+	out.projection = primary.projection;
+	out.view_projection = primary.projection * primary.view;
 }
 
 void RenderPipeline::rebuild_targets() {

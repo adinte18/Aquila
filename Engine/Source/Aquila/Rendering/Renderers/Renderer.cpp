@@ -24,32 +24,34 @@ void Renderer::on_init(GFX::GfxContext &ctx) {
 		} },
 	});
 
-	// compile blit shader
-	std::vector<RHI::VulkanCompiledStage> stages;
-	std::string err;
-	if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "Blit.slang", stages, err)) {
-		AQUILA_LOG_ERROR("Renderer: blit shader compile failed: {}", err);
-		return;
-	}
+	m_blit_pipeline = Graphics::Shader::ReloadablePipeline::create(
+		ctx, SHADERS_DIR + "Blit.slang", [this](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
+			std::vector<RHI::VulkanCompiledStage> stages;
+			std::string err;
+			if (!RHI::VulkanShaderCompiler::compile_file(SHADERS_DIR + "Blit.slang", stages, err)) {
+				AQUILA_LOG_ERROR("Renderer: blit shader compile failed: {}", err);
+				return nullptr;
+			}
 
-	// describe blit pipeline
-	RHI::GraphicsPipelineDesc desc{};
-	for (auto &stage : stages) {
-		RHI::ShaderStageDesc shader_desc{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
-		if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			shader_desc.stage = RHI::ShaderStageFlags::Vertex;
-			desc.vertex_shader = shader_desc;
-		} else {
-			shader_desc.stage = RHI::ShaderStageFlags::Fragment;
-			desc.fragment_shader = shader_desc;
-		}
-	}
-	desc.color_formats = { RHI::TextureFormat::BGRA8 };
-	desc.depth_format = RHI::TextureFormat::None;
-	desc.no_vertex_input = true;
-	desc.raster.cull_mode = RHI::CullMode::None;
-	desc.set_layouts = { &m_blit_layout->get_rhi() };
-	m_blit_pipeline = ctx.create_graphics_pipeline(desc);
+			RHI::GraphicsPipelineDesc desc{};
+			for (auto &stage : stages) {
+				RHI::ShaderStageDesc shader_desc{ .spirv = stage.spirv, .entry_point = stage.entry_point_name };
+				if (stage.stage == VK_SHADER_STAGE_VERTEX_BIT) {
+					shader_desc.stage = RHI::ShaderStageFlags::Vertex;
+					desc.vertex_shader = shader_desc;
+				} else {
+					shader_desc.stage = RHI::ShaderStageFlags::Fragment;
+					desc.fragment_shader = shader_desc;
+				}
+			}
+			desc.color_formats = { RHI::TextureFormat::BGRA8 };
+			desc.depth_format = RHI::TextureFormat::None;
+			desc.no_vertex_input = true;
+			desc.raster.cull_mode = RHI::CullMode::None;
+			desc.set_layouts = { &m_blit_layout->get_rhi() };
+			return build_ctx.create_graphics_pipeline(desc);
+		});
+
 	for (auto &set : m_blit_sets) {
 		set = ctx.allocate_descriptor_set(*m_blit_layout);
 	}
@@ -89,7 +91,7 @@ void Renderer::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 }
 
 void Renderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_blit_pipeline || (m_swapchain == nullptr)) {
+	if (!m_blit_pipeline || !m_blit_pipeline->is_valid() || (m_swapchain == nullptr)) {
 		return;
 	}
 
@@ -97,7 +99,7 @@ void Renderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext 
 	auto *swapchain = m_swapchain;
 	auto image_index = m_swapchain_image_index;
 	auto *set = m_blit_sets[m_frame_slot].get();
-	auto *pipeline = m_blit_pipeline.get();
+	auto *pipeline = &m_blit_pipeline->get();
 	auto *render_pass = m_swapchain_pass.get();
 
 	graph.add_pass(

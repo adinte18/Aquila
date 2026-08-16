@@ -23,19 +23,25 @@ class DrawCompositor {
 
 	[[nodiscard]] View *hit_test(Vec2 pos) const;
 
+	void forget_view(View *view);
+
 	void submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
 
   private:
 	void rebuild_lists(View *root);
 	void compose_draw_list();
 	void cull(View *node, Int32 parent_effective_z, const Rect *clip_rect);
-	void collect_layer(View *node);
 	void collect_layer_subtree(View *node);
 	void emit_floating_layer(View *node, const Rect *clip_rect);
 
+	struct HitTestItem {
+		View *view;
+		Rect clip;
+	};
+
 	std::array<std::vector<DrawCmd>, SharedConstants::Z_RANGE> m_z_buckets;
 	std::unordered_map<View *, std::vector<DrawCmd>> m_per_node_cmds;
-	std::vector<View *> m_canvas_items;
+	std::vector<HitTestItem> m_canvas_items;
 	std::vector<View *> m_canvas_layers;
 	std::vector<View *> m_float_roots;
 	DrawList m_draw_list;

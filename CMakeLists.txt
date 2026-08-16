@@ -227,16 +227,20 @@ if (CMAKE_BUILD_TYPE STREQUAL "Debug")
             DEBUG
             AQUILA_DEBUG
             ENABLE_VALIDATION_LAYERS
+            AQUILA_HOT_RELOAD_ALL_SHADERS
             _DEBUG
     )
     message(STATUS "Validation layers: ENABLED")
     message(STATUS "Debug symbols: FULL")
+    message(STATUS "Shader hot-reload: ALL SHADERS")
 elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_definitions(
             AQUILA_RELEASE_DEBUG
             ENABLE_VALIDATION_LAYERS
+            AQUILA_HOT_RELOAD_ALL_SHADERS
     )
     message(STATUS "Validation layers: ENABLED (RelWithDebInfo)")
+    message(STATUS "Shader hot-reload: ALL SHADERS")
 else ()
     message(STATUS "Validation layers: DISABLED")
 endif ()

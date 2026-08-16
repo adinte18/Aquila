@@ -10,6 +10,9 @@
 #include "Aquila/Rendering/FrameData.h"
 #include "Aquila/Rendering/LightData.h"
 #include "Aquila/Graphics/SurfaceData.h"
+#include "Aquila/Foundation/Math/Math.h"
+
+#include <glm/gtc/quaternion.hpp>
 
 namespace Aquila::Rendering {
 
@@ -55,6 +58,36 @@ SceneFrameData::SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height
                 .stages  = RHI::ShaderStageFlags::Fragment | RHI::ShaderStageFlags::Compute,
                 .count   = 1,
             },
+            {
+                .binding = 6,
+                .type    = RHI::DescriptorType::UniformBuffer,
+                .stages  = RHI::ShaderStageFlags::Fragment,
+                .count   = 1,
+            },
+            {
+                .binding = 7,
+                .type    = RHI::DescriptorType::CombinedImageSampler,
+                .stages  = RHI::ShaderStageFlags::Fragment,
+                .count   = 1,
+            },
+            {
+                .binding = 8,
+                .type    = RHI::DescriptorType::CombinedImageSampler,
+                .stages  = RHI::ShaderStageFlags::Fragment,
+                .count   = 1,
+            },
+            {
+                .binding = 9,
+                .type    = RHI::DescriptorType::CombinedImageSampler,
+                .stages  = RHI::ShaderStageFlags::Fragment,
+                .count   = 1,
+            },
+            {
+                .binding = 10,
+                .type    = RHI::DescriptorType::CombinedImageSampler,
+                .stages  = RHI::ShaderStageFlags::Fragment,
+                .count   = 1,
+            },
         },
     });
 
@@ -87,6 +120,25 @@ SceneFrameData::SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height
 			.debug_name = "MaterialData_" + std::to_string(i),
 		});
 
+		m_shadow_buffers[i] = ctx.create_buffer({
+			.size = sizeof(GpuShadowData),
+			.usage = RHI::BufferUsage::UniformBuffer,
+			.domain = RHI::MemoryDomain::CpuToGpu,
+			.debug_name = "ShadowData_" + std::to_string(i),
+		});
+
+		for (Uint32 c = 0; c < SHADOW_CASCADE_COUNT; ++c) {
+			m_shadow_maps[i][c] = ctx.create_texture({
+				.width = kShadowMapSize,
+				.height = kShadowMapSize,
+				.format = RHI::TextureFormat::Depth32,
+				.usage = RHI::TextureUsage::DepthAttachment | RHI::TextureUsage::Sampled,
+				.view_type = RHI::TextureViewType::Tex2D,
+				.sampler = RHI::SamplerDesc::shadow_map(),
+				.debug_name = "ShadowMap_" + std::to_string(i) + "_" + std::to_string(c),
+			});
+		}
+
 		m_sets[i] = ctx.allocate_descriptor_set(*m_layout);
 	}
 
@@ -111,36 +163,57 @@ SceneFrameData::SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height
 			.set_buffer(3, *m_material_buffers[i])
 			.set_buffer(4, *m_light_index_list_buffer)
 			.set_buffer(5, *m_cluster_light_info_buffer)
+			.set_buffer(6, *m_shadow_buffers[i])
+			.set_texture(7, *m_shadow_maps[i][0])
+			.set_texture(8, *m_shadow_maps[i][1])
+			.set_texture(9, *m_shadow_maps[i][2])
+			.set_texture(10, *m_shadow_maps[i][3])
 			.flush();
 	}
 }
 
-static GpuCameraData build_camera_data(const CameraComponent &cam, const TransformComponent &transform, Uint32 index,
-									   Uint32 width, Uint32 height) {
-	GpuCameraData data{};
-
+RenderView render_view_from_entity(const CameraComponent &cam, const TransformComponent &transform) {
 	const Vec3 pos = transform.get_world_position();
 	const quat rot = transform.get_local_rotation();
 
-	data.view = cam.get_view_matrix(pos, rot);
-	data.projection = cam.get_projection_matrix();
+	RenderView view;
+	view.view = cam.get_view_matrix(pos, rot);
+	view.projection = cam.get_projection_matrix();
+	view.position = pos;
+	view.forward = cam.get_forward_direction(rot);
+	view.up = cam.get_up_direction(rot);
+	view.right = cam.get_right_direction(rot);
+	view.near_plane = cam.near_plane;
+	view.far_plane = cam.far_plane;
+	view.fov = cam.fov;
+	view.aspect = cam.aspect_ratio;
+	view.is_orthographic = cam.is_orthographic;
+	view.valid = true;
+	return view;
+}
+
+static GpuCameraData build_camera_data(const RenderView &view, Uint32 index, Uint32 width, Uint32 height) {
+	GpuCameraData data{};
+
+	data.view = view.view;
+	data.projection = view.projection;
 	data.view_projection = data.projection * data.view;
 	data.inverse_view = glm::inverse(data.view);
 	data.inverse_projection = glm::inverse(data.projection);
 	data.inverse_view_projection = glm::inverse(data.view_projection);
 	data.prev_view_projection = data.view_projection;
 
-	data.position = Vec4(pos, 0.F);
-	data.forward = Vec4(cam.get_forward_direction(rot), 0.F);
-	data.up = Vec4(cam.get_up_direction(rot), 0.F);
-	data.right = Vec4(cam.get_right_direction(rot), 0.F);
-	data.near_plane = cam.near_plane;
-	data.far_plane = cam.far_plane;
-	data.fov = cam.fov;
-	data.aspect_ratio = cam.aspect_ratio;
+	data.position = Vec4(view.position, 0.F);
+	data.forward = Vec4(view.forward, 0.F);
+	data.up = Vec4(view.up, 0.F);
+	data.right = Vec4(view.right, 0.F);
+	data.near_plane = view.near_plane;
+	data.far_plane = view.far_plane;
+	data.fov = view.fov;
+	data.aspect_ratio = view.aspect;
 	data.resolution = Vec2(static_cast<float>(width), static_cast<float>(height));
 	data.jitter = Vec2(0.F);
-	data.is_orthographic = cam.is_orthographic ? 1u : 0u;
+	data.is_orthographic = view.is_orthographic ? 1u : 0u;
 	data.camera_index = index;
 
 	return data;
@@ -180,7 +253,80 @@ static GpuLightData build_light_data(const LightComponent &light, const Transfor
 	return data;
 }
 
-void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot) {
+static GpuShadowData compute_shadow_data(const RenderView &camera, const Vec3 &light_dir, Uint32 shadow_map_size,
+										 std::array<Mat4, SHADOW_CASCADE_COUNT> &out_vp) {
+	constexpr F32 kSplitLambda = 0.95F;
+	constexpr F32 kDepthBias = 0.0015F;
+	constexpr F32 kNormalBias = 0.03F;
+	constexpr F32 kPcfScale = 1.0F;
+	constexpr F32 kMaxShadowDistance = 100.0F;
+
+	GpuShadowData sd{};
+	sd.m_num_cascades = static_cast<Int32>(SHADOW_CASCADE_COUNT);
+	sd.m_light_direction = Vec4(Math::normalize(light_dir), 0.F);
+	sd.m_params = Vec4(kDepthBias, kNormalBias, kPcfScale, static_cast<F32>(shadow_map_size));
+
+	const F32 near_plane = camera.near_plane;
+	const F32 far_plane = Math::min(camera.far_plane, kMaxShadowDistance);
+
+	F32 splits[SHADOW_CASCADE_COUNT];
+	for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+		const F32 p = static_cast<F32>(i + 1) / static_cast<F32>(SHADOW_CASCADE_COUNT);
+		const F32 log_split = near_plane * std::pow(far_plane / near_plane, p);
+		const F32 uni_split = near_plane + (far_plane - near_plane) * p;
+		splits[i] = kSplitLambda * log_split + (1.0F - kSplitLambda) * uni_split;
+	}
+
+	const Mat4 cam_view = camera.view;
+	const Vec3 ld = Math::normalize(light_dir);
+	Vec3 up = (std::abs(ld.y) > 0.99F) ? Vec3(0.F, 0.F, 1.F) : Vec3(0.F, 1.F, 0.F);
+
+	F32 last_split = near_plane;
+	for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
+		const F32 split_near = last_split;
+		const F32 split_far = splits[i];
+
+		const Mat4 sub_proj =
+			Math::perspective_vulkan(Math::radians(camera.fov), camera.aspect, split_near, split_far);
+		const std::array<Vec4, 8> corners = Math::extract_frustum_corners(sub_proj * cam_view);
+
+		Vec3 center(0.F);
+		for (const auto &corner : corners) {
+			center += Vec3(corner);
+		}
+		center /= 8.0F;
+
+		F32 radius = 0.F;
+		for (const auto &corner : corners) {
+			radius = Math::max(radius, Math::length(Vec3(corner) - center));
+		}
+		radius = std::ceil(radius * 16.0F) / 16.0F;
+
+		const F32 back_dist = radius * 3.0F;
+		const Vec3 eye = center - ld * back_dist;
+		const Mat4 light_view = Math::look_in_direction(eye, ld, up);
+		Mat4 light_proj = Math::ortho_vulkan(-radius, radius, -radius, radius, 0.F, back_dist + radius);
+
+		Mat4 view_proj = light_proj * light_view;
+		Vec4 origin = view_proj * Vec4(0.F, 0.F, 0.F, 1.F);
+		origin *= static_cast<F32>(shadow_map_size) / 2.0F;
+		const Vec2 rounded = glm::round(Vec2(origin.x, origin.y));
+		const Vec2 offset = (rounded - Vec2(origin.x, origin.y)) * (2.0F / static_cast<F32>(shadow_map_size));
+		light_proj[3][0] += offset.x;
+		light_proj[3][1] += offset.y;
+
+		view_proj = light_proj * light_view;
+		out_vp[i] = view_proj;
+		sd.m_cascade_view_proj[i] = view_proj;
+		sd.m_cascade_splits[i] = split_far;
+		last_split = split_far;
+	}
+
+	return sd;
+}
+
+void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot,
+							const RenderView &primary_view) {
 	m_time += delta_time;
 
 	GpuFrameData gpu_frame{};
@@ -189,14 +335,7 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 	gpu_frame.frame_index = m_frame_index++;
 	gpu_frame.screen_resolution = Vec2(static_cast<float>(m_width), static_cast<float>(m_height));
 
-	if (scene.has_active_camera()) {
-		auto cam_entity = scene.get_active_camera_entity();
-		if (cam_entity.has_all_components<CameraComponent, TransformComponent>()) {
-			auto &cam = cam_entity.get_component<CameraComponent>();
-			auto &transform = cam_entity.get_component<TransformComponent>();
-			gpu_frame.main_camera = build_camera_data(cam, transform, 0, m_width, m_height);
-		}
-	}
+	gpu_frame.main_camera = build_camera_data(primary_view, 0, m_width, m_height);
 
 	auto &registry = scene.get_registry();
 	{
@@ -206,8 +345,9 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 			if (count >= SharedConstants::MAX_CAMERAS) {
 				break;
 			}
-			gpu_frame.cameras[count] = build_camera_data(
-				view.get<CameraComponent>(entity), view.get<TransformComponent>(entity), count, m_width, m_height);
+			const RenderView scene_view =
+				render_view_from_entity(view.get<CameraComponent>(entity), view.get<TransformComponent>(entity));
+			gpu_frame.cameras[count] = build_camera_data(scene_view, count, m_width, m_height);
 			++count;
 		}
 		gpu_frame.camera_count = count;
@@ -215,6 +355,8 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 
 	GpuLightData lights[SharedConstants::MAX_LIGHTS];
 	Uint32 light_count = 0;
+	int caster_index = -1;
+	Vec3 caster_dir(0.F, -1.F, 0.F);
 	{
 		auto view = registry.view<LightComponent, TransformComponent>();
 		for (auto entity : view) {
@@ -226,10 +368,25 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 			if (!light.m_is_active) {
 				continue;
 			}
+			const Uint32 index = light_count;
 			lights[light_count++] = build_light_data(light, transform);
+			if (caster_index < 0 && light.m_type == LightComponent::Type::Directional) {
+				caster_index = static_cast<int>(index);
+				caster_dir = light.m_direction;
+			}
 		}
 	}
 	gpu_frame.light_count = light_count;
+
+	GpuShadowData shadow_data{};
+	m_shadows_enabled = false;
+	if (primary_view.valid && caster_index >= 0) {
+		shadow_data = compute_shadow_data(primary_view, caster_dir, kShadowMapSize, m_cascade_view_proj);
+		shadow_data.m_enabled = 1;
+		lights[caster_index].m_shadow_index = 0;
+		m_shadows_enabled = true;
+	}
+	m_shadow_buffers[frame_slot]->write(&shadow_data, sizeof(GpuShadowData));
 
 	m_frame_buffers[frame_slot]->write(&gpu_frame, sizeof(GpuFrameData));
 	if (light_count > 0) {

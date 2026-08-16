@@ -3,8 +3,13 @@
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/Foundation/Math/Rect.h"
 
+#include <string>
+
 namespace Aquila::UI::Rendering {
 class DrawList;
+}
+namespace Aquila::UI::Text {
+class FontAtlas;
 }
 
 namespace Editor {
@@ -17,7 +22,7 @@ class PickerOverlay : public Aquila::UI::Core::View {
 
 	[[nodiscard]] std::string_view get_type_name() const override { return "PickerOverlay"; }
 
-	void set_target(const Rect &rect);
+	void set_target(const Rect &rect, std::string label = "");
 	void clear();
 
 	void on_draw_self(Aquila::UI::Rendering::DrawList &draw_list) override;
@@ -25,6 +30,8 @@ class PickerOverlay : public Aquila::UI::Core::View {
   private:
 	bool m_active = false;
 	Rect m_target;
+	std::string m_label;
+	Aquila::UI::Text::FontAtlas *m_font = nullptr;
 };
 
 } // namespace Editor

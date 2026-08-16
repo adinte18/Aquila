@@ -147,6 +147,7 @@ class View {
 	[[nodiscard]] Uint32 get_clay_id() const { return m_clay_id; }
 
 	[[nodiscard]] Uint32 get_stable_id() const { return m_stable_id; }
+	[[nodiscard]] WeakRef<void> alive_token() const { return m_alive; }
 
 	virtual Vec2 get_intrinsic_size() const { return { -1.F, -1.F }; }
 
@@ -205,7 +206,7 @@ class View {
 
 	void invalidate_layout();
 
-	void update_animation(float delta_time);
+	void update_animation(F32 delta_time);
 	virtual ~View() = default;
 
   protected:
@@ -218,13 +219,14 @@ class View {
 
   private:
 	void notify_removed(View *node);
+	void mark_style_dirty();
 
 	View *m_parent = nullptr;
 	std::vector<Unique<View>> m_children;
 
 	ComputedStyle m_display_style;
 	ComputedStyle m_animation_from;
-	float m_transition_timer = 0.F;
+	F32 m_transition_timer = 0.F;
 	bool m_display_style_initialized = false;
 
 	std::string m_id;
@@ -252,6 +254,27 @@ class View {
 	Text::FontAtlas *m_resolved_font = nullptr;
 	Canvas *m_canvas = nullptr;
 	Uint32 m_stable_id = 0;
+	Ref<char> m_alive = std::make_shared<char>(0);
+};
+
+class ViewRef {
+  public:
+	ViewRef() = default;
+	ViewRef(View *view) { assign(view); }
+	ViewRef &operator=(View *view) {
+		assign(view);
+		return *this;
+	}
+
+	[[nodiscard]] View *get() const { return m_alive.expired() ? nullptr : m_ptr; }
+	operator View *() const { return get(); }
+	View *operator->() const { return get(); }
+
+  private:
+	void assign(View *view);
+
+	View *m_ptr = nullptr;
+	WeakRef<void> m_alive;
 };
 
 template <typename T> [[nodiscard]] bool view_is(const View *view) {

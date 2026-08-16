@@ -15,6 +15,9 @@ namespace Aquila::GFX {
 class GfxContext;
 class GfxTexture;
 } // namespace Aquila::GFX
+namespace Aquila::Graphics {
+class Material;
+} // namespace Aquila::Graphics
 namespace Aquila::UI::Core {
 class Button;
 class Collapsible;
@@ -62,6 +65,8 @@ class InspectorPanel : public IEditorPanel {
 	};
 
 	void build_component_registry();
+	Ref<Aquila::Graphics::Material> ensure_default_material();
+	void attach_default_material(Aquila::SceneManagement::Entity entity);
 	void open_add_menu();
 	void open_add_popup_at(Vec2 canvas_pos, bool swallow_first_char);
 	void populate_add_menu(const std::string &query);
@@ -71,6 +76,7 @@ class InspectorPanel : public IEditorPanel {
 	void reset_signal_rows();
 
 	Aquila::GFX::GfxContext &m_context;
+	Ref<Aquila::Graphics::Material> m_default_material;
 	Aquila::UI::Core::TextureCache *m_texture_cache = nullptr;
 	Aquila::UI::Core::ScrollView *m_scroll_view = nullptr;
 	Aquila::UI::Core::View *m_section_list = nullptr;

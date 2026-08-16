@@ -1,4 +1,5 @@
 #include "Core/EditorApplication.h"
+#include "Core/EditorCamera.h"
 #include "Core/ProjectManager.h"
 
 #include "UI/Managers/FontManager.h"
@@ -22,6 +23,7 @@
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Core/Clipboard.h"
@@ -54,7 +56,17 @@ using namespace Aquila::Application;
 
 namespace {
 const std::string k_layout_path = "/app/layout.aqdl";
+
+std::string pick_label(Aquila::UI::Core::View *view) {
+	std::string label(view->get_type_name());
+	if (!view->get_id().empty()) {
+		label += " #" + view->get_id();
+	} else if (!view->get_classes().empty()) {
+		label += " ." + view->get_classes().front();
+	}
+	return label;
 }
+} // namespace
 
 EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(spec) {}
 
@@ -73,8 +85,6 @@ void EditorApplication::on_init() {
 			},
 			[native_win](const std::string &t) { glfwSetClipboardString(native_win, t.c_str()); });
 	}
-
-	Graphics::MaterialFactory::get()->enable_hot_reload(true);
 
 	Config::get_preferences().load_from_file();
 	Aquila::UI::Core::FontRegistry::set_ui_scale(Config::get_preferences().ui_scale);
@@ -116,7 +126,7 @@ void EditorApplication::enter_editor(const ProjectInfo &project) {
 	}
 
 	glfwShowWindow(get_window().get_native_window());
-	spawn_default_camera();
+	m_editor_camera = std::make_unique<EditorCamera>();
 	setup_editor_ui();
 }
 
@@ -157,24 +167,39 @@ void EditorApplication::on_pre_render(F32 delta_time) {
 	Aquila::UI::Core::CanvasManager::get()->update(delta_time);
 	Aquila::UI::Core::CanvasManager::get()->compute();
 
+	if (m_editor_camera && m_viewport_panel) {
+		const Rect viewport = m_viewport_panel->get_content_rect();
+		const auto view_width = static_cast<Uint32>(viewport.size.x);
+		const auto view_height = static_cast<Uint32>(viewport.size.y);
+		m_editor_camera->set_viewport_rect(viewport.position, viewport.size);
+		m_editor_camera->set_viewport_size(view_width, view_height);
+		m_editor_camera->update(delta_time);
+		get_render_pipeline().set_primary_view(m_editor_camera->get_render_view());
+	}
+
 	get_window().set_cursor(Aquila::UI::Core::CanvasManager::get()->get_active_cursor());
 }
 
 void EditorApplication::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
 
+	if (m_editor_camera) {
+		m_editor_camera->on_event(event);
+	}
+
 	if (m_pick_mode) {
 		bool consumed = false;
 		dispatcher.dispatch<Events::MouseMovedEvent>([&](Events::MouseMovedEvent &e) {
 			auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
 			Aquila::UI::Core::View *hit = editor_canvas.hit_test({ e.get_x(), e.get_y() });
-			if (m_picker) {
-				hit ? m_picker->set_target(hit->get_absolute_rect()) : m_picker->clear();
-			}
-			if (m_ui_debug_window && hit) {
-				m_ui_debug_window->select_view(hit);
-			}
 			consumed = true;
+			if (hit == m_pick_hover) {
+				return true;
+			}
+			m_pick_hover = hit;
+			if (m_picker) {
+				hit ? m_picker->set_target(hit->get_absolute_rect(), pick_label(hit)) : m_picker->clear();
+			}
 			return true;
 		});
 		dispatcher.dispatch<Events::MouseButtonPressedEvent>([&](Events::MouseButtonPressedEvent &) {
@@ -182,6 +207,10 @@ void EditorApplication::on_event(Events::Event &event) {
 			if (m_picker) {
 				m_picker->clear();
 			}
+			if (m_ui_debug_window && m_pick_hover) {
+				m_ui_debug_window->select_view(m_pick_hover);
+			}
+			m_pick_hover = nullptr;
 			consumed = true;
 			return true;
 		});
@@ -191,6 +220,7 @@ void EditorApplication::on_event(Events::Event &event) {
 				if (m_picker != nullptr) {
 					m_picker->clear();
 				}
+				m_pick_hover = nullptr;
 			}
 
 			consumed = true;
@@ -243,6 +273,12 @@ void EditorApplication::on_resize(Uint32 width, Uint32 height) {
 	}
 }
 
+void EditorApplication::on_render_resize(Uint32 width, Uint32 height) {
+	if (m_viewport_panel) {
+		m_viewport_panel->set_texture(&get_render_output());
+	}
+}
+
 void EditorApplication::spawn_default_camera() {
 	auto *em = get_scene().get_entity_manager();
 	auto cam = em->create_entity("Camera");
@@ -265,7 +301,7 @@ void EditorApplication::populate_demo_scene() {
 																.type = Graphics::MaterialType::Lit,
 																.color_formats = { RHI::TextureFormat::RGBA16F },
 																.depth_test = true,
-																.depth_write = false,
+																.depth_write = true,
 															});
 
 	auto add_cube = [&](const char *name, Vec3 pos) {
@@ -278,27 +314,33 @@ void EditorApplication::populate_demo_scene() {
 		mat.surface_properties.albedo = Vec4(0.8f, 0.6f, 0.4f, 1.F);
 		mat.surface_properties.metallic = 0.0f;
 		mat.surface_properties.roughness = 0.6f;
+		return entity;
 	};
-	add_cube("CubeA", { -1.5f, 0.F, 2.F });
-	add_cube("CubeB", { 1.5f, 0.F, 2.F });
-	add_cube("Floor", { 0.0f, 0.5f, 2.F });
+	add_cube("CubeA", { -2.5f, 1.F, 2.F });
+	add_cube("CubeB", { 2.5f, 1.F, 2.F });
+	auto floor = add_cube("Floor", { 0.0f, 0.f, 2.F });
+	floor.get_component<TransformComponent>().set_local_scale({ 12.F, 0.2f, 12.F });
 
 	{
 		auto e = em->create_entity("SunLight");
-		auto &light = e.add_component<LightComponent>(LightComponent::Type::Directional, Vec3(1.0f, 0.95f, 0.8f), 2.0f);
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Directional, Vec3(1.0f, 0.95f, 0.8f), 1.0f);
 		light.set_direction(glm::normalize(Vec3(0.4f, -1.0f, 0.6f)));
 	}
 	{
 		auto e = em->create_entity("PointA");
-		e.get_component<TransformComponent>().set_local_position({ -1.5f, -0.5f, 1.5f });
-		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(1.0f, 0.4f, 0.1f), 5.0f);
+		e.get_component<TransformComponent>().set_local_position({ -1.5f, 0.5f, 1.5f });
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(1.0f, 0.4f, 0.1f), 1.0f);
 		light.set_range(6.0f);
 	}
 	{
 		auto e = em->create_entity("PointB");
-		e.get_component<TransformComponent>().set_local_position({ 1.5f, -0.5f, 1.5f });
-		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(0.2f, 0.5f, 1.0f), 5.0f);
+		e.get_component<TransformComponent>().set_local_position({ 1.5f, 0.5f, 1.5f });
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(0.2f, 0.5f, 1.0f), 1.0f);
 		light.set_range(6.0f);
+	}
+	{
+		auto e = em->create_entity("Sky");
+		e.add_component<SkyLightComponent>();
 	}
 }
 
@@ -417,6 +459,12 @@ void EditorApplication::open_ui_inspector_window() {
 	m_ui_debug_window->build(&editor_canvas, 800, 600, Config::get_preferences().ui.style_path);
 
 	m_ui_debug_window->on_pick_requested = [this] { start_pick(); };
+	m_ui_debug_window->set_ignored_view(m_picker);
+	m_ui_debug_window->on_view_highlighted = [this](Aquila::UI::Core::View *view) {
+		if (m_picker && view) {
+			m_picker->set_target(view->get_absolute_rect(), pick_label(view));
+		}
+	};
 
 	UIDebugWindow *win = m_ui_debug_window.get();
 	rw.on_update = [win](F32 dt) { win->update(dt); };
@@ -436,6 +484,7 @@ void EditorApplication::start_pick() {
 		return;
 	}
 	m_ui_debug_window->refresh();
+	m_pick_hover = nullptr;
 	m_pick_mode = true;
 }
 

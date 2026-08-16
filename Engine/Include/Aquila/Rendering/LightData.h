@@ -33,4 +33,18 @@ struct alignas(16) GpuEnvironmentData {
 
 static_assert(sizeof(GpuEnvironmentData) == 176, "GpuEnvironmentData layout mismatch");
 
+constexpr Uint32 SHADOW_CASCADE_COUNT = 4;
+
+struct alignas(16) GpuShadowData {
+	std::array<Mat4, SHADOW_CASCADE_COUNT> m_cascade_view_proj;
+	Vec4 m_cascade_splits;
+	Vec4 m_light_direction;
+	Vec4 m_params;
+	Int32 m_enabled;
+	Int32 m_num_cascades;
+	std::array<Int32, 2> m_padding;
+};
+
+static_assert(sizeof(GpuShadowData) == 320, "GpuShadowData layout mismatch");
+
 } // namespace Aquila::Rendering

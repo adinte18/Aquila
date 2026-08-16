@@ -3,6 +3,8 @@
 #include "UI/Inspectors/CameraComponentUI.h"
 #include "UI/Inspectors/LightComponentUI.h"
 #include "UI/Inspectors/MaterialComponentUI.h"
+#include "UI/Inspectors/MeshComponentUI.h"
+#include "UI/Inspectors/SkyLightComponentUI.h"
 #include "UI/Inspectors/TransformComponentUI.h"
 
 #include "Aquila/Foundation/Macros.h"
@@ -19,6 +21,8 @@
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
 #include "Aquila/Scene/Components/SkyLightComponent.h"
+#include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/Foundation/SharedConstants.h"
 
 namespace Editor {
 
@@ -98,8 +102,10 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 	};
 
 	add_ui_component("section-transform", std::make_unique<TransformComponentUI>());
+	add_ui_component("section-mesh", std::make_unique<MeshComponentUI>());
 	add_ui_component("section-material", std::make_unique<MaterialComponentUI>(m_context));
 	add_ui_component("section-light", std::make_unique<LightComponentUI>(m_context));
+	add_ui_component("section-skylight", std::make_unique<SkyLightComponentUI>(m_context));
 	add_ui_component("section-camera", std::make_unique<CameraComponentUI>());
 
 	clear();
@@ -286,15 +292,42 @@ void InspectorPanel::build_component_registry() {
 	m_categories.push_back({ "Camera", icon("Engine/UI/Icons/video.png") });
 
 	m_addable.push_back({ "Mesh", "Rendering", [](Entity e) { return e.has_component<MeshComponent>(); },
-						  [](Entity e) { e.add_component<MeshComponent>(); } });
+						  [this](Entity e) {
+							  e.add_component<MeshComponent>();
+							  attach_default_material(e);
+						  } });
 	m_addable.push_back({ "Material", "Rendering", [](Entity e) { return e.has_component<MaterialComponent>(); },
-						  [](Entity e) { e.add_component<MaterialComponent>(); } });
+						  [this](Entity e) { attach_default_material(e); } });
 	m_addable.push_back({ "Light", "Lighting", [](Entity e) { return e.has_component<LightComponent>(); },
 						  [](Entity e) { e.add_component<LightComponent>(); } });
 	m_addable.push_back({ "Sky Light", "Lighting", [](Entity e) { return e.has_component<SkyLightComponent>(); },
 						  [](Entity e) { e.add_component<SkyLightComponent>(); } });
 	m_addable.push_back({ "Camera", "Camera", [](Entity e) { return e.has_component<CameraComponent>(); },
 						  [](Entity e) { e.add_component<CameraComponent>(); } });
+}
+
+Ref<Graphics::Material> InspectorPanel::ensure_default_material() {
+	if (!m_default_material) {
+		m_default_material = Graphics::MaterialFactory::get()->create(
+			m_context, SharedConstants::SHADERS_DIR + "Basic.slang",
+			{
+				.type = Graphics::MaterialType::Lit,
+				.color_formats = { RHI::TextureFormat::RGBA16F },
+				.depth_test = true,
+				.depth_write = false,
+			});
+	}
+	return m_default_material;
+}
+
+void InspectorPanel::attach_default_material(Entity entity) {
+	if (entity.has_component<MaterialComponent>()) {
+		return;
+	}
+	auto &material = entity.add_component<MaterialComponent>(ensure_default_material());
+	material.surface_properties.albedo = Vec4(0.8f, 0.8f, 0.8f, 1.0f);
+	material.surface_properties.metallic = 0.0f;
+	material.surface_properties.roughness = 0.6f;
 }
 
 void InspectorPanel::open_add_menu() {

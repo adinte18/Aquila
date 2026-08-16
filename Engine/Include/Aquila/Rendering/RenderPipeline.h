@@ -5,6 +5,7 @@
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Rendering/Renderers/IRenderer.h"
 #include "Aquila/Rendering/FrameContext.h"
+#include "Aquila/Rendering/RenderView.h"
 #include "Aquila/GFX/GfxTexture.h"
 
 namespace Aquila::GFX {
@@ -39,13 +40,18 @@ class RenderPipeline {
 	void render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, F32 delta_time, Uint32 width, Uint32 height);
 	void resize(Uint32 width, Uint32 height);
 
+	void set_primary_view(const RenderView &view) { m_primary_view = view; }
+	void clear_primary_view() { m_primary_view.reset(); }
+
 	[[nodiscard]] GFX::GfxTexture &get_output() const { return *m_scene_color; }
 	[[nodiscard]] Uint32 get_width() const { return m_width; }
 	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
   private:
-	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, FrameContext &out);
+	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary, FrameContext &out);
 	void rebuild_targets();
+
+	[[nodiscard]] RenderView resolve_primary_view(SceneManagement::Scene &scene) const;
 
 	GFX::GfxContext &m_ctx;
 	Graphics::RG::RenderGraph m_graph;
@@ -59,6 +65,8 @@ class RenderPipeline {
 
 	// Rotates 0..MAX_FRAMES_IN_FLIGHT-1 each Render() call, matching swapchain fence rotation.
 	Uint32 m_frame_slot = 0;
+
+	Option<RenderView> m_primary_view;
 };
 
 } // namespace Aquila::Rendering

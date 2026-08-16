@@ -3,6 +3,7 @@
 #include "Aquila/Application/ApplicationNew.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Aquila/UI/Core/View.h"
 #include "Core/ProjectManager.h"
 
 #include <vector>
@@ -16,6 +17,7 @@ class DockSpace;
 
 namespace Editor {
 
+class EditorCamera;
 class ViewportPanel;
 class HierarchyPanel;
 class InspectorPanel;
@@ -40,6 +42,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_pre_render(F32 delta_time) override;
 	void on_event(Aquila::Application::Events::Event &event) override;
 	void on_resize(Uint32 width, Uint32 height) override;
+	void on_render_resize(Uint32 width, Uint32 height) override;
 
   private:
 	void populate_demo_scene();
@@ -70,6 +73,7 @@ class EditorApplication : public Aquila::Application::Application {
 
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
+	Unique<EditorCamera> m_editor_camera;
 
 	Unique<ViewportPanel> m_viewport_panel;
 	Unique<HierarchyPanel> m_hierarchy_panel;
@@ -85,6 +89,7 @@ class EditorApplication : public Aquila::Application::Application {
 	Option<ProjectInfo> m_pending_project;
 
 	PickerOverlay *m_picker = nullptr;
+	Aquila::UI::Core::ViewRef m_pick_hover;
 	bool m_pick_mode = false;
 	Aquila::UI::Core::LayoutLoader m_layout_loader;
 

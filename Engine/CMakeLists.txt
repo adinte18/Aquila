@@ -103,6 +103,9 @@ set(VMA_BUILD_SAMPLES OFF CACHE BOOL "" FORCE)
 set(VMA_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(${VENDOR_DIR}/VulkanMemoryAllocator)
 
+enable_language(C)
+add_subdirectory(${VENDOR_DIR}/hosek)
+
 
 add_subdirectory(Source/Aquila/Foundation)
 add_subdirectory(Source/Aquila/Platform)

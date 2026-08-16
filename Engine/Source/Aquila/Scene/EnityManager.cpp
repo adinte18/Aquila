@@ -202,7 +202,7 @@ void EntityManager::on_scene_node_construct(entt::registry &registry, entt::enti
 		auto &parent_node = m_registry.get_or_emplace<Components::SceneNodeComponent>(node.parent.get_handle());
 
 		auto &siblings = parent_node.children;
-		if (std::find(siblings.begin(), siblings.end(), entity) == siblings.end()) {
+		if (std::ranges::find(siblings, entity) == siblings.end()) {
 			siblings.push_back(entity);
 		}
 	}
@@ -228,7 +228,7 @@ void EntityManager::on_scene_node_destroy(entt::registry &registry, entt::entity
 		if (parent_node) {
 			auto &siblings = parent_node->children;
 			if (!siblings.empty()) {
-				siblings.erase(std::remove(siblings.begin(), siblings.end(), entity), siblings.end());
+				std::erase(siblings, entity);
 			}
 		}
 	}
@@ -253,7 +253,7 @@ void EntityManager::add_child(Entity parent, Entity child) {
 
 	child_node->parent = parent_node->ent;
 
-	if (std::find(parent_node->children.begin(), parent_node->children.end(), child) == parent_node->children.end()) {
+	if (std::ranges::find(parent_node->children, child) == parent_node->children.end()) {
 		parent_node->children.push_back(child);
 	}
 }
@@ -362,7 +362,7 @@ void EntityManager::remove_child(Entity parent, Entity child) {
 	}
 
 	auto &siblings = parent_node->children;
-	siblings.erase(std::remove(siblings.begin(), siblings.end(), child), siblings.end());
+	std::erase(siblings, child);
 
 	child_node->parent = Entity::null();
 }

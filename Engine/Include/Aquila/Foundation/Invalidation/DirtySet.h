@@ -19,7 +19,7 @@ template <typename Key, typename Hash = std::hash<Key>> class DirtySet {
 
 	void remove(const Key &key) {
 		if (m_set.erase(key)) {
-			m_ordered.erase(std::remove(m_ordered.begin(), m_ordered.end(), key), m_ordered.end());
+			std::erase(m_ordered, key);
 		}
 	}
 

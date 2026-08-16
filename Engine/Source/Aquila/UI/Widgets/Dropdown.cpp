@@ -39,6 +39,11 @@ void Dropdown::set_value(const std::string &value) {
 	}
 }
 
+void Dropdown::clear_selection() {
+	m_value.clear();
+	update_header_text();
+}
+
 void Dropdown::set_placeholder(std::string text) {
 	m_placeholder = std::move(text);
 	update_header_text();

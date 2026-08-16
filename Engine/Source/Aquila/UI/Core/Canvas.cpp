@@ -23,6 +23,26 @@ Canvas::Canvas(Uint32 width, Uint32 height)
 
 	m_tooltip = static_cast<Tooltip *>(m_root->add_child(std::make_unique<Tooltip>()));
 	m_drag_ghost = static_cast<DragGhost *>(m_root->add_child(std::make_unique<DragGhost>()));
+
+	register_internal_observers();
+}
+
+void Canvas::register_internal_observers() {
+	register_removal_observer([this](View *view) { m_style_engine.remove(view); });
+	register_removal_observer([this](View *view) { m_input_router.on_view_removed(view); });
+	register_removal_observer([this](View *view) { m_draw_compositor.forget_view(view); });
+	register_removal_observer([this](View *view) { unregister_popup(view); });
+	register_removal_observer([this](View *view) { unregister_tick(view); });
+	register_removal_observer([this](View *view) { std::erase(m_active_anims, view); });
+	register_removal_observer([this](View *view) {
+		if (m_tooltip == view) {
+			m_tooltip = nullptr;
+			m_tooltip_shown = false;
+		}
+		if (m_drag_ghost == view) {
+			m_drag_ghost = nullptr;
+		}
+	});
 }
 
 void Canvas::mark_dirty() {
@@ -41,10 +61,8 @@ void Canvas::notify_style_dirty(View *view) {
 }
 
 void Canvas::notify_animation_started(View *view) {
-	for (const View *v : m_active_anims) {
-		if (v == view) {
-			return;
-		}
+	if (std::ranges::find(m_active_anims, view) != m_active_anims.end()) {
+		return;
 	}
 	m_active_anims.push_back(view);
 	mark_dirty();
@@ -64,27 +82,13 @@ void Canvas::notify_focus_request(View *view) {
 }
 
 void Canvas::notify_view_removed(View *view) {
-	m_style_engine.remove(view);
-	m_input_router.on_view_removed(view);
-	unregister_popup(view);
-	unregister_tick(view);
-	if (m_scroll_target == view) {
-		m_scroll_target = nullptr;
+	for (const auto &observer : m_removal_observers) {
+		observer(view);
 	}
-	if (auto it = std::ranges::find(m_active_anims, view); it != m_active_anims.end()) {
-		m_active_anims.erase(it);
-	}
-	if (m_tooltip_target == view) {
-		m_tooltip_target = nullptr;
-		m_tooltip_timer = 0.F;
-	}
-	if (m_tooltip == view) {
-		m_tooltip = nullptr;
-		m_tooltip_shown = false;
-	}
-	if (m_drag_ghost == view) {
-		m_drag_ghost = nullptr;
-	}
+}
+
+void Canvas::register_removal_observer(Delegate<void(View *)> observer) {
+	m_removal_observers.push_back(std::move(observer));
 }
 
 void Canvas::show_drag_ghost(std::string label, Vec2 pos, GFX::GfxTexture *icon) {
@@ -195,7 +199,7 @@ void Canvas::compute() {
 	}
 
 	if (m_layout_dirty) {
-		constexpr int k_max_container_resolve_passes = 3;
+		constexpr int K_MAX_CONTAINER_RESOLVE_PASSES = 3;
 		const bool has_container_rules = m_style_engine.get_style_sheet().has_container_blocks();
 
 		m_layout_engine.run_layout(m_root.get(), m_input_router.mouse_pos(), m_input_router.mouse_down(),
@@ -203,7 +207,7 @@ void Canvas::compute() {
 		m_layout_dirty = false;
 
 		for (int pass = 0;
-			 has_container_rules && m_layout_engine.did_layout_resize() && pass < k_max_container_resolve_passes;
+			 has_container_rules && m_layout_engine.did_layout_resize() && pass < K_MAX_CONTAINER_RESOLVE_PASSES;
 			 ++pass) {
 			for (View *resized : m_layout_engine.get_resized_nodes()) {
 				for (const auto &child : resized->get_children()) {
@@ -264,7 +268,7 @@ View *Canvas::hit_test(Vec2 pos) {
 	return m_draw_compositor.hit_test(pos);
 }
 
-void Canvas::set_scroll_offset(View *target, float offset_y) {
+void Canvas::set_scroll_offset(View *target, F32 offset_y) {
 	m_scroll_offset_target = target;
 	m_scroll_offset_y = offset_y;
 	m_layout_dirty = true;

@@ -544,7 +544,7 @@ void RGCompiler::infer_barriers(const std::vector<RGPassData> &passes, const std
 		}
 	}
 
-	const Uint32 alive_count = static_cast<Uint32>(std::count(alive.begin(), alive.end(), true));
+	const Uint32 alive_count = static_cast<Uint32>(std::ranges::count(alive, true));
 
 	// texBarriers is a flat list of ALL barriers jammed together
 	out.tex_barriers.reserve(alive_count * 2);

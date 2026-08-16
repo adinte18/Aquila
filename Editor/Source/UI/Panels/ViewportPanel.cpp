@@ -27,4 +27,8 @@ void ViewportPanel::set_texture(GFX::GfxTexture *texture) {
 	}
 }
 
+Rect ViewportPanel::get_content_rect() const {
+	return m_image ? m_image->get_absolute_rect() : Rect{};
+}
+
 } // namespace Editor

@@ -35,10 +35,10 @@ class InputRouter {
 	Canvas &m_canvas;
 	DrawCompositor &m_compositor;
 
-	View *m_hovered_view = nullptr;
-	View *m_focused_view = nullptr;
-	View *m_drag_source_candidate = nullptr;
-	View *m_drag_target = nullptr;
+	ViewRef m_hovered_view;
+	ViewRef m_focused_view;
+	ViewRef m_drag_source_candidate;
+	ViewRef m_drag_target;
 	DragState m_drag_state{};
 
 	Vec2 m_mouse_pos = {};

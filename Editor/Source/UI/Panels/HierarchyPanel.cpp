@@ -54,12 +54,10 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 
 		node_context_menu->add_item("Delete entity", [this] {
 			if (m_selected_node != nullptr) {
-				auto parent_entity = m_selected_node->get_entity();
-				auto new_entity = m_entity_manager.create_entity("Empty entity");
-				m_entity_manager.add_child(parent_entity, new_entity);
-
-				m_tree_view->add_entity_node(new_entity.get_name(), new_entity, m_selected_node);
-				m_selected_node->set_expanded(true);
+				auto current_entity = m_selected_node->get_entity();
+				m_tree_view->delete_entity_node(current_entity);
+				m_entity_manager.destroy_entity(current_entity);
+				m_tree_view->queue_redraw();
 			}
 		});
 

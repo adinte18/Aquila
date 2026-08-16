@@ -1,6 +1,7 @@
 #pragma once
 
 #include "UI/Panels/IEditorPanel.h"
+#include "Aquila/Foundation/Math/Rect.h"
 
 namespace Aquila::GFX {
 class GfxTexture;
@@ -17,6 +18,8 @@ class ViewportPanel : public IEditorPanel {
 	explicit ViewportPanel(Aquila::GFX::GfxTexture &initial_texture);
 	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
 	void set_texture(Aquila::GFX::GfxTexture *texture);
+
+	[[nodiscard]] Rect get_content_rect() const;
 
   private:
 	Aquila::GFX::GfxTexture &m_initial_texture;

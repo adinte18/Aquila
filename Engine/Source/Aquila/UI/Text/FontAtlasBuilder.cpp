@@ -35,7 +35,7 @@ GlyphBandData bucket_curves_into_bands(const GlyphBuild &build, Uint32 curve_bas
 		const Uint32 tx = abs_texel % SharedConstants::FONT_TEX_WIDTH;
 		const Uint32 ty = abs_texel / SharedConstants::FONT_TEX_WIDTH;
 
-		const auto bounds = Math::Bezier::compute_bounds(cv);
+		const auto bounds = Math::Geometry::Bezier::compute_bounds(cv);
 		const F32 x_min = bounds.min.x, x_max = bounds.max.x;
 		const F32 y_min = bounds.min.y, y_max = bounds.max.y;
 
@@ -56,10 +56,10 @@ GlyphBandData bucket_curves_into_bands(const GlyphBuild &build, Uint32 curve_bas
 
 	auto desc_sort = [](const BandEntry &a, const BandEntry &b) { return a.sort_key > b.sort_key; };
 	for (auto &hb : result.horizontal) {
-		std::sort(hb.begin(), hb.end(), desc_sort);
+		std::ranges::sort(hb, desc_sort);
 	}
 	for (auto &vb : result.vertical) {
-		std::sort(vb.begin(), vb.end(), desc_sort);
+		std::ranges::sort(vb, desc_sort);
 	}
 
 	return result;

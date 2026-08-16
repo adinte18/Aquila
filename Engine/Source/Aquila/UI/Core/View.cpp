@@ -11,14 +11,14 @@ static Uint32 s_NextStableId = 0;
 
 View::View() : m_stable_id(++s_NextStableId) {}
 
-static float apply_easing(float t, UI::TransitionEasing easing) {
+static F32 apply_easing(F32 t, UI::TransitionEasing easing) {
 	switch (easing) {
 	case UI::TransitionEasing::EaseIn:
 		return t * t;
 	case UI::TransitionEasing::EaseOut:
 		return 1.F - (1.F - t) * (1.F - t);
 	case UI::TransitionEasing::EaseInOut:
-		return t < 0.5f ? 2.F * t * t : 1.F - (-2.F * t + 2.F) * (-2.F * t + 2.F) * 0.5f;
+		return t < 0.5F ? 2.F * t * t : 1.F - (-2.F * t + 2.F) * (-2.F * t + 2.F) * 0.5F;
 	case UI::TransitionEasing::Ease:
 		return t * t * (3.F - 2.F * t);
 	case UI::TransitionEasing::Linear:
@@ -43,23 +43,23 @@ void View::set_computed_style(UI::ComputedStyle style) {
 	m_computed_style = std::move(style);
 }
 
-void View::update_animation(float dt) {
-	const float duration_sec = m_computed_style.transition_duration / 1000.F;
+void View::update_animation(F32 delta_time) {
+	const F32 duration_sec = m_computed_style.transition_duration / 1000.F;
 
 	if (m_is_animation_finished) {
 		return;
 	}
 
-	if (duration_sec <= 0.0001f) {
+	if (duration_sec <= 0.0001F) {
 		m_display_style = m_computed_style;
 		m_transition_timer = 0.F;
 		m_is_animation_finished = true;
 		return;
 	}
 
-	m_transition_timer = std::min(m_transition_timer + dt, duration_sec);
-	const float raw = m_transition_timer / duration_sec;
-	const float alpha = apply_easing(raw, m_computed_style.transition_easing);
+	m_transition_timer = std::min(m_transition_timer + delta_time, duration_sec);
+	const F32 raw = m_transition_timer / duration_sec;
+	const F32 alpha = apply_easing(raw, m_computed_style.transition_easing);
 
 	m_display_style = m_computed_style;
 
@@ -107,9 +107,7 @@ void View::set_enabled(bool enabled) {
 		return;
 	}
 	m_enabled = enabled;
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
 
 void View::request_focus() {
@@ -118,37 +116,35 @@ void View::request_focus() {
 	}
 }
 
-void View::merge_style(const StyleProperties &o) {
-	StyleProperties &s = m_style;
+void View::merge_style(const StyleProperties &overlay) {
+	StyleProperties &style = m_style;
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
-	if (o.sp) {                                           \
-		s.sp = o.sp;                                      \
+	if (overlay.sp) {                                     \
+		style.sp = overlay.sp;                            \
 	}
 	AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
 
-	if (o.min) {
-		s.min = o.min;
+	if (overlay.min) {
+		style.min = overlay.min;
 	}
-	if (o.max) {
-		s.max = o.max;
+	if (overlay.max) {
+		style.max = overlay.max;
 	}
-	if (o.padding_left) {
-		s.padding_left = o.padding_left;
+	if (overlay.padding_left) {
+		style.padding_left = overlay.padding_left;
 	}
-	if (o.padding_right) {
-		s.padding_right = o.padding_right;
+	if (overlay.padding_right) {
+		style.padding_right = overlay.padding_right;
 	}
-	if (o.padding_top) {
-		s.padding_top = o.padding_top;
+	if (overlay.padding_top) {
+		style.padding_top = overlay.padding_top;
 	}
-	if (o.padding_bottom) {
-		s.padding_bottom = o.padding_bottom;
+	if (overlay.padding_bottom) {
+		style.padding_bottom = overlay.padding_bottom;
 	}
 
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
 
 void View::add_class(std::string cls) {
@@ -156,18 +152,14 @@ void View::add_class(std::string cls) {
 		return;
 	}
 	m_classes.push_back(std::move(cls));
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
 
 void View::remove_class(std::string_view cls) {
 	auto it = std::ranges::find(m_classes, cls);
 	if (it != m_classes.end()) {
 		m_classes.erase(it);
-		if (m_canvas) {
-			m_canvas->notify_style_dirty(this);
-		}
+		mark_style_dirty();
 	}
 }
 
@@ -207,6 +199,17 @@ void View::invalidate_layout() {
 	if (m_canvas) {
 		m_canvas->notify_layout_dirty(this);
 	}
+}
+
+void View::mark_style_dirty() {
+	if (m_canvas) {
+		m_canvas->notify_style_dirty(this);
+	}
+}
+
+void ViewRef::assign(View *view) {
+	m_ptr = view;
+	m_alive = view != nullptr ? view->alive_token() : WeakRef<void>{};
 }
 
 void View::set_canvas(Canvas *canvas) {
@@ -249,7 +252,7 @@ Unique<View> View::detach_child(View *child) {
 }
 
 View *View::replace_child(View *old, Unique<View> new_child) {
-	auto it = std::ranges::find_if(m_children, [old](const Unique<View> &v) { return v.get() == old; });
+	auto it = std::ranges::find_if(m_children, [old](const Unique<View> &view) { return view.get() == old; });
 	if (it == m_children.end()) {
 		return nullptr;
 	}
@@ -288,7 +291,8 @@ void View::reorder_child(View *child, View *before) {
 	if (before == nullptr) {
 		m_children.push_back(std::move(owned));
 	} else {
-		auto dest = std::ranges::find_if(m_children, [before](const Unique<View> &view) { return view.get() == before; });
+		auto dest =
+			std::ranges::find_if(m_children, [before](const Unique<View> &view) { return view.get() == before; });
 		m_children.insert(dest, std::move(owned));
 	}
 
@@ -342,51 +346,44 @@ void View::on_mouse_enter() {
 		return;
 	}
 	m_is_hovered = true;
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 	on_mouse_entered();
 }
+
 void View::on_mouse_leave() {
 	if (!m_is_hovered) {
 		return;
 	}
 	m_is_hovered = false;
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
+
 void View::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 	if (btn == Platform::MouseButton::Left) {
 		m_is_pressed = true;
-		if (m_canvas) {
-			m_canvas->notify_style_dirty(this);
-		}
+		mark_style_dirty();
 		on_pressed(pos);
 	}
 	if (btn == Platform::MouseButton::Right) {
 		on_context_menu(pos);
 	}
 }
+
 void View::on_mouse_release(Platform::MouseButton btn, Vec2) {
 	if (btn == Platform::MouseButton::Left) {
 		m_is_pressed = false;
-		if (m_canvas) {
-			m_canvas->notify_style_dirty(this);
-		}
+		mark_style_dirty();
 	}
 }
+
 void View::on_focus_gained() {
 	m_is_focused = true;
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
+
 void View::on_focus_lost() {
 	m_is_focused = false;
-	if (m_canvas) {
-		m_canvas->notify_style_dirty(this);
-	}
+	mark_style_dirty();
 }
 
 void View::on_drag_start(DragState &state) {}
@@ -420,16 +417,15 @@ void View::on_draw_self(Rendering::DrawList &draw_list) {
 	}
 
 	const Rect world_rect = { .position = m_absolute_position, .size = m_layout_rect.size };
-	const Int32 z = 0;
 
 	for (const auto &shadow : m_display_style.box_shadows) {
 		draw_list.draw_shadow(world_rect, shadow.offset, shadow.blur, shadow.spread, shadow.color,
-							  m_display_style.border_radius, z + 0);
+							  m_display_style.border_radius, 0);
 	}
 
 	if (m_display_style.background_color.a > 0.F || m_display_style.border_width > 0.F) {
 		draw_list.draw_rect(world_rect, m_display_style.background_color, m_display_style.border_radius,
-							m_display_style.border_width, m_display_style.border_color, z + 1,
+							m_display_style.border_width, m_display_style.border_color, 1,
 							m_display_style.border_style);
 	}
 }

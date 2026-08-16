@@ -47,6 +47,19 @@ HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity 
 	return raw;
 }
 
+void HierarchyTreeView::delete_entity_node(Entity entity) {
+	for (auto it = m_node_entity_map.begin(); it != m_node_entity_map.end();) {
+		if (it->second == entity) {
+			remove_node(it->first);
+			it = m_node_entity_map.erase(it);
+		} else {
+			it++;
+		}
+	}
+
+	deselect();
+}
+
 void HierarchyTreeView::populate_from_entity(Entity entity, HierarchyTreeNode *parent) {
 	auto *node = add_entity_node(entity.get_name(), entity, parent);
 	if (auto *scene_node = entity.try_get_component<SceneNodeComponent>()) {
@@ -102,17 +115,17 @@ void HierarchyTreeView::on_drop(DragState &state) {
 
 	View *old_parent_container = source_node->get_parent();
 	auto *old_parent_node =
-		view_cast<TreeNode>(old_parent_container ? old_parent_container->get_parent() : nullptr);
+		view_cast<TreeNode>((old_parent_container != nullptr) ? old_parent_container->get_parent() : nullptr);
 
 	auto detached = old_parent_container->detach_child(source_node);
 
-	if (old_parent_node) {
+	if (old_parent_node != nullptr) {
 		old_parent_node->refresh_indicator();
 		old_parent_node->queue_redraw();
 	}
 
 	auto *moved_node = static_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
-	if (moved_node) {
+	if (moved_node != nullptr) {
 		moved_node->update_depth(0);
 	}
 }

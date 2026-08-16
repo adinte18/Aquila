@@ -12,8 +12,6 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice &device, VkShaderModul
 	AQUILA_ASSERT(module != VK_NULL_HANDLE, "VulkanComputePipeline requires a valid VkShaderModule");
 	AQUILA_ASSERT(layout != VK_NULL_HANDLE, "VulkanComputePipeline requires a valid VkPipelineLayout");
 
-	create_pipeline_cache();
-
 	VkPipelineShaderStageCreateInfo stage_info{};
 	stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	stage_info.stage = VK_SHADER_STAGE_COMPUTE_BIT;
@@ -25,8 +23,8 @@ VulkanComputePipeline::VulkanComputePipeline(VulkanDevice &device, VkShaderModul
 	pipeline_info.stage = stage_info;
 	pipeline_info.layout = layout;
 
-	AQUILA_VULKAN_CHECK(
-		vkCreateComputePipelines(m_device.get_device(), m_pipeline_cache, 1, &pipeline_info, nullptr, &m_pipeline));
+	AQUILA_VULKAN_CHECK(vkCreateComputePipelines(m_device.get_device(), m_device.get_pipeline_cache(), 1, &pipeline_info,
+												 nullptr, &m_pipeline));
 }
 
 VulkanComputePipeline::~VulkanComputePipeline() {
@@ -39,20 +37,10 @@ VulkanComputePipeline::~VulkanComputePipeline() {
 		dq.queue_deletion(m_layout);
 		m_layout = VK_NULL_HANDLE;
 	}
-	if (m_pipeline_cache != VK_NULL_HANDLE) {
-		dq.queue_deletion(m_pipeline_cache);
-		m_pipeline_cache = VK_NULL_HANDLE;
-	}
 }
 
 void VulkanComputePipeline::bind(IRHICommandList &cmd) {
 	vkCmdBindPipeline(static_cast<VulkanCommandList &>(cmd).get_handle(), VK_PIPELINE_BIND_POINT_COMPUTE, m_pipeline);
-}
-
-void VulkanComputePipeline::create_pipeline_cache() {
-	VkPipelineCacheCreateInfo cache_info{};
-	cache_info.sType = VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO;
-	AQUILA_VULKAN_CHECK(vkCreatePipelineCache(m_device.get_device(), &cache_info, nullptr, &m_pipeline_cache));
 }
 
 } // namespace Aquila::RHI

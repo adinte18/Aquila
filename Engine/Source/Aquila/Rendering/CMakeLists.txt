@@ -2,19 +2,17 @@ set(MODULE_NAME Rendering)
 set(MODULE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Engine/Include)
 set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
-set(MODULE_SOURCES
-    ${MODULE_SOURCE_DIR}/Camera.cpp
-    ${MODULE_SOURCE_DIR}/RenderPipeline.cpp
-    ${MODULE_SOURCE_DIR}/SceneFrameData.cpp
-    ${MODULE_SOURCE_DIR}/Systems/GeometrySystem.cpp
-    ${MODULE_SOURCE_DIR}/Systems/DepthPrepassSystem.cpp
-    ${MODULE_SOURCE_DIR}/Systems/ClusterComputeSystem.cpp
-    ${MODULE_SOURCE_DIR}/Systems/LightCullingSystem.cpp
-    ${MODULE_SOURCE_DIR}/Renderers/Renderer.cpp
-    ${MODULE_SOURCE_DIR}/Renderers/Renderer2D.cpp
+file(GLOB_RECURSE MODULE_SOURCES CONFIGURE_DEPENDS
+    ${MODULE_SOURCE_DIR}/*.cpp
+)
+# Legacy system built against the old renderer architecture; not part of the current build.
+list(FILTER MODULE_SOURCES EXCLUDE REGEX ".*SkyboxRenderingSystem\\.cpp$")
+
+file(GLOB_RECURSE MODULE_HEADERS CONFIGURE_DEPENDS
+    ${MODULE_INCLUDE_DIR}/Aquila/Rendering/*.h
 )
 
-add_library(${MODULE_NAME} STATIC ${MODULE_SOURCES})
+add_library(${MODULE_NAME} STATIC ${MODULE_SOURCES} ${MODULE_HEADERS})
 
 set_target_properties(${MODULE_NAME} PROPERTIES
     OUTPUT_NAME "AquilaRendering"
@@ -40,6 +38,8 @@ target_link_libraries(${MODULE_NAME}
     GFX
     Graphics
     Scene
+    PRIVATE
+    hosek
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

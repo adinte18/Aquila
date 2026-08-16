@@ -9,11 +9,15 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include "Aquila/Rendering/Systems/GridSystem.h"
+#include "Aquila/Rendering/Systems/SkySystem.h"
 #include "Aquila/Rendering/Systems/LightCullingSystem.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/Foundation/SharedConstants.h"
 
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
+#include "Aquila/Rendering/Systems/ShadowSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
 #include "Aquila/Rendering/FrameScheduler.h"
@@ -76,6 +80,8 @@ Application::~Application() {
 	m_secondary_batcher.reset();
 	m_swapchain.reset();
 	m_ctx.reset();
+
+	Graphics::Shader::ShaderHotReload::shutdown();
 
 	// TODO: move to a generic shader compiler abstraction
 	RHI::VulkanShaderCompiler::shutdown();
@@ -148,6 +154,8 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	// TODO: replace with a generic shader compiler abstraction
 	RHI::VulkanShaderCompiler::initialize();
 	Graphics::MaterialFactory::init();
+	Graphics::Shader::ShaderHotReload::init();
+	Graphics::Shader::ShaderHotReload::get()->enable(true);
 	Rendering::FrameScheduler::init();
 
 	using namespace Platform::Filesystem;
@@ -167,13 +175,18 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	});
 
 	m_render_pipeline = std::make_unique<Rendering::RenderPipeline>(*m_ctx, width, height);
+	m_render_width = width;
+	m_render_height = height;
 	m_renderer = &m_render_pipeline->add<Rendering::Renderer>();
 	m_renderer2_d = &m_render_pipeline->add<Rendering::Renderer2D>();
 
 	m_renderer->add_system<Rendering::DepthPrepassSystem>();
 	m_renderer->add_system<Rendering::ClusterComputeSystem>();
 	m_renderer->add_system<Rendering::LightCullingSystem>();
+	m_renderer->add_system<Rendering::ShadowSystem>();
 	m_renderer->add_system<Rendering::GeometrySystem>();
+	m_renderer->add_system<Rendering::SkySystem>();
+	m_renderer->add_system<Rendering::GridSystem>();
 
 	m_secondary_batcher = std::make_unique<Graphics::QuadBatcher>(*m_ctx);
 }
@@ -286,6 +299,15 @@ void Application::internal_update(F32 delta_time) {
 		handle_resize();
 	}
 
+	if (m_render_resize_pending) {
+		m_render_resize_pending = false;
+		m_ctx->wait_idle();
+		m_render_pipeline->resize(m_next_render_width, m_next_render_height);
+		m_render_width = m_next_render_width;
+		m_render_height = m_next_render_height;
+		on_render_resize(m_render_width, m_render_height);
+	}
+
 	Uint32 image_index = 0;
 	{
 		PROFILE_SCOPE("AcquireNextImage");
@@ -304,7 +326,7 @@ void Application::internal_update(F32 delta_time) {
 	on_pre_render(delta_time);
 
 	{
-		Graphics::MaterialFactory::get()->tick(*m_ctx);
+		Graphics::Shader::ShaderHotReload::get()->tick();
 	}
 
 	{
@@ -358,6 +380,18 @@ void Application::internal_on_secondary_window_event(RenderWindow &rw, Events::E
 	}
 }
 
+void Application::request_render_resize(Uint32 width, Uint32 height) {
+	if (width == 0 || height == 0) {
+		return;
+	}
+	if (width == m_render_width && height == m_render_height) {
+		return;
+	}
+	m_next_render_width = width;
+	m_next_render_height = height;
+	m_render_resize_pending = true;
+}
+
 void Application::handle_resize() {
 	const Uint32 width = m_window->get_width();
 	const Uint32 height = m_window->get_height();
@@ -367,9 +401,10 @@ void Application::handle_resize() {
 
 	m_ctx->wait_idle();
 	m_swapchain->resize(width, height);
-	m_render_pipeline->resize(width, height);
 
 	on_resize(width, height);
+
+	request_render_resize(width, height);
 }
 
 } // namespace Aquila::Application

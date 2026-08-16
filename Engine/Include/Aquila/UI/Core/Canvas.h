@@ -26,7 +26,7 @@ class Canvas {
 	Canvas(Uint32 width, Uint32 height);
 
 	void on_event(Application::Events::Event &event);
-	void update(float delta_time);
+	void update(F32 delta_time);
 	void compute();
 	void submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
 	void resize(Uint32 width, Uint32 height);
@@ -37,7 +37,7 @@ class Canvas {
 	[[nodiscard]] View *get_focused_view() const { return m_input_router.focused_view(); }
 	[[nodiscard]] View *get_hovered_view() const { return m_input_router.hovered_view(); }
 	void scroll_into_view(View *target);
-	void set_scroll_offset(View *target, float offset_y);
+	void set_scroll_offset(View *target, F32 offset_y);
 	Uint32 get_width() const { return m_width; }
 	Uint32 get_height() const { return m_height; }
 	void notify_style_dirty(View *view);
@@ -46,6 +46,7 @@ class Canvas {
 	void notify_layout_dirty(View *view);
 	void notify_focus_request(View *view);
 	void notify_view_removed(View *view);
+	void register_removal_observer(Delegate<void(View *)> observer);
 	void reload_styles();
 	void mark_subtree_dirty(View *node);
 
@@ -65,6 +66,7 @@ class Canvas {
   private:
 	void mark_node_draw_dirty(View *node);
 	void dismiss_popups_outside(View *hit);
+	void register_internal_observers();
 
 	struct OpenPopup {
 		View *root;
@@ -72,18 +74,20 @@ class Canvas {
 	};
 	std::vector<OpenPopup> m_open_popups;
 	std::vector<View *> m_ticking;
-	View *m_scroll_target = nullptr;
-	View *m_scroll_offset_target = nullptr;
-	float m_scroll_offset_y = 0.F;
+	std::vector<Delegate<void(View *)>> m_removal_observers;
+	ViewRef m_scroll_target;
+	ViewRef m_scroll_offset_target;
+	F32 m_scroll_offset_y = 0.F;
 
 	Unique<View> m_root;
 	StyleEngine m_style_engine;
 	LayoutEngine m_layout_engine;
 	DrawCompositor m_draw_compositor;
 	InputRouter m_input_router;
-	Uint32 m_width, m_height;
+	Uint32 m_width;
+	Uint32 m_height;
 
-	float m_delta_time = 0.F;
+	F32 m_delta_time = 0.F;
 
 	std::vector<View *> m_active_anims;
 
@@ -100,8 +104,8 @@ class Canvas {
 	DragGhost *m_drag_ghost = nullptr;
 
 	Tooltip *m_tooltip = nullptr;
-	View *m_tooltip_target = nullptr;
-	float m_tooltip_timer = 0.F;
+	ViewRef m_tooltip_target;
+	F32 m_tooltip_timer = 0.F;
 	bool m_tooltip_shown = false;
 };
 } // namespace Aquila::UI::Core
