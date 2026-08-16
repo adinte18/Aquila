@@ -96,18 +96,18 @@ void EditorPreferences::reset_to_defaults() {
 	ui = UISettings{};
 	current_theme = Theme::Aquila2;
 
-	ui_scale = 1.0f;
+	ui_scale = 1.0F;
 
 	show_grid = true;
 	show_gizmos = true;
 	auto_save = false;
 	auto_save_interval = 300;
 
-	camera_move_speed = 5.0f;
-	camera_rotate_speed = 0.5f;
+	camera_move_speed = 5.0F;
+	camera_rotate_speed = 0.5F;
 	invert_mouse_y = false;
 
-	thumbnail_size = 64.0f;
+	thumbnail_size = 64.0F;
 	show_file_extensions = true;
 
 	AQUILA_LOG_INFO("Editor preferences reset to defaults");

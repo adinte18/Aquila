@@ -39,7 +39,7 @@ SettingsWindow::~SettingsWindow() = default;
 
 void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 height, const std::string &style_path) {
 	m_texture_cache = texture_cache;
-	if (m_texture_cache) {
+	if (m_texture_cache != nullptr) {
 		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.png");
 	}
 

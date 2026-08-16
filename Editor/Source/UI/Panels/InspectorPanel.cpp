@@ -73,7 +73,7 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 
 	if (overlay_root != nullptr) {
 		auto popup = std::make_unique<UI::Core::PopupMenu>();
-		m_add_popup = static_cast<UI::Core::PopupMenu *>(overlay_root->add_child(std::move(popup)));
+		m_add_popup = dynamic_cast<UI::Core::PopupMenu *>(overlay_root->add_child(std::move(popup)));
 		if (m_texture_cache != nullptr) {
 			m_add_popup->set_submenu_icon(m_texture_cache->load("Engine/UI/Icons/chevron-right.png"));
 		}
@@ -325,9 +325,9 @@ void InspectorPanel::attach_default_material(Entity entity) {
 		return;
 	}
 	auto &material = entity.add_component<MaterialComponent>(ensure_default_material());
-	material.surface_properties.albedo = Vec4(0.8f, 0.8f, 0.8f, 1.0f);
-	material.surface_properties.metallic = 0.0f;
-	material.surface_properties.roughness = 0.6f;
+	material.surface_properties.albedo = Vec4(0.8F, 0.8F, 0.8F, 1.0F);
+	material.surface_properties.metallic = 0.0F;
+	material.surface_properties.roughness = 0.6F;
 }
 
 void InspectorPanel::open_add_menu() {

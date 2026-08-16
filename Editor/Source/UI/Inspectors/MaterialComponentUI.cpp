@@ -66,9 +66,9 @@ void MaterialComponentUI::build(UI::Core::Collapsible *section, UI::Core::Proper
 
 	using UI::Core::DragFloat;
 	m_metallic = grid->add_row<DragFloat>("Metallic",
-										  DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01f, .precision = 3 });
+										  DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3 });
 	m_roughness = grid->add_row<DragFloat>("Roughness",
-										   DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01f, .precision = 3 });
+										   DragFloat::Config{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3 });
 
 	m_texture_area = section->add_child<UI::Core::PropertyGrid>();
 }

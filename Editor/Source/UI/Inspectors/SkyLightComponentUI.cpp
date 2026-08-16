@@ -27,15 +27,15 @@ void SkyLightComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid 
 	m_source->add_option("HDR Image");
 
 	m_sun_elevation = grid->add_row<DragFloat>(
-		"Sun Elevation", DragFloat::Config{ .min = -10.F, .max = 90.F, .speed = 0.5f, .precision = 1 });
+		"Sun Elevation", DragFloat::Config{ .min = -10.F, .max = 90.F, .speed = 0.5F, .precision = 1 });
 	m_sun_azimuth = grid->add_row<DragFloat>(
 		"Sun Azimuth", DragFloat::Config{ .min = 0.F, .max = 360.F, .speed = 1.F, .precision = 1 });
 	m_turbidity = grid->add_row<DragFloat>(
-		"Turbidity", DragFloat::Config{ .min = 1.F, .max = 10.F, .speed = 0.05f, .precision = 2 });
+		"Turbidity", DragFloat::Config{ .min = 1.F, .max = 10.F, .speed = 0.05F, .precision = 2 });
 	m_ground_albedo = grid->add_row<UI::Core::ColorPicker>("Ground Albedo", m_context, Vec4(0.3F, 0.3F, 0.3F, 1.F));
 
 	m_intensity = grid->add_row<DragFloat>(
-		"Intensity", DragFloat::Config{ .min = 0.F, .max = 20.F, .speed = 0.05f, .precision = 3 });
+		"Intensity", DragFloat::Config{ .min = 0.F, .max = 20.F, .speed = 0.05F, .precision = 3 });
 	m_tint = grid->add_row<UI::Core::ColorPicker>("Tint", m_context, Vec4(1.F));
 
 	m_active = grid->add_row<UI::Core::Toggle>("Active", false);

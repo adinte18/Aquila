@@ -16,7 +16,7 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 	m_is_draggable = false;
 
 	on_selected.connect([this](Aquila::UI::Core::TreeNode *node) {
-		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
+		auto *hierarchy_node = dynamic_cast<HierarchyTreeNode *>(node);
 		auto it = m_node_entity_map.find(hierarchy_node);
 		if (it != m_node_entity_map.end()) {
 			on_entity_selected(it->second);
@@ -24,7 +24,7 @@ HierarchyTreeView::HierarchyTreeView(EntityManager &entity_manager) : m_entity_m
 	});
 
 	on_node_right_clicked.connect([this](Aquila::UI::Core::TreeNode *node, Vec2 pos) {
-		auto *hierarchy_node = static_cast<HierarchyTreeNode *>(node);
+		auto *hierarchy_node = dynamic_cast<HierarchyTreeNode *>(node);
 		auto it = m_node_entity_map.find(hierarchy_node);
 		if (it != m_node_entity_map.end()) {
 			on_entity_right_clicked(it->second, pos);
@@ -38,9 +38,9 @@ HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity 
 
 	HierarchyTreeNode *raw = nullptr;
 	if (parent != nullptr) {
-		raw = static_cast<HierarchyTreeNode *>(parent->add_child(std::move(node)));
+		raw = dynamic_cast<HierarchyTreeNode *>(parent->add_child(std::move(node)));
 	} else {
-		raw = static_cast<HierarchyTreeNode *>(add_child(std::move(node)));
+		raw = dynamic_cast<HierarchyTreeNode *>(add_child(std::move(node)));
 	}
 
 	m_node_entity_map[raw] = entity;
@@ -124,7 +124,7 @@ void HierarchyTreeView::on_drop(DragState &state) {
 		old_parent_node->queue_redraw();
 	}
 
-	auto *moved_node = static_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
+	auto *moved_node = dynamic_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
 	if (moved_node != nullptr) {
 		moved_node->update_depth(0);
 	}

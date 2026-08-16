@@ -62,7 +62,7 @@ void UIDebugPanel::build(View *overlay_root, Canvas *target) {
 }
 
 void UIDebugPanel::toggle() {
-	if (!m_window) {
+	if (m_window == nullptr) {
 		return;
 	}
 
@@ -76,7 +76,7 @@ void UIDebugPanel::toggle() {
 }
 
 TreeNode *UIDebugPanel::add_view_node(View *view, TreeNode *parent_node) {
-	TreeNode *node = parent_node ? parent_node->add_child_node(make_label(view)) : m_tree->add_node(make_label(view));
+	TreeNode *node = (parent_node != nullptr) ? parent_node->add_child_node(make_label(view)) : m_tree->add_node(make_label(view));
 	m_node_to_view[node] = view;
 
 	for (const auto &child : view->get_children()) {
@@ -89,7 +89,7 @@ TreeNode *UIDebugPanel::add_view_node(View *view, TreeNode *parent_node) {
 }
 
 void UIDebugPanel::refresh() {
-	if (!m_target || !m_tree_host) {
+	if ((m_target == nullptr) || (m_tree_host == nullptr)) {
 		return;
 	}
 

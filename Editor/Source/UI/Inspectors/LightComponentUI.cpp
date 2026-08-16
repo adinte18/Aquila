@@ -24,8 +24,8 @@ bool LightComponentUI::matches(Entity entity) const {
 void LightComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
 	using UI::Core::DragFloat;
 	m_color = grid->add_row<UI::Core::ColorPicker>("Color", m_context, Vec4(1.F));
-	m_intensity = grid->add_row<DragFloat>("Intensity", DragFloat::Config{ .min = 0.F, .max = 100.F, .speed = 0.5f });
-	m_range = grid->add_row<DragFloat>("Range", DragFloat::Config{ .min = 0.F, .max = 200.F, .speed = 0.5f });
+	m_intensity = grid->add_row<DragFloat>("Intensity", DragFloat::Config{ .min = 0.F, .max = 100.F, .speed = 0.5F });
+	m_range = grid->add_row<DragFloat>("Range", DragFloat::Config{ .min = 0.F, .max = 200.F, .speed = 0.5F });
 	m_active = grid->add_row<UI::Core::Toggle>("Active", false);
 	grid->add_row<UI::Core::Checkbox>("Shadows", false);
 }

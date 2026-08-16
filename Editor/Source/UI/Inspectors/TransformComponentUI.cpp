@@ -17,10 +17,10 @@ bool TransformComponentUI::matches(Entity entity) const {
 
 void TransformComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
 	m_position = grid->add_row<UI::Core::Vec3Field>("Position");
-	m_position->set_speed(0.1f);
+	m_position->set_speed(0.1F);
 
 	m_scale = grid->add_row<UI::Core::Vec3Field>("Scale");
-	m_scale->set_speed(0.1f);
+	m_scale->set_speed(0.1F);
 }
 
 void TransformComponentUI::show(Entity entity) {

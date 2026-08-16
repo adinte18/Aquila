@@ -20,13 +20,13 @@ Ref<Graphics::Resources::Mesh> make_primitive(const std::string &shape) {
 	using Graphics::Resources::Mesh;
 	auto mesh = std::make_shared<Mesh>(shape);
 	if (shape == "sphere") {
-		mesh->load_from_data(Mesh::generate_sphere(0.5f, 32, 16));
+		mesh->load_from_data(Mesh::generate_sphere(0.5F, 32, 16));
 	} else if (shape == "plane") {
-		mesh->load_from_data(Mesh::generate_plane(1.0f, 1.0f, 1, 1));
+		mesh->load_from_data(Mesh::generate_plane(1.0F, 1.0F, 1, 1));
 	} else if (shape == "cylinder") {
-		mesh->load_from_data(Mesh::generate_cylinder(0.5f, 1.0f, 32));
+		mesh->load_from_data(Mesh::generate_cylinder(0.5F, 1.0F, 32));
 	} else {
-		mesh->load_from_data(Mesh::generate_cube(1.0f));
+		mesh->load_from_data(Mesh::generate_cube(1.0F));
 	}
 	return mesh;
 }

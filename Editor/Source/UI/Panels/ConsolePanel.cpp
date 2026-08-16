@@ -60,7 +60,7 @@ ConsolePanel::~ConsolePanel() {
 }
 
 void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayRoot*/) {
-	if (m_texture_cache) {
+	if (m_texture_cache != nullptr) {
 		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.png");
 		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.png");
 		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.png");
@@ -97,19 +97,19 @@ void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 
 		auto count = std::make_unique<UI::Core::Label>("0");
 		count->add_class("console-filter-count");
-		count_out = static_cast<UI::Core::Label *>(btn->add_child(std::move(count)));
+		count_out = dynamic_cast<UI::Core::Label *>(btn->add_child(std::move(count)));
 
 		btn->on_click.connect([this, group]() { toggle_filter(group); });
 		toolbar_ptr->add_child(std::move(btn));
 	};
 
-	make_filter_btn({ 0.42f, 0.69f, 0.86f, 1.F }, FilterGroup::Info, m_info_filter_btn, m_info_count_label);
-	make_filter_btn({ 0.83f, 0.67f, 0.29f, 1.F }, FilterGroup::Warning, m_warning_filter_btn, m_warning_count_label);
-	make_filter_btn({ 0.83f, 0.42f, 0.42f, 1.F }, FilterGroup::Error, m_error_filter_btn, m_error_count_label);
+	make_filter_btn({ 0.42F, 0.69F, 0.86F, 1.F }, FilterGroup::Info, m_info_filter_btn, m_info_count_label);
+	make_filter_btn({ 0.83F, 0.67F, 0.29F, 1.F }, FilterGroup::Warning, m_warning_filter_btn, m_warning_count_label);
+	make_filter_btn({ 0.83F, 0.42F, 0.42F, 1.F }, FilterGroup::Error, m_error_filter_btn, m_error_count_label);
 }
 
 void ConsolePanel::flush_pending() {
-	if (m_pending.empty() || !m_scroll_view) {
+	if (m_pending.empty() || (m_scroll_view == nullptr)) {
 		return;
 	}
 	for (auto &line : m_pending) {
@@ -181,19 +181,19 @@ void ConsolePanel::toggle_filter(FilterGroup group) {
 	switch (group) {
 	case FilterGroup::Info:
 		m_show_info = !m_show_info;
-		if (m_info_filter_btn) {
+		if (m_info_filter_btn != nullptr) {
 			m_info_filter_btn->set_class("dimmed", !m_show_info);
 		}
 		break;
 	case FilterGroup::Warning:
 		m_show_warning = !m_show_warning;
-		if (m_warning_filter_btn) {
+		if (m_warning_filter_btn != nullptr) {
 			m_warning_filter_btn->set_class("dimmed", !m_show_warning);
 		}
 		break;
 	case FilterGroup::Error:
 		m_show_error = !m_show_error;
-		if (m_error_filter_btn) {
+		if (m_error_filter_btn != nullptr) {
 			m_error_filter_btn->set_class("dimmed", !m_show_error);
 		}
 		break;
@@ -224,13 +224,13 @@ void ConsolePanel::apply_row_visibility(int index) {
 }
 
 void ConsolePanel::update_filter_buttons() {
-	if (m_info_count_label) {
+	if (m_info_count_label != nullptr) {
 		m_info_count_label->set_text(std::to_string(m_info_count));
 	}
-	if (m_warning_count_label) {
+	if (m_warning_count_label != nullptr) {
 		m_warning_count_label->set_text(std::to_string(m_warning_count));
 	}
-	if (m_error_count_label) {
+	if (m_error_count_label != nullptr) {
 		m_error_count_label->set_text(std::to_string(m_error_count));
 	}
 }
@@ -287,17 +287,17 @@ const char *ConsolePanel::level_class(LogLevel level) {
 Vec4 ConsolePanel::level_icon_tint(LogLevel level) {
 	switch (level) {
 	case LogLevel::Warning:
-		return { 0.83f, 0.67f, 0.29f, 1.F };
+		return { 0.83F, 0.67F, 0.29F, 1.F };
 	case LogLevel::Error:
-		return { 0.83f, 0.42f, 0.42f, 1.F };
+		return { 0.83F, 0.42F, 0.42F, 1.F };
 	case LogLevel::Critical:
-		return { 1.F, 0.25f, 0.25f, 1.F };
+		return { 1.F, 0.25F, 0.25F, 1.F };
 	case LogLevel::Debug:
-		return { 0.42f, 0.69f, 0.86f, 1.F };
+		return { 0.42F, 0.69F, 0.86F, 1.F };
 	case LogLevel::Trace:
-		return { 0.53f, 0.53f, 0.53f, 1.F };
+		return { 0.53F, 0.53F, 0.53F, 1.F };
 	default:
-		return { 0.42f, 0.69f, 0.86f, 1.F };
+		return { 0.42F, 0.69F, 0.86F, 1.F };
 	}
 }
 

@@ -40,18 +40,18 @@ struct EditorPreferences {
 	UISettings ui;
 	Theme current_theme = Theme::Aquila2;
 
-	F32 ui_scale = 1.0f;
+	F32 ui_scale = 1.0F;
 
 	bool show_grid = true;
 	bool show_gizmos = true;
 	bool auto_save = false;
 	Uint32 auto_save_interval = 300; // seconds
 
-	F32 camera_move_speed = 5.0f;
-	F32 camera_rotate_speed = 0.5f;
+	F32 camera_move_speed = 5.0F;
+	F32 camera_rotate_speed = 0.5F;
 	bool invert_mouse_y = false;
 
-	F32 thumbnail_size = 64.0f;
+	F32 thumbnail_size = 64.0F;
 	bool show_file_extensions = true;
 
 	std::string preference_file_path = "/app/editor_preferences.json";

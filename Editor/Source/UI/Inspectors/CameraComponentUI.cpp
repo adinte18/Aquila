@@ -20,11 +20,11 @@ bool CameraComponentUI::matches(Entity entity) const {
 void CameraComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
 	using UI::Core::DragFloat;
 	m_fov =
-		grid->add_row<DragFloat>("FOV", DragFloat::Config{ .min = 1.F, .max = 179.F, .speed = 0.5f, .precision = 1 });
+		grid->add_row<DragFloat>("FOV", DragFloat::Config{ .min = 1.F, .max = 179.F, .speed = 0.5F, .precision = 1 });
 	m_near = grid->add_row<DragFloat>("Near",
-									  DragFloat::Config{ .min = 0.001f, .max = 100.F, .speed = 0.01f, .precision = 3 });
+									  DragFloat::Config{ .min = 0.001F, .max = 100.F, .speed = 0.01F, .precision = 3 });
 	m_far = grid->add_row<DragFloat>("Far",
-									 DragFloat::Config{ .min = 0.1f, .max = 10000.F, .speed = 0.01f, .precision = 1 });
+									 DragFloat::Config{ .min = 0.1F, .max = 10000.F, .speed = 0.01F, .precision = 1 });
 	m_primary = grid->add_row<UI::Core::Toggle>("Primary", false);
 	m_ortho = grid->add_row<UI::Core::Checkbox>("Orthographic", false);
 }

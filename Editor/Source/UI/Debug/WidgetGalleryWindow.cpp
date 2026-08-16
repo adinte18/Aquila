@@ -83,7 +83,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 	slider->set_value(40.F);
 
 	auto *progress = add_group(content, "ProgressBar")->add_child<ProgressBar>();
-	progress->set_value(0.65f);
+	progress->set_value(0.65F);
 
 	add_group(content, "TextInput")->add_child<TextInput>(std::string("Type here…"));
 
@@ -98,7 +98,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 	dropdown->add_option("second", "Second");
 	dropdown->add_option("third", "Third");
 
-	add_group(content, "ColorPicker")->add_child<ColorPicker>(ctx, Vec4(0.8f, 0.4f, 0.2f, 1.F));
+	add_group(content, "ColorPicker")->add_child<ColorPicker>(ctx, Vec4(0.8F, 0.4F, 0.2F, 1.F));
 
 	add_group(content, "Vec3Field")->add_child<Vec3Field>();
 
@@ -128,7 +128,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 	grid->add_row<DragFloat>("Scale");
 	grid->add_row<Checkbox>("Visible");
 
-	if (texture_cache) {
+	if (texture_cache != nullptr) {
 		auto *image =
 			add_group(content, "Image")->add_child<Image>(texture_cache->load("Engine/UI/Icons/info.png"), Vec4(1.F));
 		image->add_class("gallery-image");
@@ -138,7 +138,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 
 	auto *card = add_group(content, "AssetCard")->add_child<AssetCard>();
 	card->set_asset(AssetPayload{ "textures/wood.png", "texture", "wood.png" });
-	if (texture_cache) {
+	if (texture_cache != nullptr) {
 		card->set_thumbnail(texture_cache->load("Engine/UI/Icons/info.png"));
 	}
 

@@ -39,17 +39,17 @@ void HierarchyTreeNode::on_drop(DragState &state) {
 	m_entity_manager.add_child(m_entity, dragged_entity);
 
 	View *old_parent_container = source_node->get_parent();
-	auto *old_parent_node = view_cast<TreeNode>(old_parent_container ? old_parent_container->get_parent() : nullptr);
+	auto *old_parent_node = view_cast<TreeNode>((old_parent_container != nullptr) ? old_parent_container->get_parent() : nullptr);
 
 	auto detached = old_parent_container->detach_child(source_node);
 
-	if (old_parent_node) {
+	if (old_parent_node != nullptr) {
 		old_parent_node->refresh_indicator();
 		old_parent_node->queue_redraw();
 	}
 
-	auto *new_node = static_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
-	if (new_node) {
+	auto *new_node = dynamic_cast<HierarchyTreeNode *>(add_child(std::move(detached)));
+	if (new_node != nullptr) {
 		new_node->update_depth(get_depth() + 1);
 		set_expanded(true);
 	}

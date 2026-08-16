@@ -58,16 +58,16 @@ void FloatingPanelWindow::on_event(Events::Event &event) {
 }
 
 bool FloatingPanelWindow::has_content() const {
-	return m_dock_space && m_dock_space->has_any_panels();
+	return (m_dock_space != nullptr) && m_dock_space->has_any_panels();
 }
 
 Unique<View> FloatingPanelWindow::detach_content() {
-	if (!m_dock_space) {
+	if (m_dock_space == nullptr) {
 		return nullptr;
 	}
 
 	DockNode *leaf = m_dock_space->first_leaf_with_tabs();
-	if (!leaf) {
+	if (leaf == nullptr) {
 		return nullptr;
 	}
 

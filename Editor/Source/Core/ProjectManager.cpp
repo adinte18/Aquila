@@ -40,7 +40,7 @@ std::string ProjectManager::sanitize(const std::string &name) {
 	out.reserve(name.size());
 	for (const char c : name) {
 		const auto uc = static_cast<unsigned char>(c);
-		if (std::isalnum(uc) || c == '-' || c == '_') {
+		if ((std::isalnum(uc) != 0) || c == '-' || c == '_') {
 			out += c;
 		} else if (c == ' ') {
 			out += '_';
@@ -82,11 +82,11 @@ Option<ProjectInfo> ProjectManager::create(const std::string &name) {
 	auto camera = entity_manager->create_entity("Camera");
 	auto &camera_component = camera.add_component<Components::CameraComponent>();
 	camera_component.fov = 60.F;
-	camera_component.near_plane = 0.1f;
+	camera_component.near_plane = 0.1F;
 	camera_component.far_plane = 500.F;
 	camera_component.aspect_ratio = 16.F / 9.F;
 	camera_component.primary = true;
-	camera.get_component<Components::TransformComponent>().set_local_position({ 0.F, 1.5f, -5.F });
+	camera.get_component<Components::TransformComponent>().set_local_position({ 0.F, 1.5F, -5.F });
 	scene.set_active_camera(camera);
 	scene.serialize(info.directory + "/" + scene_file);
 

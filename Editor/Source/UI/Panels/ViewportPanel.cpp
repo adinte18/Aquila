@@ -22,13 +22,13 @@ void ViewportPanel::build(UI::Core::DockPanel *panel, UI::Core::View *) {
 }
 
 void ViewportPanel::set_texture(GFX::GfxTexture *texture) {
-	if (m_image) {
+	if (m_image != nullptr) {
 		m_image->set_texture(texture);
 	}
 }
 
 Rect ViewportPanel::get_content_rect() const {
-	return m_image ? m_image->get_absolute_rect() : Rect{};
+	return (m_image != nullptr) ? m_image->get_absolute_rect() : Rect{};
 }
 
 } // namespace Editor

@@ -370,7 +370,7 @@ void UIDebugWindow::on_event(Application::Events::Event &event) {
 }
 
 TreeNode *UIDebugWindow::add_view_node(View *view, TreeNode *parent_node) {
-	TreeNode *node = parent_node ? parent_node->add_child_node(full_label(view)) : m_tree->add_node(full_label(view));
+	TreeNode *node = (parent_node != nullptr) ? parent_node->add_child_node(full_label(view)) : m_tree->add_node(full_label(view));
 	m_node_to_view[node] = view;
 	m_view_to_node[view] = node;
 
@@ -387,7 +387,7 @@ TreeNode *UIDebugWindow::add_view_node(View *view, TreeNode *parent_node) {
 }
 
 void UIDebugWindow::refresh() {
-	if (!m_target || !m_tree_host) {
+	if ((m_target == nullptr) || (m_tree_host == nullptr)) {
 		return;
 	}
 
@@ -417,7 +417,7 @@ void UIDebugWindow::refresh() {
 
 void UIDebugWindow::select_view(View *view) {
 	populate(view);
-	if (!view) {
+	if (view == nullptr) {
 		return;
 	}
 
@@ -426,7 +426,7 @@ void UIDebugWindow::select_view(View *view) {
 		return;
 	}
 
-	for (View *parent = view->get_parent(); parent; parent = parent->get_parent()) {
+	for (View *parent = view->get_parent(); parent != nullptr; parent = parent->get_parent()) {
 		auto parent_it = m_view_to_node.find(parent);
 		if (parent_it != m_view_to_node.end()) {
 			parent_it->second->set_expanded(true);
@@ -439,7 +439,7 @@ void UIDebugWindow::select_view(View *view) {
 void UIDebugWindow::populate(View *view) {
 	m_current = view;
 
-	if (!view) {
+	if (view == nullptr) {
 		m_empty_hint->set_hidden(false);
 		m_detail_body->set_hidden(true);
 		m_breadcrumb->set_text("");
@@ -505,7 +505,7 @@ void UIDebugWindow::populate(View *view) {
 
 	std::string trail;
 	std::vector<std::string> chain;
-	for (View *node = view; node; node = node->get_parent()) {
+	for (View *node = view; node != nullptr; node = node->get_parent()) {
 		chain.push_back(short_label(node));
 	}
 	for (auto it = chain.rbegin(); it != chain.rend(); ++it) {
