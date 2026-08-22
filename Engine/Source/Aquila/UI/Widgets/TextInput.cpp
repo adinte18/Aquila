@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/TextInput.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/Application/Events/InputEvent.h"
@@ -63,8 +64,7 @@ void TextInput::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 	}
 
 	const float font_size = get_display_style().font_size;
-	const float bake_size = font->get_bake_size();
-	const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float scale = (font_size > 0.F) ? font_size : SharedConstants::FONT_DEFAULT_SIZE;
 
 	constexpr float k_pad_x = 4.F;
 	const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
@@ -95,8 +95,7 @@ void TextInput::on_mouse_move(Vec2 pos) {
 	}
 
 	const float font_size = get_display_style().font_size;
-	const float bake_size = font->get_bake_size();
-	const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float scale = (font_size > 0.F) ? font_size : SharedConstants::FONT_DEFAULT_SIZE;
 
 	constexpr float k_pad_x = 4.F;
 	const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
@@ -115,8 +114,7 @@ void TextInput::on_key_press(Platform::KeyCode key, int mods) {
 		on_changed(m_state.text);
 		if (Text::FontAtlas *font = resolve_font()) {
 			const float font_size = get_display_style().font_size;
-			const float bake_size = font->get_bake_size();
-			const float scale = (bake_size > 0.F && font_size > 0.F) ? (font_size / bake_size) : 1.F;
+			const float scale = (font_size > 0.F) ? font_size : SharedConstants::FONT_DEFAULT_SIZE;
 			constexpr float k_pad_x = 4.F;
 			const float visible_width = get_layout_rect().size.x - k_pad_x * 2.F;
 			clamp_scroll_offset(font, scale, visible_width);
@@ -183,7 +181,7 @@ Vec2 TextInput::get_intrinsic_size() const {
 	auto &style = get_computed_style();
 
 	Text::FontAtlas *font = resolve_font();
-	auto scale = style.font_size / font->get_bake_size();
+	const float scale = (style.font_size > 0.F) ? style.font_size : SharedConstants::FONT_DEFAULT_SIZE;
 
 	result.x = -1; // we dont care bout width
 	result.y = font->get_line_height() * scale;
@@ -205,8 +203,7 @@ void TextInput::on_draw_self(Rendering::DrawList &draw_list) {
 		return;
 	}
 
-	const float bake_size = font->get_bake_size();
-	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float scale = font_size;
 	const float line_h = font->get_line_height() * scale;
 	const float k_pad_x = style.padding.left.value;
 	const float k_pad_y = style.padding.top.value;

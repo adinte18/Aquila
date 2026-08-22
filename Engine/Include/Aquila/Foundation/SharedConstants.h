@@ -52,6 +52,10 @@ constexpr Uint32 FONT_BAND_COUNT = 16;
 constexpr Uint32 FONT_BAND_MAX = FONT_BAND_COUNT - 1;
 constexpr Uint32 FONT_TEXELS_PER_CURVE = 2;
 
+constexpr F32 FONT_DEFAULT_SIZE = 16.F;
+constexpr F32 FONT_BAND_OVERLAP_EM = 1.F / 1024.F;
+constexpr F32 FONT_AXIS_LINE_EPSILON_EM = 1.0e-5F;
+
 // Reserved rows for the on-demand glyph atlas. Glyphs are appended into these
 // pre-allocated textures so the GPU texture pointer stays stable as new
 // codepoints are loaded at runtime.

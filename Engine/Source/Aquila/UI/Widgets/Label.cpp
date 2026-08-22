@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/Label.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Style/StyleTypes.h"
@@ -38,15 +39,14 @@ Vec2 Label::measure(float override_font_size) const {
 		return {};
 	}
 
-	const float bake_size = font->get_bake_size();
 	const float render_size = (override_font_size > 0.F) ? override_font_size : get_computed_style().font_size;
-	const float scale = (bake_size > 0.F && render_size > 0.F) ? (render_size / bake_size) : 1.F;
+	const float scale = (render_size > 0.F) ? render_size : SharedConstants::FONT_DEFAULT_SIZE;
 
 	Vec2 dims = font->measure_text(m_text, render_size);
 
 	const Foundation::Utf8::Decoded first = Foundation::Utf8::decode(m_text, 0);
 	if (const Text::GlyphInfo *glyph = font->get_glyph(first.codepoint)) {
-		dims.x -= glyph->bearing.x * scale;
+		dims.x -= glyph->bearing_em.x * scale;
 	}
 	return dims;
 }

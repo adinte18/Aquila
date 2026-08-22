@@ -168,8 +168,7 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 		return;
 	}
 
-	const float bake_size = font->get_bake_size();
-	const float scale = (bake_size > 0.F) ? (font_size / bake_size) : 1.F;
+	const float scale = font_size;
 	const float line_h = font->get_line_height() * scale;
 	const float text_y = rect.position.y + (rect.size.y - line_h) * 0.5F;
 	constexpr float k_pad_x = 4.F;

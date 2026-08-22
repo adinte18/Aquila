@@ -30,7 +30,8 @@ void DrawCompositor::rebuild_lists(View *root) {
 	m_canvas_layers.clear();
 	m_float_roots.clear();
 	{
-		const Rect canvas_bounds = { { 0.F, 0.F }, { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
+		const Rect canvas_bounds = { .position = { 0.F, 0.F },
+									 .size = { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
 		cull(root, 0, &canvas_bounds);
 	}
 	gather_floating_roots(root, m_float_roots);
@@ -119,9 +120,9 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 				m_z_buckets[bucket_idx].push_back(cmd);
 			}
 		}
-		const Rect item_clip =
-			clip_rect != nullptr ? *clip_rect
-								 : Rect{ { 0.F, 0.F }, { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
+		const Rect item_clip = clip_rect != nullptr
+			? *clip_rect
+			: Rect{ .position = { 0.F, 0.F }, .size = { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
 		m_canvas_items.push_back({ node, item_clip });
 	}
 
@@ -142,7 +143,7 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 
 		ClipPushCmd clip_push;
 		clip_push.rect = own_clip;
-		m_z_buckets[bucket_idx].push_back(clip_push);
+		m_z_buckets[bucket_idx].emplace_back(clip_push);
 	}
 
 	for (const auto &child : node->get_children()) {
@@ -152,7 +153,7 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 	if (clips_children) {
 		ClipPopCmd clip_pop;
 		clip_pop.rect = clip_rect != nullptr ? *clip_rect : Rect{};
-		m_z_buckets[bucket_idx].push_back(clip_pop);
+		m_z_buckets[bucket_idx].emplace_back(clip_pop);
 	}
 }
 

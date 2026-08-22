@@ -34,7 +34,7 @@ void FontManager::reload(Aquila::GFX::GfxContext &ctx, const Config::FontSetting
 	std::unordered_map<std::string, Aquila::UI::Text::FontAtlas *> font_map;
 
 	auto load = [&](const char *name, const std::string &path) {
-		auto atlas = Aquila::UI::Text::FontAtlas::create_from_file(ctx, path, settings.size);
+		auto atlas = Aquila::UI::Text::FontAtlas::create_from_file(ctx, path);
 		if (!atlas) {
 			AQUILA_LOG_ERROR("FontManager: failed to load '{}' from {}", name, path);
 			return;

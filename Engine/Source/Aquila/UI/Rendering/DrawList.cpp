@@ -1,4 +1,5 @@
 #include "Aquila/UI/Rendering/DrawList.h"
+#include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
@@ -156,9 +157,8 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					Text::FontAtlas *atlas = c.font;
 					const F32 depth = 0.F;
 
-					const F32 bake_size = c.font->get_bake_size();
-					const F32 render_size = (c.font_size > 0.F) ? c.font_size : bake_size;
-					const F32 scale = (bake_size > 0.F) ? (render_size / bake_size) : 1.F;
+					const F32 render_size = (c.font_size > 0.F) ? c.font_size : SharedConstants::FONT_DEFAULT_SIZE;
+					const F32 scale = render_size;
 					const F32 line_height = c.font->get_line_height() * scale;
 					const F32 ascent = c.font->get_ascent() * scale;
 
@@ -171,7 +171,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
 							ci += (d.size > 0 ? d.size : 1u);
 							if (const Text::GlyphInfo *g = atlas->get_glyph(d.codepoint)) {
-								text_width += g->advance * scale;
+								text_width += g->advance_em * scale;
 							}
 						}
 
@@ -185,7 +185,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
 								ci += (d.size > 0 ? d.size : 1u);
 								if (const Text::GlyphInfo *g = atlas->get_glyph(d.codepoint)) {
-									cursor_x -= g->bearing.x * scale;
+									cursor_x -= g->bearing_em.x * scale;
 									break;
 								}
 							}
@@ -200,12 +200,12 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							}
 							const Text::SlugGlyphData *slug = atlas->get_slug_data(glyph->glyph_id);
 							if (slug != nullptr) {
-								const F32 glyph_x = cursor_x + glyph->bearing.x * scale;
-								const F32 glyph_y = baseline_y + glyph->bearing.y * scale;
+								const F32 glyph_x = cursor_x + glyph->bearing_em.x * scale;
+								const F32 glyph_y = baseline_y + glyph->bearing_em.y * scale;
 
 								Graphics::GlyphSpec spec{};
 								spec.position = { glyph_x, glyph_y };
-								spec.size = glyph->size * scale;
+								spec.size = glyph->size_em * scale;
 								spec.color = c.color;
 								spec.depth = depth;
 								spec.glyph_loc_x = slug->glyph_loc_x;
@@ -219,7 +219,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								spec.band_texture = band_texture;
 								r2d.draw_glyph(spec);
 							}
-							cursor_x += glyph->advance * scale;
+							cursor_x += glyph->advance_em * scale;
 						}
 					};
 
