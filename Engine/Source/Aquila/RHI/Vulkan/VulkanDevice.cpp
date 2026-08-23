@@ -18,6 +18,7 @@
 
 #include <cstring>
 #include <fstream>
+#include <vulkan/vulkan_core.h>
 
 namespace Aquila::RHI {
 
@@ -988,9 +989,14 @@ void VulkanDevice::create_logical_device() {
 	device_features.independentBlend = VK_TRUE;
 	device_features.sampleRateShading = VK_TRUE;
 
+  VkPhysicalDeviceVulkan11Features vulkan11_features{};
+  vulkan11_features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+  vulkan11_features.shaderDrawParameters = VK_TRUE;
+  vulkan11_features.pNext = &dynamic_rendering_features;
+
 	VkPhysicalDeviceFeatures2 device_features2{};
 	device_features2.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
-	device_features2.pNext = &dynamic_rendering_features;
+	device_features2.pNext = &vulkan11_features;
 	device_features2.features = device_features;
 
 	VkDeviceCreateInfo create_info{};

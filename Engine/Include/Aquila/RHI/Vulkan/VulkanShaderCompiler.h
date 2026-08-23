@@ -37,7 +37,7 @@ class VulkanShaderCompiler {
 
 		slang::TargetDesc target_desc{};
 		target_desc.format = SLANG_SPIRV;
-		target_desc.profile = s_GlobalSession->findProfile("spirv_1_0");
+		target_desc.profile = s_GlobalSession->findProfile("spirv_1_4");
 
 		const char *search_paths[] = { AQUILA_SHADERS_DIR };
 		slang::SessionDesc session_desc{};
