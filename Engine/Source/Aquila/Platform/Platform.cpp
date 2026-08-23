@@ -27,38 +27,38 @@ bool initialize() {
 	s_PlatformInfo.is64_bit = true;
 	s_PlatformInfo.version = "64-bit";
 #else
-	s_PlatformInfo.is64Bit = false;
+	s_PlatformInfo.is64_bit = false;
 	s_PlatformInfo.version = "32-bit";
 #endif
 
 #elif defined(AQUILA_PLATFORM_LINUX)
 	s_PlatformInfo.name = "Linux";
-	s_PlatformInfo.cpuCores = static_cast<int>(std::thread::hardware_concurrency());
+	s_PlatformInfo.cpu_cores = static_cast<int>(std::thread::hardware_concurrency());
 
 	struct sysinfo info;
 	if (sysinfo(&info) == 0) {
-		s_PlatformInfo.totalMemory = static_cast<std::size_t>(info.totalram * info.mem_unit);
+		s_PlatformInfo.total_memory = static_cast<std::size_t>(info.totalram * info.mem_unit);
 	}
 
-#ifdef PLATFORM_64BIT
-	s_PlatformInfo.is64Bit = true;
+#ifdef AQUILA_PLATFORM_64BIT
+	s_PlatformInfo.is64_bit = true;
 	s_PlatformInfo.version = "64-bit";
 #else
-	s_PlatformInfo.is64Bit = false;
+	s_PlatformInfo.is64_bit = false;
 	s_PlatformInfo.version = "32-bit";
 #endif
 
 #elif defined(AQUILA_PLATFORM_MACOS)
 	s_PlatformInfo.name = "macOS";
-	s_PlatformInfo.cpuCores = static_cast<int>(std::thread::hardware_concurrency());
+	s_PlatformInfo.cpu_cores = static_cast<int>(std::thread::hardware_concurrency());
 
 	int64_t memsize;
 	size_t size = sizeof(memsize);
 	if (sysctlbyname("hw.memsize", &memsize, &size, nullptr, 0) == 0) {
-		s_PlatformInfo.totalMemory = static_cast<std::size_t>(memsize);
+		s_PlatformInfo.total_memory = static_cast<std::size_t>(memsize);
 	}
 
-	s_PlatformInfo.is64Bit = true;
+	s_PlatformInfo.is64_bit = true;
 	s_PlatformInfo.version = "64-bit";
 #endif
 	s_Initialized = true;

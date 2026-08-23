@@ -1,0 +1,11 @@
+if (CMAKE_C_COMPILER OR CMAKE_CXX_COMPILER)
+    return()
+endif ()
+
+if (CMAKE_HOST_SYSTEM_NAME STREQUAL "Windows")
+    set(CMAKE_C_COMPILER clang-cl CACHE STRING "C compiler")
+    set(CMAKE_CXX_COMPILER clang-cl CACHE STRING "C++ compiler")
+else ()
+    set(CMAKE_C_COMPILER clang CACHE STRING "C compiler")
+    set(CMAKE_CXX_COMPILER clang++ CACHE STRING "C++ compiler")
+endif ()

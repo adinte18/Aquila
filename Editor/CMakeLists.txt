@@ -47,7 +47,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -Wno-deprecated-literal-operator
         -fcolor-diagnostics
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer -fno-inline>
-        $<$<CONFIG:Release>:-O3 -march=native -g1>
+        $<$<CONFIG:Release>:-O3 -g1>
     )
 elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(AquilaEditor PRIVATE
@@ -55,12 +55,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
         -Wno-unused-parameter
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer>
         $<$<CONFIG:Release>:-O3 -g1>
-    )
-elseif (MSVC)
-    target_compile_options(AquilaEditor PRIVATE
-        /W3 /MP /bigobj
-        $<$<CONFIG:Debug>:/Zi /Od>
-        $<$<CONFIG:Release>:/O2>
     )
 endif()
 

@@ -11,7 +11,7 @@ NativeFileSystem::NativeFileSystem(const std::string &root_path) : m_root_path(F
 #ifdef AQUILA_PLATFORM_WINDOWS
 		m_root_path += '\\';
 #else
-		m_RootPath += '/';
+		m_root_path += '/';
 #endif
 	}
 }
@@ -69,7 +69,7 @@ bool NativeFileSystem::file_move(const std::string &old_path, const std::string 
 #ifdef AQUILA_PLATFORM_WINDOWS
 	return MoveFileExA(full_old.c_str(), full_new.c_str(), MOVEFILE_REPLACE_EXISTING) != 0;
 #else
-	return std::rename(fullOld.c_str(), fullNew.c_str()) == 0;
+	return std::rename(full_old.c_str(), full_new.c_str()) == 0;
 #endif
 }
 

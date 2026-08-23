@@ -14,6 +14,10 @@ option(AQUILA_BUILD_EDITOR "Build the Aquila editor" ON)
 
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
 
+if (MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    message(FATAL_ERROR "MSVC (cl.exe) is not supported. Use Clang/clang-cl or GCC instead.")
+endif ()
+
 set(CACHE_PROGRAM "none")
 find_program(SCCACHE_PROGRAM sccache)
 find_program(CCACHE_PROGRAM ccache)
@@ -70,15 +74,6 @@ elseif (CMAKE_CXX_COMPILER_ID MATCHES "GNU")
             set(LINKER_NAME "default (slow - install lld!)")
         endif ()
     endif ()
-
-elseif (MSVC)
-    add_compile_options(/MP16)
-    if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /DEBUG:FULL /INCREMENTAL")
-    else ()
-        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /INCREMENTAL /DEBUG:FASTLINK")
-    endif ()
-    set(LINKER_NAME "MSVC")
 endif ()
 
 include(ProcessorCount)
@@ -268,6 +263,16 @@ add_compile_definitions(
     AQUILA_RESOURCES_DIR="${CMAKE_SOURCE_DIR}/Resources/"
 )
 
+
+if (PROJECT_IS_TOP_LEVEL)
+    # Expose whichever preset was configured last at the source root, so
+    # clangd (pointed at CompilationDatabase: .) finds it without per-user setup.
+    file(CREATE_LINK
+        "${CMAKE_BINARY_DIR}/compile_commands.json"
+        "${CMAKE_SOURCE_DIR}/compile_commands.json"
+        COPY_ON_ERROR SYMBOLIC
+    )
+endif ()
 
 include(cmake/InstallDependencies.cmake)
 

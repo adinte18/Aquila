@@ -44,10 +44,10 @@ FileStatInfo file_stat(const std::string &path) {
 	struct ::stat buffer;
 	if (::stat(path.c_str(), &buffer) == 0) {
 		result.exists = true;
-		result.size = static_cast<uint32>(buffer.st_size);
-		result.isDirectory = S_ISDIR(buffer.st_mode);
-		result.isRegularFile = S_ISREG(buffer.st_mode);
-		result.lastWriteTime = static_cast<uint32>(buffer.st_mtime);
+		result.size = static_cast<Uint32>(buffer.st_size);
+		result.is_directory = S_ISDIR(buffer.st_mode);
+		result.is_regular_file = S_ISREG(buffer.st_mode);
+		result.last_write_time = static_cast<Uint32>(buffer.st_mtime);
 	}
 #endif
 	return result;
@@ -211,7 +211,7 @@ std::vector<std::string> dir_list(const std::string &path, bool recursive) {
 			if (strcmp(entry->d_name, ".") != 0 && strcmp(entry->d_name, "..") != 0) {
 				entries.push_back(entry->d_name);
 				if (recursive && entry->d_type == DT_DIR) {
-					auto sub = DirList(path + "/" + entry->d_name, true);
+					auto sub = dir_list(path + "/" + entry->d_name, true);
 					entries.insert(entries.end(), sub.begin(), sub.end());
 				}
 			}
