@@ -43,8 +43,8 @@ class VulkanSwapchain final : public IRHISwapchain {
 	[[nodiscard]] VkSemaphore get_image_available_semaphore(Uint32 frame_index) const {
 		return m_image_available_semaphores[frame_index];
 	}
-	[[nodiscard]] VkSemaphore get_render_finished_semaphore(Uint32 frame_index) const {
-		return m_render_finished_semaphores[frame_index];
+	[[nodiscard]] VkSemaphore get_render_finished_semaphore(Uint32 image_index) const {
+		return m_render_finished_semaphores[image_index];
 	}
 	[[nodiscard]] VkFence get_in_flight_fence(Uint32 frame_index) const { return m_in_flight_fences[frame_index]; }
 
@@ -78,6 +78,7 @@ class VulkanSwapchain final : public IRHISwapchain {
 	void create_image_views();
 	void create_depth_resources();
 	void create_sync_objects();
+	void create_render_finished_semaphores();
 	void destroy_image_resources();
 
 	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &available_formats);

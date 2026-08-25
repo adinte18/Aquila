@@ -194,7 +194,6 @@ void VulkanSwapchain::create_depth_resources() {
 
 void VulkanSwapchain::create_sync_objects() {
 	m_image_available_semaphores.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
-	m_render_finished_semaphores.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
 	m_in_flight_fences.resize(SharedConstants::MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo sem_info{};
@@ -207,8 +206,26 @@ void VulkanSwapchain::create_sync_objects() {
 
 	for (Uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
 		AQUILA_VULKAN_CHECK(vkCreateSemaphore(m_device.get_device(), &sem_info, nullptr, &m_image_available_semaphores[i]));
-		AQUILA_VULKAN_CHECK(vkCreateSemaphore(m_device.get_device(), &sem_info, nullptr, &m_render_finished_semaphores[i]));
 		AQUILA_VULKAN_CHECK(vkCreateFence(m_device.get_device(), &fence_info, nullptr, &m_in_flight_fences[i]));
+	}
+
+	create_render_finished_semaphores();
+}
+
+void VulkanSwapchain::create_render_finished_semaphores() {
+	VkDevice dev = m_device.get_device();
+	for (auto *sem : m_render_finished_semaphores) {
+		if (sem != VK_NULL_HANDLE) {
+			vkDestroySemaphore(dev, sem, nullptr);
+		}
+	}
+
+	VkSemaphoreCreateInfo sem_info{};
+	sem_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+	m_render_finished_semaphores.assign(m_images.size(), VK_NULL_HANDLE);
+	for (auto &sem : m_render_finished_semaphores) {
+		AQUILA_VULKAN_CHECK(vkCreateSemaphore(dev, &sem_info, nullptr, &sem));
 	}
 }
 
@@ -328,6 +345,7 @@ void VulkanSwapchain::resize(Uint32 width, Uint32 height) {
 
 	create_image_views();
 	create_depth_resources();
+	create_render_finished_semaphores();
 
 	m_needs_resize = false;
 	m_next_frame_slot = 0;
@@ -341,11 +359,24 @@ VkFormat VulkanSwapchain::find_depth_format() {
 }
 
 VkSurfaceFormatKHR VulkanSwapchain::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &available_formats) {
-	for (const auto &format : available_formats) {
-		if (format.format == VK_FORMAT_R8G8B8A8_UNORM && format.colorSpace == VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT) {
-			return format;
+	const VkFormat preferred[] = { VK_FORMAT_B8G8R8A8_UNORM, VK_FORMAT_R8G8B8A8_UNORM };
+
+	for (VkFormat wanted : preferred) {
+		for (const auto &format : available_formats) {
+			if (format.format == wanted && format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+				return format;
+			}
 		}
 	}
+
+	for (VkFormat wanted : preferred) {
+		for (const auto &format : available_formats) {
+			if (format.format == wanted) {
+				return format;
+			}
+		}
+	}
+
 	return available_formats[0];
 }
 

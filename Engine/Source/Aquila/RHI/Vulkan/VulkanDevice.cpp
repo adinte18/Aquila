@@ -273,7 +273,7 @@ void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, V
 	auto &vk_swapchain = static_cast<VulkanSwapchain &>(swapchain);
 	Uint32 last_frame = vk_swapchain.get_current_frame_slot();
 	VkSemaphore image_available = vk_swapchain.get_image_available_semaphore(last_frame);
-	VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(last_frame);
+	VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(image_index);
 	VkImage image = vk_swapchain.get_image(image_index);
 
 	VkCommandPool pool = get_or_create_thread_local_graphics_pool();
@@ -361,7 +361,7 @@ void VulkanDevice::submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain, 
 		auto &vk_swapchain = static_cast<VulkanSwapchain &>(*swapchain);
 		Uint32 last_frame = vk_swapchain.get_current_frame_slot();
 		VkSemaphore image_available = vk_swapchain.get_image_available_semaphore(last_frame);
-		VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(last_frame);
+		VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(image_index);
 
 		VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 		submit_info.waitSemaphoreCount = 1;
