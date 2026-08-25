@@ -340,7 +340,7 @@ bool Scene::serialize(const std::string &filepath) {
 
 	const auto vfs_file = Aquila::Platform::Filesystem::VirtualFileSystem::get()->open_file(filepath, AccessMode::Write,
 																							OpenMode::Binary);
-	if (!vfs_file->is_valid()) {
+	if (!vfs_file || !vfs_file->is_valid()) {
 		return false;
 	}
 
@@ -355,7 +355,7 @@ bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset
 
 	auto vfs_file =
 		Aquila::Platform::Filesystem::VirtualFileSystem::get()->open_file(filepath, AccessMode::Read, OpenMode::Binary);
-	if (!vfs_file->is_valid()) {
+	if (!vfs_file || !vfs_file->is_valid()) {
 		return false;
 	}
 

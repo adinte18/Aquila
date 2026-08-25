@@ -4,8 +4,8 @@
 namespace Aquila::Platform::Filesystem {
 
 NativeFileSystem::NativeFileSystem(const std::string &root_path) : m_root_path(Filesystem::path_normalize(root_path)) {
-	if (!file_exists(m_root_path)) {
-		dir_create(m_root_path);
+	if (!Filesystem::file_exists(m_root_path)) {
+		Filesystem::dir_create(m_root_path);
 	}
 	if (!m_root_path.empty() && m_root_path.back() != '/' && m_root_path.back() != '\\') {
 #ifdef AQUILA_PLATFORM_WINDOWS
@@ -17,9 +17,6 @@ NativeFileSystem::NativeFileSystem(const std::string &root_path) : m_root_path(F
 }
 
 std::string NativeFileSystem::resolve_path(const std::string &path) const {
-	if (Filesystem::path_is_absolute(path)) {
-		return Filesystem::path_normalize(path);
-	}
 	const std::string clean = (!path.empty() && (path[0] == '/' || path[0] == '\\')) ? path.substr(1) : path;
 	return Filesystem::path_normalize(Filesystem::path_join(m_root_path, clean));
 }
