@@ -38,30 +38,8 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		auto tree_uniq = std::make_unique<HierarchyTreeView>(m_entity_manager);
 		m_tree_view = dynamic_cast<HierarchyTreeView *>(scroll->add_child(std::move(tree_uniq)));
 
-		auto node_ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
-		auto *node_context_menu = dynamic_cast<UI::Core::PopupMenu *>(m_tree_view->add_child(std::move(node_ctx_uniq)));
-
-		node_context_menu->add_item("Add child", [this] {
-			if (m_selected_node != nullptr) {
-				auto parent_entity = m_selected_node->get_entity();
-				auto new_entity = m_entity_manager.create_entity("Empty entity");
-				m_entity_manager.add_child(parent_entity, new_entity);
-
-				m_tree_view->add_entity_node(new_entity.get_name(), new_entity, m_selected_node);
-				m_selected_node->set_expanded(true);
-			}
-		});
-
-		node_context_menu->add_item("Delete entity", [this] {
-			if (m_selected_node != nullptr) {
-				auto current_entity = m_selected_node->get_entity();
-				m_tree_view->delete_entity_node(current_entity);
-				m_entity_manager.destroy_entity(current_entity);
-				m_tree_view->queue_redraw();
-			}
-		});
-
 		populate_tree();
+		populate_hierarchy_context_menu();
 
 		m_tree_view->on_entity_selected.connect([this](Entity entity) {
 			m_selected_node = m_tree_view->find_node_for_entity(entity);
@@ -73,9 +51,14 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 			on_entity_deselected();
 		});
 
-		m_tree_view->on_entity_right_clicked.connect([node_context_menu, this](Entity entity, Vec2 pos) {
+		m_tree_view->on_entity_right_clicked.connect([this](Entity entity, Vec2 pos) {
 			m_selected_node = m_tree_view->find_node_for_entity(entity);
-			node_context_menu->open_at(pos);
+			if (m_node_context_menu != nullptr) {
+				m_node_context_menu->open_at(pos);
+			} 
+			else {
+				AQUILA_LOG_DEBUG("Node context menu is nullptr");
+			}
 		});
 
 		m_tree_view->set_on_background_right_clicked([ctx](Vec2 pos) { ctx->open_at(pos); });
@@ -94,7 +77,9 @@ void HierarchyPanel::rebuild() {
 	}
 	m_tree_view->clear();
 	m_selected_node = nullptr;
+	m_node_context_menu = nullptr;
 	populate_tree();
+	populate_hierarchy_context_menu();
 }
 
 void HierarchyPanel::populate_tree() {
@@ -102,6 +87,31 @@ void HierarchyPanel::populate_tree() {
 		auto *scene_node = entity.try_get_component<SceneNodeComponent>();
 		if (scene_node == nullptr || !scene_node->parent.is_valid()) {
 			m_tree_view->populate_from_entity(entity);
+		}
+	});
+}
+
+void HierarchyPanel::populate_hierarchy_context_menu(){
+	auto node_ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
+	m_node_context_menu = dynamic_cast<UI::Core::PopupMenu *>(m_tree_view->add_child(std::move(node_ctx_uniq)));
+
+	m_node_context_menu->add_item("Add child", [this] {
+		if (m_selected_node != nullptr) {
+			auto parent_entity = m_selected_node->get_entity();
+			auto new_entity = m_entity_manager.create_entity("Empty entity");
+			m_entity_manager.add_child(parent_entity, new_entity);
+
+			m_tree_view->add_entity_node(new_entity.get_name(), new_entity, m_selected_node);
+			m_selected_node->set_expanded(true);
+		}
+	});
+
+	m_node_context_menu->add_item("Delete entity", [this] {
+		if (m_selected_node != nullptr) {
+			auto current_entity = m_selected_node->get_entity();
+			m_tree_view->delete_entity_node(current_entity);
+			m_entity_manager.destroy_entity(current_entity);
+			m_tree_view->queue_redraw();
 		}
 	});
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Aquila/UI/Widgets/PopupMenu.h"
 #include "UI/Panels/IEditorPanel.h"
 #include "Aquila/Scene/Entity.h"
 
@@ -29,10 +30,12 @@ class HierarchyPanel : public IEditorPanel {
 
   private:
 	void populate_tree();
+	void populate_hierarchy_context_menu();
 
 	Aquila::SceneManagement::EntityManager &m_entity_manager;
 	HierarchyTreeView *m_tree_view = nullptr;
 	HierarchyTreeNode *m_selected_node = nullptr;
+	Aquila::UI::Core::PopupMenu* m_node_context_menu = nullptr;
 };
 
 } // namespace Editor
