@@ -28,6 +28,16 @@ namespace Aquila::Application {
 
 using namespace SceneManagement;
 
+namespace {
+struct FrameGuard {
+	AQUILA_NONCOPYABLE(FrameGuard);
+	AQUILA_NONMOVEABLE(FrameGuard);
+	explicit FrameGuard(bool &flag) : m_flag(flag) { m_flag = true; }
+	~FrameGuard() { m_flag = false; }
+	bool &m_flag;
+};
+} // namespace
+
 Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	m_timer = std::make_unique<Foundation::Stopwatch>();
 	m_window = std::make_unique<Window>(spec.width, spec.height, spec.name, true, spec.start_hidden);
@@ -245,6 +255,11 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 		return;
 	}
 
+	if (m_frame_in_progress) {
+		return;
+	}
+	FrameGuard guard(m_frame_in_progress);
+
 	if (rw.needs_resize || rw.swapchain->needs_resize()) {
 		m_ctx->wait_idle();
 		rw.swapchain->resize(width, height);
@@ -289,54 +304,62 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 void Application::internal_update(F32 delta_time) {
 	PROFILE_SCOPE("OnUpdate");
 
-	if (m_pending_resize || m_swapchain->needs_resize()) {
-		m_pending_resize = false;
-		const Uint32 width = m_window->get_width();
-		const Uint32 height = m_window->get_height();
-		if (width == 0 || height == 0) {
-			return;
+	if (m_frame_in_progress) {
+		return;
+	}
+
+	{
+		FrameGuard guard(m_frame_in_progress);
+
+		if (m_pending_resize || m_swapchain->needs_resize()) {
+			m_pending_resize = false;
+			const Uint32 width = m_window->get_width();
+			const Uint32 height = m_window->get_height();
+			if (width == 0 || height == 0) {
+				return;
+			}
+			handle_resize();
 		}
-		handle_resize();
-	}
 
-	if (m_render_resize_pending) {
-		m_render_resize_pending = false;
-		m_ctx->wait_idle();
-		m_render_pipeline->resize(m_next_render_width, m_next_render_height);
-		m_render_width = m_next_render_width;
-		m_render_height = m_next_render_height;
-		on_render_resize(m_render_width, m_render_height);
-	}
-
-	Uint32 image_index = 0;
-	{
-		PROFILE_SCOPE("AcquireNextImage");
-		if (!m_swapchain->acquire_next_image(image_index)) {
-			return;
+		if (m_render_resize_pending) {
+			m_render_resize_pending = false;
+			m_ctx->wait_idle();
+			m_render_pipeline->resize(m_next_render_width, m_next_render_height);
+			m_render_width = m_next_render_width;
+			m_render_height = m_next_render_height;
+			on_render_resize(m_render_width, m_render_height);
 		}
-	}
 
-	m_renderer->set_swapchain_target(*m_swapchain, image_index);
-	m_renderer2_d->set_swapchain_target(*m_swapchain, image_index);
+		Uint32 image_index = 0;
+		{
+			PROFILE_SCOPE("AcquireNextImage");
+			if (!m_swapchain->acquire_next_image(image_index)) {
+				return;
+			}
+		}
 
-	Uint32 frame_slot = m_swapchain->get_current_frame_slot();
-	auto &cmd = m_ctx->acquire_frame_command_list(frame_slot);
-	cmd.begin();
+		m_renderer->set_swapchain_target(*m_swapchain, image_index);
+		m_renderer2_d->set_swapchain_target(*m_swapchain, image_index);
 
-	on_pre_render(delta_time);
+		Uint32 frame_slot = m_swapchain->get_current_frame_slot();
+		auto &cmd = m_ctx->acquire_frame_command_list(frame_slot);
+		cmd.begin();
 
-	{
-		Graphics::Shader::ShaderHotReload::get()->tick();
-	}
+		on_pre_render(delta_time);
 
-	{
-		PROFILE_SCOPE("RenderPipeline::Render");
-		m_render_pipeline->render(cmd, *m_scene, delta_time);
-	}
+		{
+			Graphics::Shader::ShaderHotReload::get()->tick();
+		}
 
-	{
-		PROFILE_SCOPE("SubmitFrame");
-		m_ctx->submit_frame(cmd, m_swapchain.get(), image_index);
+		{
+			PROFILE_SCOPE("RenderPipeline::Render");
+			m_render_pipeline->render(cmd, *m_scene, delta_time);
+		}
+
+		{
+			PROFILE_SCOPE("SubmitFrame");
+			m_ctx->submit_frame(cmd, m_swapchain.get(), image_index);
+		}
 	}
 
 	render_secondary_windows();

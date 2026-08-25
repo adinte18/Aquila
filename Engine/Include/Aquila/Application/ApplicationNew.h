@@ -94,6 +94,7 @@ class Application {
 	Unique<Foundation::Stopwatch> m_timer;
 	bool m_running = true;
 	bool m_pending_resize = false;
+	bool m_frame_in_progress = false;
 
 	Uint32 m_render_width = 0;
 	Uint32 m_render_height = 0;
