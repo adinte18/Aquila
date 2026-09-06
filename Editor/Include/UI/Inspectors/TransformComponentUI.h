@@ -18,6 +18,7 @@ class TransformComponentUI : public IComponentUI {
   private:
 	Aquila::UI::Core::Vec3Field *m_position = nullptr;
 	Aquila::UI::Core::Vec3Field *m_scale = nullptr;
+	Aquila::UI::Core::Vec3Field *m_rotation = nullptr;
 };
 
 } // namespace Editor

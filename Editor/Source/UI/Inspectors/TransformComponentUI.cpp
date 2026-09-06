@@ -21,16 +21,21 @@ void TransformComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid
 
 	m_scale = grid->add_row<UI::Core::Vec3Field>("Scale");
 	m_scale->set_speed(0.1F);
+
+	m_rotation = grid->add_row<UI::Core::Vec3Field>("Rotation");
+	m_rotation->set_speed(0.5F);
+
 }
 
 void TransformComponentUI::show(Entity entity) {
 	ComponentBinder<TransformComponent> bind(entity, &TransformComponent::on_changed);
 	bind.bind(m_position, &TransformComponent::get_local_position, &TransformComponent::set_local_position);
 	bind.bind(m_scale, &TransformComponent::get_local_scale, &TransformComponent::set_local_scale);
+	bind.bind(m_rotation, &TransformComponent::get_local_rotation_euler, &TransformComponent::set_local_rotation_euler);
 }
 
 std::vector<ComponentSignal> TransformComponentUI::signals(Entity entity) const {
-	return { { "changed", &entity.get_component<TransformComponent>().on_changed } };
+	return { { .name="changed", .signal=&entity.get_component<TransformComponent>().on_changed } };
 }
 
 } // namespace Editor

@@ -1,27 +1,32 @@
 #ifndef TRANSFORM_COMPONENT_H
 #define TRANSFORM_COMPONENT_H
 
-#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Foundation/Math/MathTypes.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Signal.h"
-#include <functional>
+#include "glm/gtc/quaternion.hpp"
+#include "glm/trigonometric.hpp"
 namespace Aquila::SceneManagement::Components {
 struct TransformComponent {
   public:
 	Signal<void()> on_changed;
 
-	TransformComponent(const Vec3 &position = Vec3{ 0.F }, const glm::quat &rotation = glm::quat{ 1.F, 0.F, 0.F, 0.F },
+	TransformComponent(const Vec3 &position = Vec3{ 0.F }, const Quaternion &rotation = Quaternion{ 1.F, 0.F, 0.F, 0.F },
 					   const Vec3 &scale = Vec3{ 1.F })
-		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0F),
-		  m_world_matrix_dirty(true) {}
+		: m_local_position(position), m_local_rotation(rotation), m_local_scale(scale), m_world_matrix(1.0F) {}
 
 	void set_local_position(const Vec3 &position) {
 		m_local_position = position;
 		mark_world_matrix_dirty();
 	}
 
-	void set_local_rotation(const glm::quat &rotation) {
+	void set_local_rotation(const Quaternion &rotation) {
 		m_local_rotation = rotation;
+		mark_world_matrix_dirty();
+	}
+
+	void set_local_rotation_euler(const Vec3 &rotation){
+		m_local_rotation = glm::quat(glm::radians(rotation));
 		mark_world_matrix_dirty();
 	}
 
@@ -31,7 +36,8 @@ struct TransformComponent {
 	}
 
 	[[nodiscard]] const Vec3 &get_local_position() const { return m_local_position; }
-	[[nodiscard]] const glm::quat &get_local_rotation() const { return m_local_rotation; }
+	[[nodiscard]] const Quaternion &get_local_rotation() const { return m_local_rotation; }
+	[[nodiscard]] Vec3 get_local_rotation_euler() const { return glm::degrees(glm::eulerAngles(m_local_rotation)); }
 	[[nodiscard]] const Vec3 &get_local_scale() const { return m_local_scale; }
 
 	// Mutable versions only when you need to modify directly
@@ -39,7 +45,7 @@ struct TransformComponent {
 		mark_world_matrix_dirty();
 		return m_local_position;
 	}
-	glm::quat &get_local_rotation_mut() {
+	Quaternion &get_local_rotation_mut() {
 		mark_world_matrix_dirty();
 		return m_local_rotation;
 	}
@@ -88,11 +94,11 @@ struct TransformComponent {
 	}
 
 	// Extract world rotation from world matrix
-	[[nodiscard]] glm::quat get_world_rotation() const {
+	[[nodiscard]] Quaternion get_world_rotation() const {
 		Vec3 scale = get_world_scale();
 
 		// Create rotation matrix by removing scale
-		glm::mat3 rotation_matrix;
+		Mat3 rotation_matrix;
 		rotation_matrix[0] = Vec3(m_world_matrix[0]) / scale.x;
 		rotation_matrix[1] = Vec3(m_world_matrix[1]) / scale.y;
 		rotation_matrix[2] = Vec3(m_world_matrix[2]) / scale.z;
@@ -100,12 +106,12 @@ struct TransformComponent {
 		return glm::quat_cast(rotation_matrix);
 	}
 
-	[[nodiscard]] glm::mat3 get_normal_matrix() const {
-		glm::mat3 normal_matrix = glm::mat3(m_world_matrix);
+	[[nodiscard]] Mat3 get_normal_matrix() const {
+		Mat3 normal_matrix = Mat3(m_world_matrix);
 		return glm::transpose(glm::inverse(normal_matrix));
 	}
 
-	[[nodiscard]] glm::mat3 get_normal_matrix_fast() const { return glm::mat3(m_world_matrix); }
+	[[nodiscard]] Mat3 get_normal_matrix_fast() const { return Mat3(m_world_matrix); }
 
 	void set_parent_matrix(const glm::mat4 &parent_matrix) {
 		m_parent_matrix = parent_matrix;
@@ -125,7 +131,7 @@ struct TransformComponent {
 	}
 
 	Vec3 m_local_position{ 0.F };
-	glm::quat m_local_rotation{ 1.F, 0.F, 0.F, 0.F };
+	Quaternion m_local_rotation{ 1.F, 0.F, 0.F, 0.F };
 	Vec3 m_local_scale{ 1.F };
 	glm::mat4 m_world_matrix{ 1.F };
 	glm::mat4 m_parent_matrix{ 1.F };
