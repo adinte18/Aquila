@@ -71,7 +71,7 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		for (auto entity : view) {
 			auto &transform = view.get<TransformComponent>(entity);
 			auto &mesh = view.get<MeshComponent>(entity);
-			if (!mesh.is_valid()) {
+			if (!mesh.is_valid() || !mesh.cast_shadows) {
 				continue;
 			}
 			draw_calls.push_back({

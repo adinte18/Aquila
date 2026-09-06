@@ -110,13 +110,13 @@ struct MeshComponent {
 	 * @brief Check if submesh has a material asset reference
 	 */
 	bool has_material_asset(Uint32 submesh_index = 0) const {
-		return material_asset_paths.find(submesh_index) != material_asset_paths.end();
+		return material_asset_paths.contains(submesh_index);
 	}
 
 	/**
 	 * @brief Check if submesh has a loaded material instance
 	 */
-	bool has_material(Uint32 submesh_index = 0) const { return materials.find(submesh_index) != materials.end(); }
+	bool has_material(Uint32 submesh_index = 0) const { return materials.contains(submesh_index); }
 
 	/**
 	 * @brief Clear all materials

@@ -17,6 +17,7 @@ struct PushConstants {
 	column_major float4x4 model;
 	float4 color;
 	uint materialIndex;
+	uint receivesShadows;
 };
 
 [[vk::push_constant]]
@@ -129,7 +130,7 @@ float3 ShadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, 
 		if (IsDirectionalLight(light)) {
 			float3 L = normalize(-GetLightDirection(light));
 			float shadow = 1.0;
-			if (light.shadowIndex >= 0) {
+			if (push.receivesShadows != 0 && light.shadowIndex >= 0) {
 				shadow = ComputeDirectionalShadow(IN.worldPos, N, L);
 			}
 			Lo += ShadeLight(N, V, L, lightColor, albedo, metallic, roughness, F0) * shadow;
@@ -162,10 +163,15 @@ float3 ShadeLight(float3 N, float3 V, float3 L, float3 radiance, float3 albedo, 
 
 	if (kDebugShadowCascades) {
 		float3 Ldir = normalize(-shadowData.lightDirection.xyz);
-		float shadow = ComputeDirectionalShadow(IN.worldPos, N, Ldir);
+
+		float shadow = 1.0;
+
+		if (push.receivesShadows != 0) {
+			shadow = ComputeDirectionalShadow(IN.worldPos, N, Ldir);
+		}
+
 		return float4(CascadeDebugColor(IN.worldPos) * shadow, 1.0);
 	}
-
 	return float4(color, surf.albedo.a);
 }
 

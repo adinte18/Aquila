@@ -89,8 +89,9 @@ void MeshComponentUI::show(Entity entity) {
 
 	ComponentBinder<MeshComponent> bind(entity);
 	bind.bind(m_cast_shadows, [](auto &c) -> bool & { return c.cast_shadows; })
-		.on_change([](const bool &val) { AQUILA_LOG_INFO("Changed to : {}", val); });
-	bind.bind(m_receive_shadows, [](auto &c) -> bool & { return c.receive_shadows; });
+		.on_change([&mesh](const bool &val) { mesh.cast_shadows = val; });
+	bind.bind(m_receive_shadows, [](auto &c) -> bool & { return c.receive_shadows; })
+		.on_change([&mesh](const bool& val) { mesh.receive_shadows = val; });
 }
 
 } // namespace Editor

@@ -20,6 +20,7 @@ struct MeshPushConstants {
 	Mat4 model;
 	Vec4 color = Vec4(1.F);
 	Uint32 material_index = 0;
+	Uint32 receives_shadows = 0;
 };
 
 void GeometrySystem::on_init(GFX::GfxContext &ctx) {
@@ -34,6 +35,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		Ref<GFX::GfxMesh> gpu_mesh;
 		Mat4 model;
 		Uint32 material_index = 0;
+		Uint32 receives_shadows = 0;
 	};
 
 	std::unordered_map<Material *, std::vector<DrawCall>> batches;
@@ -54,6 +56,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			.gpu_mesh = get_or_upload_mesh(mesh.data),
 			.model = transform.get_world_matrix(),
 			.material_index = mat->material_index,
+			.receives_shadows = static_cast<Uint32>(mesh.receive_shadows)
 		});
 	}
 
@@ -88,7 +91,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 				cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 
 				for (const auto &dc : drawCalls) {
-					MeshPushConstants push{ .model = dc.model, .material_index = dc.material_index };
+					MeshPushConstants push{ .model = dc.model, .material_index = dc.material_index, .receives_shadows = dc.receives_shadows };
 					cmd.push_constants(push, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
 					cmd.bind_vertex_buffer(dc.gpu_mesh->get_vertex_buffer());
 					cmd.bind_index_buffer(dc.gpu_mesh->get_index_buffer());
