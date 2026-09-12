@@ -5,6 +5,7 @@
     <ScrollView id="inspector-scroll">
         <View id="inspector-list">
             <TextInput id="inspector-name" class="inspector-entity-name"/>
+            <Label id="inspector-uuid" class="inspector-entity-uuid"/>
             <Button id="inspector-add-component" class="inspector-add-component" src="Engine/UI/Icons/plus.png"> Add Component</Button>
             <Collapsible id="section-transform" src="Engine/UI/Icons/move-3d.png">Transform</Collapsible>
             <Collapsible id="section-mesh" src="Engine/UI/Icons/box.png">Mesh</Collapsible>

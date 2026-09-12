@@ -3,6 +3,7 @@
 #include "Aquila/Foundation/UUID.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Style/StyleProperties.h"
+#include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/ScrollView.h"
 #include "UI/Inspectors/IComponentUI.h"
 #include "UI/Panels/IEditorPanel.h"
@@ -82,6 +83,7 @@ class InspectorPanel : public IEditorPanel {
 	Aquila::UI::Core::View *m_section_list = nullptr;
 	Aquila::UI::Core::View *m_empty_state = nullptr;
 	Aquila::UI::Core::TextInput *m_name_input = nullptr;
+	Aquila::UI::Core::Label *m_actor_uuid = nullptr;
 	Aquila::UI::Core::Button *m_add_button = nullptr;
 	Aquila::UI::Core::PopupMenu *m_add_popup = nullptr;
 	Aquila::UI::Core::TextInput *m_add_search = nullptr;

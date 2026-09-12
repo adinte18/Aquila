@@ -56,8 +56,6 @@ void HierarchyTreeView::delete_entity_node(Entity entity) {
 			it++;
 		}
 	}
-
-	deselect();
 }
 
 void HierarchyTreeView::populate_from_entity(Entity entity, HierarchyTreeNode *parent) {

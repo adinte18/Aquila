@@ -898,6 +898,15 @@ ContextMenu {
     border-width: 0px;
 }
 
+.inspector-entity-uuid {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+    width: 100%;
+    height: auto;
+    border-width: 0px;
+}
+
 IconLabel {
     flex-direction: row;
     align-items: center;

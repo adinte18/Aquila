@@ -253,11 +253,14 @@ void EditorApplication::on_event(Events::Event &event) {
 
 	Events::EventDispatcher post(event);
 	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
-		if (e.get_key_code() != Events::KeyCode::S || (e.get_mods() & Events::MODIFIER_SHIFT) == 0) {
+		if (e.get_key_code() != Events::KeyCode::S || e.get_mods() != Events::MODIFIER_SHIFT) {
 			return false;
 		}
 		auto &canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
 		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
+			return false;
+		}
+		if (Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right) || Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Left)) {
 			return false;
 		}
 		if (m_inspector_panel != nullptr) {

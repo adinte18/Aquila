@@ -47,6 +47,7 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		});
 
 		m_tree_view->on_deselected.connect([this] {
+			AQUILA_LOG_DEBUG("Entity was deselected");
 			m_selected_node = nullptr;
 			on_entity_deselected();
 		});
@@ -109,6 +110,7 @@ void HierarchyPanel::populate_hierarchy_context_menu(){
 	m_node_context_menu->add_item("Delete entity", [this] {
 		if (m_selected_node != nullptr) {
 			auto current_entity = m_selected_node->get_entity();
+			m_tree_view->deselect();
 			m_tree_view->delete_entity_node(current_entity);
 			m_entity_manager.destroy_entity(current_entity);
 			m_tree_view->queue_redraw();

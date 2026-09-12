@@ -1,5 +1,6 @@
 #include "UI/Panels/InspectorPanel.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
+#include "Aquila/UI/Widgets/Label.h"
 #include "UI/Inspectors/CameraComponentUI.h"
 #include "UI/Inspectors/LightComponentUI.h"
 #include "UI/Inspectors/MaterialComponentUI.h"
@@ -64,6 +65,11 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		});
 	}
 
+	m_actor_uuid = panel->find_by_id<UI::Core::Label>("inspector-uuid");
+	if (m_actor_uuid != nullptr) {
+		set_visible(m_actor_uuid, false);
+	}
+
 	build_component_registry();
 
 	m_add_button = panel->find_by_id<UI::Core::Button>("inspector-add-component");
@@ -98,7 +104,7 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		set_visible(signals_group, false);
 
 		m_sections.push_back(
-			{ section, std::string(section_id), std::move(component_ui), signals_group, signals_grid, {} });
+			{ .collapsible=section, .id=std::string(section_id), .ui=std::move(component_ui), .signals_group=signals_group, .signals_grid=signals_grid, .signal_rows={} });
 	};
 
 	add_ui_component("section-transform", std::make_unique<TransformComponentUI>());
@@ -120,6 +126,9 @@ void InspectorPanel::show_entity(Entity entity) {
 	set_visible(m_scroll_view, true);
 
 	set_visible(m_name_input, true);
+	set_visible(m_actor_uuid, true);
+
+	m_actor_uuid->set_text("UUID : " + entity.get_uuid().to_string());
 	m_name_input->set_text(entity.get_name());
 
 	reset_signal_rows();

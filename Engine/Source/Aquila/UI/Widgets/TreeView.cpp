@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/TreeView.h"
+#include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::UI::Core {
 
@@ -76,6 +77,7 @@ void TreeView::select_node(TreeNode *node) {
 
 void TreeView::deselect() {
 	if (m_selected == nullptr) {
+		AQUILA_LOG_DEBUG("Selected is null already");
 		return;
 	}
 	select_node(nullptr);
