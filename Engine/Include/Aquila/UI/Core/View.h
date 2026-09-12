@@ -111,6 +111,7 @@ class View {
 	[[nodiscard]] Vec2 get_layout_anim_offset() const { return m_layout_anim_offset; }
 
 	void set_input_leaf(bool v) { m_is_input_leaf = v; }
+	void set_skip_hit_test(bool v) { m_should_skip_hit_test = v; }
 	[[nodiscard]] bool is_input_leaf() const { return m_is_input_leaf; }
 	[[nodiscard]] bool is_visible() const { return m_visible; }
 

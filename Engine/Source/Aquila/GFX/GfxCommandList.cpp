@@ -78,6 +78,13 @@ void GfxCommandList::copy_buffer_to_texture(GfxBuffer &src, GfxTexture &dst, Uin
 	m_cmd->copy_buffer_to_texture(src.get_rhi(), dst.get_rhi(), width, height, dst_array_layer, dst_mip_level);
 }
 
+void GfxCommandList::copy_texture_to_buffer(GfxTexture &src, GfxBuffer &dst, Uint32 width, Uint32 height,
+											Uint32 src_array_layer, Uint32 src_mip_level, Int32 src_offset_x,
+											Int32 src_offset_y) {
+	m_cmd->copy_texture_to_buffer(src.get_rhi(), dst.get_rhi(), width, height, src_array_layer, src_mip_level,
+								  src_offset_x, src_offset_y);
+}
+
 void GfxCommandList::fill_buffer(GfxBuffer &buffer, Uint32 value, Uint64 offset, Uint64 size) {
 	m_cmd->fill_buffer(buffer.get_rhi(), offset, size, value);
 }

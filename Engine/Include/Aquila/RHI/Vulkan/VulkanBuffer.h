@@ -24,6 +24,7 @@ class VulkanBuffer final : public IRHIBuffer {
 	void *map() override;
 	void unmap() override;
 	void flush(Uint64 size = 0, Uint64 offset = 0) override;
+	void invalidate(Uint64 size = 0, Uint64 offset = 0) override;
 
 	void destroy_immediate() override;
 
@@ -33,7 +34,7 @@ class VulkanBuffer final : public IRHIBuffer {
 
 	// Extended API (used internally by other Vulkan classes)
 	[[nodiscard]] VkResult Flush(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
-	[[nodiscard]] VkResult invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
+	[[nodiscard]] VkResult Invalidate(VkDeviceSize size = VK_WHOLE_SIZE, VkDeviceSize offset = 0) const;
 	[[nodiscard]] VkDescriptorBufferInfo descriptor_info(VkDeviceSize size = VK_WHOLE_SIZE,
 														VkDeviceSize offset = 0) const;
 	[[nodiscard]] VkDescriptorBufferInfo descriptor_info_for_index(int index) const;

@@ -16,6 +16,7 @@ class GfxBuffer {
 	void *map();
 	void unmap();
 	void flush(Uint64 size = 0, Uint64 offset = 0);
+	void invalidate(Uint64 size = 0, Uint64 offset = 0);
 
 	void destroy_immediate();
 

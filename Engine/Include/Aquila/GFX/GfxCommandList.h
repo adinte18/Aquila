@@ -50,6 +50,8 @@ class GfxCommandList {
 
 	void copy_buffer_to_texture(GfxBuffer &src, GfxTexture &dst, Uint32 width, Uint32 height, Uint32 dst_array_layer = 0,
 							 Uint32 dst_mip_level = 0);
+	void copy_texture_to_buffer(GfxTexture &src, GfxBuffer &dst, Uint32 width, Uint32 height, Uint32 src_array_layer = 0,
+								Uint32 src_mip_level = 0, Int32 src_offset_x = 0, Int32 src_offset_y = 0);
 
 	static constexpr Uint64 WHOLE_SIZE = ~0ULL;
 	void fill_buffer(GfxBuffer &buffer, Uint32 value = 0u, Uint64 offset = 0, Uint64 size = WHOLE_SIZE);

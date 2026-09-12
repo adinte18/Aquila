@@ -85,12 +85,17 @@ void VulkanBuffer::flush(Uint64 size, Uint64 offset) {
 					   size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size));
 }
 
+void VulkanBuffer::invalidate(Uint64 size, Uint64 offset) {
+	vmaInvalidateAllocation(m_device.get_allocator(), m_allocation, static_cast<VkDeviceSize>(offset),
+							size == 0 ? VK_WHOLE_SIZE : static_cast<VkDeviceSize>(size));
+}
+
 // Extended Vulkan API
 VkResult VulkanBuffer::Flush(VkDeviceSize size, VkDeviceSize offset) const {
 	return vmaFlushAllocation(m_device.get_allocator(), m_allocation, offset, size);
 }
 
-VkResult VulkanBuffer::invalidate(VkDeviceSize size, VkDeviceSize offset) const {
+VkResult VulkanBuffer::Invalidate(VkDeviceSize size, VkDeviceSize offset) const {
 	return vmaInvalidateAllocation(m_device.get_allocator(), m_allocation, offset, size);
 }
 
@@ -113,7 +118,7 @@ VkResult VulkanBuffer::flush_index(int index) const {
 }
 
 VkResult VulkanBuffer::invalidate_index(int index) const {
-	return invalidate(m_alignment_size, index * m_alignment_size);
+	return Invalidate(m_alignment_size, index * m_alignment_size);
 }
 
 VkDeviceSize VulkanBuffer::get_alignment(VkDeviceSize instance_size, VkDeviceSize min_offset_alignment) {

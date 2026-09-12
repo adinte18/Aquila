@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Aquila/Rendering/Systems/GridSystem.h"
+#include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 #include "Aquila/Rendering/Systems/SkySystem.h"
 #include "Aquila/Rendering/Systems/LightCullingSystem.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
@@ -194,6 +195,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::ClusterComputeSystem>();
 	m_renderer->add_system<Rendering::LightCullingSystem>();
 	m_renderer->add_system<Rendering::ShadowSystem>();
+	m_object_picking = &m_renderer->add_system<Rendering::ObjectPickingSystem>();
 	m_renderer->add_system<Rendering::GeometrySystem>();
 	m_renderer->add_system<Rendering::SkySystem>();
 	m_renderer->add_system<Rendering::GridSystem>();

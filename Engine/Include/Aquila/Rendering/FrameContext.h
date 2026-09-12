@@ -27,6 +27,7 @@ struct FrameContext {
 
 	Graphics::RG::RGTextureHandle h_scene_color;
 	Graphics::RG::RGTextureHandle h_depth;
+	Graphics::RG::RGTextureHandle h_object_picking;
 
 	std::array<Graphics::RG::RGTextureHandle, SHADOW_CASCADE_COUNT> h_shadow_maps;
 

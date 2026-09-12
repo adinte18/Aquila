@@ -455,6 +455,7 @@ enum class ResourceState : Uint16 {
 	IndexBuffer = 1 << 11,
 	VertexBuffer = 1 << 12,
 	Present = 1 << 13,
+	HostRead = 1 << 14,
 	ColorAttachment = ColorAttachmentRead | ColorAttachmentWrite,
 	DepthRead = DepthStencilRead,
 	DepthWrite = DepthStencilRead | DepthStencilWrite,

@@ -16,6 +16,11 @@ using AABB = Math::Geometry::AABB::AABB;
 
 static constexpr Uint32 K_ELEMENT_COUNT = 3456; // cluster size so 16x9x24
 
+struct GpuAABB {
+	Vec4 min;
+	Vec4 max;
+};
+
 void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 	RenderingSystemBase::on_init(ctx);
 
@@ -59,7 +64,7 @@ void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 		});
 
 	m_output_buffer = ctx.create_buffer({
-		.size = sizeof(AABB) * K_ELEMENT_COUNT,
+		.size = sizeof(GpuAABB) * K_ELEMENT_COUNT,
 		.usage = RHI::BufferUsage::StorageBuffer,
 		.domain = RHI::MemoryDomain::GpuToCpu,
 		.debug_name = "ClusterCompute_AABBOutput",

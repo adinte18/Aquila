@@ -20,6 +20,9 @@ void GfxBuffer::destroy_immediate() {
 void GfxBuffer::flush(Uint64 size, Uint64 offset) {
 	m_buffer->flush(size, offset);
 }
+void GfxBuffer::invalidate(Uint64 size, Uint64 offset) {
+	m_buffer->invalidate(size, offset);
+}
 Uint64 GfxBuffer::get_size() const {
 	return m_buffer->get_size();
 }

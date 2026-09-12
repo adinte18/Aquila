@@ -32,7 +32,7 @@ class IRHICommandList {
 
 	virtual void bind_pipeline(IRHIPipeline &pipeline) = 0;
 	virtual void set_viewport(float x, float y, float width, float height, float min_depth = 0.0F,
-							 float max_depth = 1.0F) = 0;
+							  float max_depth = 1.0F) = 0;
 	virtual void set_scissor(Int32 x, Int32 y, Uint32 width, Uint32 height) = 0;
 
 	virtual void bind_descriptor_set(Uint32 set, IRHIDescriptorSet &descriptor_set) = 0;
@@ -42,14 +42,16 @@ class IRHICommandList {
 
 	virtual void draw(Uint32 vertex_count, Uint32 instance_count = 1, Uint32 first_vertex = 0,
 					  Uint32 first_instance = 0) = 0;
-	virtual void draw_indexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 first_index = 0, Int32 vertex_offset = 0,
-							 Uint32 first_instance = 0) = 0;
+	virtual void draw_indexed(Uint32 index_count, Uint32 instance_count = 1, Uint32 first_index = 0,
+							  Int32 vertex_offset = 0, Uint32 first_instance = 0) = 0;
 	virtual void draw_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) = 0;
 	virtual void draw_indexed_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) = 0;
 
 	virtual void copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height,
-									 Uint32 dst_array_layer = 0, Uint32 dst_mip_level = 0) = 0;
-
+										Uint32 dst_array_layer = 0, Uint32 dst_mip_level = 0) = 0;
+	virtual void copy_texture_to_buffer(IRHITexture &src, IRHIBuffer &dst, Uint32 width, Uint32 height,
+										Uint32 src_array_layer = 0, Uint32 src_mip_level = 0, Int32 src_offset_x = 0,
+										Int32 src_offset_y = 0) = 0;
 	virtual void fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) = 0;
 
 	virtual void dispatch(Uint32 x, Uint32 y, Uint32 z) = 0;

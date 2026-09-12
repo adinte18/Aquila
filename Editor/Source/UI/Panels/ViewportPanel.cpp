@@ -19,6 +19,16 @@ void ViewportPanel::build(UI::Core::DockPanel *panel, UI::Core::View *) {
 
 	m_image->set_texture(&m_initial_texture);
 	m_image->set_pass_through_scroll(true);
+	m_image->set_skip_hit_test(false);
+
+	m_image->on_pressed.connect([this](Vec2 position) {
+		const Rect rect = m_image->get_absolute_rect();
+		if (rect.size.x <= 0.F || rect.size.y <= 0.F) {
+			return;
+		}
+		const Vec2 local = position - rect.position;
+		on_clicked_uv({ local.x / rect.size.x, local.y / rect.size.y });
+	});
 }
 
 void ViewportPanel::set_texture(GFX::GfxTexture *texture) {

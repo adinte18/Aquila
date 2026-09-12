@@ -16,6 +16,7 @@ class IRHIBuffer {
 	virtual void *map() = 0;
 	virtual void unmap() = 0;
 	virtual void flush(Uint64 size = 0, Uint64 offset = 0) = 0;
+	virtual void invalidate(Uint64 size = 0, Uint64 offset = 0) = 0;
 
 	virtual void destroy_immediate() = 0;
 

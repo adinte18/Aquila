@@ -48,7 +48,8 @@ class RenderPipeline {
 	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
   private:
-	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary, FrameContext &out);
+	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary,
+							 FrameContext &out);
 	void rebuild_targets();
 
 	[[nodiscard]] RenderView resolve_primary_view(SceneManagement::Scene &scene) const;
@@ -59,6 +60,7 @@ class RenderPipeline {
 
 	Ref<GFX::GfxTexture> m_scene_color;
 	Ref<GFX::GfxTexture> m_depth_tex;
+	Ref<GFX::GfxTexture> m_object_picking;
 
 	Uint32 m_width = 0;
 	Uint32 m_height = 0;

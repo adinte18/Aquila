@@ -72,6 +72,45 @@ void HierarchyPanel::add_entity(Entity entity) {
 	}
 }
 
+void HierarchyPanel::select_entity(Entity entity) {
+	if (m_tree_view == nullptr) {
+		return;
+	}
+
+	HierarchyTreeNode *node = m_tree_view->find_node_for_entity(entity);
+	if (node == nullptr) {
+		deselect_entity();
+		return;
+	}
+
+	if (node == m_selected_node) {
+		return;
+	}
+
+	for (auto *scene_node = entity.try_get_component<SceneNodeComponent>();
+		 scene_node != nullptr && !scene_node->parent.is_null();) {
+		Entity parent = scene_node->parent;
+		if (HierarchyTreeNode *parent_node = m_tree_view->find_node_for_entity(parent)) {
+			parent_node->set_expanded(true);
+		}
+		scene_node = parent.try_get_component<SceneNodeComponent>();
+	}
+
+	m_tree_view->select_node(node);
+	m_selected_node = node;
+	on_entity_selected(entity);
+}
+
+void HierarchyPanel::deselect_entity() {
+	if (m_tree_view == nullptr || m_selected_node == nullptr) {
+		return;
+	}
+
+	m_tree_view->select_node(nullptr);
+	m_selected_node = nullptr;
+	on_entity_deselected();
+}
+
 void HierarchyPanel::rebuild() {
 	if (m_tree_view == nullptr) {
 		return;

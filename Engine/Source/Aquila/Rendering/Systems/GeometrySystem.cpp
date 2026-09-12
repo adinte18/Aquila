@@ -52,12 +52,10 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			continue;
 		}
 
-		batches[mat->material.get()].push_back({
-			.gpu_mesh = get_or_upload_mesh(mesh.data),
-			.model = transform.get_world_matrix(),
-			.material_index = mat->material_index,
-			.receives_shadows = static_cast<Uint32>(mesh.receive_shadows)
-		});
+		batches[mat->material.get()].push_back({ .gpu_mesh = get_or_upload_mesh(mesh.data),
+												 .model = transform.get_world_matrix(),
+												 .material_index = mat->material_index,
+												 .receives_shadows = static_cast<Uint32>(mesh.receive_shadows) });
 	}
 
 	auto *frame_data = ctx.frame_data;
@@ -91,7 +89,9 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 				cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 
 				for (const auto &dc : drawCalls) {
-					MeshPushConstants push{ .model = dc.model, .material_index = dc.material_index, .receives_shadows = dc.receives_shadows };
+					MeshPushConstants push{ .model = dc.model,
+											.material_index = dc.material_index,
+											.receives_shadows = dc.receives_shadows };
 					cmd.push_constants(push, RHI::ShaderStageFlags::Vertex | RHI::ShaderStageFlags::Fragment);
 					cmd.bind_vertex_buffer(dc.gpu_mesh->get_vertex_buffer());
 					cmd.bind_index_buffer(dc.gpu_mesh->get_index_buffer());

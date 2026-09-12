@@ -46,13 +46,14 @@ class VulkanCommandList final : public IRHICommandList {
 	// IRHICommandList
 	void draw(Uint32 vertex_count, Uint32 instance_count, Uint32 first_vertex, Uint32 first_instance) override;
 	void draw_indexed(Uint32 index_count, Uint32 instance_count, Uint32 first_index, Int32 vertex_offset,
-					 Uint32 first_instance) override;
+					  Uint32 first_instance) override;
 	void draw_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) override;
 	void draw_indexed_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) override;
 
-	void copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height, Uint32 dst_array_layer = 0,
-							 Uint32 dst_mip_level = 0) override;
-
+	void copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height,
+								Uint32 dst_array_layer = 0, Uint32 dst_mip_level = 0) override;
+	void copy_texture_to_buffer(IRHITexture &src, IRHIBuffer &dst, Uint32 width, Uint32 height, Uint32 src_array_layer,
+								Uint32 src_mip_level, Int32 src_offset_x, Int32 src_offset_y) override;
 	void fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) override;
 
 	void dispatch(Uint32 x, Uint32 y, Uint32 z) override;

@@ -2,6 +2,7 @@
 
 #include "UI/Panels/IEditorPanel.h"
 #include "Aquila/Foundation/Math/Rect.h"
+#include "Aquila/Foundation/Signal.h"
 
 namespace Aquila::GFX {
 class GfxTexture;
@@ -20,6 +21,8 @@ class ViewportPanel : public IEditorPanel {
 	void set_texture(Aquila::GFX::GfxTexture *texture);
 
 	[[nodiscard]] Rect get_content_rect() const;
+
+	Signal<void(Vec2)> on_clicked_uv;
 
   private:
 	Aquila::GFX::GfxTexture &m_initial_texture;

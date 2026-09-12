@@ -27,6 +27,10 @@ namespace Aquila::Graphics {
 class QuadBatcher;
 }
 
+namespace Aquila::Rendering {
+class ObjectPickingSystem;
+}
+
 namespace Aquila::Application {
 
 struct RenderWindow {
@@ -74,6 +78,7 @@ class Application {
 	Rendering::RenderPipeline &get_render_pipeline() { return *m_render_pipeline; }
 	Rendering::Renderer &get_renderer() { return *m_renderer; }
 	Rendering::Renderer2D &get_renderer2_d() { return *m_renderer2_d; }
+	Rendering::ObjectPickingSystem &get_object_picking() { return *m_object_picking; }
 
 	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
 
@@ -108,6 +113,7 @@ class Application {
 	Unique<Rendering::RenderPipeline> m_render_pipeline;
 	Rendering::Renderer *m_renderer = nullptr;
 	Rendering::Renderer2D *m_renderer2_d = nullptr;
+	Rendering::ObjectPickingSystem *m_object_picking = nullptr;
 
 	Unique<Graphics::QuadBatcher> m_secondary_batcher;
 	std::vector<Unique<RenderWindow>> m_secondary_windows;

@@ -160,6 +160,10 @@ static VkBufBarrierInfo buf_barrier_info(ResourceState state) {
 		out.stage |= VK_PIPELINE_STAGE_VERTEX_INPUT_BIT;
 		out.access |= VK_ACCESS_VERTEX_ATTRIBUTE_READ_BIT;
 	}
+	if (has(ResourceState::HostRead)) {
+		out.stage |= VK_PIPELINE_STAGE_HOST_BIT;
+		out.access |= VK_ACCESS_HOST_READ_BIT;
+	}
 
 	if (out.stage == 0) {
 		out.stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
@@ -192,13 +196,15 @@ VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool command
 
 	AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_device.get_device(), &alloc_info, &m_command_buffer));
 
-	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer), name.c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer),
+								   name.c_str());
 }
 
 VulkanCommandList::VulkanCommandList(VulkanDevice &device, VkCommandPool command_pool, VkCommandBuffer existing_cmd,
 									 CommandListType type, const std::string &name)
 	: m_command_buffer(existing_cmd), m_command_pool(command_pool), m_type(type), m_name(name), m_device(device) {
-	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer), name.c_str());
+	m_device.set_object_debug_name(VK_OBJECT_TYPE_COMMAND_BUFFER, reinterpret_cast<Uint64>(m_command_buffer),
+								   name.c_str());
 }
 
 VulkanCommandList::~VulkanCommandList() {
@@ -342,7 +348,7 @@ void VulkanCommandList::draw(Uint32 vertex_count, Uint32 instance_count, Uint32 
 }
 
 void VulkanCommandList::draw_indexed(Uint32 index_count, Uint32 instance_count, Uint32 first_index, Int32 vertex_offset,
-									Uint32 first_instance) {
+									 Uint32 first_instance) {
 	vkCmdDrawIndexed(m_command_buffer, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
@@ -353,11 +359,12 @@ void VulkanCommandList::draw_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 
 
 void VulkanCommandList::draw_indexed_indirect(IRHIBuffer &buffer, Uint64 offset, Uint32 draw_count, Uint32 stride) {
 	auto &vk_buf = static_cast<VulkanBuffer &>(buffer);
-	vkCmdDrawIndexedIndirect(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset), draw_count, stride);
+	vkCmdDrawIndexedIndirect(m_command_buffer, vk_buf.get_buffer(), static_cast<VkDeviceSize>(offset), draw_count,
+							 stride);
 }
 
 void VulkanCommandList::copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst, Uint32 width, Uint32 height,
-											Uint32 dst_array_layer, Uint32 dst_mip_level) {
+											   Uint32 dst_array_layer, Uint32 dst_mip_level) {
 	auto &vk_buf = static_cast<VulkanBuffer &>(src);
 	auto &vk_tex = static_cast<VulkanTexture &>(dst);
 
@@ -372,8 +379,31 @@ void VulkanCommandList::copy_buffer_to_texture(IRHIBuffer &src, IRHITexture &dst
 	region.imageOffset = { 0, 0, 0 };
 	region.imageExtent = { width, height, 1 };
 
-	vkCmdCopyBufferToImage(m_command_buffer, vk_buf.get_buffer(), vk_tex.get_image(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-						   1, &region);
+	vkCmdCopyBufferToImage(m_command_buffer, vk_buf.get_buffer(), vk_tex.get_image(),
+						   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+}
+
+void VulkanCommandList::copy_texture_to_buffer(IRHITexture &src, IRHIBuffer &dst, Uint32 width, Uint32 height,
+											   Uint32 src_array_layer, Uint32 src_mip_level, Int32 src_offset_x,
+											   Int32 src_offset_y) {
+	auto &vk_tex = static_cast<VulkanTexture &>(src);
+	auto &vk_buf = static_cast<VulkanBuffer &>(dst);
+
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = src_mip_level;
+	region.imageSubresource.baseArrayLayer = src_array_layer;
+	region.imageSubresource.layerCount = 1;
+
+	region.imageOffset = { src_offset_x, src_offset_y, 0 };
+	region.imageExtent = { width, height, 1 };
+
+	vkCmdCopyImageToBuffer(m_command_buffer, vk_tex.get_image(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+						   vk_buf.get_buffer(), 1, &region);
 }
 
 void VulkanCommandList::fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) {

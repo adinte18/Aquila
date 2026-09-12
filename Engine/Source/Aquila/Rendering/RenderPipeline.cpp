@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/RenderPipeline.h"
+#include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/Foundation/Profiler.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -93,7 +94,8 @@ RenderView RenderPipeline::resolve_primary_view(SceneManagement::Scene &scene) c
 	if (scene.has_active_camera()) {
 		auto cam = scene.get_active_camera_entity();
 		if (cam.has_all_components<CameraComponent, TransformComponent>()) {
-			return render_view_from_entity(cam.get_component<CameraComponent>(), cam.get_component<TransformComponent>());
+			return render_view_from_entity(cam.get_component<CameraComponent>(),
+										   cam.get_component<TransformComponent>());
 		}
 	}
 
@@ -111,6 +113,7 @@ void RenderPipeline::build_frame_context(SceneManagement::Scene &scene, F32 delt
 
 	out.h_scene_color = m_graph.import_texture(m_scene_color.get(), "SceneColor");
 	out.h_depth = m_graph.import_texture(m_depth_tex.get(), "Depth");
+	out.h_object_picking = m_graph.import_texture(m_object_picking.get(), "ObjectPicking");
 
 	out.camera_position = primary.position;
 	out.view = primary.view;
@@ -137,6 +140,14 @@ void RenderPipeline::rebuild_targets() {
 		.format = RHI::TextureFormat::Depth32,
 		.usage = RHI::TextureUsage::DepthAttachment,
 		.debug_name = "Depth",
+	});
+
+	m_object_picking = m_ctx.create_texture({
+		.width = m_width,
+		.height = m_height,
+		.format = RHI::TextureFormat::R32UI,
+		.usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc,
+		.debug_name = "ObjectPicking",
 	});
 }
 
