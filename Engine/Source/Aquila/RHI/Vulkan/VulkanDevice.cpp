@@ -272,9 +272,10 @@ void VulkanDevice::submit_and_wait(IRHICommandList &cmd) {
 
 void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, Vec4 clear_color) {
 	auto &vk_swapchain = static_cast<VulkanSwapchain &>(swapchain);
-	Uint32 last_frame = vk_swapchain.get_current_frame_slot();
-	VkSemaphore image_available = vk_swapchain.get_image_available_semaphore(last_frame);
+	const Uint32 slot = vk_swapchain.get_current_frame_slot();
+	VkSemaphore image_available = vk_swapchain.get_image_available_semaphore(slot);
 	VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(image_index);
+	VkFence slot_fence = vk_swapchain.get_in_flight_fence(slot);
 	VkImage image = vk_swapchain.get_image(image_index);
 
 	VkCommandPool pool = get_or_create_thread_local_graphics_pool();
@@ -284,12 +285,12 @@ void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, V
 	alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	alloc_info.commandPool = pool;
 	alloc_info.commandBufferCount = 1;
-	vkAllocateCommandBuffers(m_device, &alloc_info, &cmd);
+	AQUILA_VULKAN_CHECK(vkAllocateCommandBuffers(m_device, &alloc_info, &cmd));
 
 	VkCommandBufferBeginInfo begin_info{};
 	begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-	vkBeginCommandBuffer(cmd, &begin_info);
+	AQUILA_VULKAN_CHECK(vkBeginCommandBuffer(cmd, &begin_info));
 
 	VkImageSubresourceRange range{ VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
@@ -303,8 +304,8 @@ void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, V
 	to_clear.subresourceRange = range;
 	to_clear.srcAccessMask = 0;
 	to_clear.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0,
-						 nullptr, 1, &to_clear);
+	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, nullptr, 0, nullptr,
+						 1, &to_clear);
 
 	VkClearColorValue vk_clear{ .float32 = { clear_color.r, clear_color.g, clear_color.b, clear_color.a } };
 	vkCmdClearColorImage(cmd, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, &vk_clear, 1, &range);
@@ -322,9 +323,9 @@ void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, V
 	vkCmdPipelineBarrier(cmd, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, 0, nullptr, 0,
 						 nullptr, 1, &to_present);
 
-	vkEndCommandBuffer(cmd);
+	AQUILA_VULKAN_CHECK(vkEndCommandBuffer(cmd));
 
-	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
 	VkSubmitInfo submit_info{};
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info.waitSemaphoreCount = 1;
@@ -335,80 +336,96 @@ void VulkanDevice::present_frame(IRHISwapchain &swapchain, Uint32 image_index, V
 	submit_info.signalSemaphoreCount = 1;
 	submit_info.pSignalSemaphores = &render_finished;
 
-	VkFence fence = vk_swapchain.get_in_flight_fence(last_frame);
-	vkResetFences(m_device, 1, &fence);
-	submit_to_graphics_queue(&submit_info, fence);
-	vk_swapchain.mark_slot_submitted(last_frame);
-	vk_swapchain.defer_cmd_buf_free(last_frame, cmd, pool);
+	AQUILA_VULKAN_CHECK(vkResetFences(m_device, 1, &slot_fence));
+	submit_to_graphics_queue(&submit_info, slot_fence);
+	vk_swapchain.notify_frame_submitted(slot);
+	vk_swapchain.defer_cmd_buf_free(slot, cmd, pool);
 
-	vk_swapchain.present_image_raw(&image_index, render_finished);
+	vk_swapchain.present_image(image_index, render_finished);
 }
 
-void VulkanDevice::submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain, Uint32 image_index) {
-	auto &vk_cmd = static_cast<VulkanCommandList &>(cmd);
-	VkCommandBuffer cmd_buf = vk_cmd.get_handle();
+bool VulkanDevice::is_frame_managed_pool(VkCommandPool pool) const {
+	for (const auto &slot : m_frame_slots) {
+		if (pool == slot.pool) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void VulkanDevice::submit_swapchain_frame(VulkanCommandList &cmd, VulkanSwapchain &swapchain, Uint32 image_index) {
+	const Uint32 slot = swapchain.get_current_frame_slot();
+	VkCommandBuffer cmd_buf = cmd.get_handle();
+	VkSemaphore image_available = swapchain.get_image_available_semaphore(slot);
+	VkSemaphore render_finished = swapchain.get_render_finished_semaphore(image_index);
+	VkFence slot_fence = swapchain.get_in_flight_fence(slot);
+
+	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+
+	VkSubmitInfo submit_info{};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &image_available;
+	submit_info.pWaitDstStageMask = &wait_stage;
+	submit_info.commandBufferCount = 1;
+	submit_info.pCommandBuffers = &cmd_buf;
+	submit_info.signalSemaphoreCount = 1;
+	submit_info.pSignalSemaphores = &render_finished;
 
 	{
-		PROFILE_SCOPE("EndCommandBuffer");
-		cmd.end();
+		PROFILE_SCOPE("QueueSubmit");
+		AQUILA_VULKAN_CHECK(vkResetFences(m_device, 1, &slot_fence));
+		submit_to_graphics_queue(&submit_info, slot_fence);
+		swapchain.notify_frame_submitted(slot);
 	}
+
+	if (!is_frame_managed_pool(cmd.get_pool())) {
+		swapchain.defer_cmd_buf_free(slot, cmd_buf, cmd.get_pool());
+	}
+
+	{
+		PROFILE_SCOPE("QueuePresent");
+		swapchain.present_image(image_index, render_finished);
+	}
+}
+
+void VulkanDevice::submit_offscreen_frame(VulkanCommandList &cmd) {
+	const Uint32 slot = m_offscreen_frame_index;
+	VkCommandBuffer cmd_buf = cmd.get_handle();
+
+	AQUILA_VULKAN_CHECK(vkWaitForFences(m_device, 1, &m_offscreen_fences[slot], VK_TRUE, UINT64_MAX));
+
+	for (auto &pending : m_offscreen_pending_cmd_bufs[slot]) {
+		vkFreeCommandBuffers(m_device, pending.pool, 1, &pending.cmd);
+	}
+	m_offscreen_pending_cmd_bufs[slot].clear();
+	m_deletion_queue->flush(slot);
 
 	VkSubmitInfo submit_info{};
 	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 	submit_info.commandBufferCount = 1;
 	submit_info.pCommandBuffers = &cmd_buf;
 
+	AQUILA_VULKAN_CHECK(vkResetFences(m_device, 1, &m_offscreen_fences[slot]));
+	submit_to_graphics_queue(&submit_info, m_offscreen_fences[slot]);
+	m_offscreen_pending_cmd_bufs[slot].push_back({ cmd_buf, cmd.get_pool() });
+
+	m_offscreen_frame_index = (slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	m_deletion_queue->set_current_slot(m_offscreen_frame_index);
+}
+
+void VulkanDevice::submit_frame(IRHICommandList &cmd, IRHISwapchain *swapchain, Uint32 image_index) {
+	auto &vk_cmd = static_cast<VulkanCommandList &>(cmd);
+
+	{
+		PROFILE_SCOPE("EndCommandBuffer");
+		cmd.end();
+	}
+
 	if (swapchain != nullptr) {
-		auto &vk_swapchain = static_cast<VulkanSwapchain &>(*swapchain);
-		Uint32 last_frame = vk_swapchain.get_current_frame_slot();
-		VkSemaphore image_available = vk_swapchain.get_image_available_semaphore(last_frame);
-		VkSemaphore render_finished = vk_swapchain.get_render_finished_semaphore(image_index);
-
-		VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		submit_info.waitSemaphoreCount = 1;
-		submit_info.pWaitSemaphores = &image_available;
-		submit_info.pWaitDstStageMask = &wait_stage;
-		submit_info.signalSemaphoreCount = 1;
-		submit_info.pSignalSemaphores = &render_finished;
-
-		VkFence fence = vk_swapchain.get_in_flight_fence(last_frame);
-		{
-			vkResetFences(m_device, 1, &fence);
-			PROFILE_SCOPE("QueueSubmit");
-			submit_to_graphics_queue(&submit_info, fence);
-			vk_swapchain.mark_slot_submitted(last_frame);
-		}
-		bool is_frame_managed = false;
-		for (Uint32 i = 0; i < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++i) {
-			if (vk_cmd.get_pool() == m_frame_slots[i].pool) {
-				is_frame_managed = true;
-				break;
-			}
-		}
-		if (!is_frame_managed) {
-			vk_swapchain.defer_cmd_buf_free(last_frame, cmd_buf, vk_cmd.get_pool());
-		}
-
-		{
-			PROFILE_SCOPE("QueuePresent");
-			vk_swapchain.present_image_raw(&image_index, render_finished);
-		}
+		submit_swapchain_frame(vk_cmd, static_cast<VulkanSwapchain &>(*swapchain), image_index);
 	} else {
-		Uint32 slot = m_offscreen_frame_index;
-		vkWaitForFences(m_device, 1, &m_offscreen_fences[slot], VK_TRUE, UINT64_MAX);
-		for (auto &p : m_offscreen_pending_cmd_bufs[slot]) {
-			vkFreeCommandBuffers(m_device, p.pool, 1, &p.cmd);
-		}
-		m_offscreen_pending_cmd_bufs[slot].clear();
-
-		m_deletion_queue->flush(slot);
-
-		vkResetFences(m_device, 1, &m_offscreen_fences[slot]);
-		submit_to_graphics_queue(&submit_info, m_offscreen_fences[slot]);
-		m_offscreen_pending_cmd_bufs[slot].push_back({ cmd_buf, vk_cmd.get_pool() });
-
-		m_offscreen_frame_index = (slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
-		m_deletion_queue->set_current_slot(m_offscreen_frame_index);
+		submit_offscreen_frame(vk_cmd);
 	}
 }
 
@@ -692,6 +709,12 @@ void VulkanDevice::submit_to_graphics_queue(const VkSubmitInfo *submit_info, VkF
 void VulkanDevice::submit_to_transfer_queue(const VkSubmitInfo *submit_info, VkFence fence) {
 	std::lock_guard<std::mutex> lock(m_transfer_queue_mutex);
 	AQUILA_VULKAN_CHECK(vkQueueSubmit(m_transfer_queue, 1, submit_info, fence));
+}
+
+VkResult VulkanDevice::present_to_queue(const VkPresentInfoKHR *present_info) {
+	std::mutex &queue_mutex = (m_present_queue == m_graphics_queue) ? m_graphics_queue_mutex : m_present_queue_mutex;
+	std::lock_guard<std::mutex> lock(queue_mutex);
+	return vkQueuePresentKHR(m_present_queue, present_info);
 }
 
 void VulkanDevice::wait_graphics_queue_idle() {

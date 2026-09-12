@@ -51,21 +51,11 @@ class VulkanSwapchain final : public IRHISwapchain {
 	// Queue a command buffer for deferred free once frameIndex's fence is waited on next.
 	void defer_cmd_buf_free(Uint32 frame_index, VkCommandBuffer cmd, VkCommandPool pool);
 
-	VkResult present_image_raw(const Uint32 *image_index, VkSemaphore render_finished_semaphore);
+	VkResult present_image(Uint32 image_index, VkSemaphore render_finished_semaphore);
 
-	[[nodiscard]] Uint32 get_current_frame_slot() const override {
-		return (m_next_frame_slot + SharedConstants::MAX_FRAMES_IN_FLIGHT - 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
-	}
+	[[nodiscard]] Uint32 get_current_frame_slot() const override { return m_current_frame_slot; }
 
-	[[nodiscard]] bool is_image_initialized(Uint32 index) const {
-		return index < m_image_initialized.size() && m_image_initialized[index];
-	}
-	void mark_image_initialized(Uint32 index) {
-		if (index < m_image_initialized.size()) {
-			m_image_initialized[index] = true;
-		}
-	}
-	void mark_slot_submitted(Uint32 slot) { m_slot_submitted[slot] = true; }
+	void notify_frame_submitted(Uint32 slot) { m_acquire_pending[slot] = false; }
 
 	[[nodiscard]] F32 aspect_ratio() const {
 		return static_cast<F32>(m_extent.width) / static_cast<F32>(m_extent.height);
@@ -80,6 +70,11 @@ class VulkanSwapchain final : public IRHISwapchain {
 	void create_sync_objects();
 	void create_render_finished_semaphores();
 	void destroy_image_resources();
+
+	void wait_for_frame_slot(Uint32 slot);
+	void discard_unconsumed_acquire(Uint32 slot);
+	void release_frame_slot_resources(Uint32 slot);
+	void begin_device_frame(Uint32 slot);
 
 	VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR> &available_formats);
 	VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR> &available_present_modes);
@@ -102,7 +97,6 @@ class VulkanSwapchain final : public IRHISwapchain {
 
 	std::vector<ImageAllocation> m_depth_allocations;
 	std::vector<VkImageView> m_depth_image_views;
-	std::vector<bool> m_image_initialized;
 
 	struct PendingCmdBuf {
 		VkCommandBuffer cmd;
@@ -113,10 +107,11 @@ class VulkanSwapchain final : public IRHISwapchain {
 	std::vector<VkSemaphore> m_render_finished_semaphores;
 	std::vector<VkFence> m_in_flight_fences;
 	std::array<std::vector<PendingCmdBuf>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_pending_cmd_bufs;
-	std::array<bool, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_slot_submitted{};
 
-	Uint32 m_next_frame_slot = 0; // index of the frame slot to acquire on the NEXT call to AcquireNextImage
-	Uint32 m_current_frame_slot = 0; // slot locked in by AcquireNextImage
+	std::array<bool, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_acquire_pending{};
+
+	Uint32 m_next_frame_slot = 0;
+	Uint32 m_current_frame_slot = 0;
 
 	bool m_needs_resize = false;
 };

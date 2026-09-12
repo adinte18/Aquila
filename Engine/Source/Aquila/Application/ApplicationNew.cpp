@@ -261,12 +261,14 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	FrameGuard guard(m_frame_in_progress);
 
 	if (rw.needs_resize || rw.swapchain->needs_resize()) {
-		m_ctx->wait_idle();
 		rw.swapchain->resize(width, height);
 		rw.needs_resize = false;
 		rw.msaa_color.reset(); // force render-target rebuild at the new size
 		rw.render_pass.reset();
 	}
+
+	const Uint32 target_width = rw.swapchain->get_width();
+	const Uint32 target_height = rw.swapchain->get_height();
 
 	if (rw.on_update) {
 		rw.on_update(m_timer->get_delta_time());
@@ -281,7 +283,7 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 		return;
 	}
 
-	ensure_window_targets(rw, width, height);
+	ensure_window_targets(rw, target_width, target_height);
 
 	Uint32 image_index = 0;
 	if (!rw.swapchain->acquire_next_image(image_index, false)) {
@@ -291,7 +293,8 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	auto cmd = m_ctx->create_command_list(RHI::CommandListType::Graphics, "SecondaryUICmd");
 	cmd->begin();
 
-	const Mat4 ortho = glm::ortho(0.F, static_cast<float>(width), static_cast<float>(height), 0.F, -1.F, 1.F);
+	const Mat4 ortho =
+		glm::ortho(0.F, static_cast<float>(target_width), static_cast<float>(target_height), 0.F, -1.F, 1.F);
 	rw.render_pass->begin(*cmd, rw.swapchain.get(), image_index);
 	m_secondary_batcher->begin(*cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, ortho);
 	rw.on_render(*m_secondary_batcher, *cmd);
@@ -422,12 +425,14 @@ void Application::handle_resize() {
 		return;
 	}
 
-	m_ctx->wait_idle();
 	m_swapchain->resize(width, height);
 
-	on_resize(width, height);
+	const Uint32 swapchain_width = m_swapchain->get_width();
+	const Uint32 swapchain_height = m_swapchain->get_height();
 
-	request_render_resize(width, height);
+	on_resize(swapchain_width, swapchain_height);
+
+	request_render_resize(swapchain_width, swapchain_height);
 }
 
 } // namespace Aquila::Application

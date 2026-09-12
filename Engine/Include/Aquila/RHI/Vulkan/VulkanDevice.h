@@ -62,6 +62,7 @@ class VulkanDevice final : public IRHIDevice {
 	void submit_to_graphics_queue(const VkSubmitInfo *submit_info, VkFence fence);
 	void submit_to_compute_queue(const VkSubmitInfo *submit_info, VkFence fence);
 	void submit_to_transfer_queue(const VkSubmitInfo *submit_info, VkFence fence);
+	VkResult present_to_queue(const VkPresentInfoKHR *present_info);
 	void wait_graphics_queue_idle();
 	void wait_transfer_queue_idle();
 
@@ -252,6 +253,9 @@ class VulkanDevice final : public IRHIDevice {
 	bool check_validation_layer_support() const;
 	std::vector<const char *> get_required_extensions() const;
 	VkQueueFamilyIndices find_queue_families(VkPhysicalDevice vk_physical_device) const;
+	void submit_swapchain_frame(VulkanCommandList &cmd, VulkanSwapchain &swapchain, Uint32 image_index);
+	void submit_offscreen_frame(VulkanCommandList &cmd);
+	[[nodiscard]] bool is_frame_managed_pool(VkCommandPool pool) const;
 	VkSwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice vk_physical_device, VkSurfaceKHR surface) const;
 	void log_device_info() const;
 

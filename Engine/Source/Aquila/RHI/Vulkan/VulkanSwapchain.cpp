@@ -143,7 +143,6 @@ void VulkanSwapchain::create_swapchain(VkSwapchainKHR old_handle) {
 }
 
 void VulkanSwapchain::create_image_views() {
-	m_image_initialized.resize(m_images.size(), false);
 	m_image_views.resize(m_images.size());
 
 	for (size_t i = 0; i < m_images.size(); i++) {
@@ -229,66 +228,102 @@ void VulkanSwapchain::create_render_finished_semaphores() {
 	}
 }
 
-bool VulkanSwapchain::acquire_next_image(Uint32 &out_image_index, bool drive_device_frame) {
+void VulkanSwapchain::wait_for_frame_slot(Uint32 slot) {
+	AQUILA_VULKAN_CHECK(vkWaitForFences(m_device.get_device(), 1, &m_in_flight_fences[slot], VK_TRUE, UINT64_MAX));
+}
+
+void VulkanSwapchain::discard_unconsumed_acquire(Uint32 slot) {
+	if (!m_acquire_pending[slot]) {
+		return;
+	}
+
+	Aquila::Foundation::log_warning("VulkanSwapchain: frame slot {} acquired an image but never submitted; "
+									"draining its acquire semaphore",
+									slot);
+
 	VkDevice dev = m_device.get_device();
+	VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 
-	if (m_slot_submitted[m_next_frame_slot]) {
-		vkWaitForFences(dev, 1, &m_in_flight_fences[m_next_frame_slot], VK_TRUE, UINT64_MAX);
-		m_slot_submitted[m_next_frame_slot] = false;
-	}
+	VkSubmitInfo submit_info{};
+	submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+	submit_info.waitSemaphoreCount = 1;
+	submit_info.pWaitSemaphores = &m_image_available_semaphores[slot];
+	submit_info.pWaitDstStageMask = &wait_stage;
 
-	for (auto &p : m_pending_cmd_bufs[m_next_frame_slot]) {
-		vkFreeCommandBuffers(dev, p.pool, 1, &p.cmd);
+	AQUILA_VULKAN_CHECK(vkResetFences(dev, 1, &m_in_flight_fences[slot]));
+	m_device.submit_to_graphics_queue(&submit_info, m_in_flight_fences[slot]);
+	AQUILA_VULKAN_CHECK(vkWaitForFences(dev, 1, &m_in_flight_fences[slot], VK_TRUE, UINT64_MAX));
+
+	m_acquire_pending[slot] = false;
+}
+
+void VulkanSwapchain::release_frame_slot_resources(Uint32 slot) {
+	VkDevice dev = m_device.get_device();
+	for (auto &pending : m_pending_cmd_bufs[slot]) {
+		vkFreeCommandBuffers(dev, pending.pool, 1, &pending.cmd);
 	}
-	m_pending_cmd_bufs[m_next_frame_slot].clear();
+	m_pending_cmd_bufs[slot].clear();
+}
+
+void VulkanSwapchain::begin_device_frame(Uint32 slot) {
+	m_device.get_deletion_queue().flush(slot);
+	m_device.reset_frame_command_pool(slot);
+	m_device.get_deletion_queue().set_current_slot(slot);
+}
+
+bool VulkanSwapchain::acquire_next_image(Uint32 &out_image_index, bool drive_device_frame) {
+	const Uint32 slot = m_next_frame_slot;
+
+	wait_for_frame_slot(slot);
+	discard_unconsumed_acquire(slot);
+	release_frame_slot_resources(slot);
 
 	if (drive_device_frame) {
-		m_device.get_deletion_queue().flush(m_next_frame_slot);
-		m_device.reset_frame_command_pool(m_next_frame_slot);
-		m_device.get_deletion_queue().set_current_slot(m_next_frame_slot);
+		begin_device_frame(slot);
 	}
 
-	VkSemaphore sem = m_image_available_semaphores[m_next_frame_slot];
-	// we should use 0 for non blocking poll and UINT64_MAX for render on demand
-	// maybe for future option
-	VkResult result = vkAcquireNextImageKHR(dev, m_swapchain, UINT64_MAX, sem, VK_NULL_HANDLE, &out_image_index);
+	const VkResult result = vkAcquireNextImageKHR(m_device.get_device(), m_swapchain, UINT64_MAX,
+												  m_image_available_semaphores[slot], VK_NULL_HANDLE, &out_image_index);
 
-	if (result == VK_NOT_READY) {
-		Aquila::Foundation::log_warning("AcquireNextImage: image acquisition NOT_READY for slot {}", m_next_frame_slot);
-		return false;
-	}
 	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_needs_resize = true;
+		return false;
+	}
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		Aquila::Foundation::log_error("VulkanSwapchain: vkAcquireNextImageKHR failed with VkResult {}",
+									  static_cast<Int32>(result));
 		return false;
 	}
 	if (result == VK_SUBOPTIMAL_KHR) {
 		m_needs_resize = true;
 	}
-	if (result == VK_SUCCESS || result == VK_SUBOPTIMAL_KHR) {
-		m_current_frame_slot = m_next_frame_slot;
-		// vkResetFences(dev, 1, &m_InFlightFences[m_NextFrameSlot]);
-		m_next_frame_slot = (m_next_frame_slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
-		return true;
-	}
-	return false;
+
+	m_acquire_pending[slot] = true;
+	m_current_frame_slot = slot;
+	m_next_frame_slot = (slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	return true;
 }
 
 TextureFormat VulkanSwapchain::get_format() const {
 	return from_vk_format(m_image_format);
 }
 
-VkResult VulkanSwapchain::present_image_raw(const Uint32 *image_index, VkSemaphore render_finished_semaphore) {
+VkResult VulkanSwapchain::present_image(Uint32 image_index, VkSemaphore render_finished_semaphore) {
 	VkPresentInfoKHR present_info{};
 	present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
 	present_info.waitSemaphoreCount = 1;
 	present_info.pWaitSemaphores = &render_finished_semaphore;
 	present_info.swapchainCount = 1;
 	present_info.pSwapchains = &m_swapchain;
-	present_info.pImageIndices = image_index;
+	present_info.pImageIndices = &image_index;
 
-	VkResult result = vkQueuePresentKHR(m_device.get_present_queue(), &present_info);
+	const VkResult result = m_device.present_to_queue(&present_info);
+
 	if (result == VK_SUBOPTIMAL_KHR || result == VK_ERROR_OUT_OF_DATE_KHR) {
 		m_needs_resize = true;
+	} else if (result != VK_SUCCESS) {
+		Aquila::Foundation::log_error("VulkanSwapchain: vkQueuePresentKHR failed with VkResult {}",
+									  static_cast<Int32>(result));
 	}
 	return result;
 }
@@ -325,8 +360,6 @@ void VulkanSwapchain::destroy_image_resources() {
 		vmaDestroyImage(m_device.get_allocator(), alloc.image, alloc.allocation);
 	}
 	m_depth_allocations.clear();
-
-	m_image_initialized.clear();
 }
 
 void VulkanSwapchain::defer_cmd_buf_free(Uint32 frame_index, VkCommandBuffer cmd, VkCommandPool pool) {
@@ -336,12 +369,18 @@ void VulkanSwapchain::defer_cmd_buf_free(Uint32 frame_index, VkCommandBuffer cmd
 void VulkanSwapchain::resize(Uint32 width, Uint32 height) {
 	m_window_extent = { .width = width, .height = height };
 
+	m_device.wait_idle();
+
+	for (Uint32 slot = 0; slot < SharedConstants::MAX_FRAMES_IN_FLIGHT; ++slot) {
+		discard_unconsumed_acquire(slot);
+	}
+
 	destroy_image_resources();
 
-	VkSwapchainKHR prev_handle = m_swapchain;
+	VkSwapchainKHR retired_swapchain = m_swapchain;
 	m_swapchain = VK_NULL_HANDLE;
-	create_swapchain(prev_handle);
-	vkDestroySwapchainKHR(m_device.get_device(), prev_handle, nullptr);
+	create_swapchain(retired_swapchain);
+	vkDestroySwapchainKHR(m_device.get_device(), retired_swapchain, nullptr);
 
 	create_image_views();
 	create_depth_resources();
@@ -349,7 +388,7 @@ void VulkanSwapchain::resize(Uint32 width, Uint32 height) {
 
 	m_needs_resize = false;
 	m_next_frame_slot = 0;
-	m_slot_submitted.fill(false);
+	m_current_frame_slot = 0;
 }
 
 VkFormat VulkanSwapchain::find_depth_format() {
