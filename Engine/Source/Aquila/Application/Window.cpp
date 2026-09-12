@@ -1,6 +1,7 @@
 #include "Aquila/Application/Window.h"
 #include "Aquila/Application/Events/InputEvent.h"
 #include "Aquila/Application/Events/WindowEvent.h"
+#include "GLFW/glfw3.h"
 
 namespace Aquila::Application {
 
@@ -26,9 +27,14 @@ Window::~Window() {
 
 void Window::initialize() {
 	if (!s_GLFWInitialized) {
+		glfwSetErrorCallback(glfw_error_callback);
+
+		#ifdef AQUILA_PLATFORM_LINUX
+		glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+		#endif
+
 		const int success = glfwInit();
 		AQUILA_ASSERT(success, "Could not initialize GLFW!");
-		glfwSetErrorCallback(glfw_error_callback);
 		s_GLFWInitialized = true;
 	}
 
