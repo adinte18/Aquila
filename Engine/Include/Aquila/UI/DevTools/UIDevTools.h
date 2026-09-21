@@ -1,0 +1,74 @@
+#ifndef AQUILA_UI_DEVTOOLS_UI_DEV_TOOLS_H
+#define AQUILA_UI_DEVTOOLS_UI_DEV_TOOLS_H
+
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/UI/Core/View.h"
+
+#include <string>
+
+namespace Aquila::GFX {
+class GfxContext;
+}
+
+namespace Aquila::Platform::Events {
+class Event;
+}
+
+namespace Aquila::Rendering {
+class IRenderWindowHost;
+}
+
+namespace Aquila::UI::Core {
+class Canvas;
+class TextureCache;
+}
+
+namespace Aquila::UI::DevTools {
+
+class PickerOverlay;
+class UIDebugPanel;
+class UIDebugWindow;
+class WidgetGalleryWindow;
+
+struct UIDevToolsDesc {
+	Core::Canvas &target;
+	Aquila::Rendering::IRenderWindowHost &host;
+	std::string style_path;
+};
+
+class UIDevTools {
+  public:
+	explicit UIDevTools(const UIDevToolsDesc &desc);
+	~UIDevTools();
+
+	AQUILA_NONCOPYABLE(UIDevTools);
+	AQUILA_NONMOVEABLE(UIDevTools);
+
+	void attach(Core::View *layout_root);
+
+	void open_inspector_window();
+	void open_widget_gallery(GFX::GfxContext &ctx, Core::TextureCache *texture_cache);
+
+	bool on_event(Platform::Events::Event &event);
+
+  private:
+	void start_pick();
+	void stop_pick();
+
+	Core::Canvas &m_target;
+	Aquila::Rendering::IRenderWindowHost &m_host;
+	std::string m_style_path;
+
+	Unique<UIDebugPanel> m_panel;
+	Unique<UIDebugWindow> m_inspector;
+	Unique<WidgetGalleryWindow> m_gallery;
+	PickerOverlay *m_picker = nullptr;
+
+	Core::ViewRef m_pick_hover;
+	bool m_pick_mode = false;
+};
+
+}
+
+#endif

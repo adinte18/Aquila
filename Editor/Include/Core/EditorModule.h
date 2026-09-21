@@ -7,10 +7,7 @@
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/UIHost.h"
-#include "Aquila/UI/DevTools/PickerOverlay.h"
-#include "Aquila/UI/DevTools/UIDebugPanel.h"
-#include "Aquila/UI/DevTools/UIDebugWindow.h"
-#include "Aquila/UI/DevTools/WidgetGalleryWindow.h"
+#include "Aquila/UI/DevTools/UIDevTools.h"
 #include "Aquila/Rendering/CameraController.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Core/View.h"
@@ -54,13 +51,10 @@ class EditorModule final : public Aquila::Application::IModule {
 	void set_outlined_entity(Aquila::SceneManagement::Entity entity);
 	void setup_editor_ui();
 	void wire_menubar(Aquila::UI::Core::View *layout_root);
-	void open_ui_inspector_window();
-	void open_widget_gallery_window();
 	void open_settings_window();
 	void open_project_launcher();
 	void enter_editor(const ProjectInfo &project);
 	void apply_font_settings();
-	void start_pick();
 
 	Aquila::Application::EngineContext *m_engine = nullptr;
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
@@ -72,9 +66,7 @@ class EditorModule final : public Aquila::Application::IModule {
 	Unique<HierarchyPanel> m_hierarchy_panel;
 	Unique<InspectorPanel> m_inspector_panel;
 	Unique<ConsolePanel> m_console_panel;
-	Unique<Aquila::UI::DevTools::UIDebugPanel> m_ui_debug_panel;
-	Unique<Aquila::UI::DevTools::UIDebugWindow> m_ui_debug_window;
-	Unique<Aquila::UI::DevTools::WidgetGalleryWindow> m_widget_gallery_window;
+	Unique<Aquila::UI::DevTools::UIDevTools> m_devtools;
 	Unique<SettingsWindow> m_settings_window;
 	Unique<ProjectLauncher> m_project_launcher;
 	Aquila::Rendering::RenderWindowId m_launcher_window = nullptr;
@@ -83,9 +75,6 @@ class EditorModule final : public Aquila::Application::IModule {
 
 	Aquila::SceneManagement::Entity m_outlined_entity;
 
-	Aquila::UI::DevTools::PickerOverlay *m_picker = nullptr;
-	Aquila::UI::Core::ViewRef m_pick_hover;
-	bool m_pick_mode = false;
 	Aquila::UI::Core::LayoutLoader m_layout_loader;
 
 	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;

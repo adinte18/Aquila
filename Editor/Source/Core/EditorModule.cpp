@@ -7,12 +7,9 @@
 #include "UI/Panels/HierarchyPanel.h"
 #include "Aquila/UI/Core/DockWindowManager.h"
 #include "Aquila/UI/Core/FontManager.h"
-#include "Aquila/UI/DevTools/UIDebugPanel.h"
-#include "Aquila/UI/DevTools/UIDebugWindow.h"
-#include "Aquila/UI/DevTools/WidgetGalleryWindow.h"
+#include "Aquila/UI/DevTools/UIDevTools.h"
 #include "UI/Windows/SettingsWindow.h"
 #include "UI/Windows/ProjectLauncher.h"
-#include "Aquila/UI/DevTools/PickerOverlay.h"
 #include "UI/Panels/InspectorPanel.h"
 #include "UI/Panels/ViewportPanel.h"
 
@@ -59,16 +56,6 @@ namespace Events = Aquila::Platform::Events;
 
 namespace {
 const std::string k_layout_path = "/app/layout.aqdl";
-
-std::string pick_label(Aquila::UI::Core::View *view) {
-	std::string label(view->get_type_name());
-	if (!view->get_id().empty()) {
-		label += " #" + view->get_id();
-	} else if (!view->get_classes().empty()) {
-		label += " ." + view->get_classes().front();
-	}
-	return label;
-}
 }
 
 EditorModule::EditorModule() = default;
@@ -135,9 +122,7 @@ void EditorModule::on_detach() {
 	m_dock_manager.reset();
 	m_settings_window.reset();
 	m_project_launcher.reset();
-	m_widget_gallery_window.reset();
-	m_ui_debug_window.reset();
-	m_ui_debug_panel.reset();
+	m_devtools.reset();
 	m_hierarchy_panel.reset();
 	m_viewport_panel.reset();
 	m_inspector_panel.reset();
@@ -180,48 +165,8 @@ void EditorModule::on_event(Events::Event &event) {
 		m_editor_camera->on_event(event);
 	}
 
-	if (m_pick_mode) {
-		bool consumed = false;
-		dispatcher.dispatch<Events::MouseMovedEvent>([&](Events::MouseMovedEvent &e) {
-			auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-			Aquila::UI::Core::View *hit = editor_canvas.hit_test({ e.get_x(), e.get_y() });
-			consumed = true;
-			if (hit == m_pick_hover) {
-				return true;
-			}
-			m_pick_hover = hit;
-			if (m_picker) {
-				hit ? m_picker->set_target(hit->get_absolute_rect(), pick_label(hit)) : m_picker->clear();
-			}
-			return true;
-		});
-		dispatcher.dispatch<Events::MouseButtonPressedEvent>([&](Events::MouseButtonPressedEvent &) {
-			m_pick_mode = false;
-			if (m_picker) {
-				m_picker->clear();
-			}
-			if (m_ui_debug_window && m_pick_hover) {
-				m_ui_debug_window->select_view(m_pick_hover);
-			}
-			m_pick_hover = nullptr;
-			consumed = true;
-			return true;
-		});
-		dispatcher.dispatch<Events::KeyPressedEvent>([&](Events::KeyPressedEvent &e) {
-			if (e.get_key_code() == Events::KeyCode::Escape) {
-				m_pick_mode = false;
-				if (m_picker != nullptr) {
-					m_picker->clear();
-				}
-				m_pick_hover = nullptr;
-			}
-
-			consumed = true;
-			return true;
-		});
-		if (consumed) {
-			return;
-		}
+	if (m_devtools && m_devtools->on_event(event)) {
+		return;
 	}
 
 	dispatcher.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
@@ -406,10 +351,12 @@ void EditorModule::setup_editor_ui() {
 
 	wire_menubar(layout_root);
 
-	m_ui_debug_panel = std::make_unique<Aquila::UI::DevTools::UIDebugPanel>();
-	m_ui_debug_panel->build(layout_root, &editor_canvas);
-
-	m_picker = editor_canvas.get_root()->add_child<Aquila::UI::DevTools::PickerOverlay>();
+	m_devtools = std::make_unique<Aquila::UI::DevTools::UIDevTools>(Aquila::UI::DevTools::UIDevToolsDesc{
+		.target = editor_canvas,
+		.host = m_engine->get_window_host(),
+		.style_path = cfg.ui.style_path,
+	});
+	m_devtools->attach(layout_root);
 
 	if (Option<Aquila::UI::Core::DockLayoutDesc> saved =
 			Aquila::UI::Core::DockLayoutSerializer::load_from_file(k_layout_path)) {
@@ -418,55 +365,6 @@ void EditorModule::setup_editor_ui() {
 	}
 
 	editor_canvas.reload_styles();
-}
-
-void EditorModule::open_ui_inspector_window() {
-	if (m_ui_debug_window) {
-		return; // already open
-	}
-
-	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-
-	m_ui_debug_window = std::make_unique<Aquila::UI::DevTools::UIDebugWindow>();
-	m_ui_debug_window->build(&editor_canvas, 800, 600, Config::get_preferences().ui.style_path);
-
-	m_ui_debug_window->on_pick_requested = [this] { start_pick(); };
-	m_ui_debug_window->set_ignored_view(m_picker);
-	m_ui_debug_window->on_view_highlighted = [this](Aquila::UI::Core::View *view) {
-		if (m_picker && view) {
-			m_picker->set_target(view->get_absolute_rect(), pick_label(view));
-		}
-	};
-
-	Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_ui_debug_window, 800, 600, "Aquila - UI Inspector", [this] {
-		m_pick_mode = false;
-		if (m_picker) {
-			m_picker->clear();
-		}
-		m_ui_debug_window.reset();
-	});
-}
-
-void EditorModule::start_pick() {
-	if (!m_ui_debug_window) {
-		return;
-	}
-	m_ui_debug_window->refresh();
-	m_pick_hover = nullptr;
-	m_pick_mode = true;
-}
-
-void EditorModule::open_widget_gallery_window() {
-	if (m_widget_gallery_window) {
-		return;
-	}
-
-	m_widget_gallery_window = std::make_unique<Aquila::UI::DevTools::WidgetGalleryWindow>();
-	m_widget_gallery_window->build(m_engine->get_context(), m_texture_cache.get(), 420, 720,
-								   Config::get_preferences().ui.style_path);
-
-	Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_widget_gallery_window, 420, 720, "Aquila - Widget Gallery",
-					 [this] { m_widget_gallery_window.reset(); });
 }
 
 void EditorModule::open_settings_window() {
@@ -525,8 +423,8 @@ void EditorModule::wire_menubar(Aquila::UI::Core::View *layout_root) {
 
 	auto *window_menu = menu_bar->add_menu("Window");
 	window_menu->add_item("UI Inspector", {}, m_layout_loader.resolve_texture("Engine/UI/Icons/bug.png"),
-						  [this] { open_ui_inspector_window(); });
-	window_menu->add_item("Widget Gallery", {}, nullptr, [this] { open_widget_gallery_window(); });
+						  [this] { m_devtools->open_inspector_window(); });
+	window_menu->add_item("Widget Gallery", {}, nullptr, [this] { m_devtools->open_widget_gallery(m_engine->get_context(), m_texture_cache.get()); });
 	window_menu->add_separator();
 	window_menu->add_item("Hierarchy", {}, nullptr, [] { AQUILA_LOG_INFO("Window: Hierarchy"); });
 	window_menu->add_item("Inspector", {}, nullptr, [] { AQUILA_LOG_INFO("Window: Inspector"); });
