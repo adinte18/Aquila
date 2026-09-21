@@ -12,6 +12,7 @@
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Widgets/Collapsible.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
+#include "Aquila/Scene/SceneStatistics.h"
 #include "Core/EditorTools.h"
 #include "Core/ProjectManager.h"
 
@@ -68,6 +69,8 @@ class EditorModule final : public Aquila::Application::IModule {
 
 	Aquila::Application::EngineContext *m_engine = nullptr;
 	EditorTools m_tools;
+	Aquila::SceneManagement::StatisticsCollector m_statistics;
+	Unique<class StatusBar> m_status_bar;
 	std::array<Aquila::UI::Core::Button *, 3> m_tool_buttons{};
 	Aquila::UI::Core::Button *m_space_button = nullptr;
 

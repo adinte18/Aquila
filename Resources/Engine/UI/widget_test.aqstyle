@@ -2422,6 +2422,45 @@ Vec4Field {
     border-width: 0px;
 }
 
+.hud-status {
+    flex-direction: row;
+    align-items: center;
+    width: 100vw;
+    height: 24px;
+    padding: 0px 12px;
+    gap: 16px;
+    background-color: var(--bg-deep);
+    border-width: 0px;
+}
+
+.status-spacer {
+    width: grow;
+}
+
+.status-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-selection {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.status-key {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.status-value {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-bright);
+}
+
 .hud-separator {
     width: 1px;
     height: 18px;

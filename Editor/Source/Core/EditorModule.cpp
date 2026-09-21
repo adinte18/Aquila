@@ -11,6 +11,7 @@
 #include "UI/Windows/SettingsWindow.h"
 #include "UI/Windows/ProjectLauncher.h"
 #include "UI/Panels/InspectorPanel.h"
+#include "UI/Panels/StatusBar.h"
 #include "UI/Panels/ViewportPanel.h"
 
 #include "Aquila/Foundation/Macros.h"
@@ -139,6 +140,12 @@ void EditorModule::on_pre_render(F32 delta_time) {
 		m_editor_camera->set_navigation_blocked(editor_canvas.get_hovered_view() != m_viewport_panel->get_view());
 		m_editor_camera->update(delta_time);
 		m_engine->get_render_pipeline().set_primary_view(m_editor_camera->get_render_view());
+	}
+
+	if (m_status_bar && m_status_bar->is_visible()) {
+		const bool has_selection = m_outlined_entity.is_valid() && m_outlined_entity.exists();
+		m_status_bar->update(m_statistics.collect(m_engine->get_scene(), m_outlined_entity),
+							 has_selection ? m_outlined_entity.get_name() : std::string());
 	}
 
 	m_engine->get_window().set_cursor(m_ui_host->get_active_cursor());
@@ -382,6 +389,8 @@ void EditorModule::setup_editor_ui() {
 
 	wire_main_menu(layout_root);
 	wire_tools(layout_root);
+	m_status_bar = std::make_unique<StatusBar>();
+	m_status_bar->build(layout_root);
 	wire_cards(layout_root);
 
 	m_devtools = std::make_unique<Aquila::UI::DevTools::UIDevTools>(Aquila::UI::DevTools::UIDevToolsDesc{
@@ -569,6 +578,11 @@ void EditorModule::wire_main_menu(Aquila::UI::Core::View *layout_root) {
 	window_menu->add_item("Hierarchy", {}, icon("list-tree.png"), [this] { toggle_card(0); });
 	window_menu->add_item("Inspector", {}, icon("sliders-horizontal.png"), [this] { toggle_card(1); });
 	window_menu->add_item("Console", {}, icon("terminal.png"), [this] { toggle_card(2); });
+	window_menu->add_item("Status bar", {}, icon("list-tree.png"), [this] {
+		if (m_status_bar) {
+			m_status_bar->set_visible(!m_status_bar->is_visible());
+		}
+	});
 	window_menu->add_separator();
 	window_menu->add_item("UI inspector", {}, icon("bug.png"), [this] { m_devtools->open_inspector_window(); });
 	window_menu->add_item("Widget gallery", {}, icon("layers.png"), [this] {
