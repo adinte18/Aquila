@@ -1,5 +1,5 @@
-#ifndef AQUILA_UI_DEVTOOLS_U_I_DEBUG_PANEL_H
-#define AQUILA_UI_DEVTOOLS_U_I_DEBUG_PANEL_H
+#ifndef AQUILA_UI_DEVTOOLS_UI_DEBUG_PANEL_H
+#define AQUILA_UI_DEVTOOLS_UI_DEBUG_PANEL_H
 
 #include <string>
 #include <unordered_map>
