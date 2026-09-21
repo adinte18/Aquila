@@ -7,12 +7,12 @@
 #include "UI/Panels/HierarchyPanel.h"
 #include "Aquila/UI/Core/DockWindowManager.h"
 #include "Aquila/UI/Core/FontManager.h"
-#include "UI/Debug/UIDebugPanel.h"
-#include "UI/Debug/UIDebugWindow.h"
-#include "UI/Debug/WidgetGalleryWindow.h"
+#include "Aquila/UI/DevTools/UIDebugPanel.h"
+#include "Aquila/UI/DevTools/UIDebugWindow.h"
+#include "Aquila/UI/DevTools/WidgetGalleryWindow.h"
 #include "UI/Windows/SettingsWindow.h"
 #include "UI/Windows/ProjectLauncher.h"
-#include "UI/Debug/PickerOverlay.h"
+#include "Aquila/UI/DevTools/PickerOverlay.h"
 #include "UI/Panels/InspectorPanel.h"
 #include "UI/Panels/ViewportPanel.h"
 
@@ -406,10 +406,10 @@ void EditorModule::setup_editor_ui() {
 
 	wire_menubar(layout_root);
 
-	m_ui_debug_panel = std::make_unique<UIDebugPanel>();
+	m_ui_debug_panel = std::make_unique<Aquila::UI::DevTools::UIDebugPanel>();
 	m_ui_debug_panel->build(layout_root, &editor_canvas);
 
-	m_picker = editor_canvas.get_root()->add_child<PickerOverlay>();
+	m_picker = editor_canvas.get_root()->add_child<Aquila::UI::DevTools::PickerOverlay>();
 
 	if (Option<Aquila::UI::Core::DockLayoutDesc> saved =
 			Aquila::UI::Core::DockLayoutSerializer::load_from_file(k_layout_path)) {
@@ -427,7 +427,7 @@ void EditorModule::open_ui_inspector_window() {
 
 	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 
-	m_ui_debug_window = std::make_unique<UIDebugWindow>();
+	m_ui_debug_window = std::make_unique<Aquila::UI::DevTools::UIDebugWindow>();
 	m_ui_debug_window->build(&editor_canvas, 800, 600, Config::get_preferences().ui.style_path);
 
 	m_ui_debug_window->on_pick_requested = [this] { start_pick(); };
@@ -461,7 +461,7 @@ void EditorModule::open_widget_gallery_window() {
 		return;
 	}
 
-	m_widget_gallery_window = std::make_unique<WidgetGalleryWindow>();
+	m_widget_gallery_window = std::make_unique<Aquila::UI::DevTools::WidgetGalleryWindow>();
 	m_widget_gallery_window->build(m_engine->get_context(), m_texture_cache.get(), 420, 720,
 								   Config::get_preferences().ui.style_path);
 

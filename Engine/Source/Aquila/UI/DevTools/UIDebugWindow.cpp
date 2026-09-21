@@ -1,4 +1,4 @@
-#include "UI/Debug/UIDebugWindow.h"
+#include "Aquila/UI/DevTools/UIDebugWindow.h"
 
 #include "Aquila/Platform/Events/Event.h"
 #include "Aquila/Platform/Events/WindowEvent.h"
@@ -17,9 +17,8 @@
 #include <cctype>
 #include <cstdio>
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
-using namespace Aquila;
 using namespace Aquila::UI::Core;
 
 namespace {
@@ -536,4 +535,4 @@ void UIDebugWindow::apply_filter() {
 	}
 }
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools

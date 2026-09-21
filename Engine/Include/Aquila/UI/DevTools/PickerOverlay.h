@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AQUILA_UI_DEVTOOLS_PICKER_OVERLAY_H
+#define AQUILA_UI_DEVTOOLS_PICKER_OVERLAY_H
 
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/Foundation/Math/Rect.h"
@@ -12,7 +13,7 @@ namespace Aquila::UI::Text {
 class FontAtlas;
 }
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
 // Full-canvas, hit-test-transparent overlay that draws a highlight box around a
 // picked view. Driven by the element picker; sits above all editor content.
@@ -34,4 +35,6 @@ class PickerOverlay : public Aquila::UI::Core::View {
 	Aquila::UI::Text::FontAtlas *m_font = nullptr;
 };
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools
+
+#endif

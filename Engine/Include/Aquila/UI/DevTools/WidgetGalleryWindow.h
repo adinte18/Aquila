@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AQUILA_UI_DEVTOOLS_WIDGET_GALLERY_WINDOW_H
+#define AQUILA_UI_DEVTOOLS_WIDGET_GALLERY_WINDOW_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 
@@ -21,7 +22,7 @@ class Tooltip;
 class TextureCache;
 } // namespace Aquila::UI::Core
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
 class WidgetGalleryWindow {
   public:
@@ -42,4 +43,6 @@ class WidgetGalleryWindow {
 	Aquila::UI::Core::Tooltip *m_tooltip = nullptr;
 };
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools
+
+#endif

@@ -1,4 +1,4 @@
-#include "UI/Debug/PickerOverlay.h"
+#include "Aquila/UI/DevTools/PickerOverlay.h"
 
 #include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Rendering/DrawList.h"
@@ -7,9 +7,8 @@
 
 #include <cmath>
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
-using namespace Aquila;
 using namespace Aquila::UI::Core;
 
 namespace {
@@ -89,4 +88,4 @@ void PickerOverlay::on_draw_self(Aquila::UI::Rendering::DrawList &draw_list) {
 	draw_list.draw_text(text_rect, text, m_font, text_color, k_badge_font, Aquila::UI::TextAlign::Left, 2);
 }
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools

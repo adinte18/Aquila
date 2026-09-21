@@ -1,4 +1,4 @@
-#include "UI/Debug/WidgetGalleryWindow.h"
+#include "Aquila/UI/DevTools/WidgetGalleryWindow.h"
 
 #include "Aquila/Platform/Events/Event.h"
 #include "Aquila/Platform/Events/WindowEvent.h"
@@ -33,9 +33,8 @@
 #include "Aquila/UI/Widgets/TreeView.h"
 #include "Aquila/UI/Widgets/VecField.h"
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
-using namespace Aquila;
 using namespace Aquila::UI::Core;
 
 WidgetGalleryWindow::WidgetGalleryWindow() = default;
@@ -173,4 +172,4 @@ void WidgetGalleryWindow::on_event(Platform::Events::Event &event) {
 	m_canvas->on_event(event);
 }
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AQUILA_UI_DEVTOOLS_U_I_DEBUG_WINDOW_H
+#define AQUILA_UI_DEVTOOLS_U_I_DEBUG_WINDOW_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 
@@ -24,7 +25,7 @@ class TreeView;
 class TreeNode;
 } // namespace Aquila::UI::Core
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
 class UIDebugWindow {
   public:
@@ -135,4 +136,6 @@ class UIDebugWindow {
 	Aquila::UI::Core::Label *m_v_whitespace = nullptr;
 };
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools
+
+#endif

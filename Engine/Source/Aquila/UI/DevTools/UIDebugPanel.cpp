@@ -1,4 +1,4 @@
-#include "UI/Debug/UIDebugPanel.h"
+#include "Aquila/UI/DevTools/UIDebugPanel.h"
 
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/View.h"
@@ -8,9 +8,8 @@
 #include "Aquila/UI/Widgets/ScrollView.h"
 #include "Aquila/UI/Widgets/TreeView.h"
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
-using namespace Aquila;
 using namespace Aquila::UI::Core;
 
 namespace {
@@ -108,4 +107,4 @@ void UIDebugPanel::refresh() {
 	}
 }
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools

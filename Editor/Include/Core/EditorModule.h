@@ -7,6 +7,10 @@
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/UIHost.h"
+#include "Aquila/UI/DevTools/PickerOverlay.h"
+#include "Aquila/UI/DevTools/UIDebugPanel.h"
+#include "Aquila/UI/DevTools/UIDebugWindow.h"
+#include "Aquila/UI/DevTools/WidgetGalleryWindow.h"
 #include "Aquila/Rendering/CameraController.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Core/View.h"
@@ -17,7 +21,7 @@
 namespace Aquila::UI::Core {
 class View;
 class DockSpace;
-} // namespace Aquila::UI::Core
+}
 
 namespace Editor {
 
@@ -25,12 +29,8 @@ class ViewportPanel;
 class HierarchyPanel;
 class InspectorPanel;
 class ConsolePanel;
-class UIDebugPanel;
-class UIDebugWindow;
-class WidgetGalleryWindow;
 class SettingsWindow;
 class ProjectLauncher;
-class PickerOverlay;
 class ProjectManager;
 
 class EditorModule final : public Aquila::Application::IModule {
@@ -85,9 +85,9 @@ class EditorModule final : public Aquila::Application::IModule {
 	Unique<HierarchyPanel> m_hierarchy_panel;
 	Unique<InspectorPanel> m_inspector_panel;
 	Unique<ConsolePanel> m_console_panel;
-	Unique<UIDebugPanel> m_ui_debug_panel;
-	Unique<UIDebugWindow> m_ui_debug_window;
-	Unique<WidgetGalleryWindow> m_widget_gallery_window;
+	Unique<Aquila::UI::DevTools::UIDebugPanel> m_ui_debug_panel;
+	Unique<Aquila::UI::DevTools::UIDebugWindow> m_ui_debug_window;
+	Unique<Aquila::UI::DevTools::WidgetGalleryWindow> m_widget_gallery_window;
 	Unique<SettingsWindow> m_settings_window;
 	Unique<ProjectLauncher> m_project_launcher;
 	Aquila::Rendering::RenderWindowId m_launcher_window = nullptr;
@@ -96,7 +96,7 @@ class EditorModule final : public Aquila::Application::IModule {
 
 	Aquila::SceneManagement::Entity m_outlined_entity;
 
-	PickerOverlay *m_picker = nullptr;
+	Aquila::UI::DevTools::PickerOverlay *m_picker = nullptr;
 	Aquila::UI::Core::ViewRef m_pick_hover;
 	bool m_pick_mode = false;
 	Aquila::UI::Core::LayoutLoader m_layout_loader;
@@ -105,4 +105,4 @@ class EditorModule final : public Aquila::Application::IModule {
 	Unique<Aquila::UI::Core::DockWindowManager> m_dock_manager;
 };
 
-} // namespace Editor
+}

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AQUILA_UI_DEVTOOLS_U_I_DEBUG_PANEL_H
+#define AQUILA_UI_DEVTOOLS_U_I_DEBUG_PANEL_H
 
 #include <string>
 #include <unordered_map>
@@ -10,7 +11,7 @@ class TreeView;
 class TreeNode;
 } // namespace Aquila::UI::Core
 
-namespace Editor {
+namespace Aquila::UI::DevTools {
 
 class UIDebugPanel {
   public:
@@ -30,4 +31,6 @@ class UIDebugPanel {
 	std::unordered_map<Aquila::UI::Core::TreeNode *, Aquila::UI::Core::View *> m_node_to_view;
 };
 
-} // namespace Editor
+} // namespace Aquila::UI::DevTools
+
+#endif
