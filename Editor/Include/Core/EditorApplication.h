@@ -3,6 +3,7 @@
 #include "Aquila/Application/ApplicationNew.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Core/View.h"
 #include "Core/ProjectManager.h"
 
@@ -18,7 +19,6 @@ class DockSpace;
 namespace Editor {
 
 class EditorCamera;
-class SelectionOutlineSystem;
 class ViewportPanel;
 class HierarchyPanel;
 class InspectorPanel;
@@ -52,6 +52,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void reset_to_demo_scene();
 	void refresh_scene_panels();
 	void request_viewport_pick(Vec2 uv);
+	void set_outlined_entity(Aquila::SceneManagement::Entity entity);
 	void setup_editor_ui();
 	void wire_menubar(Aquila::UI::Core::View *layout_root);
 	void open_ui_inspector_window();
@@ -90,7 +91,7 @@ class EditorApplication : public Aquila::Application::Application {
 	bool m_editor_entered = false;
 	Option<ProjectInfo> m_pending_project;
 
-	SelectionOutlineSystem *m_selection_outline = nullptr;
+	Aquila::SceneManagement::Entity m_outlined_entity;
 
 	PickerOverlay *m_picker = nullptr;
 	Aquila::UI::Core::ViewRef m_pick_hover;

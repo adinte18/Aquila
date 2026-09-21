@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Aquila/Rendering/Systems/GridSystem.h"
+#include "Aquila/Rendering/Systems/OutlineSystem.h"
 #include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 #include "Aquila/Rendering/Systems/SkySystem.h"
 #include "Aquila/Rendering/Systems/LightCullingSystem.h"
@@ -199,6 +200,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::GeometrySystem>();
 	m_renderer->add_system<Rendering::SkySystem>();
 	m_renderer->add_system<Rendering::GridSystem>();
+	m_renderer->add_system<Rendering::OutlineSystem>();
 
 	m_secondary_batcher = std::make_unique<Graphics::QuadBatcher>(*m_ctx);
 }

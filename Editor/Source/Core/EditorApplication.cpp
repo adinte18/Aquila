@@ -23,6 +23,7 @@
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/OutlineComponent.h"
 #include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/EntityManager.h"
@@ -45,7 +46,6 @@
 #include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Platform/Input.h"
 #include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
-#include "Rendering/SelectionOutlineSystem.h"
 
 #include <algorithm>
 
@@ -78,7 +78,6 @@ EditorApplication::~EditorApplication() = default;
 void EditorApplication::on_init() {
 	Aquila::UI::Core::CanvasManager::init(get_window().get_width(), get_window().get_height());
 	get_renderer2_d().add_system<Aquila::UI::Rendering::ViewRenderingSystem>();
-	m_selection_outline = &get_renderer().add_system<SelectionOutlineSystem>();
 
 	{
 		GLFWwindow *native_win = get_window().get_native_window();
@@ -274,6 +273,16 @@ void EditorApplication::on_event(Events::Event &event) {
 	});
 }
 
+void EditorApplication::set_outlined_entity(Entity entity) {
+	if (m_outlined_entity.is_valid() && m_outlined_entity.exists()) {
+		m_outlined_entity.try_remove_component<OutlineComponent>();
+	}
+	m_outlined_entity = entity;
+	if (m_outlined_entity.is_valid()) {
+		m_outlined_entity.add_component<OutlineComponent>();
+	}
+}
+
 void EditorApplication::request_viewport_pick(Vec2 uv) {
 	if (Aquila::Platform::Input::is_key_pressed(Events::KeyCode::LeftAlt)) {
 		return;
@@ -453,9 +462,8 @@ void EditorApplication::setup_editor_ui() {
 	m_hierarchy_panel->on_entity_deselected.connect([this] { m_inspector_panel->clear(); });
 	m_inspector_panel->on_entity_renamed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
 
-	m_hierarchy_panel->on_entity_selected.connect(
-		[this](Entity entity) { m_selection_outline->set_selected_entity(entity); });
-	m_hierarchy_panel->on_entity_deselected.connect([this] { m_selection_outline->clear_selection(); });
+	m_hierarchy_panel->on_entity_selected.connect([this](Entity entity) { set_outlined_entity(entity); });
+	m_hierarchy_panel->on_entity_deselected.connect([this] { set_outlined_entity(Entity::null()); });
 
 	m_viewport_panel->on_clicked_uv.connect([this](Vec2 uv) { request_viewport_pick(uv); });
 	get_object_picking().on_picked.connect([this](Entity entity) {

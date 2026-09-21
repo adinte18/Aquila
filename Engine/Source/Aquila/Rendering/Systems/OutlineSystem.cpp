@@ -1,4 +1,4 @@
-#include "Rendering/SelectionOutlineSystem.h"
+#include "Aquila/Rendering/Systems/OutlineSystem.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
@@ -9,12 +9,13 @@
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
+#include "Aquila/Scene/Scene.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/OutlineComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 
-namespace Editor {
+namespace Aquila::Rendering {
 
-using namespace Aquila;
 using namespace Aquila::Graphics;
 using namespace Aquila::SceneManagement::Components;
 
@@ -22,11 +23,11 @@ using Aquila::SharedConstants::SHADERS_DIR;
 
 namespace {
 std::string mask_shader_path() {
-	return SHADERS_DIR + "Editor/SelectionMask.slang";
+	return SHADERS_DIR + "OutlineMask.slang";
 }
 
 std::string outline_shader_path() {
-	return SHADERS_DIR + "Editor/SelectionOutline.slang";
+	return SHADERS_DIR + "Outline.slang";
 }
 
 struct MaskPushConstants {
@@ -65,7 +66,7 @@ bool collect_stages(const std::string &path, const char *label, RHI::GraphicsPip
 }
 } // namespace
 
-void SelectionOutlineSystem::on_init(GFX::GfxContext &ctx) {
+void OutlineSystem::on_init(GFX::GfxContext &ctx) {
 	RenderingSystemBase::on_init(ctx);
 
 	m_outline_layout = ctx.create_descriptor_set_layout({
@@ -85,7 +86,7 @@ void SelectionOutlineSystem::on_init(GFX::GfxContext &ctx) {
 		ctx, mask_shader_path(), [](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
 			RHI::GraphicsPipelineDesc pipeline_descriptor{};
 
-			if (!collect_stages(mask_shader_path(), "SelectionOutlineSystem (mask)", pipeline_descriptor)) {
+			if (!collect_stages(mask_shader_path(), "OutlineSystem (mask)", pipeline_descriptor)) {
 				return nullptr;
 			}
 
@@ -99,7 +100,7 @@ void SelectionOutlineSystem::on_init(GFX::GfxContext &ctx) {
 			pipeline_descriptor.color_formats = { RHI::TextureFormat::R8 };
 			pipeline_descriptor.depth_format = RHI::TextureFormat::None;
 
-			pipeline_descriptor.set_layouts = { &Rendering::SceneFrameData::get()->get_layout().get_rhi() };
+			pipeline_descriptor.set_layouts = { &SceneFrameData::get()->get_layout().get_rhi() };
 			pipeline_descriptor.push_constants = { { .stages = RHI::ShaderStageFlags::Vertex,
 													 .offset = 0,
 													 .size = sizeof(MaskPushConstants) } };
@@ -110,7 +111,7 @@ void SelectionOutlineSystem::on_init(GFX::GfxContext &ctx) {
 		ctx, outline_shader_path(), [this](GFX::GfxContext &build_ctx) -> Ref<GFX::GfxPipeline> {
 			RHI::GraphicsPipelineDesc pipeline_descriptor{};
 
-			if (!collect_stages(outline_shader_path(), "SelectionOutlineSystem (outline)", pipeline_descriptor)) {
+			if (!collect_stages(outline_shader_path(), "OutlineSystem (outline)", pipeline_descriptor)) {
 				return nullptr;
 			}
 
@@ -141,28 +142,41 @@ void SelectionOutlineSystem::on_init(GFX::GfxContext &ctx) {
 		});
 }
 
-void SelectionOutlineSystem::add_passes(RG::RenderGraph &graph, Rendering::FrameContext &ctx) {
-	if (!m_selected.is_valid()) {
-		return;
-	}
-
+void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_mask_pipeline || !m_mask_pipeline->is_valid() || !m_outline_pipeline || !m_outline_pipeline->is_valid()) {
 		return;
 	}
 
-	auto *transform = m_selected.try_get_component<TransformComponent>();
-	auto *mesh = m_selected.try_get_component<MeshComponent>();
+	struct DrawCall {
+		Ref<GFX::GfxMesh> gpu_mesh;
+		Mat4 model;
+	};
 
-	if (transform == nullptr || mesh == nullptr || !mesh->is_valid()) {
+	std::vector<DrawCall> draw_calls;
+	Option<OutlineComponent> style;
+
+	auto view = ctx.scene->get_registry().view<OutlineComponent, TransformComponent, MeshComponent>();
+	for (auto entity : view) {
+		auto &mesh = view.get<MeshComponent>(entity);
+		if (!mesh.is_valid()) {
+			continue;
+		}
+
+		auto gpu_mesh = get_or_upload_mesh(mesh.data);
+		if (!gpu_mesh) {
+			continue;
+		}
+
+		if (!style) {
+			style = view.get<OutlineComponent>(entity);
+		}
+		draw_calls.push_back({ .gpu_mesh = gpu_mesh, .model = view.get<TransformComponent>(entity).get_world_matrix() });
+	}
+
+	if (draw_calls.empty()) {
 		return;
 	}
 
-	auto gpu_mesh = get_or_upload_mesh(mesh->data);
-	if (!gpu_mesh) {
-		return;
-	}
-
-	const Mat4 model = transform->get_world_matrix();
 	auto *frame_data = ctx.frame_data;
 	const Uint32 frame_slot = ctx.frame_slot;
 
@@ -171,40 +185,43 @@ void SelectionOutlineSystem::add_passes(RG::RenderGraph &graph, Rendering::Frame
 		.height = ctx.height,
 		.format = RHI::TextureFormat::R8,
 		.usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled,
-		.debug_name = "SelectionMask",
+		.debug_name = "OutlineMask",
 	});
 
 	graph.add_pass(
-		"SelectionMask",
+		"OutlineMask",
 
 		[&h_mask](RG::RGPassBuilder &builder) {
 			h_mask = builder.set_color_attachment(0, h_mask, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store,
 												  { Foundation::Color::RGBA::BLACK });
 		},
 
-		[gpu_mesh, model, frame_data, frame_slot, this](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+		[draw_calls = std::move(draw_calls), frame_data, frame_slot, this](GFX::GfxCommandList &cmd,
+																		   RG::RGRegistry &) {
 			cmd.bind_pipeline(m_mask_pipeline->get());
 			cmd.bind_descriptor_set(0, frame_data->get_descriptor_set(frame_slot));
 
-			MaskPushConstants push{ .model = model };
-			cmd.push_constants(push, RHI::ShaderStageFlags::Vertex);
-			cmd.bind_vertex_buffer(gpu_mesh->get_vertex_buffer());
-			cmd.bind_index_buffer(gpu_mesh->get_index_buffer());
-			cmd.draw_indexed(gpu_mesh->get_index_count());
+			for (const auto &draw : draw_calls) {
+				MaskPushConstants push{ .model = draw.model };
+				cmd.push_constants(push, RHI::ShaderStageFlags::Vertex);
+				cmd.bind_vertex_buffer(draw.gpu_mesh->get_vertex_buffer());
+				cmd.bind_index_buffer(draw.gpu_mesh->get_index_buffer());
+				cmd.draw_indexed(draw.gpu_mesh->get_index_count());
+			}
 		});
 
 	const RG::RGTextureHandle h_mask_read = h_mask;
 	auto *set = m_outline_sets[frame_slot].get();
 
 	const OutlinePushConstants outline_push{
-		.outline_color = m_outline_color,
+		.outline_color = style->color,
 		.texel_size = { 1.F / static_cast<F32>(ctx.width), 1.F / static_cast<F32>(ctx.height) },
-		.thickness = m_thickness,
+		.thickness = style->thickness,
 		.padding = 0.F,
 	};
 
 	graph.add_pass(
-		"SelectionOutline",
+		"Outline",
 
 		[h_mask_read, &ctx](RG::RGPassBuilder &builder) {
 			builder.read_texture(h_mask_read, RG::ResourceState::ShaderRead);
@@ -225,4 +242,4 @@ void SelectionOutlineSystem::add_passes(RG::RenderGraph &graph, Rendering::Frame
 		});
 }
 
-} // namespace Editor
+} // namespace Aquila::Rendering
