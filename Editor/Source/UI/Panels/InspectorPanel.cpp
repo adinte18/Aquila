@@ -1,12 +1,10 @@
 #include "UI/Panels/InspectorPanel.h"
+#include "Aquila/Scene/ComponentRegistry.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/UI/Widgets/Label.h"
-#include "UI/Inspectors/CameraComponentUI.h"
-#include "UI/Inspectors/LightComponentUI.h"
 #include "UI/Inspectors/MaterialComponentUI.h"
 #include "UI/Inspectors/MeshComponentUI.h"
-#include "UI/Inspectors/SkyLightComponentUI.h"
-#include "UI/Inspectors/TransformComponentUI.h"
+#include "UI/Inspectors/ReflectedComponentUI.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/UI/Widgets/Button.h"
@@ -107,12 +105,17 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 			{ .collapsible=section, .id=std::string(section_id), .ui=std::move(component_ui), .signals_group=signals_group, .signals_grid=signals_grid, .signal_rows={} });
 	};
 
-	add_ui_component("section-transform", std::make_unique<TransformComponentUI>());
+	const auto &registry = ComponentRegistry::instance();
+	auto reflected = [&](std::string_view component) {
+		return std::make_unique<ReflectedComponentUI>(*registry.find(component), &m_context);
+	};
+
+	add_ui_component("section-transform", reflected("Transform"));
 	add_ui_component("section-mesh", std::make_unique<MeshComponentUI>());
 	add_ui_component("section-material", std::make_unique<MaterialComponentUI>(m_context));
-	add_ui_component("section-light", std::make_unique<LightComponentUI>(m_context));
-	add_ui_component("section-skylight", std::make_unique<SkyLightComponentUI>(m_context));
-	add_ui_component("section-camera", std::make_unique<CameraComponentUI>());
+	add_ui_component("section-light", reflected("Light"));
+	add_ui_component("section-skylight", reflected("Sky Light"));
+	add_ui_component("section-camera", reflected("Camera"));
 
 	clear();
 }
