@@ -43,6 +43,19 @@ class IRenderWindowHost {
 	virtual void set_window_position(RenderWindowId window, Vec2 position) = 0;
 };
 
+template <typename Content>
+RenderWindowId open_content_window(IRenderWindowHost &host, Content &content, Uint32 width, Uint32 height,
+								   const std::string &title, Delegate<void()> on_close) {
+	RenderWindowCallbacks callbacks;
+	callbacks.on_update = [&content](F32 dt) { content.update(dt); };
+	callbacks.on_render = [&content](Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+		content.render(batcher, cmd);
+	};
+	callbacks.on_event = [&content](Platform::Events::Event &event) { content.on_event(event); };
+	callbacks.on_close = std::move(on_close);
+	return host.create_window(width, height, title, std::move(callbacks));
+}
+
 }
 
 #endif

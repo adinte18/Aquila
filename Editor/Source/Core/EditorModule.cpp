@@ -102,7 +102,7 @@ void EditorModule::open_project_launcher() {
 	m_project_launcher->build(m_project_manager.get(), 720, 520, Config::get_preferences().ui.style_path);
 	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
 
-	m_launcher_window = open_tool_window(*m_project_launcher, 720, 520, "Aquila - Projects", [this] {
+	m_launcher_window = Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_project_launcher, 720, 520, "Aquila - Projects", [this] {
 		m_project_launcher.reset();
 		m_launcher_window = nullptr;
 		if (!m_editor_entered) {
@@ -438,7 +438,7 @@ void EditorModule::open_ui_inspector_window() {
 		}
 	};
 
-	open_tool_window(*m_ui_debug_window, 800, 600, "Aquila - UI Inspector", [this] {
+	Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_ui_debug_window, 800, 600, "Aquila - UI Inspector", [this] {
 		m_pick_mode = false;
 		if (m_picker) {
 			m_picker->clear();
@@ -465,7 +465,7 @@ void EditorModule::open_widget_gallery_window() {
 	m_widget_gallery_window->build(m_engine->get_context(), m_texture_cache.get(), 420, 720,
 								   Config::get_preferences().ui.style_path);
 
-	open_tool_window(*m_widget_gallery_window, 420, 720, "Aquila - Widget Gallery",
+	Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_widget_gallery_window, 420, 720, "Aquila - Widget Gallery",
 					 [this] { m_widget_gallery_window.reset(); });
 }
 
@@ -479,7 +479,7 @@ void EditorModule::open_settings_window() {
 	m_settings_window->on_applied = [this] { apply_font_settings(); };
 
 	const Aquila::Rendering::RenderWindowId window =
-		open_tool_window(*m_settings_window, 560, 640, "Aquila - Settings", [this] { m_settings_window.reset(); });
+		Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_settings_window, 560, 640, "Aquila - Settings", [this] { m_settings_window.reset(); });
 	m_settings_window->on_request_close = [this, window] { m_engine->get_window_host().request_close(window); };
 }
 
