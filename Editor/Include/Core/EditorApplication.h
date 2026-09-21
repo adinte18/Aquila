@@ -46,8 +46,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_render_resize(Uint32 width, Uint32 height) override;
 
   private:
-	void populate_demo_scene();
-	void spawn_default_camera();
+	F32 window_aspect();
 	void new_empty_scene();
 	void reset_to_demo_scene();
 	void refresh_scene_panels();

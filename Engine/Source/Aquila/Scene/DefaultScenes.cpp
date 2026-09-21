@@ -1,0 +1,85 @@
+#include "Aquila/Scene/DefaultScenes.h"
+
+#include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/GFX/GfxContext.h"
+#include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/Graphics/Resources/Mesh.h"
+#include "Aquila/Scene/Components/CameraComponent.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Scene/Components/MaterialComponent.h"
+#include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/SkyLightComponent.h"
+#include "Aquila/Scene/Components/TransformComponent.h"
+#include "Aquila/Scene/EntityManager.h"
+
+namespace Aquila::SceneManagement {
+
+using namespace Aquila::SceneManagement::Components;
+
+Entity spawn_default_camera(Scene &scene, F32 aspect_ratio) {
+	auto *em = scene.get_entity_manager();
+	auto cam = em->create_entity("Camera");
+	auto &cam_comp = cam.add_component<CameraComponent>();
+	cam_comp.fov = 60.F;
+	cam_comp.near_plane = 0.1F;
+	cam_comp.far_plane = 500.F;
+	cam_comp.aspect_ratio = aspect_ratio;
+	cam_comp.primary = true;
+	cam.get_component<TransformComponent>().set_local_position({ 0.F, 1.5F, -5.F });
+	scene.set_active_camera(cam);
+	return cam;
+}
+
+void populate_demo_scene(Scene &scene, GFX::GfxContext &ctx, F32 aspect_ratio) {
+	auto *em = scene.get_entity_manager();
+	spawn_default_camera(scene, aspect_ratio);
+
+	auto lit_mat = Graphics::MaterialFactory::get()->create(ctx, SharedConstants::SHADERS_DIR + "Basic.slang",
+															{
+																.type = Graphics::MaterialType::Lit,
+																.color_formats = { RHI::TextureFormat::RGBA16F },
+																.depth_test = true,
+																.depth_write = true,
+															});
+
+	auto add_cube = [&](const char *name, Vec3 pos) {
+		auto entity = em->create_entity(name);
+		auto mesh = std::make_shared<Graphics::Resources::Mesh>(name);
+		mesh->load_from_data(Graphics::Resources::Mesh::generate_cube(0.5F));
+		entity.add_component<MeshComponent>().set_mesh(mesh);
+		entity.get_component<TransformComponent>().set_local_position(pos);
+		auto &mat = entity.add_component<MaterialComponent>(lit_mat);
+		mat.surface_properties.albedo = Vec4(0.8F, 0.6F, 0.4F, 1.F);
+		mat.surface_properties.metallic = 0.0F;
+		mat.surface_properties.roughness = 0.6F;
+		return entity;
+	};
+	add_cube("CubeA", { -2.5F, 1.F, 2.F });
+	add_cube("CubeB", { 2.5F, 1.F, 2.F });
+	auto floor = add_cube("Floor", { 0.0F, 0.F, 2.F });
+	floor.get_component<TransformComponent>().set_local_scale({ 12.F, 0.2F, 12.F });
+
+	{
+		auto e = em->create_entity("SunLight");
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Directional, Vec3(1.0F, 0.95F, 0.8F), 1.0F);
+		light.set_direction(glm::normalize(Vec3(0.4F, -1.0F, 0.6F)));
+	}
+	{
+		auto e = em->create_entity("PointA");
+		e.get_component<TransformComponent>().set_local_position({ -1.5F, 0.5F, 1.5F });
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(1.0F, 0.4F, 0.1F), 1.0F);
+		light.set_range(6.0F);
+	}
+	{
+		auto e = em->create_entity("PointB");
+		e.get_component<TransformComponent>().set_local_position({ 1.5F, 0.5F, 1.5F });
+		auto &light = e.add_component<LightComponent>(LightComponent::Type::Point, Vec3(0.2F, 0.5F, 1.0F), 1.0F);
+		light.set_range(6.0F);
+	}
+	{
+		auto e = em->create_entity("Sky");
+		e.add_component<SkyLightComponent>();
+	}
+}
+
+}
