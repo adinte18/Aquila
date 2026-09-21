@@ -1,4 +1,4 @@
-#include "UI/Debug/FloatingPanelWindow.h"
+#include "Aquila/UI/Core/FloatingPanelWindow.h"
 
 #include "Aquila/Platform/Events/Event.h"
 #include "Aquila/Platform/Events/InputEvent.h"
@@ -10,11 +10,9 @@
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/DockSpace.h"
 
-namespace Editor {
+namespace Aquila::UI::Core {
 
-using namespace Aquila;
-using namespace Aquila::UI::Core;
-namespace Events = Aquila::Platform::Events;
+namespace Events = Platform::Events;
 
 FloatingPanelWindow::FloatingPanelWindow() = default;
 FloatingPanelWindow::~FloatingPanelWindow() = default;
@@ -23,14 +21,14 @@ void FloatingPanelWindow::build(Unique<View> panel_subtree, const std::string &t
 								const std::string &style_path) {
 	m_title = title;
 	m_canvas = std::make_unique<Canvas>(width, height);
-	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
+	StyleParser::load_file(style_path, m_canvas->get_style_sheet());
 
 	auto *root = m_canvas->get_root();
 	root->add_class("floating-panel-root");
 
 	m_body = root->add_child<View>();
 	m_body->add_class("floating-panel-body");
-	m_dock_space = m_body->add_child<UI::Core::DockSpace>();
+	m_dock_space = m_body->add_child<DockSpace>();
 	m_dock_space->get_root_node()->accept_panel(std::move(panel_subtree), title);
 
 	m_canvas->reload_styles();
@@ -74,4 +72,4 @@ Unique<View> FloatingPanelWindow::detach_content() {
 	return leaf->detach_panel(leaf->get_active_panel_ptr());
 }
 
-} // namespace Editor
+} // namespace Aquila::UI::Core

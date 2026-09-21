@@ -4,7 +4,7 @@
 #include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
 #include "UI/Panels/HierarchyPanel.h"
-#include "UI/Debug/FloatingPanelWindow.h"
+#include "Aquila/UI/Core/FloatingPanelWindow.h"
 #include "UI/Debug/UIDebugPanel.h"
 #include "UI/Debug/UIDebugWindow.h"
 #include "UI/Debug/WidgetGalleryWindow.h"
@@ -622,10 +622,10 @@ void EditorApplication::spawn_floating_panel(Unique<Aquila::UI::Core::View> pane
 	glfwSetWindowPos(rw.window->get_native_window(), static_cast<int>(screen_pos.x) - 60,
 					 static_cast<int>(screen_pos.y) - 12);
 
-	auto fpw = std::make_unique<FloatingPanelWindow>();
+	auto fpw = std::make_unique<Aquila::UI::Core::FloatingPanelWindow>();
 	fpw->build(std::move(panel_subtree), title, 800, 600, Config::get_preferences().ui.style_path);
 
-	FloatingPanelWindow *panel = fpw.get();
+	Aquila::UI::Core::FloatingPanelWindow *panel = fpw.get();
 	RenderWindow *window = &rw;
 
 	rw.on_update = [panel](F32 dt) { panel->update(dt); };
@@ -638,7 +638,7 @@ void EditorApplication::spawn_floating_panel(Unique<Aquila::UI::Core::View> pane
 	m_floating_panels.push_back({ std::move(fpw), window });
 }
 
-void EditorApplication::on_floating_closed(FloatingPanelWindow *panel) {
+void EditorApplication::on_floating_closed(Aquila::UI::Core::FloatingPanelWindow *panel) {
 	auto it =
 		std::ranges::find_if(m_floating_panels, [panel](const FloatingEntry &e) { return e.panel.get() == panel; });
 	if (it == m_floating_panels.end()) {

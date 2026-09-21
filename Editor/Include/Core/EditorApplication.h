@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/Application/ApplicationNew.h"
+#include "Aquila/UI/Core/FloatingPanelWindow.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/UIHost.h"
@@ -29,7 +30,6 @@ class UIDebugWindow;
 class WidgetGalleryWindow;
 class SettingsWindow;
 class ProjectLauncher;
-class FloatingPanelWindow;
 class PickerOverlay;
 class ProjectManager;
 
@@ -71,7 +71,7 @@ class EditorApplication : public Aquila::Application::Application {
 	Aquila::UI::Core::DockSpace *find_dock_target_at_screen(Vec2 screen_pos, GLFWwindow *exclude, Vec2 &out_local);
 	void close_floating_window(GLFWwindow *native);
 	void spawn_floating_panel(Unique<Aquila::UI::Core::View> panel_subtree, std::string title, Vec2 screen_pos);
-	void on_floating_closed(FloatingPanelWindow *panel);
+	void on_floating_closed(Aquila::UI::Core::FloatingPanelWindow *panel);
 	void dock_back_to_center(Unique<Aquila::UI::Core::View> content, const std::string &title);
 
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
@@ -102,7 +102,7 @@ class EditorApplication : public Aquila::Application::Application {
 	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
 
 	struct FloatingEntry {
-		Unique<FloatingPanelWindow> panel;
+		Unique<Aquila::UI::Core::FloatingPanelWindow> panel;
 		Aquila::Application::RenderWindow *window = nullptr;
 	};
 	std::vector<FloatingEntry> m_floating_panels;
