@@ -80,6 +80,7 @@ void Application::route_window_event(Platform::Events::Event &event) {
 
 Application::~Application() {
 	m_ctx->wait_idle();
+	m_modules.clear();
 
 	Platform::Filesystem::VirtualFileSystem::shutdown();
 	Foundation::Profiler::Profiler::shutdown();
@@ -103,6 +104,7 @@ void Application::run() {
 	init_rendering(m_window->get_width(), m_window->get_height());
 	m_scene = std::make_unique<Scene>("Main");
 	on_init();
+	attach_modules();
 
 	while (m_running) {
 		const bool has_frames = Foundation::FrameScheduler::get()->consume();
@@ -155,7 +157,23 @@ void Application::run() {
 	}
 
 	m_ctx->wait_idle();
+	detach_modules();
 	on_shutdown();
+}
+
+void Application::attach_modules() {
+	m_modules_attached = true;
+	for (auto &module : m_modules) {
+		module->on_attach(m_engine_context);
+	}
+}
+
+void Application::detach_modules() {
+	for (auto it = m_modules.rbegin(); it != m_modules.rend(); ++it) {
+		(*it)->on_detach();
+	}
+	m_modules.clear();
+	m_modules_attached = false;
 }
 
 void Application::close() {
@@ -362,6 +380,9 @@ void Application::internal_update(F32 delta_time) {
 			m_render_width = m_next_render_width;
 			m_render_height = m_next_render_height;
 			on_render_resize(m_render_width, m_render_height);
+			for (auto &module : m_modules) {
+				module->on_render_resize(m_render_width, m_render_height);
+			}
 		}
 
 		Uint32 image_index = 0;
@@ -380,6 +401,9 @@ void Application::internal_update(F32 delta_time) {
 		cmd.begin();
 
 		on_pre_render(delta_time);
+		for (auto &module : m_modules) {
+			module->on_pre_render(delta_time);
+		}
 
 		{
 			Graphics::Shader::ShaderHotReload::get()->tick();
@@ -407,6 +431,9 @@ void Application::internal_on_main_window_event(Platform::Events::Event &event) 
 	}
 
 	on_event(event);
+	for (auto &module : m_modules) {
+		module->on_event(event);
+	}
 
 	Platform::Events::EventDispatcher dispatcher(event);
 
@@ -462,6 +489,9 @@ void Application::handle_resize() {
 	const Uint32 swapchain_height = m_swapchain->get_height();
 
 	on_resize(swapchain_width, swapchain_height);
+	for (auto &module : m_modules) {
+		module->on_resize(swapchain_width, swapchain_height);
+	}
 
 	request_render_resize(swapchain_width, swapchain_height);
 }

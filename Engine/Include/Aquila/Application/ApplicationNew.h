@@ -4,6 +4,8 @@
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Timer.h"
+#include "Aquila/Application/EngineContext.h"
+#include "Aquila/Application/IModule.h"
 #include "Aquila/Application/Window.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxSwapchain.h"
@@ -56,6 +58,17 @@ class Application : public Rendering::IRenderWindowHost {
 	AQUILA_NONCOPYABLE(Application);
 	AQUILA_NONMOVEABLE(Application);
 
+	template <typename T, typename... Args> T &add_module(Args &&...args) {
+		static_assert(std::is_base_of_v<IModule, T>, "T must derive from IModule");
+		auto module = std::make_unique<T>(std::forward<Args>(args)...);
+		T &ref = *module;
+		m_modules.push_back(std::move(module));
+		if (m_modules_attached) {
+			ref.on_attach(m_engine_context);
+		}
+		return ref;
+	}
+
 	void run();
 	void close();
 
@@ -92,6 +105,10 @@ class Application : public Rendering::IRenderWindowHost {
 	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
 
   private:
+	friend class EngineContext;
+
+	void attach_modules();
+	void detach_modules();
 	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
 	void internal_on_main_window_event(Platform::Events::Event &event);
@@ -102,6 +119,10 @@ class Application : public Rendering::IRenderWindowHost {
 	void render_secondary_windows();
 	void render_one_secondary_window(RenderWindow &rw);
 	void ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height);
+
+	EngineContext m_engine_context{ *this };
+	std::vector<Unique<IModule>> m_modules;
+	bool m_modules_attached = false;
 
 	ApplicationSpec m_spec;
 	Unique<Window> m_window;
