@@ -19,12 +19,12 @@ struct GfxFixture {
 		glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 		window = glfwCreateWindow(800, 600, "RHITests", nullptr, nullptr);
 		REQUIRE(window != nullptr);
-		ctx = GFX::GfxContext::Create(*window);
+		ctx = GFX::GfxContext::create(*window);
 		REQUIRE(ctx != nullptr);
 	}
 
 	~GfxFixture() {
-		ctx->WaitIdle();
+		ctx->wait_idle();
 		ctx.reset();
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -54,59 +54,59 @@ TEST_SUITE("Device") {
 	}
 
 	TEST_CASE("Underlying device is accessible and valid") {
-		RHI::IRHIDevice *dev = &Ctx().GetDevice();
+		RHI::IRHIDevice *dev = &Ctx().get_device();
 		CHECK(dev != nullptr);
 	}
 
 	TEST_CASE("WaitIdle does not crash") {
-		CHECK_NOTHROW(Ctx().WaitIdle());
+		CHECK_NOTHROW(Ctx().wait_idle());
 	}
 }
 
 // [Buffer]
 
 TEST_SUITE("Buffer") {
-	TEST_CASE("GPU_ONLY vertex buffer creates successfully") {
+	TEST_CASE("GpuOnly vertex buffer creates successfully") {
 		RHI::BufferDesc desc{};
 		desc.size = sizeof(float) * 12;
 		desc.usage = RHI::BufferUsage::VertexBuffer | RHI::BufferUsage::TransferDst;
-		desc.domain = RHI::MemoryDomain::GPU_ONLY;
-		desc.debugName = "Test_VertexBuf";
+		desc.domain = RHI::MemoryDomain::GpuOnly;
+		desc.debug_name = "Test_VertexBuf";
 
-		auto buf = Ctx().CreateBuffer(desc);
+		auto buf = Ctx().create_buffer(desc);
 		CHECK(buf != nullptr);
 	}
 
-	TEST_CASE("CPU_TO_GPU uniform buffer creates successfully") {
+	TEST_CASE("CpuToGpu uniform buffer creates successfully") {
 		RHI::BufferDesc desc{};
 		desc.size = 256;
 		desc.usage = RHI::BufferUsage::UniformBuffer;
-		desc.domain = RHI::MemoryDomain::CPU_TO_GPU;
-		desc.debugName = "Test_UniformBuf";
+		desc.domain = RHI::MemoryDomain::CpuToGpu;
+		desc.debug_name = "Test_UniformBuf";
 
-		auto buf = Ctx().CreateBuffer(desc);
+		auto buf = Ctx().create_buffer(desc);
 		CHECK(buf != nullptr);
 	}
 
-	TEST_CASE("CPU_ONLY staging buffer creates successfully") {
+	TEST_CASE("CpuOnly staging buffer creates successfully") {
 		RHI::BufferDesc desc{};
 		desc.size = 1024;
 		desc.usage = RHI::BufferUsage::TransferSrc;
-		desc.domain = RHI::MemoryDomain::CPU_ONLY;
-		desc.debugName = "Test_StagingBuf";
+		desc.domain = RHI::MemoryDomain::CpuOnly;
+		desc.debug_name = "Test_StagingBuf";
 
-		auto buf = Ctx().CreateBuffer(desc);
+		auto buf = Ctx().create_buffer(desc);
 		CHECK(buf != nullptr);
 	}
 
-	TEST_CASE("GPU_TO_CPU readback buffer creates successfully") {
+	TEST_CASE("GpuToCpu readback buffer creates successfully") {
 		RHI::BufferDesc desc{};
 		desc.size = 512;
 		desc.usage = RHI::BufferUsage::TransferDst;
-		desc.domain = RHI::MemoryDomain::GPU_TO_CPU;
-		desc.debugName = "Test_ReadbackBuf";
+		desc.domain = RHI::MemoryDomain::GpuToCpu;
+		desc.debug_name = "Test_ReadbackBuf";
 
-		auto buf = Ctx().CreateBuffer(desc);
+		auto buf = Ctx().create_buffer(desc);
 		CHECK(buf != nullptr);
 	}
 
@@ -114,12 +114,12 @@ TEST_SUITE("Buffer") {
 		RHI::BufferDesc desc{};
 		desc.size = 64;
 		desc.usage = RHI::BufferUsage::UniformBuffer;
-		desc.domain = RHI::MemoryDomain::CPU_TO_GPU;
+		desc.domain = RHI::MemoryDomain::CpuToGpu;
 
-		desc.debugName = "BufA";
-		auto a = Ctx().CreateBuffer(desc);
-		desc.debugName = "BufB";
-		auto b = Ctx().CreateBuffer(desc);
+		desc.debug_name = "BufA";
+		auto a = Ctx().create_buffer(desc);
+		desc.debug_name = "BufB";
+		auto b = Ctx().create_buffer(desc);
 
 		CHECK(a.get() != b.get());
 	}
@@ -128,10 +128,10 @@ TEST_SUITE("Buffer") {
 		RHI::BufferDesc desc{};
 		desc.size = 2048;
 		desc.usage = RHI::BufferUsage::StorageBuffer | RHI::BufferUsage::TransferDst;
-		desc.domain = RHI::MemoryDomain::GPU_ONLY;
-		desc.debugName = "Test_StorageBuf";
+		desc.domain = RHI::MemoryDomain::GpuOnly;
+		desc.debug_name = "Test_StorageBuf";
 
-		auto buf = Ctx().CreateBuffer(desc);
+		auto buf = Ctx().create_buffer(desc);
 		CHECK(buf != nullptr);
 	}
 }
@@ -145,9 +145,9 @@ TEST_SUITE("Texture") {
 		desc.height = 256;
 		desc.format = RHI::TextureFormat::RGBA8;
 		desc.usage = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
-		desc.debugName = "Test_RGBA8";
+		desc.debug_name = "Test_RGBA8";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		CHECK(tex != nullptr);
 	}
 
@@ -157,9 +157,9 @@ TEST_SUITE("Texture") {
 		desc.height = 512;
 		desc.format = RHI::TextureFormat::RGBA16F;
 		desc.usage = RHI::TextureUsage::Storage | RHI::TextureUsage::Sampled;
-		desc.debugName = "Test_RGBA16F_Storage";
+		desc.debug_name = "Test_RGBA16F_Storage";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		CHECK(tex != nullptr);
 	}
 
@@ -169,9 +169,9 @@ TEST_SUITE("Texture") {
 		desc.height = 720;
 		desc.format = RHI::TextureFormat::Depth32;
 		desc.usage = RHI::TextureUsage::DepthAttachment | RHI::TextureUsage::Sampled;
-		desc.debugName = "Test_Depth";
+		desc.debug_name = "Test_Depth";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		CHECK(tex != nullptr);
 	}
 
@@ -181,9 +181,9 @@ TEST_SUITE("Texture") {
 		desc.height = 720;
 		desc.format = RHI::TextureFormat::RGBA8;
 		desc.usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::Sampled;
-		desc.debugName = "Test_ColorAttachment";
+		desc.debug_name = "Test_ColorAttachment";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		CHECK(tex != nullptr);
 	}
 
@@ -193,12 +193,12 @@ TEST_SUITE("Texture") {
 		desc.height = 64;
 		desc.format = RHI::TextureFormat::RGBA8;
 		desc.usage = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
-		desc.debugName = "Test_DimCheck";
+		desc.debug_name = "Test_DimCheck";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		REQUIRE(tex != nullptr);
-		CHECK(tex->GetWidth() == 128u);
-		CHECK(tex->GetHeight() == 64u);
+		CHECK(tex->get_width() == 128u);
+		CHECK(tex->get_height() == 64u);
 	}
 
 	TEST_CASE("Texture reports correct format") {
@@ -207,23 +207,23 @@ TEST_SUITE("Texture") {
 		desc.height = 64;
 		desc.format = RHI::TextureFormat::RGBA32F;
 		desc.usage = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst;
-		desc.debugName = "Test_FormatCheck";
+		desc.debug_name = "Test_FormatCheck";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		REQUIRE(tex != nullptr);
-		CHECK(tex->GetFormat() == RHI::TextureFormat::RGBA32F);
+		CHECK(tex->get_format() == RHI::TextureFormat::RGBA32F);
 	}
 
 	TEST_CASE("Mipped texture creates successfully") {
 		RHI::TextureDesc desc{};
 		desc.width = 512;
 		desc.height = 512;
-		desc.mipLevels = 4;
+		desc.mip_levels = 4;
 		desc.format = RHI::TextureFormat::RGBA8;
 		desc.usage = RHI::TextureUsage::Sampled | RHI::TextureUsage::TransferDst | RHI::TextureUsage::TransferSrc;
-		desc.debugName = "Test_Mipped";
+		desc.debug_name = "Test_Mipped";
 
-		auto tex = Ctx().CreateTexture(desc);
+		auto tex = Ctx().create_texture(desc);
 		CHECK(tex != nullptr);
 	}
 }
@@ -236,33 +236,33 @@ TEST_SUITE("Swapchain") {
 		desc.width = 800;
 		desc.height = 600;
 		desc.format = RHI::TextureFormat::BGRA8;
-		desc.imageCount = 2;
+		desc.image_count = 2;
 		desc.vsync = true;
 
-		auto sc = Ctx().CreateSwapchain(desc);
+		auto sc = Ctx().create_swapchain(desc);
 		CHECK(sc != nullptr);
 	}
 
 	TEST_CASE("Swapchain reports at least one image") {
 		RHI::SwapchainDesc desc{ .width = 800, .height = 600, .format = RHI::TextureFormat::BGRA8 };
-		auto sc = Ctx().CreateSwapchain(desc);
+		auto sc = Ctx().create_swapchain(desc);
 		REQUIRE(sc != nullptr);
-		CHECK(sc->GetImageCount() >= 1u);
+		CHECK(sc->get_image_count() >= 1u);
 	}
 
 	TEST_CASE("Swapchain reports non-zero dimensions") {
 		RHI::SwapchainDesc desc{ .width = 800, .height = 600, .format = RHI::TextureFormat::BGRA8 };
-		auto sc = Ctx().CreateSwapchain(desc);
+		auto sc = Ctx().create_swapchain(desc);
 		REQUIRE(sc != nullptr);
-		CHECK(sc->GetWidth() > 0u);
-		CHECK(sc->GetHeight() > 0u);
+		CHECK(sc->get_width() > 0u);
+		CHECK(sc->get_height() > 0u);
 	}
 
 	TEST_CASE("Swapchain format is not None") {
 		RHI::SwapchainDesc desc{ .width = 800, .height = 600, .format = RHI::TextureFormat::BGRA8 };
-		auto sc = Ctx().CreateSwapchain(desc);
+		auto sc = Ctx().create_swapchain(desc);
 		REQUIRE(sc != nullptr);
-		CHECK(sc->GetFormat() != RHI::TextureFormat::None);
+		CHECK(sc->get_format() != RHI::TextureFormat::None);
 	}
 }
 
@@ -270,36 +270,36 @@ TEST_SUITE("Swapchain") {
 
 TEST_SUITE("CommandList") {
 	TEST_CASE("Graphics command list creates successfully") {
-		auto cmd = Ctx().CreateCommandList(RHI::CommandListType::Graphics, "Test_Graphics");
+		auto cmd = Ctx().create_command_list(RHI::CommandListType::Graphics, "Test_Graphics");
 		CHECK(cmd != nullptr);
 	}
 
 	TEST_CASE("Compute command list creates successfully") {
-		auto cmd = Ctx().CreateCommandList(RHI::CommandListType::Compute, "Test_Compute");
+		auto cmd = Ctx().create_command_list(RHI::CommandListType::Compute, "Test_Compute");
 		CHECK(cmd != nullptr);
 	}
 
 	TEST_CASE("Transfer command list creates successfully") {
-		auto cmd = Ctx().CreateCommandList(RHI::CommandListType::Transfer, "Test_Transfer");
+		auto cmd = Ctx().create_command_list(RHI::CommandListType::Transfer, "Test_Transfer");
 		CHECK(cmd != nullptr);
 	}
 
 	TEST_CASE("Command list Begin/End cycle does not crash") {
-		auto cmd = Ctx().CreateCommandList(RHI::CommandListType::Graphics, "Test_BeginEnd");
+		auto cmd = Ctx().create_command_list(RHI::CommandListType::Graphics, "Test_BeginEnd");
 		REQUIRE(cmd != nullptr);
-		CHECK_NOTHROW(cmd->Begin());
-		CHECK_NOTHROW(cmd->End());
+		CHECK_NOTHROW(cmd->begin());
+		CHECK_NOTHROW(cmd->end());
 	}
 
 	TEST_CASE("SubmitAndWait with empty command list does not crash") {
-		auto cmd = Ctx().CreateCommandList(RHI::CommandListType::Graphics, "Test_SubmitWait");
+		auto cmd = Ctx().create_command_list(RHI::CommandListType::Graphics, "Test_SubmitWait");
 		REQUIRE(cmd != nullptr);
-		cmd->Begin();
-		cmd->End();
-		CHECK_NOTHROW(Ctx().SubmitAndWait(*cmd));
+		cmd->begin();
+		cmd->end();
+		CHECK_NOTHROW(Ctx().submit_and_wait(*cmd));
 	}
 
 	TEST_CASE("ExecuteImmediate does not crash") {
-		CHECK_NOTHROW(Ctx().ExecuteImmediate(RHI::CommandListType::Transfer, [](GFX::GfxCommandList &) {}));
+		CHECK_NOTHROW(Ctx().execute_immediate(RHI::CommandListType::Transfer, [](GFX::GfxCommandList &) {}));
 	}
 }
