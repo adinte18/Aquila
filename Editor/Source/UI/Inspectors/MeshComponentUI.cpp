@@ -2,11 +2,9 @@
 
 #include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
-#include "Aquila/UI/Widgets/Checkbox.h"
 #include "Aquila/UI/Widgets/Dropdown.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
-#include "UI/Inspectors/ComponentBinder.h"
 
 namespace Editor {
 
@@ -42,11 +40,9 @@ std::string procedural_shape(const std::string &path) {
 
 } // namespace
 
-bool MeshComponentUI::matches(Entity entity) const {
-	return entity.has_component<MeshComponent>();
-}
+MeshComponentUI::MeshComponentUI(const ComponentDescriptor &descriptor) : ReflectedComponentUI(descriptor, nullptr) {}
 
-void MeshComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *grid) {
+void MeshComponentUI::build(UI::Core::Collapsible *section, UI::Core::PropertyGrid *grid) {
 	m_primitive = grid->add_row<UI::Core::Dropdown>("Primitive");
 	m_primitive->add_option("cube", "Cube");
 	m_primitive->add_option("sphere", "Sphere");
@@ -55,8 +51,8 @@ void MeshComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid *gri
 
 	m_vertices = grid->add_row<UI::Core::Label>("Vertices", std::string("0"));
 	m_triangles = grid->add_row<UI::Core::Label>("Triangles", std::string("0"));
-	m_cast_shadows = grid->add_row<UI::Core::Checkbox>("Cast Shadows", false);
-	m_receive_shadows = grid->add_row<UI::Core::Checkbox>("Receive Shadows", false);
+
+	ReflectedComponentUI::build(section, grid);
 }
 
 void MeshComponentUI::update_stats(Entity entity) {
@@ -71,6 +67,7 @@ void MeshComponentUI::update_stats(Entity entity) {
 }
 
 void MeshComponentUI::show(Entity entity) {
+	ReflectedComponentUI::show(entity);
 	update_stats(entity);
 
 	auto &mesh = entity.get_component<MeshComponent>();
@@ -86,12 +83,6 @@ void MeshComponentUI::show(Entity entity) {
 		entity.get_component<MeshComponent>().set_mesh(make_primitive(shape));
 		update_stats(entity);
 	});
-
-	ComponentBinder<MeshComponent> bind(entity);
-	bind.bind(m_cast_shadows, [](auto &c) -> bool & { return c.cast_shadows; })
-		.on_change([&mesh](const bool &val) { mesh.cast_shadows = val; });
-	bind.bind(m_receive_shadows, [](auto &c) -> bool & { return c.receive_shadows; })
-		.on_change([&mesh](const bool& val) { mesh.receive_shadows = val; });
 }
 
 } // namespace Editor

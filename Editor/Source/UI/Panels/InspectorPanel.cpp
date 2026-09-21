@@ -111,8 +111,8 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 	};
 
 	add_ui_component("section-transform", reflected("Transform"));
-	add_ui_component("section-mesh", std::make_unique<MeshComponentUI>());
-	add_ui_component("section-material", std::make_unique<MaterialComponentUI>(m_context));
+	add_ui_component("section-mesh", std::make_unique<MeshComponentUI>(*registry.find("Mesh")));
+	add_ui_component("section-material", std::make_unique<MaterialComponentUI>(*registry.find("Material"), m_context));
 	add_ui_component("section-light", reflected("Light"));
 	add_ui_component("section-skylight", reflected("Sky Light"));
 	add_ui_component("section-camera", reflected("Camera"));
