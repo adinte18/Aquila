@@ -7,71 +7,71 @@
 
 using namespace Aquila::Foundation;
 
-static void RunFrame(const std::string &section = "Work",
+static void run_frame(const std::string &section = "Work",
 					 std::chrono::milliseconds sleep = std::chrono::milliseconds(1)) {
-	Profiler::Get()->BeginFrame();
-	Profiler::Get()->BeginSection(section);
+	Profiler::get()->begin_frame();
+	Profiler::get()->begin_section(section);
 	std::this_thread::sleep_for(sleep);
-	Profiler::Get()->EndSection();
-	Profiler::Get()->EndFrame();
+	Profiler::get()->end_section();
+	Profiler::get()->end_frame();
 }
 
-#define RESET() Profiler::Get()->Reset()
-#define PROFILE_INIT() Profiler::Init();
-#define PROFILE_SHUTDOWN() Profiler::Shutdown();
+#define RESET() Profiler::get()->reset()
+#define PROFILE_INIT() Profiler::init();
+#define PROFILE_SHUTDOWN() Profiler::shutdown();
 
 TEST_SUITE("Timer tests") {
-	TEST_CASE("Now() returns a valid time point") {
+	TEST_CASE("now() returns a valid time point") {
 		auto before = Clock::now();
-		auto now = Now();
+		auto current = now();
 		auto after = Clock::now();
 
-		CHECK(now >= before);
-		CHECK(now <= after);
+		CHECK(current >= before);
+		CHECK(current <= after);
 	}
 
-	TEST_CASE("ElapsedSeconds returns correct duration") {
-		auto start = Now();
+	TEST_CASE("elapsed_seconds returns correct duration") {
+		auto start = now();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		auto end = Now();
+		auto end = now();
 
-		double elapsed = ElapsedSeconds(start, end);
+		double elapsed = elapsed_seconds(start, end);
 		CHECK(elapsed >= 0.08);
 		CHECK(elapsed <= 0.5);
 	}
 
-	TEST_CASE("ElapsedMilliseconds returns correct duration") {
-		auto start = Now();
+	TEST_CASE("elapsed_milliseconds returns correct duration") {
+		auto start = now();
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		auto end = Now();
+		auto end = now();
 
-		double elapsed = ElapsedMilliseconds(start, end);
+		double elapsed = elapsed_milliseconds(start, end);
 		CHECK(elapsed >= 90.0);
 		CHECK(elapsed <= 500.0);
 	}
 
-	TEST_CASE("ElapsedSeconds and ElapsedMilliseconds are consistent") {
-		auto start = Now();
+	TEST_CASE("elapsed_seconds and elapsed_milliseconds are consistent") {
+		auto start = now();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		auto end = Now();
+		auto end = now();
 
-		double secs = ElapsedSeconds(start, end);
-		double millis = ElapsedMilliseconds(start, end);
+		double secs = elapsed_seconds(start, end);
+		double millis = elapsed_milliseconds(start, end);
 
 		CHECK(millis == doctest::Approx(secs * 1000.0).epsilon(0.01));
 	}
 
-	TEST_CASE("ElapsedSeconds with same start and end is ~zero") {
-		auto t = Now();
-		double elapsed = ElapsedSeconds(t, t);
+	TEST_CASE("elapsed_seconds with same start and end is ~zero") {
+		auto t = now();
+		double elapsed = elapsed_seconds(t, t);
 		CHECK(elapsed == doctest::Approx(0.0).epsilon(1e-9));
 	}
 
 	TEST_CASE("GetTimeSinceStart returns positive elapsed time") {
-		auto start = Now();
+		auto start = now();
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		double elapsed = GetTimeSinceStart(start);
+		double elapsed = get_time_since_start(start);
 		CHECK(elapsed >= 0.04);
 		CHECK(elapsed <= 0.5);
 	}
@@ -80,53 +80,53 @@ TEST_SUITE("Timer tests") {
 		Stopwatch sw;
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
 
-		CHECK(sw.GetElapsedTime() >= 0.04f);
+		CHECK(sw.get_elapsed_time() >= 0.04f);
 	}
 
 	TEST_CASE("Stopwatch::GetElapsedTime increases over time") {
 		Stopwatch sw;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		float t1 = sw.GetElapsedTime();
+		float t1 = sw.get_elapsed_time();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		float t2 = sw.GetElapsedTime();
+		float t2 = sw.get_elapsed_time();
 
 		CHECK(t2 > t1);
 	}
 
 	TEST_CASE("Stopwatch::GetDeltaTime is 0 before first Tick") {
 		Stopwatch sw;
-		CHECK(sw.GetDeltaTime() == doctest::Approx(0.0f));
+		CHECK(sw.get_delta_time() == doctest::Approx(0.0f));
 	}
 
 	TEST_CASE("Stopwatch::Tick updates delta time") {
 		Stopwatch sw;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		sw.Tick();
+		sw.tick();
 
-		CHECK(sw.GetDeltaTime() >= 0.09f);
-		CHECK(sw.GetDeltaTime() <= 0.5f);
+		CHECK(sw.get_delta_time() >= 0.09f);
+		CHECK(sw.get_delta_time() <= 0.5f);
 	}
 
 	TEST_CASE("Stopwatch::Tick measures time between ticks, not since start") {
 		Stopwatch sw;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
-		sw.Tick();
+		sw.tick();
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		sw.Tick();
+		sw.tick();
 
-		CHECK(sw.GetDeltaTime() >= 0.04f);
-		CHECK(sw.GetDeltaTime() <= 0.2f);
+		CHECK(sw.get_delta_time() >= 0.04f);
+		CHECK(sw.get_delta_time() <= 0.2f);
 	}
 
 	TEST_CASE("Stopwatch::Start resets elapsed time") {
 		Stopwatch sw;
 		std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-		sw.Start();
-		float elapsed = sw.GetElapsedTime();
+		sw.start();
+		float elapsed = sw.get_elapsed_time();
 
 		CHECK(elapsed < 0.05f);
 	}
@@ -134,122 +134,122 @@ TEST_SUITE("Timer tests") {
 	TEST_CASE("Stopwatch::Start resets delta time to 0") {
 		Stopwatch sw;
 		std::this_thread::sleep_for(std::chrono::milliseconds(50));
-		sw.Tick();
+		sw.tick();
 
-		sw.Start();
-		CHECK(sw.GetDeltaTime() == doctest::Approx(0.0f));
+		sw.start();
+		CHECK(sw.get_delta_time() == doctest::Approx(0.0f));
 	}
 }
 
 TEST_SUITE("Logger tests") {
 	TEST_CASE("Log debug writes message") {
 		std::ostringstream capture;
-		Logger::SetSink(&capture);
+		Logger::set_sink(&capture);
 
-		Logger::LogDebug("Test message");
+		Logger::log_debug("Test message");
 
-		Logger::SetSink(nullptr);
+		Logger::set_sink(nullptr);
 		CHECK(capture.str().find("Test message") != std::string::npos);
 	}
 
 	TEST_CASE("Log level filters lower levels") {
 		std::ostringstream capture;
-		Logger::SetSink(&capture);
-		Logger::SetLogLevel(LogLevel::Warning);
+		Logger::set_sink(&capture);
+		Logger::set_log_level(LogLevel::Warning);
 
-		Logger::LogDebug("Should not appear");
+		Logger::log_debug("Should not appear");
 
-		Logger::SetSink(nullptr);
+		Logger::set_sink(nullptr);
 		CHECK(capture.str().empty());
 	}
 
 	TEST_CASE("Profiler is enabled by default") {
 		PROFILE_INIT();
 		RESET();
-		CHECK(Profiler::Get()->IsEnabled());
+		CHECK(Profiler::get()->is_enabled());
 	}
 
 	TEST_CASE("SetEnabled toggles the flag") {
 		RESET();
-		Profiler::Get()->SetEnabled(false);
-		CHECK_FALSE(Profiler::Get()->IsEnabled());
-		Profiler::Get()->SetEnabled(true);
-		CHECK(Profiler::Get()->IsEnabled());
+		Profiler::get()->set_enabled(false);
+		CHECK_FALSE(Profiler::get()->is_enabled());
+		Profiler::get()->set_enabled(true);
+		CHECK(Profiler::get()->is_enabled());
 	}
 
 	TEST_CASE("Frame counters start at zero after Reset") {
 		RESET();
-		CHECK(Profiler::Get()->GetFrameCount() == 0u);
-		CHECK(Profiler::Get()->GetFrameNumber() == 0u);
+		CHECK(Profiler::get()->get_frame_count() == 0u);
+		CHECK(Profiler::get()->get_frame_number() == 0u);
 	}
 
 	TEST_CASE("BeginFrame increments FrameNumber; EndFrame increments FrameCount") {
 		RESET();
-		RunFrame();
-		CHECK(Profiler::Get()->GetFrameNumber() == 1u);
-		CHECK(Profiler::Get()->GetFrameCount() == 1u);
+		run_frame();
+		CHECK(Profiler::get()->get_frame_number() == 1u);
+		CHECK(Profiler::get()->get_frame_count() == 1u);
 
-		RunFrame();
-		CHECK(Profiler::Get()->GetFrameNumber() == 2u);
-		CHECK(Profiler::Get()->GetFrameCount() == 2u);
+		run_frame();
+		CHECK(Profiler::get()->get_frame_number() == 2u);
+		CHECK(Profiler::get()->get_frame_count() == 2u);
 	}
 
 	TEST_CASE("FrameDuration is positive after a frame") {
 		RESET();
-		RunFrame("W", std::chrono::milliseconds(2));
-		CHECK(Profiler::Get()->GetFrameDuration() > 0.0);
+		run_frame("W", std::chrono::milliseconds(2));
+		CHECK(Profiler::get()->get_frame_duration() > 0.0);
 	}
 
 	TEST_CASE("FPS is consistent with frame duration (fps * dur ~ 1000 ms)") {
 		RESET();
-		RunFrame("W", std::chrono::milliseconds(10));
-		double dur = Profiler::Get()->GetFrameDuration();
-		double fps = Profiler::Get()->GetFPS();
+		run_frame("W", std::chrono::milliseconds(10));
+		double dur = Profiler::get()->get_frame_duration();
+		double fps = Profiler::get()->get_fps();
 		CHECK(fps * dur == doctest::Approx(1000.0).epsilon(0.05));
 	}
 
 	TEST_CASE("Named section appears in CurrentFrameEntries") {
 		RESET();
-		Profiler::Get()->BeginFrame();
-		Profiler::Get()->BeginSection("Render");
-		Profiler::Get()->EndSection();
-		Profiler::Get()->EndFrame();
+		Profiler::get()->begin_frame();
+		Profiler::get()->begin_section("Render");
+		Profiler::get()->end_section();
+		Profiler::get()->end_frame();
 
-		const auto &entries = Profiler::Get()->GetCurrentFrameEntries();
+		const auto &entries = Profiler::get()->get_current_frame_entries();
 		REQUIRE(entries.size() == 1u);
 		CHECK(entries[0].name == "Render");
 	}
 
 	TEST_CASE("Section duration is non-negative") {
 		RESET();
-		RunFrame("Physics");
-		const auto &entries = Profiler::Get()->GetCurrentFrameEntries();
+		run_frame("Physics");
+		const auto &entries = Profiler::get()->get_current_frame_entries();
 		REQUIRE_FALSE(entries.empty());
 		CHECK(entries[0].duration >= 0.0);
 	}
 
 	TEST_CASE("Multiple sections in one frame are all recorded") {
 		RESET();
-		Profiler::Get()->BeginFrame();
+		Profiler::get()->begin_frame();
 		for (auto name : { "A", "B", "C" }) {
-			Profiler::Get()->BeginSection(name);
-			Profiler::Get()->EndSection();
+			Profiler::get()->begin_section(name);
+			Profiler::get()->end_section();
 		}
-		Profiler::Get()->EndFrame();
+		Profiler::get()->end_frame();
 
-		CHECK(Profiler::Get()->GetCurrentFrameEntries().size() == 3u);
+		CHECK(Profiler::get()->get_current_frame_entries().size() == 3u);
 	}
 
 	TEST_CASE("Nested sections get correct depth values") {
 		RESET();
-		Profiler::Get()->BeginFrame();
-		Profiler::Get()->BeginSection("Outer");
-		Profiler::Get()->BeginSection("Inner");
-		Profiler::Get()->EndSection();
-		Profiler::Get()->EndSection();
-		Profiler::Get()->EndFrame();
+		Profiler::get()->begin_frame();
+		Profiler::get()->begin_section("Outer");
+		Profiler::get()->begin_section("Inner");
+		Profiler::get()->end_section();
+		Profiler::get()->end_section();
+		Profiler::get()->end_frame();
 
-		const auto &e = Profiler::Get()->GetCurrentFrameEntries();
+		const auto &e = Profiler::get()->get_current_frame_entries();
 		REQUIRE(e.size() == 2u);
 		CHECK(e[0].name == "Outer");
 		CHECK(e[0].depth == 0);
@@ -260,51 +260,51 @@ TEST_SUITE("Logger tests") {
 	TEST_CASE("Stats accumulate correctly over multiple frames") {
 		RESET();
 		for (int i = 0; i < 5; ++i) {
-			RunFrame("Loop");
+			run_frame("Loop");
 		}
 
 		ProfilerEntry stats;
-		REQUIRE(Profiler::Get()->GetSectionStats("Loop", stats));
-		CHECK(stats.frameCount == 5u);
-		CHECK(stats.avgDuration >= 0.0);
-		CHECK(stats.minDuration <= stats.maxDuration);
+		REQUIRE(Profiler::get()->get_section_stats("Loop", stats));
+		CHECK(stats.frame_count == 5u);
+		CHECK(stats.avg_duration >= 0.0);
+		CHECK(stats.min_duration <= stats.max_duration);
 	}
 
 	TEST_CASE("GetSectionStats returns false for unknown section") {
 		RESET();
 		ProfilerEntry dummy;
-		CHECK_FALSE(Profiler::Get()->GetSectionStats("DoesNotExist", dummy));
+		CHECK_FALSE(Profiler::get()->get_section_stats("DoesNotExist", dummy));
 	}
 
 	TEST_CASE("FrameHistory grows by one entry per frame") {
 		RESET();
-		RunFrame();
-		RunFrame();
-		RunFrame();
-		CHECK(Profiler::Get()->GetFrameHistory().size() == 3u);
+		run_frame();
+		run_frame();
+		run_frame();
+		CHECK(Profiler::get()->get_frame_history().size() == 3u);
 	}
 
 	TEST_CASE("FrameStatsHistory size matches FrameHistory size") {
 		RESET();
 		for (int i = 0; i < 7; ++i) {
-			RunFrame();
+			run_frame();
 		}
-		CHECK(Profiler::Get()->GetFrameStatsHistory().size() == Profiler::Get()->GetFrameHistory().size());
+		CHECK(Profiler::get()->get_frame_stats_history().size() == Profiler::get()->get_frame_history().size());
 	}
 
 	TEST_CASE("FrameTimeHistory ring buffer is 120 elements") {
 		RESET();
-		CHECK(Profiler::Get()->GetFrameTimeHistory().size() == 120u);
+		CHECK(Profiler::get()->get_frame_time_history().size() == 120u);
 	}
 
 	TEST_CASE("FrameTimeHistory records non-zero values after frames") {
 		RESET();
 		for (int i = 0; i < 3; ++i) {
-			RunFrame("W", std::chrono::milliseconds(1));
+			run_frame("W", std::chrono::milliseconds(1));
 		}
 
 		int nonzero = 0;
-		for (float v : Profiler::Get()->GetFrameTimeHistory()) {
+		for (float v : Profiler::get()->get_frame_time_history()) {
 			if (v > 0.0f) {
 				++nonzero;
 			}
@@ -315,56 +315,56 @@ TEST_SUITE("Logger tests") {
 	TEST_CASE("Reset clears all accumulated state") {
 		RESET();
 		for (int i = 0; i < 10; ++i) {
-			RunFrame("X");
+			run_frame("X");
 		}
 
-		Profiler::Get()->Reset();
+		Profiler::get()->reset();
 
-		CHECK(Profiler::Get()->GetFrameCount() == 0u);
-		CHECK(Profiler::Get()->GetFrameNumber() == 0u);
-		CHECK(Profiler::Get()->GetStats().empty());
-		CHECK(Profiler::Get()->GetFrameHistory().empty());
-		CHECK(Profiler::Get()->GetFrameStatsHistory().empty());
-		CHECK(Profiler::Get()->GetCurrentFrameEntries().empty());
-		CHECK(Profiler::Get()->GetBottlenecks().empty());
+		CHECK(Profiler::get()->get_frame_count() == 0u);
+		CHECK(Profiler::get()->get_frame_number() == 0u);
+		CHECK(Profiler::get()->get_stats().empty());
+		CHECK(Profiler::get()->get_frame_history().empty());
+		CHECK(Profiler::get()->get_frame_stats_history().empty());
+		CHECK(Profiler::get()->get_current_frame_entries().empty());
+		CHECK(Profiler::get()->get_bottlenecks().empty());
 
-		for (float v : Profiler::Get()->GetFrameTimeHistory()) {
+		for (float v : Profiler::get()->get_frame_time_history()) {
 			CHECK(v == doctest::Approx(0.0f));
 		}
 	}
 
 	TEST_CASE("EndSection on empty stack does not crash") {
 		RESET();
-		Profiler::Get()->BeginFrame();
-		CHECK_NOTHROW(Profiler::Get()->EndSection());
-		Profiler::Get()->EndFrame();
+		Profiler::get()->begin_frame();
+		CHECK_NOTHROW(Profiler::get()->end_section());
+		Profiler::get()->end_frame();
 	}
 
 	TEST_CASE("Section consuming >20% of frame time is flagged as bottleneck") {
 		RESET();
 		for (int i = 0; i < 5; ++i) {
-			Profiler::Get()->BeginFrame();
-			Profiler::Get()->BeginSection("HeavyWork");
+			Profiler::get()->begin_frame();
+			Profiler::get()->begin_section("HeavyWork");
 			std::this_thread::sleep_for(std::chrono::milliseconds(10));
-			Profiler::Get()->EndSection();
-			Profiler::Get()->EndFrame();
+			Profiler::get()->end_section();
+			Profiler::get()->end_frame();
 		}
 
-		const auto &bns = Profiler::Get()->GetBottlenecks();
+		const auto &bns = Profiler::get()->get_bottlenecks();
 		bool found = std::find(bns.begin(), bns.end(), "HeavyWork") != bns.end();
 		CHECK(found);
 	}
 
 	TEST_CASE("ProfileSection RAII calls Begin/End automatically") {
 		RESET();
-		Profiler::Get()->BeginFrame();
+		Profiler::get()->begin_frame();
 		{
 			ProfileSection ps("RAIISection");
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
-		Profiler::Get()->EndFrame();
+		Profiler::get()->end_frame();
 
-		const auto &entries = Profiler::Get()->GetCurrentFrameEntries();
+		const auto &entries = Profiler::get()->get_current_frame_entries();
 		REQUIRE(entries.size() == 1u);
 		CHECK(entries[0].name == "RAIISection");
 		CHECK(entries[0].duration > 0.0);
@@ -372,48 +372,48 @@ TEST_SUITE("Logger tests") {
 
 	TEST_CASE("ProfileSection does nothing when profiler is disabled") {
 		RESET();
-		Profiler::Get()->SetEnabled(false);
+		Profiler::get()->set_enabled(false);
 
-		Profiler::Get()->BeginFrame();
+		Profiler::get()->begin_frame();
 		{
 			ProfileSection ps("Ignored");
 		}
-		Profiler::Get()->EndFrame();
+		Profiler::get()->end_frame();
 
-		CHECK(Profiler::Get()->GetCurrentFrameEntries().empty());
-		Profiler::Get()->SetEnabled(true);
+		CHECK(Profiler::get()->get_current_frame_entries().empty());
+		Profiler::get()->set_enabled(true);
 	}
 
 	TEST_CASE("Section records the calling thread id") {
 		RESET();
-		RunFrame("TID");
-		const auto &e = Profiler::Get()->GetCurrentFrameEntries();
+		run_frame("TID");
+		const auto &e = Profiler::get()->get_current_frame_entries();
 		REQUIRE_FALSE(e.empty());
-		CHECK(e[0].threadId == std::this_thread::get_id());
+		CHECK(e[0].thread_id == std::this_thread::get_id());
 	}
 
 	TEST_CASE("Same section name always produces the same color hash") {
 		RESET();
-		RunFrame("Stable");
-		auto color1 = Profiler::Get()->GetCurrentFrameEntries()[0].color;
+		run_frame("Stable");
+		auto color1 = Profiler::get()->get_current_frame_entries()[0].color;
 
 		RESET();
-		RunFrame("Stable");
-		auto color2 = Profiler::Get()->GetCurrentFrameEntries()[0].color;
+		run_frame("Stable");
+		auto color2 = Profiler::get()->get_current_frame_entries()[0].color;
 
 		CHECK(color1 == color2);
 	}
 
 	TEST_CASE("Different section names produce different color hashes") {
 		RESET();
-		Profiler::Get()->BeginFrame();
-		Profiler::Get()->BeginSection("Alpha");
-		Profiler::Get()->EndSection();
-		Profiler::Get()->BeginSection("Beta");
-		Profiler::Get()->EndSection();
-		Profiler::Get()->EndFrame();
+		Profiler::get()->begin_frame();
+		Profiler::get()->begin_section("Alpha");
+		Profiler::get()->end_section();
+		Profiler::get()->begin_section("Beta");
+		Profiler::get()->end_section();
+		Profiler::get()->end_frame();
 
-		const auto &e = Profiler::Get()->GetCurrentFrameEntries();
+		const auto &e = Profiler::get()->get_current_frame_entries();
 		REQUIRE(e.size() == 2u);
 		CHECK(e[0].color != e[1].color);
 

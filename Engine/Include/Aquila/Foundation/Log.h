@@ -106,41 +106,41 @@ class Logger {
 	template <typename... Args>
 	static void log_trace(std::string_view format_str, Args &&...args,
 						  const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Trace, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Trace, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	static void log_debug(std::string_view format_str, Args &&...args,
 						  const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Debug, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Debug, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	static void log_info(std::string_view format_str, Args &&...args,
 						 const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Info, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Info, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	static void log_warning(std::string_view format_str, Args &&...args,
 							const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Warning, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Warning, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	static void log_error(std::string_view format_str, Args &&...args,
 						  const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Error, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Error, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args>
 	static void log_critical(std::string_view format_str, Args &&...args,
 							 const std::source_location &location = std::source_location::current()) {
-		LogImplInternal(LogLevel::Critical, format_str, location, std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Critical, format_str, location, std::forward<Args>(args)...);
 	}
 
 	template <typename... Args> static void simple_log_trace(std::string_view format_str, Args &&...args) {
-		LogImplInternal(LogLevel::Trace, format_str, std::source_location::current(), std::forward<Args>(args)...);
+		log_impl_internal(LogLevel::Trace, format_str, std::source_location::current(), std::forward<Args>(args)...);
 	}
 
 	template <typename... Args> static void simple_log_debug(std::string_view format_str, Args &&...args) {
