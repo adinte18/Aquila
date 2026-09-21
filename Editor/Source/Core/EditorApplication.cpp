@@ -4,7 +4,7 @@
 #include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
 #include "UI/Panels/HierarchyPanel.h"
-#include "Aquila/UI/Core/FloatingPanelWindow.h"
+#include "Aquila/UI/Core/DockWindowManager.h"
 #include "UI/Debug/UIDebugPanel.h"
 #include "UI/Debug/UIDebugWindow.h"
 #include "UI/Debug/WidgetGalleryWindow.h"
@@ -135,7 +135,7 @@ void EditorApplication::on_shutdown() {
 		}
 	}
 
-	m_floating_panels.clear();
+	m_dock_manager.reset();
 	m_settings_window.reset();
 	m_project_launcher.reset();
 	m_widget_gallery_window.reset();
@@ -376,7 +376,8 @@ void EditorApplication::setup_editor_ui() {
 		return;
 	}
 
-	wire_dock_space(m_dock_space, get_window().get_native_window());
+	m_dock_manager = std::make_unique<Aquila::UI::Core::DockWindowManager>(*this, cfg.ui.style_path);
+	m_dock_manager->set_main_dock_space(m_dock_space);
 
 	m_hierarchy_panel = std::make_unique<HierarchyPanel>(*get_scene().get_entity_manager());
 	m_viewport_panel = std::make_unique<ViewportPanel>(get_render_output());
@@ -507,166 +508,6 @@ void EditorApplication::apply_font_settings() {
 	UI::FontManager::get().reload(get_context(), prefs.fonts);
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
 	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
-}
-
-void EditorApplication::wire_dock_space(Aquila::UI::Core::DockSpace *dock_space, GLFWwindow *source_native) {
-	dock_space->set_tear_off_callback(
-		[this, source_native](Unique<Aquila::UI::Core::View> sub, std::string title, Vec2 pos) {
-			handle_tear_off(source_native, std::move(sub), std::move(title), pos);
-		});
-	dock_space->set_external_drag_observer(
-		[this, source_native](Vec2 pos) { preview_dock_targets(source_native, pos); },
-		[this] { clear_dock_target_previews(); });
-	dock_space->set_emptied_callback([this, source_native] { close_floating_window(source_native); });
-}
-
-void EditorApplication::close_floating_window(GLFWwindow *native) {
-	for (auto &entry : m_floating_panels) {
-		if (entry.window->window->get_native_window() == native) {
-			glfwSetWindowShouldClose(native, GLFW_TRUE);
-			return;
-		}
-	}
-}
-
-Aquila::UI::Core::DockSpace *EditorApplication::find_dock_target_at_screen(Vec2 screen_pos, GLFWwindow *exclude,
-																		   Vec2 &out_local) {
-	struct Candidate {
-		Aquila::UI::Core::DockSpace *dock_space;
-		GLFWwindow *native;
-		float width;
-		float height;
-	};
-	std::vector<Candidate> candidates;
-	candidates.reserve(m_floating_panels.size());
-	for (auto &entry : m_floating_panels) {
-		candidates.push_back({ entry.panel->get_dock_space(), entry.window->window->get_native_window(),
-							   static_cast<float>(entry.window->window->get_width()),
-							   static_cast<float>(entry.window->window->get_height()) });
-	}
-	candidates.push_back({ m_dock_space, get_window().get_native_window(), static_cast<float>(get_window().get_width()),
-						   static_cast<float>(get_window().get_height()) });
-
-	for (auto &c : candidates) {
-		if (c.native == exclude) {
-			continue;
-		}
-		int cx = 0;
-		int cy = 0;
-		glfwGetWindowPos(c.native, &cx, &cy);
-		const Vec2 local = { screen_pos.x - static_cast<float>(cx), screen_pos.y - static_cast<float>(cy) };
-		if (local.x >= 0.F && local.y >= 0.F && local.x < c.width && local.y < c.height) {
-			out_local = local;
-			return c.dock_space;
-		}
-	}
-	return nullptr;
-}
-
-void EditorApplication::preview_dock_targets(GLFWwindow *source_native, Vec2 source_local) {
-	int sx = 0;
-	int sy = 0;
-	glfwGetWindowPos(source_native, &sx, &sy);
-	const Vec2 screen = { static_cast<float>(sx) + source_local.x, static_cast<float>(sy) + source_local.y };
-
-	clear_dock_target_previews();
-
-	Vec2 target_local{ 0.F, 0.F };
-	if (Aquila::UI::Core::DockSpace *target = find_dock_target_at_screen(screen, source_native, target_local)) {
-		target->preview_external_drag(target_local);
-	}
-}
-
-void EditorApplication::clear_dock_target_previews() {
-	m_dock_space->clear_external_drag();
-	for (auto &entry : m_floating_panels) {
-		entry.panel->get_dock_space()->clear_external_drag();
-	}
-}
-
-void EditorApplication::handle_tear_off(GLFWwindow *source_native, Unique<Aquila::UI::Core::View> content,
-										std::string title, Vec2 source_local) {
-	clear_dock_target_previews();
-
-	int sx = 0, sy = 0;
-	glfwGetWindowPos(source_native, &sx, &sy);
-	const Vec2 screen = { static_cast<float>(sx) + source_local.x, static_cast<float>(sy) + source_local.y };
-
-	// A release inside the source window's own bounds floats the panel — the source sits on top
-	int sw = 0, sh = 0;
-	glfwGetWindowSize(source_native, &sw, &sh);
-	const bool inside_source = source_local.x >= 0.F && source_local.y >= 0.F &&
-		source_local.x < static_cast<float>(sw) && source_local.y < static_cast<float>(sh);
-
-	Vec2 target_local{ 0.F, 0.F };
-	Aquila::UI::Core::DockSpace *target =
-		inside_source ? nullptr : find_dock_target_at_screen(screen, source_native, target_local);
-	const bool docked = (target != nullptr) && target->try_dock_external(content, title, target_local);
-
-	if (!docked) {
-		spawn_floating_panel(std::move(content), std::move(title), screen);
-	}
-
-	// A floating window drained of its last tab has nothing left to show — close it.
-	for (auto &entry : m_floating_panels) {
-		if (entry.window->window->get_native_window() == source_native && !entry.panel->has_content()) {
-			close_floating_window(source_native);
-			break;
-		}
-	}
-}
-
-void EditorApplication::spawn_floating_panel(Unique<Aquila::UI::Core::View> panel_subtree, std::string title,
-											 Vec2 screen_pos) {
-	RenderWindow &rw = create_secondary_window(800, 600, title);
-	glfwSetWindowPos(rw.window->get_native_window(), static_cast<int>(screen_pos.x) - 60,
-					 static_cast<int>(screen_pos.y) - 12);
-
-	auto fpw = std::make_unique<Aquila::UI::Core::FloatingPanelWindow>();
-	fpw->build(std::move(panel_subtree), title, 800, 600, Config::get_preferences().ui.style_path);
-
-	Aquila::UI::Core::FloatingPanelWindow *panel = fpw.get();
-	RenderWindow *window = &rw;
-
-	rw.on_update = [panel](F32 dt) { panel->update(dt); };
-	rw.on_render = [panel](auto &batcher, auto &cmd) { panel->render(batcher, cmd); };
-	rw.on_event = [panel](Events::Event &event) { panel->on_event(event); };
-	rw.on_close = [this, panel] { on_floating_closed(panel); };
-
-	wire_dock_space(panel->get_dock_space(), window->window->get_native_window());
-
-	m_floating_panels.push_back({ std::move(fpw), window });
-}
-
-void EditorApplication::on_floating_closed(Aquila::UI::Core::FloatingPanelWindow *panel) {
-	auto it =
-		std::ranges::find_if(m_floating_panels, [panel](const FloatingEntry &e) { return e.panel.get() == panel; });
-	if (it == m_floating_panels.end()) {
-		return;
-	}
-
-	while (panel->has_content()) {
-		auto content = panel->detach_content();
-		if (!content) {
-			break;
-		}
-		dock_back_to_center(std::move(content), panel->get_title());
-	}
-
-	m_floating_panels.erase(it);
-}
-
-void EditorApplication::dock_back_to_center(Unique<Aquila::UI::Core::View> content, const std::string &title) {
-	if (!content || (m_dock_space == nullptr)) {
-		return;
-	}
-
-	Aquila::UI::Core::DockNode *node =
-		m_dock_space->get_root_node()->hit_test_node(m_dock_space->get_absolute_rect().center());
-	if (node == nullptr) {
-		return;
-	}
-	node->accept_panel(std::move(content), title, Aquila::UI::Core::DropZone::Center);
 }
 
 void EditorApplication::wire_menubar(Aquila::UI::Core::View *layout_root) {

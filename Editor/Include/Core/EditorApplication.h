@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aquila/Application/ApplicationNew.h"
-#include "Aquila/UI/Core/FloatingPanelWindow.h"
+#include "Aquila/UI/Core/DockWindowManager.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/UIHost.h"
@@ -63,17 +63,6 @@ class EditorApplication : public Aquila::Application::Application {
 	void apply_font_settings();
 	void start_pick();
 
-	void wire_dock_space(Aquila::UI::Core::DockSpace *dock_space, GLFWwindow *source_native);
-	void handle_tear_off(GLFWwindow *source_native, Unique<Aquila::UI::Core::View> content, std::string title,
-					   Vec2 source_local);
-	void preview_dock_targets(GLFWwindow *source_native, Vec2 source_local);
-	void clear_dock_target_previews();
-	Aquila::UI::Core::DockSpace *find_dock_target_at_screen(Vec2 screen_pos, GLFWwindow *exclude, Vec2 &out_local);
-	void close_floating_window(GLFWwindow *native);
-	void spawn_floating_panel(Unique<Aquila::UI::Core::View> panel_subtree, std::string title, Vec2 screen_pos);
-	void on_floating_closed(Aquila::UI::Core::FloatingPanelWindow *panel);
-	void dock_back_to_center(Unique<Aquila::UI::Core::View> content, const std::string &title);
-
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
@@ -100,12 +89,7 @@ class EditorApplication : public Aquila::Application::Application {
 	Aquila::UI::Core::LayoutLoader m_layout_loader;
 
 	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
-
-	struct FloatingEntry {
-		Unique<Aquila::UI::Core::FloatingPanelWindow> panel;
-		Aquila::Application::RenderWindow *window = nullptr;
-	};
-	std::vector<FloatingEntry> m_floating_panels;
+	Unique<Aquila::UI::Core::DockWindowManager> m_dock_manager;
 };
 
 } // namespace Editor

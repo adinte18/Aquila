@@ -1,0 +1,51 @@
+#ifndef AQUILA_UI_CORE_DOCK_WINDOW_MANAGER_H
+#define AQUILA_UI_CORE_DOCK_WINDOW_MANAGER_H
+
+#include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Rendering/IRenderWindowHost.h"
+#include "Aquila/UI/Core/FloatingPanelWindow.h"
+
+#include <string>
+#include <vector>
+
+namespace Aquila::UI::Core {
+
+class DockSpace;
+class View;
+
+class DockWindowManager {
+  public:
+	DockWindowManager(Aquila::Rendering::IRenderWindowHost &host, std::string style_path);
+	~DockWindowManager();
+
+	AQUILA_NONCOPYABLE(DockWindowManager);
+	AQUILA_NONMOVEABLE(DockWindowManager);
+
+	void set_main_dock_space(DockSpace *dock_space);
+
+  private:
+	struct FloatingEntry {
+		Unique<FloatingPanelWindow> panel;
+		Aquila::Rendering::RenderWindowId window = nullptr;
+	};
+
+	void wire_dock_space(DockSpace *dock_space, Aquila::Rendering::RenderWindowId source);
+	void handle_tear_off(Aquila::Rendering::RenderWindowId source, Unique<View> content, std::string title, Vec2 source_local);
+	void preview_dock_targets(Aquila::Rendering::RenderWindowId source, Vec2 source_local);
+	void clear_dock_target_previews();
+	DockSpace *find_dock_target_at_screen(Vec2 screen_pos, Aquila::Rendering::RenderWindowId exclude, Vec2 &out_local);
+	void close_floating_window(Aquila::Rendering::RenderWindowId window);
+	void spawn_floating_panel(Unique<View> panel_subtree, std::string title, Vec2 screen_pos);
+	void on_floating_closed(FloatingPanelWindow *panel);
+	void dock_back_to_center(Unique<View> content, const std::string &title);
+
+	Aquila::Rendering::IRenderWindowHost &m_host;
+	std::string m_style_path;
+	DockSpace *m_main_dock_space = nullptr;
+	std::vector<FloatingEntry> m_floating_panels;
+};
+
+}
+
+#endif
