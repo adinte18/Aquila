@@ -336,6 +336,8 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 
 	Uint32 image_index = 0;
 	if (!rw.swapchain->acquire_next_image(image_index, false)) {
+		AQUILA_LOG_DEBUG("Secondary swapchain out of date, scheduling another frame");
+		Foundation::FrameScheduler::get()->request_frame();
 		return;
 	}
 
@@ -351,6 +353,11 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	rw.render_pass->end(*cmd);
 
 	m_ctx->submit_frame(*cmd, rw.swapchain.get(), image_index);
+
+	if (rw.swapchain->needs_resize()) {
+		AQUILA_LOG_DEBUG("Secondary swapchain needs a resize after presenting, scheduling another frame");
+		Foundation::FrameScheduler::get()->request_frame();
+	}
 }
 
 void Application::internal_update(F32 delta_time) {
@@ -389,6 +396,8 @@ void Application::internal_update(F32 delta_time) {
 		{
 			PROFILE_SCOPE("AcquireNextImage");
 			if (!m_swapchain->acquire_next_image(image_index)) {
+				AQUILA_LOG_DEBUG("Main swapchain out of date, scheduling another frame");
+				Foundation::FrameScheduler::get()->request_frame();
 				return;
 			}
 		}
@@ -417,6 +426,11 @@ void Application::internal_update(F32 delta_time) {
 		{
 			PROFILE_SCOPE("SubmitFrame");
 			m_ctx->submit_frame(cmd, m_swapchain.get(), image_index);
+		}
+
+		if (m_swapchain->needs_resize()) {
+			AQUILA_LOG_DEBUG("Main swapchain needs a resize after presenting, scheduling another frame");
+			Foundation::FrameScheduler::get()->request_frame();
 		}
 	}
 
