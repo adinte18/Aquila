@@ -5,196 +5,196 @@
 
 using namespace Aquila::Platform::Filesystem;
 
-static std::string MakeTempRoot(const std::string &name) {
-	std::string path = PathJoin(DirGetCurrent(), "__test_" + name);
-	DirCreate(path);
+static std::string make_temp_root(const std::string &name) {
+	std::string path = path_join(dir_get_current(), "__test_" + name);
+	dir_create(path);
 	return path;
 }
 
-static void CleanupTempRoot(const std::string &path) {
-	DirRemove(path);
+static void cleanup_temp_root(const std::string &path) {
+	dir_remove(path);
 }
 
 TEST_SUITE("Filesystem::Path") {
-	TEST_CASE("PathJoin") {
-		CHECK(PathJoin("/foo", "bar") == "/foo/bar");
-		CHECK(PathJoin("/foo/", "bar") == "/foo/bar");
-		CHECK(PathJoin("", "bar") == "bar");
-		CHECK(PathJoin("/foo", "") == "/foo");
+	TEST_CASE("path_join") {
+		CHECK(path_join("/foo", "bar") == "/foo/bar");
+		CHECK(path_join("/foo/", "bar") == "/foo/bar");
+		CHECK(path_join("", "bar") == "bar");
+		CHECK(path_join("/foo", "") == "/foo");
 	}
 
-	TEST_CASE("PathNormalize") {
-		CHECK(PathNormalize("/foo/../bar") == "/bar");
-		CHECK(PathNormalize("/foo/./bar") == "/foo/bar");
-		CHECK(PathNormalize("//foo//bar") == "/foo/bar");
-		CHECK(PathNormalize("foo\\bar") == "foo/bar");
+	TEST_CASE("path_normalize") {
+		CHECK(path_normalize("/foo/../bar") == "/bar");
+		CHECK(path_normalize("/foo/./bar") == "/foo/bar");
+		CHECK(path_normalize("//foo//bar") == "/foo/bar");
+		CHECK(path_normalize("foo\\bar") == "foo/bar");
 	}
 
-	TEST_CASE("PathIsAbsolute") {
+	TEST_CASE("path_is_absolute") {
 #ifdef AQUILA_PLATFORM_WINDOWS
-		CHECK(PathIsAbsolute("C:\\foo") == true);
-		CHECK(PathIsAbsolute("foo") == false);
+		CHECK(path_is_absolute("C:\\foo") == true);
+		CHECK(path_is_absolute("foo") == false);
 #else
-		CHECK(PathIsAbsolute("/foo") == true);
-		CHECK(PathIsAbsolute("foo") == false);
-		CHECK(PathIsAbsolute("") == false);
+		CHECK(path_is_absolute("/foo") == true);
+		CHECK(path_is_absolute("foo") == false);
+		CHECK(path_is_absolute("") == false);
 #endif
 	}
 
-	TEST_CASE("PathExtension") {
-		CHECK(PathExtension("file.txt") == ".txt");
-		CHECK(PathExtension("file.tar.gz") == ".gz");
-		CHECK(PathExtension("file") == "");
-		CHECK(PathExtension(".hidden") == "");
+	TEST_CASE("path_extension") {
+		CHECK(path_extension("file.txt") == ".txt");
+		CHECK(path_extension("file.tar.gz") == ".gz");
+		CHECK(path_extension("file") == "");
+		CHECK(path_extension(".hidden") == "");
 	}
 }
 
 TEST_SUITE("Filesystem::Dir") {
-	TEST_CASE("DirCreate / DirRemove / FileStat") {
-		const std::string root = MakeTempRoot("dircreate");
-		const std::string sub = PathJoin(root, "subdir");
+	TEST_CASE("dir_create / dir_remove / FileStat") {
+		const std::string root = make_temp_root("dircreate");
+		const std::string sub = path_join(root, "subdir");
 
-		CHECK(DirCreate(sub) == true);
-		const auto stat = FileStat_(sub);
+		CHECK(dir_create(sub) == true);
+		const auto stat = file_stat(sub);
 		CHECK(stat.exists == true);
-		CHECK(stat.isDirectory == true);
+		CHECK(stat.is_directory == true);
 
-		CHECK(DirRemove(sub) == true);
-		CHECK(FileStat_(sub).exists == false);
+		CHECK(dir_remove(sub) == true);
+		CHECK(file_stat(sub).exists == false);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
-	TEST_CASE("DirList") {
-		const std::string root = MakeTempRoot("dirlist");
+	TEST_CASE("dir_list") {
+		const std::string root = make_temp_root("dirlist");
 
 		// Create two subdirs and one file
-		DirCreate(PathJoin(root, "a"));
-		DirCreate(PathJoin(root, "b"));
+		dir_create(path_join(root, "a"));
+		dir_create(path_join(root, "b"));
 		// write a tiny file
-		FILE *f = fopen(PathJoin(root, "file.txt").c_str(), "w");
+		FILE *f = fopen(path_join(root, "file.txt").c_str(), "w");
 		if (f) {
 			fputs("x", f);
 			fclose(f);
 		}
 
-		auto entries = DirList(root);
+		auto entries = dir_list(root);
 		CHECK(entries.size() == 3);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 }
 
 TEST_SUITE("Filesystem::File") {
-	TEST_CASE("FileMove") {
-		const std::string root = MakeTempRoot("filemove");
-		const std::string src = PathJoin(root, "src.txt");
-		const std::string dst = PathJoin(root, "dst.txt");
+	TEST_CASE("file_move") {
+		const std::string root = make_temp_root("filemove");
+		const std::string src = path_join(root, "src.txt");
+		const std::string dst = path_join(root, "dst.txt");
 
 		FILE *f = fopen(src.c_str(), "w");
 		REQUIRE(f != nullptr);
 		fputs("data", f);
 		fclose(f);
 
-		CHECK(FileMove(src, dst) == true);
-		CHECK(FileExists(src) == false);
-		CHECK(FileExists(dst) == true);
+		CHECK(file_move(src, dst) == true);
+		CHECK(file_exists(src) == false);
+		CHECK(file_exists(dst) == true);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
-	TEST_CASE("FileExists / FileRemove") {
-		const std::string root = MakeTempRoot("fileexists");
-		const std::string file = PathJoin(root, "test.txt");
+	TEST_CASE("file_exists / file_remove") {
+		const std::string root = make_temp_root("fileexists");
+		const std::string file = path_join(root, "test.txt");
 
-		CHECK(FileExists(file) == false);
+		CHECK(file_exists(file) == false);
 
 		FILE *f = fopen(file.c_str(), "w");
 		REQUIRE(f != nullptr);
 		fputs("hello", f);
 		fclose(f);
 
-		CHECK(FileExists(file) == true);
-		CHECK(FileRemove(file) == true);
-		CHECK(FileExists(file) == false);
+		CHECK(file_exists(file) == true);
+		CHECK(file_remove(file) == true);
+		CHECK(file_exists(file) == false);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 }
 
 TEST_SUITE("NativeFileSystem") {
-	TEST_CASE("DirCreate / DirExists / DirRemove") {
-		const std::string root = MakeTempRoot("nfs_dir");
+	TEST_CASE("dir_create / DirExists / dir_remove") {
+		const std::string root = make_temp_root("nfs_dir");
 		NativeFileSystem nfs(root);
 
-		CHECK(nfs.DirCreate("sub") == true);
-		CHECK(nfs.DirExists("sub") == true);
-		CHECK(nfs.DirRemove("sub") == true);
-		CHECK(nfs.DirExists("sub") == false);
+		CHECK(nfs.dir_create("sub") == true);
+		CHECK(nfs.dir_exists("sub") == true);
+		CHECK(nfs.dir_remove("sub") == true);
+		CHECK(nfs.dir_exists("sub") == false);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
 	TEST_CASE("Constructor creates root if missing") {
-		const std::string root = PathJoin(DirGetCurrent(), "__test_nfs_root");
-		CHECK(FileExists(root) == false);
+		const std::string root = path_join(dir_get_current(), "__test_nfs_root");
+		CHECK(file_exists(root) == false);
 
 		NativeFileSystem nfs(root);
-		const auto stat = FileStat_(root);
-		CHECK(stat.isDirectory == true);
+		const auto stat = file_stat(root);
+		CHECK(stat.is_directory == true);
 
-		DirRemove(root);
+		dir_remove(root);
 	}
 
-	TEST_CASE("FileOpen / FileExists / FileRemove") {
-		const std::string root = MakeTempRoot("nfs_open");
+	TEST_CASE("FileOpen / file_exists / file_remove") {
+		const std::string root = make_temp_root("nfs_open");
 		NativeFileSystem nfs(root);
 
-		auto file = nfs.FileOpen("hello.txt", AccessMode::Write, OpenMode::Text);
+		auto file = nfs.file_open("hello.txt", AccessMode::Write, OpenMode::Text);
 		REQUIRE(file != nullptr);
 		file.reset(); // close it
 
-		CHECK(nfs.FileExists("hello.txt") == true);
-		CHECK(nfs.FileRemove("hello.txt") == true);
-		CHECK(nfs.FileExists("hello.txt") == false);
+		CHECK(nfs.file_exists("hello.txt") == true);
+		CHECK(nfs.file_remove("hello.txt") == true);
+		CHECK(nfs.file_exists("hello.txt") == false);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
 	TEST_CASE("FileGetSize") {
-		const std::string root = MakeTempRoot("nfs_size");
+		const std::string root = make_temp_root("nfs_size");
 		NativeFileSystem nfs(root);
 
-		auto file = nfs.FileOpen("size.txt", AccessMode::Write, OpenMode::Binary);
+		auto file = nfs.file_open("size.txt", AccessMode::Write, OpenMode::Binary);
 		REQUIRE(file != nullptr);
 		const char *data = "hello";
-		file->Write(data, 5);
+		file->write(data, 5);
 		file.reset();
 
-		CHECK(nfs.FileGetSize("size.txt") == 5);
+		CHECK(nfs.file_get_size("size.txt") == 5);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
-	TEST_CASE("FileMove renames within root") {
-		const std::string root = MakeTempRoot("nfs_move");
+	TEST_CASE("file_move renames within root") {
+		const std::string root = make_temp_root("nfs_move");
 		NativeFileSystem nfs(root);
 
-		auto f = nfs.FileOpen("old.txt", AccessMode::Write, OpenMode::Text);
+		auto f = nfs.file_open("old.txt", AccessMode::Write, OpenMode::Text);
 		REQUIRE(f != nullptr);
 		f.reset();
 
-		CHECK(nfs.FileMove("old.txt", "new.txt") == true);
-		CHECK(nfs.FileExists("old.txt") == false);
-		CHECK(nfs.FileExists("new.txt") == true);
+		CHECK(nfs.file_move("old.txt", "new.txt") == true);
+		CHECK(nfs.file_exists("old.txt") == false);
+		CHECK(nfs.file_exists("new.txt") == true);
 
-		CleanupTempRoot(root);
+		cleanup_temp_root(root);
 	}
 
 	TEST_CASE("IsReadOnly returns false") {
-		const std::string root = MakeTempRoot("nfs_ro");
+		const std::string root = make_temp_root("nfs_ro");
 		NativeFileSystem nfs(root);
-		CHECK(nfs.IsReadOnly() == false);
-		CleanupTempRoot(root);
+		CHECK(nfs.is_read_only() == false);
+		cleanup_temp_root(root);
 	}
 }
