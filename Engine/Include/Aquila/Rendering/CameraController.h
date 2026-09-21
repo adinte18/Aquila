@@ -1,4 +1,5 @@
-#pragma once
+#ifndef AQUILA_RENDERING_CAMERA_CONTROLLER_H
+#define AQUILA_RENDERING_CAMERA_CONTROLLER_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Rendering/Camera.h"
@@ -8,24 +9,24 @@ namespace Aquila::Platform::Events {
 class Event;
 }
 
-namespace Editor {
+namespace Aquila::Rendering {
 
-class EditorCamera {
+class CameraController {
   public:
-	EditorCamera();
+	CameraController();
 
 	void set_viewport_size(Uint32 width, Uint32 height);
 	void set_viewport_rect(Vec2 position, Vec2 size);
 
 	void update(F32 delta_time);
-	void on_event(Aquila::Platform::Events::Event &event);
+	void on_event(Platform::Events::Event &event);
 
-	[[nodiscard]] Aquila::Rendering::RenderView get_render_view() const;
+	[[nodiscard]] RenderView get_render_view() const;
 
   private:
 	enum class NavMode { None, Fly, Orbit };
 
-	Aquila::Rendering::Camera m_camera;
+	Camera m_camera;
 
 	F32 m_fov = 60.F;
 	F32 m_near = 0.1F;
@@ -43,4 +44,6 @@ class EditorCamera {
 	bool m_prev_lmb = false;
 };
 
-} // namespace Editor
+} // namespace Aquila::Rendering
+
+#endif

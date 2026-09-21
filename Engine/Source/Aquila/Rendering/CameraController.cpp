@@ -1,14 +1,14 @@
-#include "Core/EditorCamera.h"
+#include "Aquila/Rendering/CameraController.h"
 
 #include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Platform/Input.h"
 #include "Aquila/Foundation/FrameScheduler.h"
 
-namespace Editor {
+namespace Aquila::Rendering {
 
-using Aquila::Platform::Input;
-namespace Events = Aquila::Platform::Events;
+using Platform::Input;
+namespace Events = Platform::Events;
 
 namespace {
 constexpr F32 kRotateSensitivity = 0.0035F;
@@ -21,14 +21,14 @@ bool point_in_rect(Vec2 point, Vec2 position, Vec2 size) {
 }
 } // namespace
 
-EditorCamera::EditorCamera() {
+CameraController::CameraController() {
 	m_camera.set_position({ 0.F, 1.5F, -5.F });
 	m_camera.get_rotation() = Vec3(0.F);
 	m_camera.set_perspective_projection(m_fov, m_aspect, m_near, m_far);
 	m_camera.set_view_yxz(m_camera.get_position(), m_camera.get_rotation());
 }
 
-void EditorCamera::set_viewport_size(Uint32 width, Uint32 height) {
+void CameraController::set_viewport_size(Uint32 width, Uint32 height) {
 	if (width == 0 || height == 0 || (width == m_width && height == m_height)) {
 		return;
 	}
@@ -38,12 +38,12 @@ void EditorCamera::set_viewport_size(Uint32 width, Uint32 height) {
 	m_camera.set_perspective_projection(m_fov, m_aspect, m_near, m_far);
 }
 
-void EditorCamera::set_viewport_rect(Vec2 position, Vec2 size) {
+void CameraController::set_viewport_rect(Vec2 position, Vec2 size) {
 	m_viewport_pos = position;
 	m_viewport_size = size;
 }
 
-void EditorCamera::update(F32 delta_time) {
+void CameraController::update(F32 delta_time) {
 	const Vec2 mouse = Input::get_mouse_position();
 	const bool rmb = Input::is_mouse_button_pressed(Events::MouseButton::Right);
 	const bool lmb = Input::is_mouse_button_pressed(Events::MouseButton::Left);
@@ -113,10 +113,10 @@ void EditorCamera::update(F32 delta_time) {
 
 	m_camera.set_view_yxz(m_camera.get_position(), m_camera.get_rotation());
 
-	Aquila::Foundation::FrameScheduler::get()->request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 }
 
-void EditorCamera::on_event(Events::Event &event) {
+void CameraController::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Events::MouseScrolledEvent>([this](Events::MouseScrolledEvent &scroll) {
 		if (!point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
@@ -128,10 +128,10 @@ void EditorCamera::on_event(Events::Event &event) {
 	});
 }
 
-Aquila::Rendering::RenderView EditorCamera::get_render_view() const {
+RenderView CameraController::get_render_view() const {
 	const Mat4 &inverse_view = m_camera.get_inverse_view();
 
-	Aquila::Rendering::RenderView view;
+	RenderView view;
 	view.view = m_camera.get_view();
 	view.projection = m_camera.get_projection();
 	view.projection[1][1] *= -1.F;
@@ -148,4 +148,4 @@ Aquila::Rendering::RenderView EditorCamera::get_render_view() const {
 	return view;
 }
 
-} // namespace Editor
+} // namespace Aquila::Rendering

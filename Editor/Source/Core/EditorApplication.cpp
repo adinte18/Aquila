@@ -1,5 +1,4 @@
 #include "Core/EditorApplication.h"
-#include "Core/EditorCamera.h"
 #include "Core/ProjectManager.h"
 
 #include "UI/Managers/FontManager.h"
@@ -129,7 +128,7 @@ void EditorApplication::enter_editor(const ProjectInfo &project) {
 	}
 
 	glfwShowWindow(get_window().get_native_window());
-	m_editor_camera = std::make_unique<EditorCamera>();
+	m_editor_camera = std::make_unique<Aquila::Rendering::CameraController>();
 	setup_editor_ui();
 }
 

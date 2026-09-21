@@ -3,6 +3,7 @@
 #include "Aquila/Application/ApplicationNew.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Aquila/Rendering/CameraController.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Core/View.h"
 #include "Core/ProjectManager.h"
@@ -18,7 +19,6 @@ class DockSpace;
 
 namespace Editor {
 
-class EditorCamera;
 class ViewportPanel;
 class HierarchyPanel;
 class InspectorPanel;
@@ -76,7 +76,7 @@ class EditorApplication : public Aquila::Application::Application {
 
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
-	Unique<EditorCamera> m_editor_camera;
+	Unique<Aquila::Rendering::CameraController> m_editor_camera;
 
 	Unique<ViewportPanel> m_viewport_panel;
 	Unique<HierarchyPanel> m_hierarchy_panel;
