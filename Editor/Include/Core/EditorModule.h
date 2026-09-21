@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Aquila/Application/ApplicationNew.h"
+#include "Aquila/Application/EngineContext.h"
+#include "Aquila/Application/IModule.h"
+#include "Aquila/Rendering/IRenderWindowHost.h"
 #include "Aquila/UI/Core/DockWindowManager.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
@@ -31,14 +33,13 @@ class ProjectLauncher;
 class PickerOverlay;
 class ProjectManager;
 
-class EditorApplication : public Aquila::Application::Application {
+class EditorModule final : public Aquila::Application::IModule {
   public:
-	explicit EditorApplication(const ApplicationSpec &spec);
-	~EditorApplication() override;
+	EditorModule();
+	~EditorModule() override;
 
-  protected:
-	void on_init() override;
-	void on_shutdown() override;
+	void on_attach(Aquila::Application::EngineContext &engine) override;
+	void on_detach() override;
 	void on_pre_render(F32 delta_time) override;
 	void on_event(Aquila::Platform::Events::Event &event) override;
 	void on_resize(Uint32 width, Uint32 height) override;
@@ -71,9 +72,10 @@ class EditorApplication : public Aquila::Application::Application {
 		};
 		callbacks.on_event = [&content](Aquila::Platform::Events::Event &event) { content.on_event(event); };
 		callbacks.on_close = std::move(on_close);
-		return create_window(width, height, title, std::move(callbacks));
+		return m_engine->get_window_host().create_window(width, height, title, std::move(callbacks));
 	}
 
+	Aquila::Application::EngineContext *m_engine = nullptr;
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
