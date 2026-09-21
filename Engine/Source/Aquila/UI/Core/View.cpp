@@ -214,6 +214,10 @@ void ViewRef::assign(View *view) {
 
 void View::set_canvas(Canvas *canvas) {
 	m_canvas = canvas;
+	if (canvas != nullptr) {
+		canvas->notify_style_dirty(this);
+		canvas->notify_draw_dirty(this);
+	}
 	for (const auto &child : m_children) {
 		child->set_canvas(canvas);
 	}
