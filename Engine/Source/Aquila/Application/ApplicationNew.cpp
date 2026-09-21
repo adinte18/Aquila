@@ -224,6 +224,33 @@ RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, 
 	return ref;
 }
 
+Rendering::RenderWindowId Application::create_window(Uint32 width, Uint32 height, const std::string &title,
+													 Rendering::RenderWindowCallbacks callbacks) {
+	RenderWindow &rw = create_secondary_window(width, height, title);
+	rw.on_update = std::move(callbacks.on_update);
+	rw.on_render = std::move(callbacks.on_render);
+	rw.on_event = std::move(callbacks.on_event);
+	rw.on_close = std::move(callbacks.on_close);
+	return rw.window.get();
+}
+
+void Application::request_close(Rendering::RenderWindowId window) {
+	static_cast<const Window *>(window)->request_close();
+}
+
+Vec2 Application::get_window_position(Rendering::RenderWindowId window) const {
+	return static_cast<const Window *>(window)->get_position();
+}
+
+Vec2 Application::get_window_size(Rendering::RenderWindowId window) const {
+	const auto *native = static_cast<const Window *>(window);
+	return { static_cast<F32>(native->get_width()), static_cast<F32>(native->get_height()) };
+}
+
+void Application::set_window_position(Rendering::RenderWindowId window, Vec2 position) {
+	static_cast<const Window *>(window)->set_position(position);
+}
+
 void Application::ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height) {
 	if (!rw.msaa_color) {
 		rw.msaa_color = m_ctx->create_texture({

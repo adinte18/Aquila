@@ -9,6 +9,7 @@
 #include "Aquila/GFX/GfxSwapchain.h"
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/Scene/Scene.h"
+#include "Aquila/Rendering/IRenderWindowHost.h"
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/Renderers/Renderer.h"
 #include "Aquila/Rendering/Renderers/Renderer2D.h"
@@ -47,10 +48,10 @@ struct RenderWindow {
 	Delegate<void()> on_close;
 };
 
-class Application {
+class Application : public Rendering::IRenderWindowHost {
   public:
 	explicit Application(const ApplicationSpec &spec);
-	virtual ~Application();
+	~Application() override;
 
 	AQUILA_NONCOPYABLE(Application);
 	AQUILA_NONMOVEABLE(Application);
@@ -59,6 +60,14 @@ class Application {
 	void close();
 
 	Window &get_window() { return *m_window; }
+
+	Rendering::RenderWindowId create_window(Uint32 width, Uint32 height, const std::string &title,
+											Rendering::RenderWindowCallbacks callbacks) override;
+	void request_close(Rendering::RenderWindowId window) override;
+	[[nodiscard]] Rendering::RenderWindowId get_main_window() const override { return m_window.get(); }
+	[[nodiscard]] Vec2 get_window_position(Rendering::RenderWindowId window) const override;
+	[[nodiscard]] Vec2 get_window_size(Rendering::RenderWindowId window) const override;
+	void set_window_position(Rendering::RenderWindowId window, Vec2 position) override;
 
   protected:
 	virtual void on_init() {}

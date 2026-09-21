@@ -234,6 +234,25 @@ void Window::set_clipboard_text(const std::string &text) const {
 	glfwSetClipboardString(m_window, text.c_str());
 }
 
+void Window::show() const {
+	glfwShowWindow(m_window);
+}
+
+void Window::request_close() const {
+	glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+}
+
+Vec2 Window::get_position() const {
+	int x = 0;
+	int y = 0;
+	glfwGetWindowPos(m_window, &x, &y);
+	return { static_cast<F32>(x), static_cast<F32>(y) };
+}
+
+void Window::set_position(Vec2 position) const {
+	glfwSetWindowPos(m_window, static_cast<int>(position.x), static_cast<int>(position.y));
+}
+
 void Window::set_cursor(Platform::CursorType type) {
 	if (type == m_current_cursor) {
 		return;

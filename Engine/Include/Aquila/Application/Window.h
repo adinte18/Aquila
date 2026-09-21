@@ -34,6 +34,10 @@ class Window {
 	Uint32 get_height() const { return m_data.height; }
 	void set_title(const std::string &text) const;
 	void set_cursor(Platform::CursorType type);
+	void show() const;
+	void request_close() const;
+	[[nodiscard]] Vec2 get_position() const;
+	void set_position(Vec2 position) const;
 	[[nodiscard]] std::string get_clipboard_text() const;
 	void set_clipboard_text(const std::string &text) const;
 
