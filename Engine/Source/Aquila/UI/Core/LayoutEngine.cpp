@@ -185,6 +185,12 @@ LayoutEngine::LayoutEngine(Uint32 width, Uint32 height) : m_width(width), m_heig
 	Clay_SetMeasureTextFunction(measure_clay_text, nullptr);
 }
 
+LayoutEngine::~LayoutEngine() {
+	if (Clay_GetCurrentContext() == static_cast<Clay_Context *>(m_clay_ctx)) {
+		Clay_SetCurrentContext(nullptr);
+	}
+}
+
 void LayoutEngine::set_dimensions(Uint32 width, Uint32 height) {
 	m_width = width;
 	m_height = height;

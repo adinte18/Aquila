@@ -214,6 +214,10 @@ void ViewRef::assign(View *view) {
 
 void View::set_canvas(Canvas *canvas) {
 	m_canvas = canvas;
+	if (canvas != nullptr) {
+		canvas->notify_style_dirty(this);
+		canvas->notify_draw_dirty(this);
+	}
 	for (const auto &child : m_children) {
 		child->set_canvas(canvas);
 	}
@@ -235,6 +239,7 @@ void View::remove_child(View *child) {
 		notify_removed(child);
 		m_children.erase(iterator);
 		mark_subtree_bounds_dirty();
+		invalidate_layout();
 	}
 }
 
@@ -248,6 +253,7 @@ Unique<View> View::detach_child(View *child) {
 	auto owned = std::move(*it);
 	m_children.erase(it);
 	mark_subtree_bounds_dirty();
+	invalidate_layout();
 	return owned;
 }
 
