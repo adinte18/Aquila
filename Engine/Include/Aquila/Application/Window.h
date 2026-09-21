@@ -34,6 +34,8 @@ class Window {
 	Uint32 get_height() const { return m_data.height; }
 	void set_title(const std::string &text) const;
 	void set_cursor(Platform::CursorType type);
+	[[nodiscard]] std::string get_clipboard_text() const;
+	void set_clipboard_text(const std::string &text) const;
 
 	void set_event_callback(const EventCallbackFn &callback) { m_data.event_callback = callback; }
 

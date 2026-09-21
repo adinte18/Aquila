@@ -27,11 +27,9 @@
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/DefaultScenes.h"
 #include "Aquila/Scene/EntityManager.h"
-#include "Aquila/UI/Core/Clipboard.h"
 #include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
-#include "Aquila/UI/Core/CanvasManager.h"
-#include "Aquila/UI/Rendering/ViewRenderingSystem.h"
+#include "Aquila/UI/Core/UIHost.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/ColorPicker.h"
@@ -76,18 +74,14 @@ EditorApplication::EditorApplication(const ApplicationSpec &spec) : Application(
 EditorApplication::~EditorApplication() = default;
 
 void EditorApplication::on_init() {
-	Aquila::UI::Core::CanvasManager::init(get_window().get_width(), get_window().get_height());
-	get_renderer2_d().add_system<Aquila::UI::Rendering::ViewRenderingSystem>();
-
-	{
-		GLFWwindow *native_win = get_window().get_native_window();
-		Aquila::UI::Core::Clipboard::init(
-			[native_win]() -> std::string {
-				const char *s = glfwGetClipboardString(native_win);
-				return s ? s : "";
-			},
-			[native_win](const std::string &t) { glfwSetClipboardString(native_win, t.c_str()); });
-	}
+	Window &main_window = get_window();
+	m_ui_host = std::make_unique<Aquila::UI::Core::UIHost>(Aquila::UI::Core::UIHostDesc{
+		.renderer_2d = get_renderer2_d(),
+		.width = main_window.get_width(),
+		.height = main_window.get_height(),
+		.clipboard_get = [&main_window] { return main_window.get_clipboard_text(); },
+		.clipboard_set = [&main_window](const std::string &text) { main_window.set_clipboard_text(text); },
+	});
 
 	Config::get_preferences().load_from_file();
 	Aquila::UI::Core::FontRegistry::set_ui_scale(Config::get_preferences().ui_scale);
@@ -153,7 +147,7 @@ void EditorApplication::on_shutdown() {
 	m_console_panel.reset();
 	m_texture_cache.reset();
 
-	Aquila::UI::Core::CanvasManager::shutdown();
+	m_ui_host.reset();
 	UI::FontManager::get().shutdown();
 }
 
@@ -167,8 +161,7 @@ void EditorApplication::on_pre_render(F32 delta_time) {
 	if (m_console_panel) {
 		m_console_panel->flush_pending();
 	}
-	Aquila::UI::Core::CanvasManager::get()->update(delta_time);
-	Aquila::UI::Core::CanvasManager::get()->compute();
+	m_ui_host->update(delta_time);
 
 	if (m_editor_camera && m_viewport_panel) {
 		const Rect viewport = m_viewport_panel->get_content_rect();
@@ -180,7 +173,7 @@ void EditorApplication::on_pre_render(F32 delta_time) {
 		get_render_pipeline().set_primary_view(m_editor_camera->get_render_view());
 	}
 
-	get_window().set_cursor(Aquila::UI::Core::CanvasManager::get()->get_active_cursor());
+	get_window().set_cursor(m_ui_host->get_active_cursor());
 }
 
 void EditorApplication::on_event(Events::Event &event) {
@@ -193,7 +186,7 @@ void EditorApplication::on_event(Events::Event &event) {
 	if (m_pick_mode) {
 		bool consumed = false;
 		dispatcher.dispatch<Events::MouseMovedEvent>([&](Events::MouseMovedEvent &e) {
-			auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+			auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 			Aquila::UI::Core::View *hit = editor_canvas.hit_test({ e.get_x(), e.get_y() });
 			consumed = true;
 			if (hit == m_pick_hover) {
@@ -242,7 +235,7 @@ void EditorApplication::on_event(Events::Event &event) {
 		}
 
 		if (e.get_key_code() == Events::KeyCode::F6) {
-			auto &canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+			auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 			Aquila::UI::StyleParser::load_file(Config::get_preferences().ui.style_path, canvas.get_style_sheet());
 			canvas.reload_styles();
 
@@ -252,14 +245,14 @@ void EditorApplication::on_event(Events::Event &event) {
 		return false;
 	});
 
-	Aquila::UI::Core::CanvasManager::get()->on_event(event);
+	m_ui_host->on_event(event);
 
 	Events::EventDispatcher post(event);
 	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
 		if (e.get_key_code() != Events::KeyCode::S || e.get_mods() != Events::MODIFIER_SHIFT) {
 			return false;
 		}
-		auto &canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+		auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
 			return false;
 		}
@@ -338,7 +331,7 @@ void EditorApplication::reset_to_demo_scene() {
 }
 
 void EditorApplication::setup_editor_ui() {
-	auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 	const auto &cfg = Config::get_preferences();
 
 	m_texture_cache = std::make_unique<Aquila::UI::Core::TextureCache>(get_context(), cfg.ui.resources_path);
@@ -434,7 +427,7 @@ void EditorApplication::open_ui_inspector_window() {
 		return; // already open
 	}
 
-	auto &editor_canvas = Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor);
+	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 	RenderWindow &rw = create_secondary_window(800, 600, "Aquila - UI Inspector");
 
 	m_ui_debug_window = std::make_unique<UIDebugWindow>();
@@ -513,7 +506,7 @@ void EditorApplication::apply_font_settings() {
 
 	UI::FontManager::get().reload(get_context(), prefs.fonts);
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
-	Aquila::UI::Core::CanvasManager::get()->get_layer(Aquila::UI::Core::UILayer::Editor).reload_styles();
+	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
 }
 
 void EditorApplication::wire_dock_space(Aquila::UI::Core::DockSpace *dock_space, GLFWwindow *source_native) {

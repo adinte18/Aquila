@@ -225,6 +225,15 @@ static int to_glfw_cursor(Platform::CursorType type) {
 	}
 }
 
+std::string Window::get_clipboard_text() const {
+	const char *text = glfwGetClipboardString(m_window);
+	return text != nullptr ? text : "";
+}
+
+void Window::set_clipboard_text(const std::string &text) const {
+	glfwSetClipboardString(m_window, text.c_str());
+}
+
 void Window::set_cursor(Platform::CursorType type) {
 	if (type == m_current_cursor) {
 		return;

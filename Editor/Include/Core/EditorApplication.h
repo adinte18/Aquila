@@ -3,6 +3,7 @@
 #include "Aquila/Application/ApplicationNew.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Aquila/UI/Core/UIHost.h"
 #include "Aquila/Rendering/CameraController.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/UI/Core/View.h"
@@ -73,6 +74,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_floating_closed(FloatingPanelWindow *panel);
 	void dock_back_to_center(Unique<Aquila::UI::Core::View> content, const std::string &title);
 
+	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
 	Unique<Aquila::Rendering::CameraController> m_editor_camera;
