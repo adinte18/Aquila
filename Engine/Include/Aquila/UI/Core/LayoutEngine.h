@@ -8,6 +8,7 @@ namespace Aquila::UI::Core {
 class LayoutEngine {
   public:
 	LayoutEngine(Uint32 width, Uint32 height);
+	~LayoutEngine();
 
 	void set_dimensions(Uint32 width, Uint32 height);
 
