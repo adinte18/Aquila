@@ -1,5 +1,6 @@
 #include "UI/Panels/InspectorPanel.h"
 #include "Aquila/Scene/ComponentRegistry.h"
+#include "Aquila/Scene/DefaultScenes.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "UI/Inspectors/MaterialComponentUI.h"
@@ -247,14 +248,7 @@ void InspectorPanel::build_component_registry() {
 
 Ref<Graphics::Material> InspectorPanel::ensure_default_material() {
 	if (!m_default_material) {
-		m_default_material = Graphics::MaterialFactory::get()->create(
-			m_context, SharedConstants::SHADERS_DIR + "Basic.slang",
-			{
-				.type = Graphics::MaterialType::Lit,
-				.color_formats = { RHI::TextureFormat::RGBA16F },
-				.depth_test = true,
-				.depth_write = false,
-			});
+		m_default_material = SceneManagement::make_default_material(m_context);
 	}
 	return m_default_material;
 }

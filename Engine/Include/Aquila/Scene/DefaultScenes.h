@@ -9,7 +9,13 @@ namespace Aquila::GFX {
 class GfxContext;
 }
 
+namespace Aquila::Graphics {
+class Material;
+}
+
 namespace Aquila::SceneManagement {
+
+Ref<Graphics::Material> make_default_material(GFX::GfxContext &ctx);
 
 Entity spawn_default_camera(Scene &scene, F32 aspect_ratio);
 
