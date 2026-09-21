@@ -3,10 +3,10 @@
 
 #include "Aquila/Application/ApplicationNew.h"
 
-#include "UI/Managers/FontManager.h"
 #include "UI/Panels/ConsolePanel.h"
 #include "UI/Panels/HierarchyPanel.h"
 #include "Aquila/UI/Core/DockWindowManager.h"
+#include "Aquila/UI/Core/FontManager.h"
 #include "UI/Debug/UIDebugPanel.h"
 #include "UI/Debug/UIDebugWindow.h"
 #include "UI/Debug/WidgetGalleryWindow.h"
@@ -90,7 +90,7 @@ void EditorModule::on_attach(EngineContext &engine) {
 	Config::get_preferences().load_from_file();
 	Aquila::UI::Core::FontRegistry::set_ui_scale(Config::get_preferences().ui_scale);
 
-	UI::FontManager::get().initialize(m_engine->get_context(), Config::get_preferences().fonts);
+	Aquila::UI::Core::FontManager::get().initialize(m_engine->get_context(), Config::get_preferences().fonts);
 
 	m_project_manager = std::make_unique<ProjectManager>();
 
@@ -145,7 +145,7 @@ void EditorModule::on_detach() {
 	m_texture_cache.reset();
 
 	m_ui_host.reset();
-	UI::FontManager::get().shutdown();
+	Aquila::UI::Core::FontManager::get().shutdown();
 }
 
 void EditorModule::on_pre_render(F32 delta_time) {
@@ -335,7 +335,7 @@ void EditorModule::setup_editor_ui() {
 
 	Aquila::UI::StyleParser::load_file(cfg.ui.style_path, editor_canvas.get_style_sheet());
 
-	m_layout_loader.register_font("regular", UI::FontManager::get().get_font("regular"));
+	m_layout_loader.register_font("regular", Aquila::UI::Core::FontManager::get().get_font("regular"));
 	m_layout_loader.register_texture_cache(m_texture_cache.get());
 	m_layout_loader.register_widget(
 		"ColorPicker", [this](std::string_view, Aquila::UI::Text::FontAtlas *) -> Unique<Aquila::UI::Core::View> {
@@ -486,7 +486,7 @@ void EditorModule::open_settings_window() {
 void EditorModule::apply_font_settings() {
 	const auto &prefs = Config::get_preferences();
 
-	UI::FontManager::get().reload(m_engine->get_context(), prefs.fonts);
+	Aquila::UI::Core::FontManager::get().reload(m_engine->get_context(), prefs.fonts);
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
 	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
 }

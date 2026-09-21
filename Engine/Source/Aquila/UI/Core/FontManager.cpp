@@ -1,10 +1,10 @@
-#include "UI/Managers/FontManager.h"
+#include "Aquila/UI/Core/FontManager.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/UI/Core/FontRegistry.h"
 
-namespace Editor::UI {
+namespace Aquila::UI::Core {
 
 namespace {
 
@@ -22,7 +22,7 @@ FontManager &FontManager::get() {
 	return instance;
 }
 
-void FontManager::initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings) {
+void FontManager::initialize(GFX::GfxContext &ctx, const FontSettings &settings) {
 	if (m_initialized) {
 		AQUILA_LOG_WARNING("FontManager: already initialized");
 		return;
@@ -30,16 +30,16 @@ void FontManager::initialize(Aquila::GFX::GfxContext &ctx, const Config::FontSet
 	reload(ctx, settings);
 }
 
-void FontManager::reload(Aquila::GFX::GfxContext &ctx, const Config::FontSettings &settings) {
-	std::unordered_map<std::string, Aquila::UI::Text::FontAtlas *> font_map;
+void FontManager::reload(GFX::GfxContext &ctx, const FontSettings &settings) {
+	std::unordered_map<std::string, Text::FontAtlas *> font_map;
 
 	auto load = [&](const char *name, const std::string &path) {
-		auto atlas = Aquila::UI::Text::FontAtlas::create_from_file(ctx, path);
+		auto atlas = Text::FontAtlas::create_from_file(ctx, path);
 		if (!atlas) {
 			AQUILA_LOG_ERROR("FontManager: failed to load '{}' from {}", name, path);
 			return;
 		}
-		Aquila::UI::Core::FontRegistry::Register(name, atlas.get());
+		FontRegistry::Register(name, atlas.get());
 		font_map[name] = atlas.get();
 		m_atlases.push_back(std::move(atlas));
 	};
@@ -48,8 +48,8 @@ void FontManager::reload(Aquila::GFX::GfxContext &ctx, const Config::FontSetting
 	load("mono", family_to_path(settings.mono_family));
 
 	if (auto it = font_map.find("regular"); it != font_map.end()) {
-		Aquila::UI::Core::FontRegistry::Register("medium", it->second);
-		Aquila::UI::Core::FontRegistry::Register("bold", it->second);
+		FontRegistry::Register("medium", it->second);
+		FontRegistry::Register("bold", it->second);
 		font_map["medium"] = it->second;
 		font_map["bold"] = it->second;
 	}
@@ -66,7 +66,7 @@ void FontManager::shutdown() {
 	m_initialized = false;
 }
 
-Aquila::UI::Text::FontAtlas *FontManager::get_font(const std::string &name) const {
+Text::FontAtlas *FontManager::get_font(const std::string &name) const {
 	auto it = m_font_map.find(name);
 	if (it != m_font_map.end()) {
 		return it->second;
@@ -75,4 +75,4 @@ Aquila::UI::Text::FontAtlas *FontManager::get_font(const std::string &name) cons
 	return m_atlases.empty() ? nullptr : m_atlases.front().get();
 }
 
-} // namespace Editor::UI
+} // namespace Aquila::UI::Core
