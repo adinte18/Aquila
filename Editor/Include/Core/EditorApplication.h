@@ -12,8 +12,6 @@
 
 #include <vector>
 
-struct GLFWwindow;
-
 namespace Aquila::UI::Core {
 class View;
 class DockSpace;
@@ -63,6 +61,19 @@ class EditorApplication : public Aquila::Application::Application {
 	void apply_font_settings();
 	void start_pick();
 
+	template <typename Content>
+	Aquila::Rendering::RenderWindowId open_tool_window(Content &content, Uint32 width, Uint32 height,
+													   const std::string &title, Delegate<void()> on_close) {
+		Aquila::Rendering::RenderWindowCallbacks callbacks;
+		callbacks.on_update = [&content](F32 dt) { content.update(dt); };
+		callbacks.on_render = [&content](Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd) {
+			content.render(batcher, cmd);
+		};
+		callbacks.on_event = [&content](Aquila::Platform::Events::Event &event) { content.on_event(event); };
+		callbacks.on_close = std::move(on_close);
+		return create_window(width, height, title, std::move(callbacks));
+	}
+
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
@@ -77,7 +88,7 @@ class EditorApplication : public Aquila::Application::Application {
 	Unique<WidgetGalleryWindow> m_widget_gallery_window;
 	Unique<SettingsWindow> m_settings_window;
 	Unique<ProjectLauncher> m_project_launcher;
-	GLFWwindow *m_launcher_native = nullptr;
+	Aquila::Rendering::RenderWindowId m_launcher_window = nullptr;
 	bool m_editor_entered = false;
 	Option<ProjectInfo> m_pending_project;
 

@@ -94,35 +94,28 @@ void EditorApplication::on_init() {
 }
 
 void EditorApplication::open_project_launcher() {
-	RenderWindow &rw = create_secondary_window(720, 520, "Aquila - Projects");
-	m_launcher_native = rw.window->get_native_window();
-
 	m_project_launcher = std::make_unique<ProjectLauncher>();
 	m_project_launcher->build(m_project_manager.get(), 720, 520, Config::get_preferences().ui.style_path);
 	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
 
-	ProjectLauncher *win = m_project_launcher.get();
-	rw.on_update = [win](F32 dt) { win->update(dt); };
-	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
-	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
-	rw.on_close = [this] {
+	m_launcher_window = open_tool_window(*m_project_launcher, 720, 520, "Aquila - Projects", [this] {
 		m_project_launcher.reset();
-		m_launcher_native = nullptr;
+		m_launcher_window = nullptr;
 		if (!m_editor_entered) {
 			close();
 		}
-	};
+	});
 }
 
 void EditorApplication::enter_editor(const ProjectInfo &project) {
 	AQUILA_LOG_INFO("EditorApplication: opening project '{}' ({})", project.name, project.directory);
 
 	m_editor_entered = true;
-	if (m_launcher_native != nullptr) {
-		glfwSetWindowShouldClose(m_launcher_native, GLFW_TRUE);
+	if (m_launcher_window != nullptr) {
+		request_close(m_launcher_window);
 	}
 
-	glfwShowWindow(get_window().get_native_window());
+	get_window().show();
 	m_editor_camera = std::make_unique<Aquila::Rendering::CameraController>();
 	setup_editor_ui();
 }
@@ -429,7 +422,6 @@ void EditorApplication::open_ui_inspector_window() {
 	}
 
 	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-	RenderWindow &rw = create_secondary_window(800, 600, "Aquila - UI Inspector");
 
 	m_ui_debug_window = std::make_unique<UIDebugWindow>();
 	m_ui_debug_window->build(&editor_canvas, 800, 600, Config::get_preferences().ui.style_path);
@@ -442,17 +434,13 @@ void EditorApplication::open_ui_inspector_window() {
 		}
 	};
 
-	UIDebugWindow *win = m_ui_debug_window.get();
-	rw.on_update = [win](F32 dt) { win->update(dt); };
-	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
-	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
-	rw.on_close = [this] {
+	open_tool_window(*m_ui_debug_window, 800, 600, "Aquila - UI Inspector", [this] {
 		m_pick_mode = false;
 		if (m_picker) {
 			m_picker->clear();
 		}
 		m_ui_debug_window.reset();
-	};
+	});
 }
 
 void EditorApplication::start_pick() {
@@ -469,17 +457,12 @@ void EditorApplication::open_widget_gallery_window() {
 		return;
 	}
 
-	RenderWindow &rw = create_secondary_window(420, 720, "Aquila - Widget Gallery");
-
 	m_widget_gallery_window = std::make_unique<WidgetGalleryWindow>();
 	m_widget_gallery_window->build(get_context(), m_texture_cache.get(), 420, 720,
 								   Config::get_preferences().ui.style_path);
 
-	WidgetGalleryWindow *win = m_widget_gallery_window.get();
-	rw.on_update = [win](F32 dt) { win->update(dt); };
-	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
-	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
-	rw.on_close = [this] { m_widget_gallery_window.reset(); };
+	open_tool_window(*m_widget_gallery_window, 420, 720, "Aquila - Widget Gallery",
+					 [this] { m_widget_gallery_window.reset(); });
 }
 
 void EditorApplication::open_settings_window() {
@@ -487,19 +470,13 @@ void EditorApplication::open_settings_window() {
 		return;
 	}
 
-	RenderWindow &rw = create_secondary_window(560, 640, "Aquila - Settings");
-	GLFWwindow *native = rw.window->get_native_window();
-
 	m_settings_window = std::make_unique<SettingsWindow>();
 	m_settings_window->build(m_texture_cache.get(), 560, 640, Config::get_preferences().ui.style_path);
-	m_settings_window->on_request_close = [native] { glfwSetWindowShouldClose(native, GLFW_TRUE); };
 	m_settings_window->on_applied = [this] { apply_font_settings(); };
 
-	SettingsWindow *win = m_settings_window.get();
-	rw.on_update = [win](F32 dt) { win->update(dt); };
-	rw.on_render = [win](auto &batcher, auto &cmd) { win->render(batcher, cmd); };
-	rw.on_event = [win](Events::Event &event) { win->on_event(event); };
-	rw.on_close = [this] { m_settings_window.reset(); };
+	const Aquila::Rendering::RenderWindowId window =
+		open_tool_window(*m_settings_window, 560, 640, "Aquila - Settings", [this] { m_settings_window.reset(); });
+	m_settings_window->on_request_close = [this, window] { request_close(window); };
 }
 
 void EditorApplication::apply_font_settings() {
