@@ -41,7 +41,7 @@ class EditorApplication : public Aquila::Application::Application {
 	void on_init() override;
 	void on_shutdown() override;
 	void on_pre_render(F32 delta_time) override;
-	void on_event(Aquila::Application::Events::Event &event) override;
+	void on_event(Aquila::Platform::Events::Event &event) override;
 	void on_resize(Uint32 width, Uint32 height) override;
 	void on_render_resize(Uint32 width, Uint32 height) override;
 

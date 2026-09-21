@@ -3,7 +3,7 @@
 #include "Aquila/UI/Core/DragState.h"
 #include "Aquila/UI/Core/View.h"
 
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 class Event;
 }
 
@@ -16,7 +16,7 @@ class InputRouter {
   public:
 	InputRouter(Canvas &canvas, DrawCompositor &compositor) : m_canvas(canvas), m_compositor(compositor) {}
 
-	void on_event(Application::Events::Event &event);
+	void on_event(Platform::Events::Event &event);
 	void set_focus(View *view); // handles OnFocusLost/OnFocusGained bookkeeping
 	void on_view_removed(View *view);
 

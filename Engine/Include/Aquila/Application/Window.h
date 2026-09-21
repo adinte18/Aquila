@@ -9,9 +9,9 @@
 
 #include <array>
 
-#include "Aquila/Application/Events/Event.h"
-#include "Aquila/Application/Events/WindowEvent.h"
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/Event.h"
+#include "Aquila/Platform/Events/WindowEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
@@ -20,7 +20,7 @@ namespace Aquila::Application {
 
 class Window {
   public:
-	using EventCallbackFn = std::function<void(Events::Event &)>;
+	using EventCallbackFn = std::function<void(Platform::Events::Event &)>;
 
 	Window(Uint32 width, Uint32 height, const std::string &title, bool maximized = true, bool start_hidden = false);
 	~Window();

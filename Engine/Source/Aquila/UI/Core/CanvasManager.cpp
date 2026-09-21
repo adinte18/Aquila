@@ -12,7 +12,7 @@ Canvas &CanvasManager::get_layer(UILayer layer) {
 	return *m_layers[static_cast<Uint8>(layer)];
 }
 
-void CanvasManager::on_event(Application::Events::Event &e) {
+void CanvasManager::on_event(Platform::Events::Event &e) {
 	for (int i = static_cast<int>(m_layers.size()) - 1; i >= 0; i--) {
 		m_layers[i]->on_event(e);
 		if (e.handled) {

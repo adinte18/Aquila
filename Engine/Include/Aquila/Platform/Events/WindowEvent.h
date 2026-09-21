@@ -1,9 +1,9 @@
 #ifndef AQUILA_APPLICATION_EVENTS_H
 #define AQUILA_APPLICATION_EVENTS_H
 
-#include "Aquila/Application/Events/Event.h"
+#include "Aquila/Platform/Events/Event.h"
 
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 
 class WindowResizeEvent final : public Event {
   public:
@@ -96,6 +96,6 @@ class AppRenderEvent final : public Event {
 	EVENT_CLASS_CATEGORY(EventCategory::Application)
 };
 
-} // namespace Aquila::Application::Events
+} // namespace Aquila::Platform::Events
 
 #endif // AQUILA_APPLICATION_EVENTS_H

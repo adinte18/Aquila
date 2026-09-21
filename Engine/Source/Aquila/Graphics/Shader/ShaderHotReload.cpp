@@ -1,5 +1,5 @@
 #include "Aquila/Graphics/Shader/ShaderHotReload.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 #include <vector>
 
 namespace Aquila::Graphics::Shader {
@@ -49,7 +49,7 @@ void ShaderHotReload::tick() {
 		callback();
 	}
 
-	Rendering::FrameScheduler::get()->request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 }
 
 } // namespace Aquila::Graphics::Shader

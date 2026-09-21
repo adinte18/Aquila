@@ -21,7 +21,7 @@
 #include "Aquila/Rendering/Systems/ShadowSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
 #include "Aquila/Platform/Filesystem/Filesystem.h"
 
@@ -45,7 +45,7 @@ Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	Foundation::Profiler::Profiler::init();
 	Platform::Filesystem::VirtualFileSystem::init();
 
-	m_window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
+	m_window->set_event_callback([this](Platform::Events::Event &event) { route_window_event(event); });
 
 	m_window->set_refresh_callback([this]() {
 		m_timer->tick();
@@ -55,7 +55,7 @@ Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	m_timer->start();
 }
 
-void Application::route_window_event(Events::Event &event) {
+void Application::route_window_event(Platform::Events::Event &event) {
 	Platform::Input::on_event(event);
 
 	auto *source = event.get_source();
@@ -83,7 +83,7 @@ Application::~Application() {
 	Platform::Filesystem::VirtualFileSystem::shutdown();
 	Foundation::Profiler::Profiler::shutdown();
 	Graphics::MaterialFactory::shutdown();
-	Rendering::FrameScheduler::shutdown();
+	Foundation::FrameScheduler::shutdown();
 
 	m_scene.reset();
 	m_render_pipeline.reset();
@@ -104,7 +104,7 @@ void Application::run() {
 	on_init();
 
 	while (m_running) {
-		const bool has_frames = Rendering::FrameScheduler::get()->consume();
+		const bool has_frames = Foundation::FrameScheduler::get()->consume();
 
 		if (has_frames) {
 			m_window->poll_events();
@@ -167,7 +167,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	Graphics::MaterialFactory::init();
 	Graphics::Shader::ShaderHotReload::init();
 	Graphics::Shader::ShaderHotReload::get()->enable(true);
-	Rendering::FrameScheduler::init();
+	Foundation::FrameScheduler::init();
 
 	using namespace Platform::Filesystem;
 	VirtualFileSystem::get()->mount("/resources", std::make_shared<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
@@ -206,7 +206,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, const std::string &title) {
 	auto rw = std::make_unique<RenderWindow>();
 	rw->window = std::make_unique<Window>(width, height, title, false);
-	rw->window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
+	rw->window->set_event_callback([this](Platform::Events::Event &event) { route_window_event(event); });
 	rw->window->set_refresh_callback([this, p = rw.get()]() { render_one_secondary_window(*p); });
 	rw->swapchain = m_ctx->create_swapchain({
 		.width = width,
@@ -370,23 +370,23 @@ void Application::internal_update(F32 delta_time) {
 	render_secondary_windows();
 }
 
-void Application::internal_on_main_window_event(Events::Event &event) {
-	const bool is_cursor_event = (event.get_category() & Events::EventCategory::Mouse) &&
-		!(event.get_category() & Events::EventCategory::MouseButton);
+void Application::internal_on_main_window_event(Platform::Events::Event &event) {
+	const bool is_cursor_event = (event.get_category() & Platform::Events::EventCategory::Mouse) &&
+		!(event.get_category() & Platform::Events::EventCategory::MouseButton);
 	if (!is_cursor_event) {
-		Rendering::FrameScheduler::get()->request_frame();
+		Foundation::FrameScheduler::get()->request_frame();
 	}
 
 	on_event(event);
 
-	Events::EventDispatcher dispatcher(event);
+	Platform::Events::EventDispatcher dispatcher(event);
 
-	dispatcher.dispatch<Events::WindowCloseEvent>([this](Events::WindowCloseEvent &) {
+	dispatcher.dispatch<Platform::Events::WindowCloseEvent>([this](Platform::Events::WindowCloseEvent &) {
 		m_running = false;
 		return true;
 	});
 
-	dispatcher.dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &ev) {
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &ev) {
 		if (ev.get_width() > 0 && ev.get_height() > 0) {
 			m_pending_resize = true;
 		}
@@ -394,11 +394,11 @@ void Application::internal_on_main_window_event(Events::Event &event) {
 	});
 }
 
-void Application::internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event) {
-	Rendering::FrameScheduler::get()->request_frame();
+void Application::internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event) {
+	Foundation::FrameScheduler::get()->request_frame();
 
-	Events::EventDispatcher dispatcher(event);
-	dispatcher.dispatch<Events::WindowResizeEvent>([&](auto &) {
+	Platform::Events::EventDispatcher dispatcher(event);
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([&](auto &) {
 		rw.needs_resize = true; // swapchain + targets rebuilt in RenderOneSecondaryWindow
 		return false;
 	});

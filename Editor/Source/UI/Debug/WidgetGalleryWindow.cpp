@@ -1,7 +1,7 @@
 #include "UI/Debug/WidgetGalleryWindow.h"
 
-#include "Aquila/Application/Events/Event.h"
-#include "Aquila/Application/Events/WindowEvent.h"
+#include "Aquila/Platform/Events/Event.h"
+#include "Aquila/Platform/Events/WindowEvent.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/TextureCache.h"
@@ -161,9 +161,9 @@ void WidgetGalleryWindow::render(Graphics::QuadBatcher &batcher, GFX::GfxCommand
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
-void WidgetGalleryWindow::on_event(Application::Events::Event &event) {
-	Application::Events::EventDispatcher dispatcher(event);
-	dispatcher.dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
+void WidgetGalleryWindow::on_event(Platform::Events::Event &event) {
+	Platform::Events::EventDispatcher dispatcher(event);
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &e) {
 		if (e.get_width() > 0 && e.get_height() > 0) {
 			m_canvas->resize(e.get_width(), e.get_height());
 		}

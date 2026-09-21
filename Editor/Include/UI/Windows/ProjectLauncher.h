@@ -11,7 +11,7 @@ class QuadBatcher;
 namespace Aquila::GFX {
 class GfxCommandList;
 }
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 class Event;
 }
 namespace Aquila::UI::Core {
@@ -31,7 +31,7 @@ class ProjectLauncher {
 
 	void update(F32 delta_time);
 	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
-	void on_event(Aquila::Application::Events::Event &event);
+	void on_event(Aquila::Platform::Events::Event &event);
 
 	Delegate<void(const ProjectInfo &)> on_project_ready;
 

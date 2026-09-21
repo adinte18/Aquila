@@ -1,7 +1,7 @@
 #include "UI/Windows/ProjectLauncher.h"
 
-#include "Aquila/Application/Events/Event.h"
-#include "Aquila/Application/Events/WindowEvent.h"
+#include "Aquila/Platform/Events/Event.h"
+#include "Aquila/Platform/Events/WindowEvent.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleParser.h"
@@ -111,9 +111,9 @@ void ProjectLauncher::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
-void ProjectLauncher::on_event(Application::Events::Event &event) {
-	Application::Events::EventDispatcher dispatcher(event);
-	dispatcher.dispatch<Application::Events::WindowResizeEvent>([this](Application::Events::WindowResizeEvent &e) {
+void ProjectLauncher::on_event(Platform::Events::Event &event) {
+	Platform::Events::EventDispatcher dispatcher(event);
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &e) {
 		if (e.get_width() > 0 && e.get_height() > 0) {
 			m_canvas->resize(e.get_width(), e.get_height());
 		}

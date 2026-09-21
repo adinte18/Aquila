@@ -1,9 +1,9 @@
 #pragma once
 #include "Aquila/Foundation/Singleton.h"
 
-namespace Aquila::Rendering {
+namespace Aquila::Foundation {
 
-class FrameScheduler : public Foundation::Singleton<FrameScheduler> {
+class FrameScheduler : public Singleton<FrameScheduler> {
   public:
 	void request_frame() { m_dirty = true; }
 
@@ -16,9 +16,9 @@ class FrameScheduler : public Foundation::Singleton<FrameScheduler> {
 	}
 
   private:
-	friend class Foundation::Singleton<FrameScheduler>;
+	friend class Singleton<FrameScheduler>;
 	FrameScheduler() = default;
 	bool m_dirty = true; // always render the first frame
 };
 
-} // namespace Aquila::Rendering
+} // namespace Aquila::Foundation

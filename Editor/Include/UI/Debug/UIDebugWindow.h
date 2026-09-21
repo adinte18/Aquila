@@ -12,7 +12,7 @@ class QuadBatcher;
 namespace Aquila::GFX {
 class GfxCommandList;
 }
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 class Event;
 }
 namespace Aquila::UI::Core {
@@ -35,7 +35,7 @@ class UIDebugWindow {
 
 	void update(F32 delta_time);
 	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
-	void on_event(Aquila::Application::Events::Event &event);
+	void on_event(Aquila::Platform::Events::Event &event);
 
 	void refresh();
 	void select_view(Aquila::UI::Core::View *view);

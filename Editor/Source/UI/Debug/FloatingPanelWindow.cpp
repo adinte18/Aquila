@@ -1,8 +1,8 @@
 #include "UI/Debug/FloatingPanelWindow.h"
 
-#include "Aquila/Application/Events/Event.h"
-#include "Aquila/Application/Events/InputEvent.h"
-#include "Aquila/Application/Events/WindowEvent.h"
+#include "Aquila/Platform/Events/Event.h"
+#include "Aquila/Platform/Events/InputEvent.h"
+#include "Aquila/Platform/Events/WindowEvent.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StyleParser.h"
@@ -14,7 +14,7 @@ namespace Editor {
 
 using namespace Aquila;
 using namespace Aquila::UI::Core;
-namespace Events = Aquila::Application::Events;
+namespace Events = Aquila::Platform::Events;
 
 FloatingPanelWindow::FloatingPanelWindow() = default;
 FloatingPanelWindow::~FloatingPanelWindow() = default;

@@ -42,7 +42,7 @@
 #include "Aquila/UI/Core/DockLayoutSerializer.h"
 #include "Aquila/UI/Widgets/Menubar.h"
 #include "Aquila/UI/Widgets/TextInput.h"
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Platform/Input.h"
 #include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 #include "Rendering/SelectionOutlineSystem.h"
@@ -55,6 +55,7 @@ using namespace Aquila;
 using namespace Aquila::SceneManagement;
 using namespace Aquila::SceneManagement::Components;
 using namespace Aquila::Application;
+namespace Events = Aquila::Platform::Events;
 
 namespace {
 const std::string k_layout_path = "/app/layout.aqdl";

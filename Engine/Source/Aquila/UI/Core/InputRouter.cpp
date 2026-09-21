@@ -1,13 +1,13 @@
 #include "Aquila/UI/Core/InputRouter.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/DrawCompositor.h"
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Platform/Input.h"
 
 namespace Aquila::UI::Core {
 
-using namespace Application::Events;
+using namespace Platform::Events;
 
 void InputRouter::set_focus(View *view) {
 	if (m_focused_view == view) {
@@ -32,7 +32,7 @@ void InputRouter::on_view_removed(View *view) {
 	}
 }
 
-void InputRouter::on_event(Application::Events::Event &e) {
+void InputRouter::on_event(Platform::Events::Event &e) {
 	EventDispatcher dispatcher(e);
 
 	dispatcher.dispatch<MouseMovedEvent>([this](MouseMovedEvent &e) {

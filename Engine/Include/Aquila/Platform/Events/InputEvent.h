@@ -1,9 +1,9 @@
 #ifndef AQUILA_INPUT_EVENTS_H
 #define AQUILA_INPUT_EVENTS_H
 
-#include "Aquila/Application/Events/Event.h"
+#include "Aquila/Platform/Events/Event.h"
 
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 
 enum class KeyCode : Uint16 {
 	Unknown = 0,
@@ -198,6 +198,6 @@ class MouseButtonReleasedEvent final : public Event {
 	MouseButton m_button;
 };
 
-} // namespace Aquila::Application::Events
+} // namespace Aquila::Platform::Events
 
 #endif // AQUILA_INPUT_EVENTS_H

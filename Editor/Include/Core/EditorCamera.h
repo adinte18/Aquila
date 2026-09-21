@@ -4,7 +4,7 @@
 #include "Aquila/Rendering/Camera.h"
 #include "Aquila/Rendering/RenderView.h"
 
-namespace Aquila::Application::Events {
+namespace Aquila::Platform::Events {
 class Event;
 }
 
@@ -18,7 +18,7 @@ class EditorCamera {
 	void set_viewport_rect(Vec2 position, Vec2 size);
 
 	void update(F32 delta_time);
-	void on_event(Aquila::Application::Events::Event &event);
+	void on_event(Aquila::Platform::Events::Event &event);
 
 	[[nodiscard]] Aquila::Rendering::RenderView get_render_view() const;
 

@@ -43,7 +43,7 @@ struct RenderWindow {
 
 	Delegate<void(F32)> on_update;
 	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> on_render;
-	Delegate<void(Events::Event &)> on_event;
+	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
 };
 
@@ -64,7 +64,7 @@ class Application {
 	virtual void on_init() {}
 	virtual void on_shutdown() {}
 	virtual void on_pre_render(F32 delta_time) {}
-	virtual void on_event(Events::Event &event) {}
+	virtual void on_event(Platform::Events::Event &event) {}
 	virtual void on_resize(Uint32 width, Uint32 height) {}
 	virtual void on_render_resize(Uint32 width, Uint32 height) {}
 
@@ -83,10 +83,10 @@ class Application {
 	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
 
   private:
-	void route_window_event(Events::Event &event);
+	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
-	void internal_on_main_window_event(Events::Event &event);
-	void internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event);
+	void internal_on_main_window_event(Platform::Events::Event &event);
+	void internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event);
 	void handle_resize();
 	void init_rendering(Uint32 width, Uint32 height);
 

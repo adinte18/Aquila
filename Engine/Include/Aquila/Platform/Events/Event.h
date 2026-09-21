@@ -4,11 +4,9 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Profiler.h"
 
-namespace Aquila::Application {
-class Window;
-}
+namespace Aquila::Platform::Events {
 
-namespace Aquila::Application::Events {
+using EventSource = const void *;
 
 enum class EventCategory : Uint8 {
 	None = 0,
@@ -36,13 +34,13 @@ class Event {
 	[[nodiscard]] virtual EventCategory get_category() const = 0;
 	[[nodiscard]] virtual std::type_index get_type_index() const = 0;
 	[[nodiscard]] virtual std::string to_string() const { return get_name(); }
-	[[nodiscard]] Window *get_source() const { return m_source; }
+	[[nodiscard]] EventSource get_source() const { return m_source; }
 
-	void set_source(Window *window) { m_source = window; };
+	void set_source(EventSource source) { m_source = source; }
 	bool handled = false;
 
   private:
-	Window *m_source = nullptr;
+	EventSource m_source = nullptr;
 };
 
 class EventDispatcher {
@@ -61,5 +59,5 @@ class EventDispatcher {
 	Event &m_event;
 };
 
-} // namespace Aquila::Application::Events
+} // namespace Aquila::Platform::Events
 #endif

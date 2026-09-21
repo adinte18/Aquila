@@ -1,14 +1,14 @@
 #include "Core/EditorCamera.h"
 
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Platform/Input.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 
 namespace Editor {
 
 using Aquila::Platform::Input;
-namespace Events = Aquila::Application::Events;
+namespace Events = Aquila::Platform::Events;
 
 namespace {
 constexpr F32 kRotateSensitivity = 0.0035F;
@@ -113,7 +113,7 @@ void EditorCamera::update(F32 delta_time) {
 
 	m_camera.set_view_yxz(m_camera.get_position(), m_camera.get_rotation());
 
-	Aquila::Rendering::FrameScheduler::get()->request_frame();
+	Aquila::Foundation::FrameScheduler::get()->request_frame();
 }
 
 void EditorCamera::on_event(Events::Event &event) {

@@ -1,5 +1,5 @@
 #include "Aquila/UI/Core/Canvas.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/UI/Widgets/DragGhost.h"
 #include "Aquila/UI/Widgets/Tooltip.h"
 
@@ -47,7 +47,7 @@ void Canvas::register_internal_observers() {
 
 void Canvas::mark_dirty() {
 	m_dirty = true;
-	Aquila::Rendering::FrameScheduler::get()->request_frame();
+	Aquila::Foundation::FrameScheduler::get()->request_frame();
 }
 
 void Canvas::request_layout() {
@@ -260,7 +260,7 @@ void Canvas::submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandL
 	m_draw_compositor.submit(r2d, cmd);
 }
 
-void Canvas::on_event(Application::Events::Event &e) {
+void Canvas::on_event(Platform::Events::Event &e) {
 	m_input_router.on_event(e);
 }
 
@@ -296,7 +296,7 @@ void Canvas::update(F32 delta_time) {
 	style_pass();
 	animation_pass(delta_time);
 	if (needs_frame || !m_active_anims.empty()) {
-		Aquila::Rendering::FrameScheduler::get()->request_frame();
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
 	}
 }
 
@@ -371,7 +371,7 @@ void Canvas::update_tooltip(F32 dt) {
 		m_tooltip_shown = true;
 		mark_dirty();
 	} else {
-		Aquila::Rendering::FrameScheduler::get()->request_frame();
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
 	}
 }
 

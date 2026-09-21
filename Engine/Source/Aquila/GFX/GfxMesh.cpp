@@ -3,12 +3,12 @@
 
 namespace Aquila::GFX {
 
-Ref<GfxMesh> GfxMesh::create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh) {
+Ref<GfxMesh> GfxMesh::create(GfxContext &ctx, std::span<const RHI::Vertex> vertices, std::span<const Uint32> indices) {
 	auto gfx_mesh = Ref<GfxMesh>(new GfxMesh());
-	gfx_mesh->m_index_count = mesh.get_index_count();
+	gfx_mesh->m_index_count = static_cast<Uint32>(indices.size());
 
-	const Uint64 vb_size = mesh.get_vertex_count() * sizeof(RHI::Vertex);
-	const Uint64 ib_size = mesh.get_index_count() * sizeof(Uint32);
+	const Uint64 vb_size = vertices.size_bytes();
+	const Uint64 ib_size = indices.size_bytes();
 
 	gfx_mesh->m_vertex_buffer = ctx.create_buffer({
 		.size = vb_size,
@@ -36,8 +36,8 @@ Ref<GfxMesh> GfxMesh::create(GfxContext &ctx, const Graphics::Resources::Mesh &m
 		.debug_name = "GfxMesh_IB_Stage",
 	});
 
-	vb_stage->write(mesh.get_vertices().data(), vb_size);
-	ib_stage->write(mesh.get_indices().data(), ib_size);
+	vb_stage->write(vertices.data(), vb_size);
+	ib_stage->write(indices.data(), ib_size);
 
 	ctx.copy_buffer(*vb_stage, *gfx_mesh->m_vertex_buffer, vb_size);
 	ctx.copy_buffer(*ib_stage, *gfx_mesh->m_index_buffer, ib_size);
