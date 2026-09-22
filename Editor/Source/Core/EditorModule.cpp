@@ -476,18 +476,21 @@ void EditorModule::refresh_tool_buttons() {
 void EditorModule::wire_cards(Aquila::UI::Core::View *layout_root) {
 	using Aquila::UI::Core::Collapsible;
 
-	const std::array<const char *, 3> ids = { "card-hierarchy", "card-inspector", "card-console" };
-	constexpr Usize console_index = 2;
+	const std::array<const char *, 2> ids = { "card-hierarchy", "card-inspector" };
 
 	for (Usize i = 0; i < ids.size(); ++i) {
 		m_cards[i].card = layout_root->find_by_id<Collapsible>(ids[i]);
-		set_card_visible(i, i != console_index);
+		set_card_visible(i, true);
 	}
 
-	if (auto *console_button = layout_root->find_by_id<Aquila::UI::Core::Button>("toggle-console")) {
-		m_console_button = console_button;
-		console_button->on_click.connect([this] { toggle_card(console_index); });
-		refresh_card_buttons();
+	auto *console_card = layout_root->find_by_id("card-console");
+	auto *console_button = layout_root->find_by_id<Aquila::UI::Core::Button>("hud-console");
+	if (console_card != nullptr && console_button != nullptr) {
+		console_button->on_click.connect([console_card, console_button, shown = true]() mutable {
+			shown = !shown;
+			console_card->set_hidden(!shown);
+			console_button->set_class("hud-tool-active", shown);
+		});
 	}
 
 	auto *rail_left = layout_root->find_by_id("rail-left");
@@ -497,7 +500,7 @@ void EditorModule::wire_cards(Aquila::UI::Core::View *layout_root) {
 		m_cards[0].card->add_header_action(m_layout_loader.resolve_texture("Engine/UI/Icons/plus.png"), "New entity",
 										  m_layout_loader.resolve_command("entity.create"));
 	}
-	for (Usize i = 0; i < console_index; ++i) {
+	for (Usize i = 0; i < m_cards.size(); ++i) {
 		if (m_cards[i].card != nullptr && rail_left != nullptr && rail_right != nullptr) {
 			Collapsible *card = m_cards[i].card;
 			card->add_header_action(swap_icon, "Move to the other side", [card, rail_left, rail_right] {
@@ -514,7 +517,7 @@ void EditorModule::wire_cards(Aquila::UI::Core::View *layout_root) {
 	auto *chevron_collapsed = m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-right.png");
 	auto *chevron_expanded = m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-down.png");
 	std::function<void(Aquila::UI::Core::View *)> apply_chevrons = [&](Aquila::UI::Core::View *view) {
-		if (auto *collapsible = Aquila::UI::Core::view_cast<Collapsible>(view)) {
+		if (auto *collapsible = Aquila::UI::Core::view_cast<Collapsible>(view); collapsible != nullptr && collapsible->is_collapsible()) {
 			collapsible->set_state_icons(chevron_collapsed, chevron_expanded);
 		}
 		for (const auto &child : view->get_children()) {
@@ -533,17 +536,10 @@ void EditorModule::set_card_visible(Usize index, bool visible) {
 	if (m_cards[index].card != nullptr) {
 		m_cards[index].card->set_hidden(!visible);
 	}
-	refresh_card_buttons();
 }
 
 void EditorModule::toggle_card(Usize index) {
 	set_card_visible(index, !m_cards[index].visible);
-}
-
-void EditorModule::refresh_card_buttons() {
-	if (m_console_button != nullptr) {
-		m_console_button->set_class("hud-tool-active", m_cards[2].visible);
-	}
 }
 
 void EditorModule::wire_main_menu(Aquila::UI::Core::View *layout_root) {
@@ -577,7 +573,6 @@ void EditorModule::wire_main_menu(Aquila::UI::Core::View *layout_root) {
 	PopupMenu *window_menu = m_main_menu->add_submenu("Window", icon("panel-left.png"));
 	window_menu->add_item("Hierarchy", {}, icon("list-tree.png"), [this] { toggle_card(0); });
 	window_menu->add_item("Inspector", {}, icon("sliders-horizontal.png"), [this] { toggle_card(1); });
-	window_menu->add_item("Console", {}, icon("terminal.png"), [this] { toggle_card(2); });
 	window_menu->add_item("Status bar", {}, icon("list-tree.png"), [this] {
 		if (m_status_bar) {
 			m_status_bar->set_visible(!m_status_bar->is_visible());

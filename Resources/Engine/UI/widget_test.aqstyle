@@ -2327,8 +2327,8 @@ Vec4Field {
 }
 
 .card-console {
-    width: 50vw;
-    height: 200px;
+    width: 60vw;
+    height: 260px;
 }
 
 .card-header {
@@ -2459,6 +2459,15 @@ Vec4Field {
     font-family: regular;
     font-size: 12px;
     color: var(--text-bright);
+}
+
+.selectable-text-view {
+    width: grow;
+    font-family: mono;
+    font-size: 14px;
+    color: var(--text);
+    cursor: text;
+    selection-color: var(--selection);
 }
 
 .hud-separator {

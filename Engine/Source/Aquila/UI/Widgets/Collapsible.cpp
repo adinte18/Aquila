@@ -60,6 +60,9 @@ Collapsible::Collapsible(std::string title) {
 	button->set_text(std::move(title));
 	button->add_class("collapsible-title");
 	button->on_click.connect([this] {
+		if (!m_collapsible) {
+			return;
+		}
 		set_expanded(!m_expanded);
 		on_toggled(m_expanded);
 	});
@@ -79,6 +82,11 @@ void Collapsible::set_title(std::string title) {
 	m_title_button->set_text(std::move(title));
 }
 
+void Collapsible::set_reorderable(bool reorderable) {
+	m_reorderable = reorderable;
+	m_grip->set_hidden(!reorderable);
+}
+
 void Collapsible::set_variant(const std::string &variant) {
 	add_class(variant);
 	m_header_bar->add_class(variant + "-header");
@@ -90,6 +98,14 @@ void Collapsible::set_variant(const std::string &variant) {
 void Collapsible::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
 	if (name == "variant") {
 		set_variant(std::string(value));
+		return;
+	}
+	if (name == "reorderable") {
+		set_reorderable(value != "false");
+		return;
+	}
+	if (name == "collapsible") {
+		set_collapsible(value != "false");
 		return;
 	}
 	if (name == "src" || name == "uv" || name == "tint") {
@@ -137,7 +153,7 @@ void Collapsible::apply_state() {
 }
 
 void Collapsible::begin_drag() {
-	if (m_dragging) {
+	if (m_dragging || !m_reorderable) {
 		return;
 	}
 	m_container = get_parent();

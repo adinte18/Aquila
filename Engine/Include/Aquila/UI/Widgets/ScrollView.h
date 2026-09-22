@@ -15,6 +15,7 @@ class ScrollView : public View {
 
 	void remove_oldest_content();
 	void scroll_to_bottom();
+	[[nodiscard]] bool is_at_bottom() const;
 
 	void on_style_resolved() override;
 	bool on_update(F32 delta_time) override;

@@ -86,4 +86,42 @@ TEST_SUITE("Collapsible") {
 		CHECK(card->get_style().height->unit == Aquila::UI::LengthUnit::Grow);
 		CHECK(card->get_style().width->unit == Aquila::UI::LengthUnit::Grow);
 	}
+
+	TEST_CASE("a collapsible that is not reorderable cannot be dragged") {
+		CanvasSingletonsScope singletons;
+		Canvas canvas(400, 400);
+		View *rail = canvas.get_root()->add_child<View>();
+		auto *card = rail->add_child<Collapsible>(std::string("Card"));
+		card->set_reorderable(false);
+
+		card->begin_drag();
+
+		CHECK_FALSE(card->has_floating());
+		CHECK(rail->get_children().size() == 1);
+	}
+
+	TEST_CASE("the reorderable attribute can be set from a layout") {
+		Collapsible card("Card");
+		card.apply_xml_attribute("reorderable", "false");
+		CHECK_FALSE(card.is_reorderable());
+	}
+
+	TEST_CASE("a collapsible that is not collapsible ignores header clicks") {
+		CanvasSingletonsScope singletons;
+		Canvas canvas(400, 400);
+		auto *card = canvas.get_root()->add_child<Collapsible>(std::string("Card"));
+		card->set_collapsible(false);
+
+		auto *title = dynamic_cast<Button *>(card->View::get_children()[0]->get_children()[0].get());
+		REQUIRE(title != nullptr);
+		title->on_click();
+
+		CHECK(card->is_expanded());
+	}
+
+	TEST_CASE("the collapsible attribute can be set from a layout") {
+		Collapsible card("Card");
+		card.apply_xml_attribute("collapsible", "false");
+		CHECK_FALSE(card.is_collapsible());
+	}
 }

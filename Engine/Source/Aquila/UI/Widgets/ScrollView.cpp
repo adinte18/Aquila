@@ -68,13 +68,15 @@ void ScrollView::remove_oldest_content() {
 }
 
 void ScrollView::scroll_to_bottom() {
-	const auto &children = m_inner->get_children();
-	if (children.empty()) {
-		return;
-	}
+	constexpr float k_end_of_content = 1.0e9F;
 	if (Canvas *canvas = get_canvas()) {
-		canvas->scroll_into_view(children.back().get());
+		canvas->set_scroll_offset(this, k_end_of_content);
 	}
+}
+
+bool ScrollView::is_at_bottom() const {
+	const ScrollMetrics m = measure();
+	return m.max_offset <= 0.F || m.offset >= m.max_offset - 1.F;
 }
 
 void ScrollView::on_style_resolved() {

@@ -31,13 +31,13 @@
         <Button id="tool-scale" class="hud-tool" src="Engine/UI/Icons/scale-3d.png" tooltip="Scale (R)"/>
         <View class="hud-separator"/>
         <Button id="tool-space" class="hud-tool" src="Engine/UI/Icons/globe.png" tooltip="World space (click for local)"/>
-        <View class="hud-separator"/>
-        <Button id="toggle-console" class="hud-tool" src="Engine/UI/Icons/terminal.png" tooltip="Show or hide the console"/>
     </View>
+
+    <Button id="hud-console" class="hud-round hud-tool-active" src="Engine/UI/Icons/terminal.png" tooltip="Show or hide the console" float-attach="root" float-element="right-bottom" float-parent="right-bottom" float-offset="-52 -36" float-z="20"/>
 
     <Button id="hud-settings" class="hud-round" src="Engine/UI/Icons/settings.png" tooltip="Preferences" float-attach="root" float-element="right-bottom" float-parent="right-bottom" float-offset="-12 -36" float-z="20"/>
 
-    <Collapsible id="card-console" variant="card" class="card-console hidden" src="Engine/UI/Icons/terminal.png" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -56" float-z="20">Console
+    <Collapsible id="card-console" variant="card" reorderable="false" collapsible="false" class="card-console" src="Engine/UI/Icons/terminal.png" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -92" float-z="20">Console
         <Include src="console.aqlayout"/>
     </Collapsible>
 

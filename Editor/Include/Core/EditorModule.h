@@ -60,7 +60,6 @@ class EditorModule final : public Aquila::Application::IModule {
 	void wire_cards(Aquila::UI::Core::View *layout_root);
 	void set_card_visible(Usize index, bool visible);
 	void toggle_card(Usize index);
-	void refresh_card_buttons();
 	void open_settings_window();
 	void open_project_launcher();
 	void enter_editor(const ProjectInfo &project);
@@ -78,8 +77,7 @@ class EditorModule final : public Aquila::Application::IModule {
 		Aquila::UI::Core::Collapsible *card = nullptr;
 		bool visible = true;
 	};
-	std::array<CardState, 3> m_cards{};
-	Aquila::UI::Core::Button *m_console_button = nullptr;
+	std::array<CardState, 2> m_cards{};
 	Aquila::UI::Core::PopupMenu *m_main_menu = nullptr;
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;

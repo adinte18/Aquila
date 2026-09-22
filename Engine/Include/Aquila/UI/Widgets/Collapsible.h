@@ -20,6 +20,10 @@ class Collapsible : public View {
 
 	void set_title(std::string title);
 	void set_variant(const std::string &variant);
+	void set_reorderable(bool reorderable);
+	[[nodiscard]] bool is_reorderable() const { return m_reorderable; }
+	void set_collapsible(bool collapsible) { m_collapsible = collapsible; }
+	[[nodiscard]] bool is_collapsible() const { return m_collapsible; }
 	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
 	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 	void set_expanded(bool expanded);
@@ -45,6 +49,8 @@ class Collapsible : public View {
 	void start_ticking();
 	void stop_ticking();
 
+	bool m_reorderable = true;
+	bool m_collapsible = true;
 	bool m_expanded = true;
 	GFX::GfxTexture *m_icon_collapsed = nullptr;
 	GFX::GfxTexture *m_icon_expanded = nullptr;
