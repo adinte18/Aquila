@@ -1,7 +1,9 @@
 #pragma once
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/GFX/GfxBuffer.h"
-#include "Aquila/Graphics/Resources/Mesh.h"
+#include "Aquila/RHI/Vertex.h"
+
+#include <span>
 
 namespace Aquila::GFX {
 
@@ -9,7 +11,7 @@ class GfxContext;
 
 class GfxMesh {
   public:
-	static Ref<GfxMesh> create(GfxContext &ctx, const Graphics::Resources::Mesh &mesh);
+	static Ref<GfxMesh> create(GfxContext &ctx, std::span<const RHI::Vertex> vertices, std::span<const Uint32> indices);
 
 	AQUILA_NONCOPYABLE(GfxMesh);
 	AQUILA_NONMOVEABLE(GfxMesh);

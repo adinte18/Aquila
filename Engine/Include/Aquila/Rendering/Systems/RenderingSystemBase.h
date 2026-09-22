@@ -36,7 +36,7 @@ class RenderingSystemBase : public IRenderingSystem {
 		if (it != m_mesh_cache.end()) {
 			return it->second;
 		}
-		auto gpu = GFX::GfxMesh::create(*m_ctx, *mesh);
+		auto gpu = GFX::GfxMesh::create(*m_ctx, mesh->get_vertices(), mesh->get_indices());
 		m_mesh_cache[mesh.get()] = gpu;
 		return gpu;
 	}

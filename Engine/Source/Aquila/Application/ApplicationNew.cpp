@@ -10,6 +10,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 
 #include "Aquila/Rendering/Systems/GridSystem.h"
+#include "Aquila/Rendering/Systems/OutlineSystem.h"
 #include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 #include "Aquila/Rendering/Systems/SkySystem.h"
 #include "Aquila/Rendering/Systems/LightCullingSystem.h"
@@ -21,7 +22,7 @@
 #include "Aquila/Rendering/Systems/ShadowSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
 #include "Aquila/Platform/Filesystem/Filesystem.h"
 
@@ -45,7 +46,7 @@ Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	Foundation::Profiler::Profiler::init();
 	Platform::Filesystem::VirtualFileSystem::init();
 
-	m_window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
+	m_window->set_event_callback([this](Platform::Events::Event &event) { route_window_event(event); });
 
 	m_window->set_refresh_callback([this]() {
 		m_timer->tick();
@@ -55,7 +56,7 @@ Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 	m_timer->start();
 }
 
-void Application::route_window_event(Events::Event &event) {
+void Application::route_window_event(Platform::Events::Event &event) {
 	Platform::Input::on_event(event);
 
 	auto *source = event.get_source();
@@ -79,11 +80,12 @@ void Application::route_window_event(Events::Event &event) {
 
 Application::~Application() {
 	m_ctx->wait_idle();
+	m_modules.clear();
 
 	Platform::Filesystem::VirtualFileSystem::shutdown();
 	Foundation::Profiler::Profiler::shutdown();
 	Graphics::MaterialFactory::shutdown();
-	Rendering::FrameScheduler::shutdown();
+	Foundation::FrameScheduler::shutdown();
 
 	m_scene.reset();
 	m_render_pipeline.reset();
@@ -102,9 +104,10 @@ void Application::run() {
 	init_rendering(m_window->get_width(), m_window->get_height());
 	m_scene = std::make_unique<Scene>("Main");
 	on_init();
+	attach_modules();
 
 	while (m_running) {
-		const bool has_frames = Rendering::FrameScheduler::get()->consume();
+		const bool has_frames = Foundation::FrameScheduler::get()->consume();
 
 		if (has_frames) {
 			m_window->poll_events();
@@ -154,7 +157,23 @@ void Application::run() {
 	}
 
 	m_ctx->wait_idle();
+	detach_modules();
 	on_shutdown();
+}
+
+void Application::attach_modules() {
+	m_modules_attached = true;
+	for (auto &module : m_modules) {
+		module->on_attach(m_engine_context);
+	}
+}
+
+void Application::detach_modules() {
+	for (auto it = m_modules.rbegin(); it != m_modules.rend(); ++it) {
+		(*it)->on_detach();
+	}
+	m_modules.clear();
+	m_modules_attached = false;
 }
 
 void Application::close() {
@@ -167,7 +186,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	Graphics::MaterialFactory::init();
 	Graphics::Shader::ShaderHotReload::init();
 	Graphics::Shader::ShaderHotReload::get()->enable(true);
-	Rendering::FrameScheduler::init();
+	Foundation::FrameScheduler::init();
 
 	using namespace Platform::Filesystem;
 	VirtualFileSystem::get()->mount("/resources", std::make_shared<NativeFileSystem>(SharedConstants::RESOURCES_DIR));
@@ -199,6 +218,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::GeometrySystem>();
 	m_renderer->add_system<Rendering::SkySystem>();
 	m_renderer->add_system<Rendering::GridSystem>();
+	m_renderer->add_system<Rendering::OutlineSystem>();
 
 	m_secondary_batcher = std::make_unique<Graphics::QuadBatcher>(*m_ctx);
 }
@@ -206,7 +226,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, const std::string &title) {
 	auto rw = std::make_unique<RenderWindow>();
 	rw->window = std::make_unique<Window>(width, height, title, false);
-	rw->window->set_event_callback([this](Events::Event &event) { route_window_event(event); });
+	rw->window->set_event_callback([this](Platform::Events::Event &event) { route_window_event(event); });
 	rw->window->set_refresh_callback([this, p = rw.get()]() { render_one_secondary_window(*p); });
 	rw->swapchain = m_ctx->create_swapchain({
 		.width = width,
@@ -220,6 +240,33 @@ RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, 
 	RenderWindow &ref = *rw;
 	m_secondary_windows.push_back(std::move(rw));
 	return ref;
+}
+
+Rendering::RenderWindowId Application::create_window(Uint32 width, Uint32 height, const std::string &title,
+													 Rendering::RenderWindowCallbacks callbacks) {
+	RenderWindow &rw = create_secondary_window(width, height, title);
+	rw.on_update = std::move(callbacks.on_update);
+	rw.on_render = std::move(callbacks.on_render);
+	rw.on_event = std::move(callbacks.on_event);
+	rw.on_close = std::move(callbacks.on_close);
+	return rw.window.get();
+}
+
+void Application::request_close(Rendering::RenderWindowId window) {
+	static_cast<const Window *>(window)->request_close();
+}
+
+Vec2 Application::get_window_position(Rendering::RenderWindowId window) const {
+	return static_cast<const Window *>(window)->get_position();
+}
+
+Vec2 Application::get_window_size(Rendering::RenderWindowId window) const {
+	const auto *native = static_cast<const Window *>(window);
+	return { static_cast<F32>(native->get_width()), static_cast<F32>(native->get_height()) };
+}
+
+void Application::set_window_position(Rendering::RenderWindowId window, Vec2 position) {
+	static_cast<const Window *>(window)->set_position(position);
 }
 
 void Application::ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height) {
@@ -333,6 +380,9 @@ void Application::internal_update(F32 delta_time) {
 			m_render_width = m_next_render_width;
 			m_render_height = m_next_render_height;
 			on_render_resize(m_render_width, m_render_height);
+			for (auto &module : m_modules) {
+				module->on_render_resize(m_render_width, m_render_height);
+			}
 		}
 
 		Uint32 image_index = 0;
@@ -351,6 +401,9 @@ void Application::internal_update(F32 delta_time) {
 		cmd.begin();
 
 		on_pre_render(delta_time);
+		for (auto &module : m_modules) {
+			module->on_pre_render(delta_time);
+		}
 
 		{
 			Graphics::Shader::ShaderHotReload::get()->tick();
@@ -370,23 +423,26 @@ void Application::internal_update(F32 delta_time) {
 	render_secondary_windows();
 }
 
-void Application::internal_on_main_window_event(Events::Event &event) {
-	const bool is_cursor_event = (event.get_category() & Events::EventCategory::Mouse) &&
-		!(event.get_category() & Events::EventCategory::MouseButton);
+void Application::internal_on_main_window_event(Platform::Events::Event &event) {
+	const bool is_cursor_event = (event.get_category() & Platform::Events::EventCategory::Mouse) &&
+		!(event.get_category() & Platform::Events::EventCategory::MouseButton);
 	if (!is_cursor_event) {
-		Rendering::FrameScheduler::get()->request_frame();
+		Foundation::FrameScheduler::get()->request_frame();
 	}
 
 	on_event(event);
+	for (auto &module : m_modules) {
+		module->on_event(event);
+	}
 
-	Events::EventDispatcher dispatcher(event);
+	Platform::Events::EventDispatcher dispatcher(event);
 
-	dispatcher.dispatch<Events::WindowCloseEvent>([this](Events::WindowCloseEvent &) {
+	dispatcher.dispatch<Platform::Events::WindowCloseEvent>([this](Platform::Events::WindowCloseEvent &) {
 		m_running = false;
 		return true;
 	});
 
-	dispatcher.dispatch<Events::WindowResizeEvent>([this](Events::WindowResizeEvent &ev) {
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &ev) {
 		if (ev.get_width() > 0 && ev.get_height() > 0) {
 			m_pending_resize = true;
 		}
@@ -394,11 +450,11 @@ void Application::internal_on_main_window_event(Events::Event &event) {
 	});
 }
 
-void Application::internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event) {
-	Rendering::FrameScheduler::get()->request_frame();
+void Application::internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event) {
+	Foundation::FrameScheduler::get()->request_frame();
 
-	Events::EventDispatcher dispatcher(event);
-	dispatcher.dispatch<Events::WindowResizeEvent>([&](auto &) {
+	Platform::Events::EventDispatcher dispatcher(event);
+	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([&](auto &) {
 		rw.needs_resize = true; // swapchain + targets rebuilt in RenderOneSecondaryWindow
 		return false;
 	});
@@ -433,6 +489,9 @@ void Application::handle_resize() {
 	const Uint32 swapchain_height = m_swapchain->get_height();
 
 	on_resize(swapchain_width, swapchain_height);
+	for (auto &module : m_modules) {
+		module->on_resize(swapchain_width, swapchain_height);
+	}
 
 	request_render_resize(swapchain_width, swapchain_height);
 }

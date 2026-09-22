@@ -1,4 +1,6 @@
-#include "Core/EditorApplication.h"
+#include "Core/EditorModule.h"
+
+#include "Aquila/Application/ApplicationNew.h"
 
 int main() {
 	ApplicationSpec spec;
@@ -7,7 +9,8 @@ int main() {
 	spec.height = 1080;
 	spec.start_hidden = true;
 
-	Editor::EditorApplication editor(spec);
-	editor.run();
+	Aquila::Application::Application app(spec);
+	app.add_module<Editor::EditorModule>();
+	app.run();
 	return EXIT_SUCCESS;
 }

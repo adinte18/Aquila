@@ -1,6 +1,6 @@
 #include "Aquila/Application/Window.h"
-#include "Aquila/Application/Events/InputEvent.h"
-#include "Aquila/Application/Events/WindowEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
+#include "Aquila/Platform/Events/WindowEvent.h"
 #include "GLFW/glfw3.h"
 
 namespace Aquila::Application {
@@ -72,14 +72,14 @@ void Window::setup_callbacks() {
 		data.height = height;
 		data.resized = true;
 
-		Events::WindowResizeEvent event(width, height);
+		Platform::Events::WindowResizeEvent event(width, height);
 		event.set_source(data.owner);
 		data.event_callback(event);
 	});
 
 	glfwSetWindowCloseCallback(m_window, [](GLFWwindow *window) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		Events::WindowCloseEvent event(static_cast<bool>(glfwWindowShouldClose(window)));
+		Platform::Events::WindowCloseEvent event(static_cast<bool>(glfwWindowShouldClose(window)));
 		event.set_source(data.owner);
 		data.event_callback(event);
 	});
@@ -88,21 +88,21 @@ void Window::setup_callbacks() {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		switch (action) {
 		case GLFW_PRESS: {
-			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 0, mods);
+			Platform::Events::KeyPressedEvent event(static_cast<Platform::Events::KeyCode>(key), 0, mods);
 			event.set_source(data.owner);
 
 			data.event_callback(event);
 			break;
 		}
 		case GLFW_RELEASE: {
-			Events::KeyReleasedEvent event(static_cast<Events::KeyCode>(key));
+			Platform::Events::KeyReleasedEvent event(static_cast<Platform::Events::KeyCode>(key));
 			event.set_source(data.owner);
 
 			data.event_callback(event);
 			break;
 		}
 		case GLFW_REPEAT: {
-			Events::KeyPressedEvent event(static_cast<Events::KeyCode>(key), 1, mods);
+			Platform::Events::KeyPressedEvent event(static_cast<Platform::Events::KeyCode>(key), 1, mods);
 			event.set_source(data.owner);
 
 			data.event_callback(event);
@@ -114,7 +114,7 @@ void Window::setup_callbacks() {
 
 	glfwSetCharCallback(m_window, [](GLFWwindow *window, unsigned int keycode) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		Events::KeyTypedEvent event(static_cast<Events::KeyCode>(keycode));
+		Platform::Events::KeyTypedEvent event(static_cast<Platform::Events::KeyCode>(keycode));
 		event.set_source(data.owner);
 
 		data.event_callback(event);
@@ -125,14 +125,14 @@ void Window::setup_callbacks() {
 
 		switch (action) {
 		case GLFW_PRESS: {
-			Events::MouseButtonPressedEvent event(static_cast<Events::MouseButton>(button));
+			Platform::Events::MouseButtonPressedEvent event(static_cast<Platform::Events::MouseButton>(button));
 			event.set_source(data.owner);
 
 			data.event_callback(event);
 			break;
 		}
 		case GLFW_RELEASE: {
-			Events::MouseButtonReleasedEvent event(static_cast<Events::MouseButton>(button));
+			Platform::Events::MouseButtonReleasedEvent event(static_cast<Platform::Events::MouseButton>(button));
 			event.set_source(data.owner);
 
 			data.event_callback(event);
@@ -144,7 +144,7 @@ void Window::setup_callbacks() {
 
 	glfwSetScrollCallback(m_window, [](GLFWwindow *window, const F64 x_offset, const F64 y_offset) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		Events::MouseScrolledEvent event(static_cast<F32>(x_offset), static_cast<F32>(y_offset));
+		Platform::Events::MouseScrolledEvent event(static_cast<F32>(x_offset), static_cast<F32>(y_offset));
 		event.set_source(data.owner);
 
 		data.event_callback(event);
@@ -160,7 +160,7 @@ void Window::setup_callbacks() {
 
 	glfwSetWindowFocusCallback(m_window, [](GLFWwindow *window, const int focused) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
-		Events::WindowFocusEvent event(focused == GLFW_TRUE);
+		Platform::Events::WindowFocusEvent event(focused == GLFW_TRUE);
 		event.set_source(data.owner);
 
 		data.event_callback(event);
@@ -180,7 +180,7 @@ void Window::setup_callbacks() {
 
 void Window::flush_pending_events() {
 	if (m_data.has_pending_mouse_move) {
-		Events::MouseMovedEvent event(m_data.last_mouse_x, m_data.last_mouse_y);
+		Platform::Events::MouseMovedEvent event(m_data.last_mouse_x, m_data.last_mouse_y);
 		event.set_source(m_data.owner);
 
 		m_data.event_callback(event);
@@ -223,6 +223,34 @@ static int to_glfw_cursor(Platform::CursorType type) {
 	default:
 		return GLFW_ARROW_CURSOR;
 	}
+}
+
+std::string Window::get_clipboard_text() const {
+	const char *text = glfwGetClipboardString(m_window);
+	return text != nullptr ? text : "";
+}
+
+void Window::set_clipboard_text(const std::string &text) const {
+	glfwSetClipboardString(m_window, text.c_str());
+}
+
+void Window::show() const {
+	glfwShowWindow(m_window);
+}
+
+void Window::request_close() const {
+	glfwSetWindowShouldClose(m_window, GLFW_TRUE);
+}
+
+Vec2 Window::get_position() const {
+	int x = 0;
+	int y = 0;
+	glfwGetWindowPos(m_window, &x, &y);
+	return { static_cast<F32>(x), static_cast<F32>(y) };
+}
+
+void Window::set_position(Vec2 position) const {
+	glfwSetWindowPos(m_window, static_cast<int>(position.x), static_cast<int>(position.y));
 }
 
 void Window::set_cursor(Platform::CursorType type) {

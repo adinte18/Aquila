@@ -4,11 +4,14 @@
 #include "Aquila/Foundation/Defines.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Timer.h"
+#include "Aquila/Application/EngineContext.h"
+#include "Aquila/Application/IModule.h"
 #include "Aquila/Application/Window.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxSwapchain.h"
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/Scene/Scene.h"
+#include "Aquila/Rendering/IRenderWindowHost.h"
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/Renderers/Renderer.h"
 #include "Aquila/Rendering/Renderers/Renderer2D.h"
@@ -43,28 +46,47 @@ struct RenderWindow {
 
 	Delegate<void(F32)> on_update;
 	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> on_render;
-	Delegate<void(Events::Event &)> on_event;
+	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
 };
 
-class Application {
+class Application : public Rendering::IRenderWindowHost {
   public:
 	explicit Application(const ApplicationSpec &spec);
-	virtual ~Application();
+	~Application() override;
 
 	AQUILA_NONCOPYABLE(Application);
 	AQUILA_NONMOVEABLE(Application);
+
+	template <typename T, typename... Args> T &add_module(Args &&...args) {
+		static_assert(std::is_base_of_v<IModule, T>, "T must derive from IModule");
+		auto module = std::make_unique<T>(std::forward<Args>(args)...);
+		T &ref = *module;
+		m_modules.push_back(std::move(module));
+		if (m_modules_attached) {
+			ref.on_attach(m_engine_context);
+		}
+		return ref;
+	}
 
 	void run();
 	void close();
 
 	Window &get_window() { return *m_window; }
 
+	Rendering::RenderWindowId create_window(Uint32 width, Uint32 height, const std::string &title,
+											Rendering::RenderWindowCallbacks callbacks) override;
+	void request_close(Rendering::RenderWindowId window) override;
+	[[nodiscard]] Rendering::RenderWindowId get_main_window() const override { return m_window.get(); }
+	[[nodiscard]] Vec2 get_window_position(Rendering::RenderWindowId window) const override;
+	[[nodiscard]] Vec2 get_window_size(Rendering::RenderWindowId window) const override;
+	void set_window_position(Rendering::RenderWindowId window, Vec2 position) override;
+
   protected:
 	virtual void on_init() {}
 	virtual void on_shutdown() {}
 	virtual void on_pre_render(F32 delta_time) {}
-	virtual void on_event(Events::Event &event) {}
+	virtual void on_event(Platform::Events::Event &event) {}
 	virtual void on_resize(Uint32 width, Uint32 height) {}
 	virtual void on_render_resize(Uint32 width, Uint32 height) {}
 
@@ -83,16 +105,24 @@ class Application {
 	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
 
   private:
-	void route_window_event(Events::Event &event);
+	friend class EngineContext;
+
+	void attach_modules();
+	void detach_modules();
+	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
-	void internal_on_main_window_event(Events::Event &event);
-	void internal_on_secondary_window_event(RenderWindow &rw, Events::Event &event);
+	void internal_on_main_window_event(Platform::Events::Event &event);
+	void internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event);
 	void handle_resize();
 	void init_rendering(Uint32 width, Uint32 height);
 
 	void render_secondary_windows();
 	void render_one_secondary_window(RenderWindow &rw);
 	void ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height);
+
+	EngineContext m_engine_context{ *this };
+	std::vector<Unique<IModule>> m_modules;
+	bool m_modules_attached = false;
 
 	ApplicationSpec m_spec;
 	Unique<Window> m_window;

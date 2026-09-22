@@ -1,7 +1,7 @@
 ﻿#include "Aquila/Graphics/Material/MaterialFactory.h"
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
 #include "Aquila/Graphics/Shader/ShaderHotReload.h"
-#include "Aquila/Rendering/SceneFrameData.h"
+#include "Aquila/GFX/GfxDescriptorSet.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/Foundation/Macros.h"
 
@@ -20,7 +20,8 @@ MaterialFactory::~MaterialFactory() {
 
 Ref<GFX::GfxPipeline> MaterialFactory::build_pipeline(GFX::GfxContext &ctx, Shader::ShaderProgram &program,
 													  const MaterialCreateInfo &info) {
-	auto *scene_layout = &Rendering::SceneFrameData::get()->get_layout().get_rhi();
+	AQUILA_ASSERT(m_scene_layout != nullptr, "MaterialFactory: scene layout was not set before creating materials");
+	auto *scene_layout = &m_scene_layout->get_rhi();
 
 	if (!program.get_stage_desc(RHI::ShaderStageFlags::Vertex).spirv.empty() == false &&
 		!program.get_stage_desc(RHI::ShaderStageFlags::Compute).spirv.empty()) {

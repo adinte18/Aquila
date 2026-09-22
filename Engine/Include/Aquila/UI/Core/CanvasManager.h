@@ -19,7 +19,7 @@ class CanvasManager : public Foundation::Singleton<CanvasManager> {
   public:
 	Canvas &get_layer(UILayer layer);
 
-	void on_event(Application::Events::Event &e);
+	void on_event(Platform::Events::Event &e);
 	void update(float delta_time);
 	void compute();
 

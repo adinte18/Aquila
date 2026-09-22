@@ -11,7 +11,7 @@
 #include "Aquila/Scene/Components/MeshComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Foundation/SharedConstants.h"
-#include "Aquila/Rendering/FrameScheduler.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 
 #include <algorithm>
 
@@ -126,7 +126,7 @@ void ObjectPickingSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) 
 	resolve_readback(frame_slot, *ctx.scene);
 
 	if (std::ranges::any_of(m_readback_in_flight, [](bool in_flight) { return in_flight; })) {
-		FrameScheduler::get()->request_frame();
+		Foundation::FrameScheduler::get()->request_frame();
 	}
 
 	if (!m_pending_request.has_value()) {
@@ -231,7 +231,7 @@ void ObjectPickingSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) 
 		});
 
 	m_readback_in_flight[frame_slot] = true;
-	FrameScheduler::get()->request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 }
 
 } // namespace Aquila::Rendering

@@ -25,7 +25,7 @@ class Canvas {
   public:
 	Canvas(Uint32 width, Uint32 height);
 
-	void on_event(Application::Events::Event &event);
+	void on_event(Platform::Events::Event &event);
 	void update(F32 delta_time);
 	void compute();
 	void submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);

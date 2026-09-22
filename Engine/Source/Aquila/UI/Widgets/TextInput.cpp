@@ -2,7 +2,7 @@
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Platform/Input.h"
 
 namespace Aquila::UI::Core {

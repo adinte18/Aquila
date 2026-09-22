@@ -2,37 +2,33 @@
 #define AQUILA_INPUT_H
 
 #include "Aquila/Foundation/SharedConstants.h"
-#include "Aquila/Application/Events/InputEvent.h"
-
-namespace Aquila::Application {
-class Window;
-}
+#include "Aquila/Platform/Events/InputEvent.h"
 
 namespace Aquila::Platform {
 
-using namespace Aquila::Application::Events;
+using namespace Aquila::Platform::Events;
 
 class Input {
   public:
 	Input() = delete;
 
 	[[nodiscard]] static bool is_key_pressed(KeyCode key) {
-		if (s_ActiveWindow == nullptr) {
+		if (s_active_window == nullptr) {
 			return false;
 		}
-		return s_States[s_ActiveWindow].key_states.at((Uint8)key);
+		return s_states[s_active_window].key_states.at((Uint8)key);
 	}
 	[[nodiscard]] static bool is_mouse_button_pressed(MouseButton button) {
-		if (s_ActiveWindow == nullptr) {
+		if (s_active_window == nullptr) {
 			return false;
 		}
-		return s_States[s_ActiveWindow].mouse_button_states.at((Uint8)button);
+		return s_states[s_active_window].mouse_button_states.at((Uint8)button);
 	}
 	[[nodiscard]] static Vec2 get_mouse_position() {
-		if (s_ActiveWindow == nullptr) {
+		if (s_active_window == nullptr) {
 			return {};
 		}
-		auto &state = s_States[s_ActiveWindow];
+		auto &state = s_states[s_active_window];
 		return { state.mouse_x, state.mouse_y };
 	}
 
@@ -42,8 +38,8 @@ class Input {
 			return;
 		}
 
-		auto &state = s_States[window];
-		s_ActiveWindow = window;
+		auto &state = s_states[window];
+		s_active_window = window;
 
 		EventDispatcher dispatcher(event);
 
@@ -74,10 +70,10 @@ class Input {
 		});
 	}
 
-	static void on_window_destroyed(Application::Window *window) {
-		s_States.erase(window);
-		if (s_ActiveWindow == window) {
-			s_ActiveWindow = nullptr;
+	static void on_window_destroyed(EventSource window) {
+		s_states.erase(window);
+		if (s_active_window == window) {
+			s_active_window = nullptr;
 		}
 	}
 
@@ -89,8 +85,8 @@ class Input {
 		F32 mouse_y = 0.0F;
 	};
 
-	inline static std::unordered_map<Application::Window *, InputState> s_States;
-	inline static Application::Window *s_ActiveWindow = nullptr;
+	inline static std::unordered_map<EventSource, InputState> s_states;
+	inline static EventSource s_active_window = nullptr;
 };
 
 } // namespace Aquila::Platform

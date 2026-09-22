@@ -1,6 +1,7 @@
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/Rendering/SceneFrameData.h"
+#include "Aquila/Graphics/Material/MaterialFactory.h"
 #include "Aquila/Foundation/Profiler.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
@@ -16,6 +17,7 @@ using namespace SceneManagement::Components;
 RenderPipeline::RenderPipeline(GFX::GfxContext &ctx, Uint32 width, Uint32 height)
 	: m_ctx(ctx), m_width(width), m_height(height) {
 	SceneFrameData::init(ctx, width, height);
+	Graphics::MaterialFactory::get()->set_scene_layout(SceneFrameData::get()->get_layout());
 	rebuild_targets();
 }
 

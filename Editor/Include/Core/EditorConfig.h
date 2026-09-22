@@ -2,6 +2,7 @@
 #define EDITOR_CONFIG_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/UI/Core/FontManager.h"
 
 namespace Editor::Config {
 
@@ -20,11 +21,7 @@ struct WindowSettings {
 	bool vsync = true;
 };
 
-struct FontSettings {
-	std::string main_family = "Lexend";
-	std::string mono_family = "Inconsolata";
-	F32 size = 16.F;
-};
+using FontSettings = Aquila::UI::Core::FontSettings;
 
 struct UISettings {
 	std::string resources_path = "/resources";

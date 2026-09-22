@@ -1,12 +1,12 @@
 #include "Aquila/UI/Core/TextInputState.h"
-#include "Aquila/Application/Events/InputEvent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/UI/Core/Clipboard.h"
 
 namespace Aquila::UI::Core {
 
 using KeyCode = Platform::KeyCode;
-using namespace Application::Events;
+using namespace Platform::Events;
 
 bool TextInputState::handle_key_press(Platform::KeyCode key, int mods) {
 	const bool ctrl = (mods & MODIFIER_CONTROL) != 0;
