@@ -19,6 +19,14 @@ void ReflectedComponentUI::build(UI::Core::Collapsible *, UI::Core::PropertyGrid
 	m_properties = std::make_unique<UI::Core::ReflectedPropertyGrid>(*grid, m_descriptor.get_type(), m_context);
 }
 
+bool ReflectedComponentUI::is_removable() const {
+	return m_descriptor.is_removable();
+}
+
+void ReflectedComponentUI::remove(Entity entity) {
+	m_descriptor.remove(entity);
+}
+
 void ReflectedComponentUI::show(Entity entity) {
 	const ComponentDescriptor &descriptor = m_descriptor;
 	m_properties->bind(descriptor.get(entity), [&descriptor, entity] {
@@ -26,13 +34,6 @@ void ReflectedComponentUI::show(Entity entity) {
 			(*changed)();
 		}
 	});
-}
-
-std::vector<ComponentSignal> ReflectedComponentUI::signals(Entity entity) const {
-	if (Signal<void()> *changed = m_descriptor.get_changed_signal(entity)) {
-		return { { .name = "changed", .signal = changed } };
-	}
-	return {};
 }
 
 }

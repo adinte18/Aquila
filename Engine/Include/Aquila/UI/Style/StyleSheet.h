@@ -77,7 +77,7 @@ class StyleSheet {
   private:
 	[[nodiscard]] bool matches(const StyleRule &rule, const Core::View &view) const;
 
-	void apply_properties(ComputedStyle &out, const StyleProperties &props) const;
+	void apply_properties(ComputedStyle &out, const StyleProperties &props, bool scale_metrics) const;
 	void apply_matching_rules(ComputedStyle &out, const std::vector<StyleRule> &rules, const Core::View &view) const;
 
 	std::vector<StyleRule> m_rules;

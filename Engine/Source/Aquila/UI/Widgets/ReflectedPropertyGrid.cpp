@@ -118,7 +118,7 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 		break;
 	}
 	case PropertyKind::Vec2: {
-		auto *field = grid.add_row<Vec2Field>(property.name);
+		auto *field = grid.add_stacked_row<Vec2Field>(property.name);
 		field->set_speed(property.hints.speed);
 		field->on_changed.connect([edited](Vec2 value) { edited(PropertyValue{ value }); });
 		row.widget = field;
@@ -132,7 +132,7 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(Vec4(std::get<Vec3>(value), 1.F)); };
 		} else {
-			auto *field = grid.add_row<Vec3Field>(property.name);
+			auto *field = grid.add_stacked_row<Vec3Field>(property.name);
 			field->set_speed(property.hints.speed);
 			field->on_changed.connect([edited](Vec3 value) { edited(PropertyValue{ value }); });
 			row.widget = field;
@@ -147,7 +147,7 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(std::get<Vec4>(value)); };
 		} else {
-			auto *field = grid.add_row<Vec4Field>(property.name);
+			auto *field = grid.add_stacked_row<Vec4Field>(property.name);
 			field->set_speed(property.hints.speed);
 			field->on_changed.connect([edited](Vec4 value) { edited(PropertyValue{ value }); });
 			row.widget = field;

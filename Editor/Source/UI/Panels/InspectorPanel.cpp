@@ -9,7 +9,6 @@
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Collapsible.h"
-#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
 #include "Aquila/UI/Widgets/TextInput.h"
@@ -36,7 +35,7 @@ void InspectorPanel::set_visible(UI::Core::View *v, bool visible) {
 	v->set_hidden(!visible);
 }
 
-void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
+void InspectorPanel::build(UI::Core::View *panel, UI::Core::View *overlay_root) {
 	m_scroll_view = panel->find_by_id<UI::Core::ScrollView>("inspector-scroll");
 	if (m_scroll_view == nullptr) {
 		AQUILA_LOG_ERROR("InspectorPanel: 'inspector-scroll' not found in layout");
@@ -97,12 +96,20 @@ void InspectorPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		section->on_reordered.connect([this] { capture_layout(); });
 		section->on_toggled.connect([this](bool) { capture_layout(); });
 
-		auto *signals_group = section->add_child<UI::Core::Collapsible>("Signals");
-		auto *signals_grid = signals_group->add_child<UI::Core::PropertyGrid>();
-		set_visible(signals_group, false);
+		if (component_ui->is_removable()) {
+			IComponentUI *ui = component_ui.get();
+			GFX::GfxTexture *trash = m_texture_cache != nullptr ? m_texture_cache->load("Engine/UI/Icons/trash.png") : nullptr;
+			section->add_header_action(trash, "Remove component", [this, ui] {
+				if (!m_has_current) {
+					return;
+				}
+				ui->remove(m_current_entity);
+				show_entity(m_current_entity);
+				on_components_changed(m_current_entity);
+			});
+		}
 
-		m_sections.push_back(
-			{ .collapsible=section, .id=std::string(section_id), .ui=std::move(component_ui), .signals_group=signals_group, .signals_grid=signals_grid, .signal_rows={} });
+		m_sections.push_back({ .collapsible = section, .id = std::string(section_id), .ui = std::move(component_ui) });
 	};
 
 	const auto &registry = ComponentRegistry::instance();
@@ -134,30 +141,12 @@ void InspectorPanel::show_entity(Entity entity) {
 	m_actor_uuid->set_text("UUID : " + entity.get_uuid().to_string());
 	m_name_input->set_text(entity.get_name());
 
-	reset_signal_rows();
-
-	for (size_t si = 0; si < m_sections.size(); ++si) {
-		Section &section = m_sections[si];
+	for (Section &section : m_sections) {
 		const bool has = section.ui->matches(entity);
 		set_visible(section.collapsible, has);
-		if (!has) {
-			continue;
+		if (has) {
+			section.ui->show(entity);
 		}
-		section.ui->show(entity);
-
-		for (const ComponentSignal &sig : section.ui->signals(entity)) {
-			auto *button = section.signals_grid->add_row<UI::Core::Button>(sig.name);
-			button->set_text("Observe");
-			SignalRow row;
-			row.name = sig.name;
-			row.signal = sig.signal;
-			row.button = button;
-			section.signal_rows.push_back(row);
-		}
-		for (size_t ri = 0; ri < section.signal_rows.size(); ++ri) {
-			section.signal_rows[ri].button->on_click.connect([this, si, ri] { toggle_signal_observe(si, ri); });
-		}
-		set_visible(section.signals_group, !section.signal_rows.empty());
 	}
 
 	m_current_entity = entity;
@@ -174,7 +163,6 @@ void InspectorPanel::clear() {
 	}
 	m_has_current = false;
 	m_current_entity = Entity::null();
-	reset_signal_rows();
 	if (m_add_popup != nullptr) {
 		m_add_popup->dismiss();
 	}
@@ -184,67 +172,6 @@ void InspectorPanel::clear() {
 	}
 	set_visible(m_scroll_view, false);
 	set_visible(m_empty_state, true);
-}
-
-void InspectorPanel::toggle_signal_observe(size_t section_index, size_t row_index) {
-	if (section_index >= m_sections.size()) {
-		return;
-	}
-	auto &rows = m_sections[section_index].signal_rows;
-	if (row_index >= rows.size()) {
-		return;
-	}
-	SignalRow &row = rows[row_index];
-	if (row.signal == nullptr) {
-		return;
-	}
-
-	if (row.observing) {
-		row.signal->disconnect(row.connection);
-		row.observing = false;
-		row.fired = 0;
-		row.button->set_text("Observe");
-		return;
-	}
-
-	row.connection =
-		row.signal->connect([this, section_index, row_index] { on_signal_fired(section_index, row_index); });
-	row.observing = true;
-	row.fired = 0;
-	row.button->set_text("Observing (0)");
-}
-
-void InspectorPanel::on_signal_fired(size_t section_index, size_t row_index) {
-	if (section_index >= m_sections.size()) {
-		return;
-	}
-	auto &rows = m_sections[section_index].signal_rows;
-	if (row_index >= rows.size()) {
-		return;
-	}
-	SignalRow &row = rows[row_index];
-	row.fired++;
-	row.button->set_text("Observing (" + std::to_string(row.fired) + ")");
-	AQUILA_LOG_INFO("Signal '{}' fired ({})", row.name != nullptr ? row.name : "", row.fired);
-}
-
-void InspectorPanel::reset_signal_rows() {
-	for (auto &section : m_sections) {
-		for (auto &row : section.signal_rows) {
-			if (row.signal != nullptr && row.observing) {
-				row.signal->disconnect(row.connection);
-			}
-		}
-		section.signal_rows.clear();
-		if (section.signals_grid != nullptr) {
-			while (!section.signals_grid->get_children().empty()) {
-				section.signals_grid->remove_child(section.signals_grid->get_children().front().get());
-			}
-		}
-		if (section.signals_group != nullptr) {
-			set_visible(section.signals_group, false);
-		}
-	}
 }
 
 InspectorPanel::EntityLayout InspectorPanel::default_layout() const {
@@ -388,6 +315,7 @@ void InspectorPanel::populate_add_menu(const std::string &query) {
 			attach(m_current_entity);
 			AQUILA_LOG_INFO("Added {} component to '{}'", name, m_current_entity.get_name());
 			show_entity(m_current_entity);
+			on_components_changed(m_current_entity);
 		});
 	};
 

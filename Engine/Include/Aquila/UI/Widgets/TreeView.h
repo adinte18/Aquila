@@ -72,6 +72,7 @@ class TreeNode : public View {
 	[[nodiscard]] int get_depth() const { return m_depth; }
 
 	void set_selected(bool selected);
+	void set_type_icon(GFX::GfxTexture *icon);
 	void refresh_indicator();
 
   protected:
@@ -86,6 +87,7 @@ class TreeNode : public View {
 	std::string m_label;
 	int m_depth = 0;
 	bool m_expanded = true;
+	GFX::GfxTexture *m_type_icon = nullptr;
 
 	Button *m_header = nullptr;
 	View *m_children = nullptr;

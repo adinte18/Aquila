@@ -177,7 +177,7 @@ ListBox {
     background-color: var(--bg-widget);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 2px;
+    border-radius: 4px;
     align-items: center;
     justify-content: start;
     padding: 0px 10px;
@@ -866,7 +866,7 @@ ContextMenu {
     flex-direction: column;
     width: 100%;
     padding: 8px;
-    gap: 6px;
+    gap: 8px;
 }
 
 .inspector-add-component {
@@ -914,13 +914,13 @@ IconLabel {
 }
 
 .icon {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .trailing-icon {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
 }
 
 .icon-label-spacer {
@@ -1004,14 +1004,25 @@ IconLabel {
     flex-direction: row;
     align-items: center;
     width: 100%;
-    gap: 24px;
+    gap: 8px;
 }
 
 .property-label {
     font-family: regular;
-    font-size: 14px;
+    font-size: 13px;
     color: var(--text-dim);
-    width: 80px;
+    width: 84px;
+}
+
+.property-row-stacked {
+    flex-direction: column;
+    align-items: start;
+    width: 100%;
+    gap: 3px;
+}
+
+.property-label-stacked {
+    width: grow;
 }
 
 .property-separator {
@@ -1058,15 +1069,15 @@ TextInput {
     overflow: hidden;
     width: grow;
     min-width: 0px;
-    height: 26px;
+    height: 22px;
     padding: 10px;
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 2px;
+    border-radius: 4px;
     color: var(--text);
     font-family: regular;
-    font-size: 14px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
@@ -1131,44 +1142,44 @@ Toggle {
 
 DragFloat {
     width: grow;
-    height: 24px;
+    height: 22px;
     min-width: 0px;
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 2px;
+    border-radius: 4px;
     color: var(--text);
     font-family: regular;
-    font-size: 14px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
 DragInt {
     width: grow;
-    height: 24px;
+    height: 22px;
     min-width: 0px;
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 2px;
+    border-radius: 4px;
     color: var(--text);
     font-family: regular;
-    font-size: 14px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
 NumberInput {
     width: grow;
-    height: 26px;
+    height: 22px;
     min-width: 0px;
     padding: 0px 8px;
     background-color: var(--input-bg);
     border-width: 1px;
     border-color: var(--input-border);
-    border-radius: 2px;
+    border-radius: 4px;
     color: var(--text);
     font-family: regular;
-    font-size: 14px;
+    font-size: 13px;
     transition: 60ms ease-out;
 }
 
@@ -1259,13 +1270,14 @@ Vec4Field {
 .tree-view-content{
     flex-direction: column;
     width: grow;
+    gap: 2px;
 }
 
 .tree-view {
     flex-direction: column;
     width: grow;
     height: auto;
-    padding: 6px;
+    padding: 2px;
 }
 
 .tree-node {
@@ -1276,19 +1288,22 @@ Vec4Field {
 .tree-node-children {
     flex-direction: column;
     width: grow;
+    gap: 2px;
+    padding: 0px 0px 0px 14px;
 }
 
 .tree-node-header {
     font-family: regular;
-    font-size: 16px;
+    font-size: 13px;
     color: var(--text);
     width: grow;
-    height: 24px;
+    height: 26px;
+    padding: 0px 8px;
     align-items: center;
     justify-content: start;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: 60ms linear;
-    background-color: var(--bg-panel);
+    background-color: transparent;
 }
 
 .tree-node-header:hover {
@@ -1297,7 +1312,7 @@ Vec4Field {
 }
 
 .tree-node-header:pressed {
-    background-color: var(--bg-panel);
+    background-color: var(--bg-muted);
 }
 
 .tree-node-selected {
@@ -2244,6 +2259,174 @@ Vec4Field {
         height: 20px;
         font-size: 14px;
     }
+}
+
+.hud-pill {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 6px;
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+}
+
+.hud-rail {
+    flex-direction: column;
+    width: 260px;
+    height: 80vh;
+    gap: 6px;
+}
+
+.hud-rail-wide {
+    width: 300px;
+}
+
+.hud-tool {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text-dim);
+    padding: 8px 12px;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.hud-tool:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.hud-tool:pressed {
+    background-color: var(--bg-surface);
+}
+
+.hud-tool-active {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.card {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    min-height: 0px;
+    background-color: var(--bg-base);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.collapsed {
+    height: auto;
+}
+
+.card-console {
+    width: 50vw;
+    height: 200px;
+}
+
+.card-header {
+    height: 30px;
+    padding: 0px 4px 0px 2px;
+    background-color: transparent;
+}
+
+.card-title {
+    background-color: transparent;
+    font-size: 13px;
+    color: var(--text-bright);
+    padding: 0px 6px;
+}
+
+.card-content {
+    height: grow;
+    min-height: 0px;
+    padding: 2px 6px 6px 6px;
+    gap: 4px;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.collapsible-action {
+    width: 24px;
+    height: 24px;
+    padding: 0px;
+    background-color: transparent;
+    border-radius: 4px;
+}
+
+.collapsible-action:hover {
+    background-color: var(--bg-hover);
+}
+
+.hierarchy-toolbar-btn {
+    width: grow;
+    height: 26px;
+    background-color: var(--bg-muted);
+    border-radius: 4px;
+}
+
+.hud-round {
+    width: 32px;
+    height: 32px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+}
+
+.hud-round:hover {
+    background-color: var(--bg-hover);
+}
+
+.hud-round:pressed {
+    background-color: var(--bg-surface);
+}
+
+.component {
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--bg-muted);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.component-header {
+    height: 28px;
+    padding: 0px 2px 0px 2px;
+    background-color: transparent;
+}
+
+.component-title {
+    background-color: transparent;
+    font-size: 13px;
+    color: var(--text-bright);
+    padding: 0px 6px;
+}
+
+.component-content {
+    padding: 2px 8px 8px 8px;
+    gap: 6px;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.hud-separator {
+    width: 1px;
+    height: 18px;
+    margin: 0px 6px;
+    background-color: var(--hairline);
 }
 
 .hidden {

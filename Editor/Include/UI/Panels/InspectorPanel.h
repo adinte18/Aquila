@@ -22,7 +22,6 @@ class Material;
 namespace Aquila::UI::Core {
 class Button;
 class Collapsible;
-class DockPanel;
 class PopupMenu;
 class PropertyGrid;
 class TextInput;
@@ -35,8 +34,9 @@ namespace Editor {
 class InspectorPanel : public IEditorPanel {
   public:
 	InspectorPanel(Aquila::GFX::GfxContext &context, Aquila::UI::Core::TextureCache *texture_cache);
-	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void build(Aquila::UI::Core::View *panel, Aquila::UI::Core::View *overlay_root) override;
 	Signal<void(Aquila::SceneManagement::Entity)> on_entity_renamed;
+	Signal<void(Aquila::SceneManagement::Entity)> on_components_changed;
 	void show_entity(Aquila::SceneManagement::Entity entity);
 	void clear();
 	void open_add_search(Vec2 canvas_pos);
@@ -72,10 +72,6 @@ class InspectorPanel : public IEditorPanel {
 	void open_add_popup_at(Vec2 canvas_pos, bool swallow_first_char);
 	void populate_add_menu(const std::string &query);
 
-	void toggle_signal_observe(size_t section_index, size_t row_index);
-	void on_signal_fired(size_t section_index, size_t row_index);
-	void reset_signal_rows();
-
 	Aquila::GFX::GfxContext &m_context;
 	Ref<Aquila::Graphics::Material> m_default_material;
 	Aquila::UI::Core::TextureCache *m_texture_cache = nullptr;
@@ -90,22 +86,10 @@ class InspectorPanel : public IEditorPanel {
 	std::vector<AddableComponent> m_addable;
 	std::vector<ComponentCategory> m_categories;
 
-	struct SignalRow {
-		const char *name = nullptr;
-		Signal<void()> *signal = nullptr;
-		Aquila::UI::Core::Button *button = nullptr;
-		Signal<void()>::Connection connection;
-		int fired = 0;
-		bool observing = false;
-	};
-
 	struct Section {
 		Aquila::UI::Core::Collapsible *collapsible = nullptr;
 		std::string id;
 		Unique<IComponentUI> ui;
-		Aquila::UI::Core::Collapsible *signals_group = nullptr;
-		Aquila::UI::Core::PropertyGrid *signals_grid = nullptr;
-		std::vector<SignalRow> signal_rows;
 	};
 	std::vector<Section> m_sections;
 

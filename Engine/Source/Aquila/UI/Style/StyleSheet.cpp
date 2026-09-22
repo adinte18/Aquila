@@ -80,7 +80,7 @@ void StyleSheet::apply_matching_rules(ComputedStyle &out, const std::vector<Styl
 	}
 	std::ranges::stable_sort(matching, {}, [](const StyleRule *r) { return r->specificity; });
 	for (const StyleRule *rule : matching) {
-		apply_properties(out, rule->properties);
+		apply_properties(out, rule->properties, true);
 	}
 }
 
@@ -103,7 +103,7 @@ ComputedStyle StyleSheet::resolve(const Core::View &view, const ComputedStyle *p
 	}
 	std::ranges::stable_sort(matching, {}, [](const StyleRule *r) { return r->specificity; });
 	for (const StyleRule *rule : matching) {
-		apply_properties(result, rule->properties);
+		apply_properties(result, rule->properties, true);
 	}
 
 	for (const auto &block : m_media_blocks) {
@@ -118,7 +118,7 @@ ComputedStyle StyleSheet::resolve(const Core::View &view, const ComputedStyle *p
 		}
 	}
 
-	apply_properties(result, view.get_style());
+	apply_properties(result, view.get_style(), false);
 
 	return result;
 }
@@ -162,14 +162,34 @@ bool StyleSheet::matches(const StyleRule &rule, const Core::View &view) const {
 	return false;
 }
 
-void StyleSheet::apply_properties(ComputedStyle &out, const StyleProperties &props) const {
+namespace {
+
+StyleLength scale_length(StyleLength length, float scale) {
+	if (length.unit == LengthUnit::Pixel) {
+		length.value *= scale;
+	}
+	return length;
+}
+
+StyleEdges scale_edges(StyleEdges edges, float scale) {
+	return { .top = scale_length(edges.top, scale),
+			 .right = scale_length(edges.right, scale),
+			 .bottom = scale_length(edges.bottom, scale),
+			 .left = scale_length(edges.left, scale) };
+}
+
+} // namespace
+
+void StyleSheet::apply_properties(ComputedStyle &out, const StyleProperties &props, bool scale_metrics) const {
+	const float scale = scale_metrics ? Core::FontRegistry::ui_scale() : 1.F;
+
 	if (props.min) {
-		out.min_width = *props.min;
-		out.min_height = *props.min;
+		out.min_width = scale_length(*props.min, scale);
+		out.min_height = scale_length(*props.min, scale);
 	}
 	if (props.max) {
-		out.max_width = *props.max;
-		out.max_height = *props.max;
+		out.max_width = scale_length(*props.max, scale);
+		out.max_height = scale_length(*props.max, scale);
 	}
 
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
@@ -179,21 +199,74 @@ void StyleSheet::apply_properties(ComputedStyle &out, const StyleProperties &pro
 	AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
 
+	if (scale != 1.F) {
+		if (props.width) {
+			out.width = scale_length(*props.width, scale);
+		}
+		if (props.height) {
+			out.height = scale_length(*props.height, scale);
+		}
+		if (props.min_width) {
+			out.min_width = scale_length(*props.min_width, scale);
+		}
+		if (props.max_width) {
+			out.max_width = scale_length(*props.max_width, scale);
+		}
+		if (props.min_height) {
+			out.min_height = scale_length(*props.min_height, scale);
+		}
+		if (props.max_height) {
+			out.max_height = scale_length(*props.max_height, scale);
+		}
+		if (props.padding) {
+			out.padding = scale_edges(*props.padding, scale);
+		}
+		if (props.gap) {
+			out.gap = *props.gap * scale;
+		}
+		if (props.border_width) {
+			out.border_width = *props.border_width * scale;
+		}
+		if (props.border_radius) {
+			out.border_radius = *props.border_radius * scale;
+		}
+		if (props.top) {
+			out.top = scale_length(*props.top, scale);
+		}
+		if (props.right) {
+			out.right = scale_length(*props.right, scale);
+		}
+		if (props.bottom) {
+			out.bottom = scale_length(*props.bottom, scale);
+		}
+		if (props.left) {
+			out.left = scale_length(*props.left, scale);
+		}
+		if (props.box_shadows) {
+			out.box_shadows = *props.box_shadows;
+			for (BoxShadow &shadow : out.box_shadows) {
+				shadow.offset *= scale;
+				shadow.blur *= scale;
+				shadow.spread *= scale;
+			}
+		}
+	}
+
 	if (props.font_size) {
 		out.font_size = *props.font_size * Core::FontRegistry::ui_scale();
 	}
 
 	if (props.padding_left) {
-		out.padding.left = *props.padding_left;
+		out.padding.left = scale_length(*props.padding_left, scale);
 	}
 	if (props.padding_right) {
-		out.padding.right = *props.padding_right;
+		out.padding.right = scale_length(*props.padding_right, scale);
 	}
 	if (props.padding_top) {
-		out.padding.top = *props.padding_top;
+		out.padding.top = scale_length(*props.padding_top, scale);
 	}
 	if (props.padding_bottom) {
-		out.padding.bottom = *props.padding_bottom;
+		out.padding.bottom = scale_length(*props.padding_bottom, scale);
 	}
 }
 

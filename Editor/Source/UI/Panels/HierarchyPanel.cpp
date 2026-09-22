@@ -8,7 +8,6 @@
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
-#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/ScrollView.h"
 
 namespace Editor {
@@ -19,7 +18,7 @@ using namespace Aquila::SceneManagement::Components;
 
 HierarchyPanel::HierarchyPanel(EntityManager &entity_manager) : m_entity_manager(entity_manager) {}
 
-void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
+void HierarchyPanel::build(UI::Core::View *panel, UI::Core::View *overlay_root) {
 	auto ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
 	auto *ctx = dynamic_cast<UI::Core::PopupMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
 	ctx->add_item("Create Empty", [this] {
@@ -163,6 +162,13 @@ void HierarchyPanel::refresh_entity(Entity entity) {
 	}
 	if (HierarchyTreeNode *node = m_tree_view->find_node_for_entity(entity)) {
 		node->set_label(entity.get_name());
+		m_tree_view->refresh_node_icon(node);
+	}
+}
+
+void HierarchyPanel::set_entity_icons(const EntityIcons &icons) {
+	if (m_tree_view != nullptr) {
+		m_tree_view->set_entity_icons(icons);
 	}
 }
 

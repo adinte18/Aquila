@@ -93,4 +93,18 @@ TEST_SUITE("ComponentRegistry") {
 		light.set_type(LightComponent::Type::Point);
 		CHECK(range.is_visible(instance));
 	}
+
+	TEST_CASE("components can be removed through their descriptor, except the transform") {
+		Scene scene("Test");
+		Entity entity = scene.get_entity_manager()->create_entity("Thing");
+		entity.add_component<CameraComponent>();
+		const auto &registry = ComponentRegistry::instance();
+
+		const ComponentDescriptor &camera = *registry.find("Camera");
+		REQUIRE(camera.is_removable());
+		camera.remove(entity);
+		CHECK_FALSE(camera.has(entity));
+
+		CHECK_FALSE(registry.find("Transform")->is_removable());
+	}
 }

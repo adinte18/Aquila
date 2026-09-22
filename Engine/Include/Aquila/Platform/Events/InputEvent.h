@@ -8,6 +8,9 @@ namespace Aquila::Platform::Events {
 enum class KeyCode : Uint16 {
 	Unknown = 0,
 	Space = 32,
+	Minus = 45,
+	Num0 = 48,
+	Equal = 61,
 	A = 65,
 	B = 66,
 	C = 67,
@@ -63,6 +66,8 @@ enum class KeyCode : Uint16 {
 	RightShift = 344,
 	RightControl = 345,
 	RightAlt = 346,
+	KeypadSubtract = 333,
+	KeypadAdd = 334,
 };
 
 enum class MouseButton : Uint8 { Left = 0, Right = 1, Middle = 2 };

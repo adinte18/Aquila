@@ -10,6 +10,7 @@ class GfxTexture;
 
 namespace Aquila::UI::Core {
 class Image;
+class View;
 }
 
 namespace Editor {
@@ -17,10 +18,11 @@ namespace Editor {
 class ViewportPanel : public IEditorPanel {
   public:
 	explicit ViewportPanel(Aquila::GFX::GfxTexture &initial_texture);
-	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void build(Aquila::UI::Core::View *panel, Aquila::UI::Core::View *overlay_root) override;
 	void set_texture(Aquila::GFX::GfxTexture *texture);
 
 	[[nodiscard]] Rect get_content_rect() const;
+	[[nodiscard]] const Aquila::UI::Core::View *get_view() const;
 
 	Signal<void(Vec2)> on_clicked_uv;
 

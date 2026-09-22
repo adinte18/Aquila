@@ -33,6 +33,7 @@ class IconLabel : public View {
 							 IResourceResolver *resolver = nullptr) override;
 
   private:
+	void update_label_visibility();
 	void update_icon_visibility();
 	void update_right_content();
 

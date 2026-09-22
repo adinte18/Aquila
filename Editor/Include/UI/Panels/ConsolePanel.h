@@ -2,7 +2,6 @@
 
 #include "UI/Panels/IEditorPanel.h"
 #include "Aquila/UI/Core/TextureCache.h"
-#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/ScrollView.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Button.h"
@@ -36,7 +35,7 @@ class ConsolePanel : public IEditorPanel {
 	explicit ConsolePanel(Aquila::UI::Core::TextureCache *texture_cache);
 	~ConsolePanel();
 
-	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void build(Aquila::UI::Core::View *panel, Aquila::UI::Core::View *overlay_root) override;
 	void flush_pending();
 	void clear_all();
 

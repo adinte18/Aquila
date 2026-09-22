@@ -93,25 +93,12 @@ void TreeView::notify_right_clicked(TreeNode *node, Vec2 pos) {
 	on_node_right_clicked(node, pos);
 }
 
-static constexpr float K_INDENT_PER_DEPTH = 16.F;
-
 TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	: m_owner(owner), m_label(std::move(label)), m_depth(depth) {
 	add_class("tree-node");
 
 	auto header = std::make_unique<Button>();
-	{
-		StyleProperties hp;
-		const float indent = K_INDENT_PER_DEPTH * static_cast<float>(m_depth);
-		hp.padding = StyleEdges{
-			StyleLength::pixel(2.F),
-			StyleLength::pixel(4.F),
-			StyleLength::pixel(2.F),
-			StyleLength::pixel(4.F + indent),
-		};
-		header->set_style(hp);
-		header->add_class("tree-node-header");
-	}
+	header->add_class("tree-node-header");
 	header->on_click.connect([this] { on_header_clicked(); });
 	header->on_context_menu.connect([this](Vec2 pos) { on_header_right_clicked(pos); });
 	m_header = dynamic_cast<Button *>(View::add_child(std::move(header)));
@@ -144,16 +131,6 @@ TreeNode *TreeNode::add_child_node(std::string label) {
 
 void TreeNode::update_depth(int new_depth) {
 	m_depth = new_depth;
-
-	const float indent = K_INDENT_PER_DEPTH * static_cast<float>(m_depth);
-	StyleProperties hp;
-	hp.padding = StyleEdges{
-		StyleLength::pixel(2.F),
-		StyleLength::pixel(4.F),
-		StyleLength::pixel(2.F),
-		StyleLength::pixel(4.F + indent),
-	};
-	m_header->merge_style(hp);
 
 	for (const auto &child : m_children->get_children()) {
 		if (auto *child_node = view_cast<TreeNode>(child.get())) {
@@ -200,12 +177,27 @@ void TreeNode::on_header_right_clicked(Vec2 pos) {
 	m_owner.notify_right_clicked(this, pos);
 }
 
+void TreeNode::set_type_icon(GFX::GfxTexture *icon) {
+	m_type_icon = icon;
+	update_header_text();
+}
+
 void TreeNode::update_header_text() {
 	if ((m_header == nullptr) || (m_children == nullptr)) {
 		return;
 	}
 	const bool has_children = !m_children->get_children().empty();
 	const bool use_icons = (m_owner.m_icon_collapsed != nullptr) || (m_owner.m_icon_expanded != nullptr);
+
+	if (m_type_icon != nullptr) {
+		m_header->set_reserve_icon_space(true);
+		m_header->set_icon(m_type_icon);
+		m_header->set_trailing_icon(has_children ? (m_expanded ? m_owner.m_icon_expanded : m_owner.m_icon_collapsed)
+												 : nullptr);
+		m_header->set_text(m_label);
+		return;
+	}
+	m_header->set_trailing_icon(nullptr);
 
 	if (use_icons) {
 		m_header->set_reserve_icon_space(true);

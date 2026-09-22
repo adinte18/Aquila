@@ -246,6 +246,7 @@ class View {
 	Uint32 m_clay_id = 0;
 
 	Option<FloatingConfig> m_floating;
+	void apply_floating_attribute(std::string_view name, std::string_view value);
 
 	bool m_is_animation_finished = false;
 	bool m_draw_dirty = true;

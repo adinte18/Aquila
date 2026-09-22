@@ -48,7 +48,7 @@ void CameraController::update(F32 delta_time) {
 	const bool rmb = Input::is_mouse_button_pressed(Events::MouseButton::Right);
 	const bool lmb = Input::is_mouse_button_pressed(Events::MouseButton::Left);
 	const bool alt = Input::is_key_pressed(Events::KeyCode::LeftAlt);
-	const bool over = point_in_rect(mouse, m_viewport_pos, m_viewport_size);
+	const bool over = !m_navigation_blocked && point_in_rect(mouse, m_viewport_pos, m_viewport_size);
 
 	const bool rmb_edge = rmb && !m_prev_rmb;
 	const bool lmb_edge = lmb && !m_prev_lmb;
@@ -119,7 +119,7 @@ void CameraController::update(F32 delta_time) {
 void CameraController::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Events::MouseScrolledEvent>([this](Events::MouseScrolledEvent &scroll) {
-		if (!point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
+		if (m_navigation_blocked || !point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
 			return false;
 		}
 		m_camera.move_forward(scroll.get_y_offset() * kDollyStep);

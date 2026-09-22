@@ -17,6 +17,7 @@ class CameraController {
 
 	void set_viewport_size(Uint32 width, Uint32 height);
 	void set_viewport_rect(Vec2 position, Vec2 size);
+	void set_navigation_blocked(bool blocked) { m_navigation_blocked = blocked; }
 
 	void update(F32 delta_time);
 	void on_event(Platform::Events::Event &event);
@@ -42,6 +43,7 @@ class CameraController {
 	Vec2 m_last_mouse{ 0.F, 0.F };
 	bool m_prev_rmb = false;
 	bool m_prev_lmb = false;
+	bool m_navigation_blocked = false;
 };
 
 } // namespace Aquila::Rendering

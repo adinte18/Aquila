@@ -4,6 +4,10 @@
 #include "Aquila/UI/Widgets/Button.h"
 #include <unordered_map>
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Aquila::UI::Core {
 
 class Collapsible : public View {
@@ -15,10 +19,13 @@ class Collapsible : public View {
 	[[nodiscard]] ViewKind get_kind() const override { return k_kind; }
 
 	void set_title(std::string title);
+	void set_variant(const std::string &variant);
 	void apply_xml_text_content(std::string_view text) override { set_title(std::string(text)); }
 	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 	void set_expanded(bool expanded);
 	[[nodiscard]] bool is_expanded() const { return m_expanded; }
+	Button *add_header_action(GFX::GfxTexture *icon, std::string tooltip, Delegate<void()> on_click);
+	void set_state_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded);
 	Signal<void(bool)> on_toggled;
 	Signal<void()> on_reordered;
 
@@ -39,11 +46,14 @@ class Collapsible : public View {
 	void stop_ticking();
 
 	bool m_expanded = true;
+	GFX::GfxTexture *m_icon_collapsed = nullptr;
+	GFX::GfxTexture *m_icon_expanded = nullptr;
 	View *m_header_bar = nullptr;
 	Button *m_title_button = nullptr;
 	View *m_grip = nullptr;
 	View *m_content = nullptr;
 
+	StyleProperties m_pre_drag_style;
 	bool m_dragging = false;
 	bool m_ticking = false;
 	View *m_container = nullptr;

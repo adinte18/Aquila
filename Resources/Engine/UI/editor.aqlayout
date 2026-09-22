@@ -1,36 +1,35 @@
 <View id="root">
 
-    <View id="toolbar">
-        <View id="toolbar-left">
-            <View id="engine-logo">
-                <Image id="image-logo" src="Logo/16px.png"/>
-            </View>
-            <MenuBar id="main-menubar">
-            </MenuBar>
-        </View>
+    <Image id="viewport"/>
+
+    <Button id="hud-menu" class="hud-round" src="Engine/UI/Icons/menu.png" tooltip="Menu" float-attach="root" float-element="left-top" float-parent="left-top" float-offset="12 12" float-z="30"/>
+
+    <View id="rail-left" class="hud-rail" float-attach="root" float-element="left-top" float-parent="left-top" float-offset="12 52" float-z="20">
+        <Collapsible id="card-hierarchy" variant="card" src="Engine/UI/Icons/list-tree.png">Hierarchy
+            <Include src="hierarchy.aqlayout"/>
+        </Collapsible>
     </View>
 
-    <View id="workspace">
-        <View id="dock-root">
-            <DockSpace id="editor-dock">
-                <DockNode split="vertical">
-                    <DockNode split="horizontal">
-                        <DockPanel id="panel-hierarchy">Hierarchy
-                            <Include src="hierarchy.aqlayout"/>
-                        </DockPanel>
-                        <DockPanel id="panel-viewport">Viewport
-                            <Include src="viewport.aqlayout"/>
-                        </DockPanel>
-                        <DockPanel id="panel-inspector">Inspector
-                            <Include src="inspector.aqlayout"/>
-                        </DockPanel>
-                    </DockNode>
-                    <DockPanel id="panel-console">Console
-                        <Include src="console.aqlayout"/>
-                    </DockPanel>
-                </DockNode>
-            </DockSpace>
-        </View>
+    <View id="rail-right" class="hud-rail hud-rail-wide" float-attach="root" float-element="right-top" float-parent="right-top" float-offset="-12 52" float-z="20">
+        <Collapsible id="card-inspector" variant="card" src="Engine/UI/Icons/sliders-horizontal.png">Inspector
+            <Include src="inspector.aqlayout"/>
+        </Collapsible>
     </View>
+
+    <View id="hud-tools" class="hud-pill" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -12" float-z="20">
+        <Button id="tool-translate" class="hud-tool" src="Engine/UI/Icons/move-3d.png" tooltip="Move (W)"/>
+        <Button id="tool-rotate" class="hud-tool" src="Engine/UI/Icons/rotate-3d.png" tooltip="Rotate (E)"/>
+        <Button id="tool-scale" class="hud-tool" src="Engine/UI/Icons/scale-3d.png" tooltip="Scale (R)"/>
+        <View class="hud-separator"/>
+        <Button id="tool-space" class="hud-tool" src="Engine/UI/Icons/globe.png" tooltip="World space (click for local)"/>
+        <View class="hud-separator"/>
+        <Button id="toggle-console" class="hud-tool" src="Engine/UI/Icons/terminal.png" tooltip="Show or hide the console"/>
+    </View>
+
+    <Button id="hud-settings" class="hud-round" src="Engine/UI/Icons/settings.png" tooltip="Preferences" float-attach="root" float-element="right-bottom" float-parent="right-bottom" float-offset="-12 -12" float-z="20"/>
+
+    <Collapsible id="card-console" variant="card" class="card-console hidden" src="Engine/UI/Icons/terminal.png" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -56" float-z="20">Console
+        <Include src="console.aqlayout"/>
+    </Collapsible>
 
 </View>

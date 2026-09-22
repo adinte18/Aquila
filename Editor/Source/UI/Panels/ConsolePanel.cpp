@@ -59,7 +59,7 @@ ConsolePanel::~ConsolePanel() {
 	Logger::set_sink(nullptr);
 }
 
-void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayRoot*/) {
+void ConsolePanel::build(UI::Core::View *panel, UI::Core::View * /*overlayRoot*/) {
 	if (m_texture_cache != nullptr) {
 		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.png");
 		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.png");

@@ -67,8 +67,8 @@ void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 hei
 			 &m_working.fonts.main_family);
 	font_row(interface_section, "Mono font", "Monospace font used by the console and code-style text.",
 			 &m_working.fonts.mono_family);
-	float_row(interface_section, "Interface scale", "Scales the size of all interface text. 1.0 is the default.",
-			  &m_working.ui_scale, 0.75F, 1.75F, 0.01F, 2);
+	float_row(interface_section, "Interface scale", "Scales the whole interface: text, spacing and sizes. 1.0 is the default. Ctrl+Plus, Ctrl+Minus and Ctrl+0 also change it.",
+			  &m_working.ui_scale, 0.5F, 2.F, 0.01F, 2);
 
 	auto *footer = root->add_child<View>();
 	footer->add_class("settings-footer");

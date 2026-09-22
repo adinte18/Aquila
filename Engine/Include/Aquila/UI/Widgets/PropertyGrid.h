@@ -14,10 +14,17 @@ class PropertyGrid : public View {
 	void set_label_width(float w) { m_label_width = w; }
 	[[nodiscard]] float get_label_width() const { return m_label_width; }
 
-	View *add_row(std::string label, Unique<View> widget);
+	enum class RowLayout : Uint8 { Inline, Stacked };
+
+	View *add_row(std::string label, Unique<View> widget, RowLayout layout = RowLayout::Inline);
 
 	template <typename T, typename... Args> T *add_row(std::string label, Args &&...args) {
 		return static_cast<T *>(add_row(std::move(label), std::make_unique<T>(std::forward<Args>(args)...)));
+	}
+
+	template <typename T, typename... Args> T *add_stacked_row(std::string label, Args &&...args) {
+		return static_cast<T *>(
+			add_row(std::move(label), std::make_unique<T>(std::forward<Args>(args)...), RowLayout::Stacked));
 	}
 
 	void add_separator();

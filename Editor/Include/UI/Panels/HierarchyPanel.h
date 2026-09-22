@@ -16,11 +16,12 @@ namespace Editor {
 
 class HierarchyTreeView;
 class HierarchyTreeNode;
+struct EntityIcons;
 
 class HierarchyPanel : public IEditorPanel {
   public:
 	explicit HierarchyPanel(Aquila::SceneManagement::EntityManager &entity_manager);
-	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void build(Aquila::UI::Core::View *panel, Aquila::UI::Core::View *overlay_root) override;
 	Signal<void(Aquila::SceneManagement::Entity)> on_entity_selected;
 	Signal<void()> on_entity_deselected;
 	void add_entity(Aquila::SceneManagement::Entity entity);
@@ -29,6 +30,7 @@ class HierarchyPanel : public IEditorPanel {
 	void refresh_entity(Aquila::SceneManagement::Entity entity);
 	void rebuild();
 	void set_tree_icons(Aquila::GFX::GfxTexture *collapsed, Aquila::GFX::GfxTexture *expanded);
+	void set_entity_icons(const EntityIcons &icons);
 
   private:
 	void populate_tree();

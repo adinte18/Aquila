@@ -16,7 +16,7 @@ using Reflection::PropertyHints;
 namespace {
 
 void register_builtin_components(ComponentRegistry &registry) {
-	registry.register_component<TransformComponent>("Transform")
+	registry.register_component<TransformComponent>("Transform", false)
 		.property("Position", &TransformComponent::get_local_position, &TransformComponent::set_local_position,
 				  PropertyHints{ .speed = 0.1F })
 		.property("Scale", &TransformComponent::get_local_scale, &TransformComponent::set_local_scale,

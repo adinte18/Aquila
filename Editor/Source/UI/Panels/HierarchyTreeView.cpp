@@ -2,7 +2,11 @@
 
 #include "UI/Panels/HierarchyTreeNode.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Scene/Components/CameraComponent.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Scene/Components/MeshComponent.h"
 #include "Aquila/Scene/Components/SceneNodeComponent.h"
+#include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/EntityManager.h"
 
 namespace Editor {
@@ -44,7 +48,38 @@ HierarchyTreeNode *HierarchyTreeView::add_entity_node(std::string label, Entity 
 	}
 
 	m_node_entity_map[raw] = entity;
+	raw->set_type_icon(icon_for(entity));
 	return raw;
+}
+
+Aquila::GFX::GfxTexture *HierarchyTreeView::icon_for(Entity entity) const {
+	if (entity.has_component<CameraComponent>()) {
+		return m_icons.camera;
+	}
+	if (entity.has_component<SkyLightComponent>()) {
+		return m_icons.sky;
+	}
+	if (entity.has_component<LightComponent>()) {
+		return m_icons.light;
+	}
+	if (entity.has_component<MeshComponent>()) {
+		return m_icons.mesh;
+	}
+	return m_icons.empty;
+}
+
+void HierarchyTreeView::set_entity_icons(const EntityIcons &icons) {
+	m_icons = icons;
+	for (const auto &[node, entity] : m_node_entity_map) {
+		node->set_type_icon(icon_for(entity));
+	}
+}
+
+void HierarchyTreeView::refresh_node_icon(HierarchyTreeNode *node) {
+	const auto it = m_node_entity_map.find(node);
+	if (it != m_node_entity_map.end()) {
+		node->set_type_icon(icon_for(it->second));
+	}
 }
 
 void HierarchyTreeView::delete_entity_node(Entity entity) {
