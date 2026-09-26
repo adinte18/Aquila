@@ -105,6 +105,34 @@ void GfxContext::copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64
 	execute_immediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
 		m_device->copy_buffer(cmd.get_rhi(), src.get_rhi(), dst.get_rhi(), size, src_offset, dst_offset);
 	});
+void GfxContext::upload_texture_mips(GfxTexture &dst, const std::vector<std::vector<Uint8>> &levels) {
+	std::vector<Ref<GfxBuffer>> staging;
+	staging.reserve(levels.size());
+	for (const auto &level : levels) {
+		RHI::BufferDesc staging_desc{};
+		staging_desc.size = level.size();
+		staging_desc.usage = RHI::BufferUsage::TransferSrc;
+		staging_desc.domain = RHI::MemoryDomain::CpuOnly;
+		staging_desc.debug_name = "TextureMipUploadStaging";
+		staging.push_back(create_buffer(staging_desc));
+		staging.back()->get_rhi().write(level.data(), level.size(), 0);
+	}
+
+	execute_immediate(RHI::CommandListType::Graphics, [&](GfxCommandList &cmd) {
+		cmd.transition_texture(dst, RHI::ResourceState::Undefined, RHI::ResourceState::TransferDst);
+		for (Uint32 mip = 0; mip < static_cast<Uint32>(staging.size()); ++mip) {
+			const Uint32 w = std::max(1U, dst.get_width() >> mip);
+			const Uint32 h = std::max(1U, dst.get_height() >> mip);
+			cmd.copy_buffer_to_texture(*staging[mip], dst, w, h, 0, mip);
+		}
+		cmd.transition_texture(dst, RHI::ResourceState::TransferDst, RHI::ResourceState::ShaderRead);
+	});
+
+	for (auto &buffer : staging) {
+		destroy_immediate_buffer(*buffer);
+	}
+}
+
 }
 
 void GfxContext::wait_idle() {

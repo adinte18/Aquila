@@ -36,6 +36,7 @@ class GfxContext {
 	void copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset = 0, Uint64 dst_offset = 0);
 	void upload_texture_data(GfxTexture &dst, const void *data, Uint64 byte_size);
 
+	void upload_texture_mips(GfxTexture &dst, const std::vector<std::vector<Uint8>> &levels);
 	void destroy_immediate_texture(GfxTexture &texture);
 	void destroy_immediate_buffer(GfxBuffer &buffer);
 

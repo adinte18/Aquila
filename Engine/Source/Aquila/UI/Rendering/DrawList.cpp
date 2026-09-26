@@ -149,8 +149,8 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					r2d.draw_shadow(spec);
 				} else if constexpr (std::is_same_v<T, ImageCmd>) {
 					Graphics::SpriteSpec spec{};
-					spec.position = c.rect.position;
-					spec.size = c.rect.size;
+					spec.position = glm::round(c.rect.position);
+					spec.size = glm::round(c.rect.position + c.rect.size) - spec.position;
 					spec.tint = c.tint;
 					spec.texture = c.texture;
 					spec.uv_min = c.uv_min;
