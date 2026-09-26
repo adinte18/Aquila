@@ -151,6 +151,10 @@ Option<StyleLength> parse_length(std::string_view raw) {
 Option<Vec4> parse_color(std::string_view raw) {
 	std::string s = to_lower(trim(raw));
 
+	if (s == "transparent") {
+		return Vec4(0.F);
+	}
+
 	if (s.starts_with('#')) {
 		auto hex = std::string_view(s).substr(1);
 		auto byte = [&](size_t off) -> float {

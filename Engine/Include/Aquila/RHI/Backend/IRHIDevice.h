@@ -7,6 +7,7 @@
 #include "Aquila/RHI/Backend/IRHIDescriptors.h"
 #include "Aquila/RHI/Backend/IRHIRenderpass.h"
 #include "Aquila/RHI/Backend/IRHIPipeline.h"
+#include "Aquila/RHI/Backend/IRHIQueryPool.h"
 #include "Aquila/RHI/Backend/IRHISwapchain.h"
 #include "Aquila/RHI/Backend/IRHITexture.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
@@ -29,6 +30,7 @@ class IRHIDevice {
 	[[nodiscard]] virtual Unique<IRHICommandList> create_frame_command_list(Uint32 slot) = 0;
 	[[nodiscard]] virtual Unique<IRHISwapchain> create_swapchain(const SwapchainDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIRenderPass> create_render_pass(const RHI::RenderPassDesc &desc) = 0;
+	[[nodiscard]] virtual Unique<IRHIQueryPool> create_timestamp_pool(Uint32 count) = 0;
 	[[nodiscard]] virtual Unique<IRHIPipeline> create_graphics_pipeline(const GraphicsPipelineDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIPipeline> create_compute_pipeline(const ComputePipelineDesc &desc) = 0;
 	[[nodiscard]] virtual Unique<IRHIDescriptorSetLayout>

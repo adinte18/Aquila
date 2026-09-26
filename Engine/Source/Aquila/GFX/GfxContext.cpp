@@ -56,6 +56,10 @@ Ref<GfxDescriptorSetLayout> GfxContext::create_descriptor_set_layout(const RHI::
 Ref<GfxDescriptorSet> GfxContext::allocate_descriptor_set(GfxDescriptorSetLayout &layout) {
 	return Ref<GfxDescriptorSet>(new GfxDescriptorSet(m_device->allocate_descriptor_set(layout.get_rhi())));
 }
+Unique<RHI::IRHIQueryPool> GfxContext::create_timestamp_pool(Uint32 count) {
+	return m_device->create_timestamp_pool(count);
+}
+
 Ref<GfxRenderPass> GfxContext::create_render_pass(const RHI::RenderPassDesc &desc) {
 	return Ref<GfxRenderPass>(new GfxRenderPass(m_device->create_render_pass(desc)));
 }
@@ -99,6 +103,34 @@ void GfxContext::upload_texture_data(GfxTexture &dst, const void *data, Uint64 b
 	});
 
 	destroy_immediate_buffer(*staging);
+}
+
+void GfxContext::upload_texture_mips(GfxTexture &dst, const std::vector<std::vector<Uint8>> &levels) {
+	std::vector<Ref<GfxBuffer>> staging;
+	staging.reserve(levels.size());
+	for (const auto &level : levels) {
+		RHI::BufferDesc staging_desc{};
+		staging_desc.size = level.size();
+		staging_desc.usage = RHI::BufferUsage::TransferSrc;
+		staging_desc.domain = RHI::MemoryDomain::CpuOnly;
+		staging_desc.debug_name = "TextureMipUploadStaging";
+		staging.push_back(create_buffer(staging_desc));
+		staging.back()->get_rhi().write(level.data(), level.size(), 0);
+	}
+
+	execute_immediate(RHI::CommandListType::Graphics, [&](GfxCommandList &cmd) {
+		cmd.transition_texture(dst, RHI::ResourceState::Undefined, RHI::ResourceState::TransferDst);
+		for (Uint32 mip = 0; mip < static_cast<Uint32>(staging.size()); ++mip) {
+			const Uint32 w = std::max(1U, dst.get_width() >> mip);
+			const Uint32 h = std::max(1U, dst.get_height() >> mip);
+			cmd.copy_buffer_to_texture(*staging[mip], dst, w, h, 0, mip);
+		}
+		cmd.transition_texture(dst, RHI::ResourceState::TransferDst, RHI::ResourceState::ShaderRead);
+	});
+
+	for (auto &buffer : staging) {
+		destroy_immediate_buffer(*buffer);
+	}
 }
 
 void GfxContext::copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset, Uint64 dst_offset) {

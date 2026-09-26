@@ -59,10 +59,7 @@ Collapsible::Collapsible(std::string title) {
 	auto button = std::make_unique<Button>();
 	button->set_text(std::move(title));
 	button->add_class("collapsible-title");
-	button->on_click.connect([this] {
-		set_expanded(!m_expanded);
-		on_toggled(m_expanded);
-	});
+	button->on_click.connect([this] { toggle(); });
 	m_title_button = dynamic_cast<Button *>(m_header_bar->add_child(std::move(button)));
 
 	auto grip = std::make_unique<CollapsibleGrip>(this);
@@ -79,7 +76,48 @@ void Collapsible::set_title(std::string title) {
 	m_title_button->set_text(std::move(title));
 }
 
+void Collapsible::set_icon(GFX::GfxTexture *icon) {
+	m_title_button->set_icon(icon);
+}
+
+void Collapsible::toggle() {
+	if (!m_collapsible) {
+		return;
+	}
+	set_expanded(!m_expanded);
+	on_toggled(m_expanded);
+}
+
+void Collapsible::set_reorderable(bool reorderable) {
+	m_reorderable = reorderable;
+	m_grip->set_hidden(!reorderable);
+}
+
+void Collapsible::set_variant(const std::string &variant) {
+	m_variant = variant;
+	add_class(variant);
+	m_header_bar->add_class(variant + "-header");
+	m_title_button->add_class(variant + "-title");
+	if (m_chevron != nullptr) {
+		m_chevron->add_class(variant + "-chevron");
+	}
+	m_grip->add_class(variant + "-grip");
+	m_content->add_class(variant + "-content");
+}
+
 void Collapsible::apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver) {
+	if (name == "variant") {
+		set_variant(std::string(value));
+		return;
+	}
+	if (name == "reorderable") {
+		set_reorderable(value != "false");
+		return;
+	}
+	if (name == "collapsible") {
+		set_collapsible(value != "false");
+		return;
+	}
 	if (name == "src" || name == "uv" || name == "tint") {
 		m_title_button->apply_xml_attribute(name, value, resolver);
 		return;
@@ -99,12 +137,55 @@ View *Collapsible::add_child(Unique<View> child) {
 	return m_content->View::add_child(std::move(child));
 }
 
+Button *Collapsible::add_header_action(GFX::GfxTexture *icon, std::string tooltip, Delegate<void()> on_click) {
+	auto action = std::make_unique<Button>();
+	action->add_class("collapsible-action");
+	action->set_icon(icon);
+	action->set_tooltip(std::move(tooltip));
+	action->on_click.connect(std::move(on_click));
+	auto *raw = dynamic_cast<Button *>(m_header_bar->add_child(std::move(action)));
+	m_header_bar->reorder_child(raw, m_grip);
+	return raw;
+}
+
+void Collapsible::set_state_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded, bool leading) {
+	m_icon_collapsed = collapsed;
+	m_icon_expanded = expanded;
+	m_state_icons_leading = leading;
+	if (leading && m_chevron == nullptr) {
+		auto chevron = std::make_unique<Button>();
+		chevron->add_class("collapsible-chevron");
+		if (!m_variant.empty()) {
+			chevron->add_class(m_variant + "-chevron");
+		}
+		chevron->on_click.connect([this] { toggle(); });
+		m_chevron = dynamic_cast<Button *>(m_header_bar->add_child(std::move(chevron)));
+		m_header_bar->reorder_child(m_chevron, m_title_button);
+	}
+	if (leading) {
+		m_title_button->set_trailing_icon(nullptr);
+	}
+	if (m_chevron != nullptr) {
+		m_chevron->set_hidden(!leading);
+	}
+	apply_state();
+}
+
 void Collapsible::apply_state() {
 	m_content->set_hidden(!m_expanded);
+	set_class("collapsed", !m_expanded);
+	if (m_icon_collapsed != nullptr || m_icon_expanded != nullptr) {
+		GFX::GfxTexture *icon = m_expanded ? m_icon_expanded : m_icon_collapsed;
+		if (m_state_icons_leading) {
+			m_chevron->set_icon(icon);
+		} else {
+			m_title_button->set_trailing_icon(icon);
+		}
+	}
 }
 
 void Collapsible::begin_drag() {
-	if (m_dragging) {
+	if (m_dragging || !m_reorderable) {
 		return;
 	}
 	m_container = get_parent();
@@ -125,8 +206,10 @@ void Collapsible::begin_drag() {
 	m_container->reorder_child(m_placeholder, this);
 	m_drop_anchor = this;
 
+	m_pre_drag_style = get_style();
 	StyleProperties drag_style;
 	drag_style.width = StyleLength::pixel(get_absolute_rect().size.x);
+	drag_style.height = StyleLength::pixel(get_absolute_rect().size.y);
 	merge_style(drag_style);
 
 	FloatingConfig floating;
@@ -218,9 +301,7 @@ void Collapsible::finalize_drag() {
 	m_placeholder = nullptr;
 	m_drop_anchor = nullptr;
 
-	StyleProperties restore_style;
-	restore_style.width = StyleLength::percent(100.0F);
-	merge_style(restore_style);
+	set_style(m_pre_drag_style);
 
 	clear_floating();
 	invalidate_layout();

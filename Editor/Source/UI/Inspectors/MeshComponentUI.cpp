@@ -2,6 +2,7 @@
 
 #include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Widgets/Dropdown.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
@@ -40,14 +41,20 @@ std::string procedural_shape(const std::string &path) {
 
 } // namespace
 
-MeshComponentUI::MeshComponentUI(const ComponentDescriptor &descriptor) : ReflectedComponentUI(descriptor, nullptr) {}
+MeshComponentUI::MeshComponentUI(const ComponentDescriptor &descriptor, UI::Core::TextureCache *textures)
+	: ReflectedComponentUI(descriptor, nullptr), m_textures(textures) {}
 
 void MeshComponentUI::build(UI::Core::Collapsible *section, UI::Core::PropertyGrid *grid) {
+	auto icon = [this](const char *name) -> GFX::GfxTexture * {
+		return m_textures != nullptr ? m_textures->load("Engine/UI/Icons/" + std::string(name) + ".svg") : nullptr;
+	};
+
 	m_primitive = grid->add_row<UI::Core::Dropdown>("Primitive");
-	m_primitive->add_option("cube", "Cube");
-	m_primitive->add_option("sphere", "Sphere");
-	m_primitive->add_option("plane", "Plane");
-	m_primitive->add_option("cylinder", "Cylinder");
+	m_primitive->set_icon(icon("cuboid"));
+	m_primitive->add_option("cube", "Cube", icon("box"));
+	m_primitive->add_option("sphere", "Sphere", icon("circle"));
+	m_primitive->add_option("plane", "Plane", icon("square"));
+	m_primitive->add_option("cylinder", "Cylinder", icon("cylinder"));
 
 	m_vertices = grid->add_row<UI::Core::Label>("Vertices", std::string("0"));
 	m_triangles = grid->add_row<UI::Core::Label>("Triangles", std::string("0"));

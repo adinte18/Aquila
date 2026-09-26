@@ -59,14 +59,18 @@ ConsolePanel::~ConsolePanel() {
 	Logger::set_sink(nullptr);
 }
 
-void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayRoot*/) {
+void ConsolePanel::build(UI::Core::View *panel, UI::Core::View * /*overlayRoot*/) {
 	if (m_texture_cache != nullptr) {
-		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.png");
-		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.png");
-		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.png");
+		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.svg");
+		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.svg");
+		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.svg");
 	}
 
 	m_scroll_view = panel->find_by_id<UI::Core::ScrollView>("console-scroll");
+	if (m_scroll_view != nullptr) {
+		m_view = dynamic_cast<UI::Core::SelectableTextView *>(
+			m_scroll_view->add_child(std::make_unique<UI::Core::SelectableTextView>()));
+	}
 
 	UI::Core::View *toolbar_ptr = panel->find_by_id("console-toolbar");
 	if (toolbar_ptr == nullptr) {
@@ -109,22 +113,32 @@ void ConsolePanel::build(UI::Core::DockPanel *panel, UI::Core::View * /*overlayR
 }
 
 void ConsolePanel::flush_pending() {
-	if (m_pending.empty() || (m_scroll_view == nullptr)) {
+	if (m_pending.empty() || (m_scroll_view == nullptr) || (m_view == nullptr)) {
 		return;
 	}
+	const bool follow_output = m_scroll_view->is_at_bottom();
 	for (auto &line : m_pending) {
-		LogLevel level = parse_level(line);
-		append_entry({ level, std::move(line) });
+		const LogLevel level = parse_level(line);
+		const std::string_view tag = level_tag(level);
+		const Usize tag_pos = tag.empty() ? std::string::npos : line.find(tag);
+		LogEntry entry{ level, std::move(line) };
+		if (tag_pos != std::string::npos) {
+			entry.tag_begin = static_cast<int>(tag_pos);
+			entry.tag_length = static_cast<int>(tag.size());
+		}
+		append_entry(std::move(entry));
 	}
 	m_pending.clear();
 	update_filter_buttons();
-	m_scroll_view->scroll_to_bottom();
+	if (follow_output) {
+		m_scroll_view->scroll_to_bottom();
+	}
 }
 
 void ConsolePanel::append_entry(LogEntry entry) {
 	if ((int)m_entries.size() >= K_MAX_MESSAGES) {
-		auto &oldest = m_entries.front();
-		switch (level_to_group(oldest.level)) {
+		const LogLevel oldest_level = m_entries.front().level;
+		switch (level_to_group(oldest_level)) {
 		case FilterGroup::Info:
 			--m_info_count;
 			break;
@@ -135,12 +149,11 @@ void ConsolePanel::append_entry(LogEntry entry) {
 			--m_error_count;
 			break;
 		}
+		if (is_shown(oldest_level)) {
+			m_view->remove_front(1);
+		}
 		m_entries.erase(m_entries.begin());
-		m_rows.erase(m_rows.begin());
-		m_scroll_view->remove_oldest_content();
 	}
-
-	int row_index = (int)m_entries.size();
 
 	switch (level_to_group(entry.level)) {
 	case FilterGroup::Info:
@@ -154,21 +167,15 @@ void ConsolePanel::append_entry(LogEntry entry) {
 		break;
 	}
 
-	auto line = std::make_unique<UI::Core::Label>(entry.message);
-	line->add_class("console-line");
-	line->add_class(level_class(entry.level));
-
-	UI::Core::View *line_ptr = m_scroll_view->add_child(std::move(line));
-	m_rows.push_back(line_ptr);
+	if (is_shown(entry.level)) {
+		show_entry(entry);
+	}
 	m_entries.push_back(std::move(entry));
-
-	apply_row_visibility(row_index);
 }
 
 void ConsolePanel::clear_all() {
-	while (!m_rows.empty()) {
-		m_scroll_view->remove_oldest_content();
-		m_rows.erase(m_rows.begin());
+	if (m_view != nullptr) {
+		m_view->clear();
 	}
 	m_entries.clear();
 	m_info_count = 0;
@@ -198,29 +205,35 @@ void ConsolePanel::toggle_filter(FilterGroup group) {
 		}
 		break;
 	}
-	for (int i = 0; i < (int)m_rows.size(); ++i) {
-		apply_row_visibility(i);
-	}
+	rebuild_view();
 }
 
-void ConsolePanel::apply_row_visibility(int index) {
-	if (index < 0 || index >= (int)m_rows.size()) {
+bool ConsolePanel::is_shown(LogLevel level) const {
+	switch (level_to_group(level)) {
+	case FilterGroup::Info:
+		return m_show_info;
+	case FilterGroup::Warning:
+		return m_show_warning;
+	case FilterGroup::Error:
+		return m_show_error;
+	}
+	return true;
+}
+
+void ConsolePanel::show_entry(const LogEntry &entry) {
+	m_view->add_line(entry.message, Vec4(0.F), entry.tag_begin, entry.tag_length, level_tag_color(entry.level));
+}
+
+void ConsolePanel::rebuild_view() {
+	if (m_view == nullptr) {
 		return;
 	}
-	FilterGroup group = level_to_group(m_entries[index].level);
-	bool visible = false;
-	switch (group) {
-	case FilterGroup::Info:
-		visible = m_show_info;
-		break;
-	case FilterGroup::Warning:
-		visible = m_show_warning;
-		break;
-	case FilterGroup::Error:
-		visible = m_show_error;
-		break;
+	m_view->clear();
+	for (const LogEntry &entry : m_entries) {
+		if (is_shown(entry.level)) {
+			show_entry(entry);
+		}
 	}
-	m_rows[index]->set_hidden(!visible);
 }
 
 void ConsolePanel::update_filter_buttons() {
@@ -267,20 +280,37 @@ ConsolePanel::FilterGroup ConsolePanel::level_to_group(LogLevel level) {
 	}
 }
 
-const char *ConsolePanel::level_class(LogLevel level) {
+Vec4 ConsolePanel::level_tag_color(LogLevel level) {
 	switch (level) {
-	case LogLevel::Critical:
-		return "console-critical";
-	case LogLevel::Error:
-		return "console-error";
 	case LogLevel::Warning:
-		return "console-warning";
+		return { 0.83F, 0.67F, 0.29F, 1.F };
+	case LogLevel::Error:
+		return { 0.87F, 0.45F, 0.45F, 1.F };
+	case LogLevel::Critical:
+		return { 1.F, 0.32F, 0.32F, 1.F };
 	case LogLevel::Debug:
-		return "console-debug";
+		return { 0.F, 0.8F, 0.8F, 1.F };
 	case LogLevel::Trace:
-		return "console-trace";
+		return { 0.55F, 0.55F, 0.55F, 1.F };
 	default:
-		return "console-info";
+		return { 0.35F, 0.87F, 0.35F, 1.F };
+	}
+}
+
+std::string_view ConsolePanel::level_tag(LogLevel level) {
+	switch (level) {
+	case LogLevel::Warning:
+		return "[AQUILA WARNING]";
+	case LogLevel::Error:
+		return "[AQUILA ERROR]";
+	case LogLevel::Critical:
+		return "[AQUILA CRITICAL]";
+	case LogLevel::Debug:
+		return "[AQUILA DEBUG]";
+	case LogLevel::Trace:
+		return "[AQUILA TRACE]";
+	default:
+		return "[AQUILA INFO]";
 	}
 }
 

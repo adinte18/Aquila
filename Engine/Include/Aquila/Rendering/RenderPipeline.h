@@ -6,7 +6,12 @@
 #include "Aquila/Rendering/Renderers/IRenderer.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/RenderView.h"
+#include "Aquila/Rendering/RenderSettings.h"
 #include "Aquila/GFX/GfxTexture.h"
+
+#include <array>
+#include <string>
+#include <vector>
 
 namespace Aquila::GFX {
 class GfxContext;
@@ -43,9 +48,21 @@ class RenderPipeline {
 	void set_primary_view(const RenderView &view) { m_primary_view = view; }
 	void clear_primary_view() { m_primary_view.reset(); }
 
+	[[nodiscard]] RenderSettings &get_settings() { return m_settings; }
+	[[nodiscard]] const RenderView &get_last_view() const { return m_last_view; }
+
 	[[nodiscard]] GFX::GfxTexture &get_output() const { return *m_scene_color; }
 	[[nodiscard]] Uint32 get_width() const { return m_width; }
 	[[nodiscard]] Uint32 get_height() const { return m_height; }
+
+	struct PassTiming {
+		std::string name;
+		F32 milliseconds = 0.F;
+	};
+
+	[[nodiscard]] const std::vector<PassTiming> &get_pass_timings() const { return m_pass_timings; }
+	[[nodiscard]] F32 get_gpu_frame_milliseconds() const { return m_gpu_frame_ms; }
+	[[nodiscard]] bool has_gpu_timings() const { return m_timestamp_pools[0] != nullptr; }
 
   private:
 	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary,
@@ -68,7 +85,16 @@ class RenderPipeline {
 	// Rotates 0..MAX_FRAMES_IN_FLIGHT-1 each Render() call, matching swapchain fence rotation.
 	Uint32 m_frame_slot = 0;
 
+	void read_pass_timings(Uint32 slot);
+
+	std::array<Unique<RHI::IRHIQueryPool>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_timestamp_pools;
+	std::array<std::vector<std::string>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_timed_passes;
+	std::vector<PassTiming> m_pass_timings;
+	F32 m_gpu_frame_ms = 0.F;
+
 	Option<RenderView> m_primary_view;
+	RenderSettings m_settings;
+	RenderView m_last_view;
 };
 
 } // namespace Aquila::Rendering

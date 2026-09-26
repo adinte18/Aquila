@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/Graphics/RenderGraph/RGTypes.h"
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 #include "Aquila/Rendering/FrameContext.h"
@@ -159,6 +160,9 @@ void ObjectPickingSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) 
 	std::vector<DrawCall> draw_calls;
 
 	for (auto entity : view) {
+		if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+			continue;
+		}
 		auto &transform = view.get<TransformComponent>(entity);
 
 		auto &mesh = view.get<MeshComponent>(entity);

@@ -93,6 +93,14 @@ void GfxCommandList::dispatch(Uint32 x, Uint32 y, Uint32 z) {
 	m_cmd->dispatch(x, y, z);
 }
 
+void GfxCommandList::reset_queries(RHI::IRHIQueryPool &pool, Uint32 first, Uint32 count) {
+	m_cmd->reset_queries(pool, first, count);
+}
+
+void GfxCommandList::write_timestamp(RHI::IRHIQueryPool &pool, Uint32 index) {
+	m_cmd->write_timestamp(pool, index);
+}
+
 void GfxCommandList::push_debug_group(const char *name) {
 	m_cmd->push_debug_group(name);
 }

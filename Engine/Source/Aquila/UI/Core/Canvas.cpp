@@ -257,6 +257,10 @@ void Canvas::submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandL
 	if (!m_root) {
 		return;
 	}
+	if (m_dirty) {
+		style_pass();
+		compute();
+	}
 	m_draw_compositor.submit(r2d, cmd);
 }
 

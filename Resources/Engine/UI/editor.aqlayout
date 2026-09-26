@@ -1,36 +1,25 @@
 <View id="root">
 
-    <View id="toolbar">
-        <View id="toolbar-left">
-            <View id="engine-logo">
-                <Image id="image-logo" src="Logo/16px.png"/>
-            </View>
-            <MenuBar id="main-menubar">
-            </MenuBar>
-        </View>
+    <View id="topbar" class="topbar">
+        <Button id="topbar-menu" class="topbar-btn" src="Engine/UI/Icons/menu.svg" tooltip="Menu"/>
+        <View class="topbar-sep"/>
+        <View id="workspace-tabs" class="workspace-tabs"/>
+        <View class="topbar-spacer"/>
+        <Button id="topbar-reset" class="topbar-btn" src="Engine/UI/Icons/refresh-cw.svg" tooltip="Reset this workspace"/>
+        <Button id="topbar-settings" class="topbar-btn" src="Engine/UI/Icons/settings.svg" tooltip="Preferences"/>
     </View>
 
-    <View id="workspace">
-        <View id="dock-root">
-            <DockSpace id="editor-dock">
-                <DockNode split="vertical">
-                    <DockNode split="horizontal">
-                        <DockPanel id="panel-hierarchy">Hierarchy
-                            <Include src="hierarchy.aqlayout"/>
-                        </DockPanel>
-                        <DockPanel id="panel-viewport">Viewport
-                            <Include src="viewport.aqlayout"/>
-                        </DockPanel>
-                        <DockPanel id="panel-inspector">Inspector
-                            <Include src="inspector.aqlayout"/>
-                        </DockPanel>
-                    </DockNode>
-                    <DockPanel id="panel-console">Console
-                        <Include src="console.aqlayout"/>
-                    </DockPanel>
-                </DockNode>
-            </DockSpace>
-        </View>
+    <View id="dock-root" class="dock-root">
+        <DockSpace id="editor-dock"/>
+    </View>
+
+    <View id="hud-status" class="hud-status">
+        <Label id="status-selection" class="status-selection">No selection</Label>
+        <View class="status-spacer"/>
+        <View class="status-item"><Label class="status-key">Objects</Label><Label id="stat-objects" class="status-value">0</Label></View>
+        <View class="status-item"><Label class="status-key">Lights</Label><Label id="stat-lights" class="status-value">0</Label></View>
+        <View class="status-item"><Label class="status-key">Vertices</Label><Label id="stat-vertices" class="status-value">0</Label></View>
+        <View class="status-item"><Label class="status-key">Triangles</Label><Label id="stat-triangles" class="status-value">0</Label></View>
     </View>
 
 </View>

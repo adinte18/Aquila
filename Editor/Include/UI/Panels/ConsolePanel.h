@@ -2,8 +2,8 @@
 
 #include "UI/Panels/IEditorPanel.h"
 #include "Aquila/UI/Core/TextureCache.h"
-#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/ScrollView.h"
+#include "Aquila/UI/Widgets/SelectableTextView.h"
 #include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/Image.h"
@@ -36,7 +36,7 @@ class ConsolePanel : public IEditorPanel {
 	explicit ConsolePanel(Aquila::UI::Core::TextureCache *texture_cache);
 	~ConsolePanel();
 
-	void build(Aquila::UI::Core::DockPanel *panel, Aquila::UI::Core::View *overlay_root) override;
+	void build(Aquila::UI::Core::View *panel, Aquila::UI::Core::View *overlay_root) override;
 	void flush_pending();
 	void clear_all();
 
@@ -44,17 +44,22 @@ class ConsolePanel : public IEditorPanel {
 	struct LogEntry {
 		LogLevel level;
 		std::string message;
+		int tag_begin = 0;
+		int tag_length = 0;
 	};
 
 	enum class FilterGroup { Info, Warning, Error };
 
 	void append_entry(LogEntry entry);
 	void toggle_filter(FilterGroup group);
-	void apply_row_visibility(int index);
+	void show_entry(const LogEntry &entry);
+	void rebuild_view();
+	[[nodiscard]] bool is_shown(LogLevel level) const;
 	void update_filter_buttons();
 	static LogLevel parse_level(const std::string &line);
 	static FilterGroup level_to_group(LogLevel level);
-	static const char *level_class(LogLevel level);
+	static Vec4 level_tag_color(LogLevel level);
+	static std::string_view level_tag(LogLevel level);
 	static Vec4 level_icon_tint(LogLevel level);
 	static constexpr int K_MAX_MESSAGES = 500;
 
@@ -77,7 +82,7 @@ class ConsolePanel : public IEditorPanel {
 	bool m_show_error = true;
 
 	Aquila::UI::Core::ScrollView *m_scroll_view = nullptr;
-	std::vector<Aquila::UI::Core::View *> m_rows;
+	Aquila::UI::Core::SelectableTextView *m_view = nullptr;
 
 	Aquila::UI::Core::Label *m_info_count_label = nullptr;
 	Aquila::UI::Core::Label *m_warning_count_label = nullptr;

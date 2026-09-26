@@ -30,10 +30,19 @@ View *DockNode::make_zone_indicator(FloatingAttachPoint elem_pt, FloatingAttachP
 
 DockNode::DockNode(DockDragContext *drag_ctx) : m_drag_ctx(drag_ctx) {
 	add_class("dock-node");
+	add_class("dock-leaf");
 
 	auto tab_bar = std::make_unique<View>();
 	tab_bar->add_class("dock-tab-bar");
 	m_tab_bar = add_child(std::move(tab_bar));
+
+	auto tab_strip = std::make_unique<View>();
+	tab_strip->add_class("dock-tab-strip");
+	m_tab_strip = m_tab_bar->add_child(std::move(tab_strip));
+
+	auto tab_actions = std::make_unique<View>();
+	tab_actions->add_class("dock-tab-actions");
+	m_tab_actions = m_tab_bar->add_child(std::move(tab_actions));
 
 	auto panel_area = std::make_unique<View>();
 	panel_area->add_class("dock-panel-area");
@@ -46,6 +55,18 @@ DockNode::DockNode(DockDragContext *drag_ctx) : m_drag_ctx(drag_ctx) {
 	m_zone_right = make_zone_indicator(AP::Center, AP::Center, { k_step, 0.F }, "dock-zone-right-ind");
 	m_zone_top = make_zone_indicator(AP::Center, AP::Center, { 0.F, -k_step }, "dock-zone-top-ind");
 	m_zone_bottom = make_zone_indicator(AP::Center, AP::Center, { 0.F, k_step }, "dock-zone-bottom-ind");
+
+	decorate_tab_bar();
+}
+
+void DockNode::decorate_tab_bar() {
+	if (m_tab_actions == nullptr || m_drag_ctx == nullptr || !m_drag_ctx->decorate_tab_bar) {
+		return;
+	}
+	while (!m_tab_actions->get_children().empty()) {
+		m_tab_actions->remove_child(m_tab_actions->get_children().back().get());
+	}
+	m_drag_ctx->decorate_tab_bar(this, m_tab_actions);
 }
 
 std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool anchor_first) {
@@ -59,12 +80,16 @@ std::pair<DockNode *, DockNode *> DockNode::split(SplitDirection dir, bool ancho
 	if (m_tab_bar != nullptr) {
 		remove_child(m_tab_bar);
 		m_tab_bar = nullptr;
+		m_tab_strip = nullptr;
+		m_tab_actions = nullptr;
 	}
 	if (m_panel_area != nullptr) {
 		remove_child(m_panel_area);
 		m_panel_area = nullptr;
 	}
 	m_is_leaf = false;
+	remove_class("dock-leaf");
+	add_class("dock-split");
 
 	StyleProperties sp;
 	sp.flex_direction = (dir == SplitDirection::Horizontal) ? FlexDirection::Row : FlexDirection::Column;
@@ -143,7 +168,7 @@ DockNode *DockNode::append_leaf(SplitDirection dir) {
 void DockNode::append_tab(DockPanel *panel, std::string title) {
 	auto wrapper = std::make_unique<View>();
 	wrapper->add_class("dock-tab-wrapper");
-	View *wrapper_raw = m_tab_bar->add_child(std::move(wrapper));
+	View *wrapper_raw = m_tab_strip->add_child(std::move(wrapper));
 
 	auto btn = std::make_unique<DockTabButton>();
 	btn->set_text(title);
@@ -155,6 +180,16 @@ void DockNode::append_tab(DockPanel *panel, std::string title) {
 
 	btn_raw->set_drag_info(m_drag_ctx, panel, this);
 	btn_raw->on_click.connect([this, panel] { set_active_panel_by_ptr(panel); });
+
+	if (m_drag_ctx != nullptr && m_drag_ctx->closable_tabs) {
+		auto close = std::make_unique<DockCloseButton>();
+		close->add_class("dock-tab-close-btn");
+		if (m_drag_ctx->close_icon != nullptr) {
+			close->set_icon(m_drag_ctx->close_icon);
+		}
+		close->set_close_info(this, panel);
+		wrapper_raw->add_child(std::move(close));
+	}
 
 	m_tabs.push_back({ wrapper_raw, btn_raw, panel, std::move(title) });
 }
@@ -218,6 +253,46 @@ void DockNode::apply_active_panel() {
 	}
 }
 
+int DockNode::index_of(const DockPanel *panel) const {
+	for (int i = 0; i < static_cast<int>(m_tabs.size()); ++i) {
+		if (m_tabs[i].panel == panel) {
+			return i;
+		}
+	}
+	return -1;
+}
+
+Unique<View> DockNode::replace_panel(DockPanel *old_panel, Unique<View> new_view) {
+	const int index = index_of(old_panel);
+	auto *new_panel = view_cast<DockPanel>(new_view.get());
+	if (index < 0 || new_panel == nullptr) {
+		return nullptr;
+	}
+
+	std::string title = new_panel->get_title();
+	m_tab_strip->remove_child(m_tabs[index].wrapper);
+	Unique<View> old_owned = m_panel_area->detach_child(old_panel);
+	m_panel_area->add_child(std::move(new_view));
+
+	const int active = m_active_panel;
+	m_tabs.erase(m_tabs.begin() + index);
+	append_tab(new_panel, std::move(title));
+	std::rotate(m_tabs.begin() + index, m_tabs.end() - 1, m_tabs.end());
+
+	std::vector<Unique<View>> wrappers;
+	wrappers.reserve(m_tabs.size());
+	for (auto &t : m_tabs) {
+		wrappers.push_back(m_tab_strip->detach_child(t.wrapper));
+	}
+	for (size_t i = 0; i < m_tabs.size(); ++i) {
+		m_tabs[i].wrapper = m_tab_strip->add_child(std::move(wrappers[i]));
+	}
+
+	m_active_panel = active;
+	apply_active_panel();
+	return old_owned;
+}
+
 std::vector<DockPanel *> DockNode::get_ordered_panels() const {
 	std::vector<DockPanel *> panels;
 	panels.reserve(m_tabs.size());
@@ -241,7 +316,7 @@ Unique<View> DockNode::detach_panel(DockPanel *panel) {
 		return nullptr;
 	}
 
-	m_tab_bar->remove_child(it->wrapper);
+	m_tab_strip->remove_child(it->wrapper);
 	auto owned = m_panel_area->detach_child(panel);
 	m_tabs.erase(it);
 
@@ -307,10 +382,10 @@ void DockNode::reorder_panel(DockPanel *panel, Vec2 cursor_pos) {
 	std::vector<Unique<View>> wrappers;
 	wrappers.reserve(m_tabs.size());
 	for (auto &t : m_tabs) {
-		wrappers.push_back(m_tab_bar->detach_child(t.wrapper));
+		wrappers.push_back(m_tab_strip->detach_child(t.wrapper));
 	}
 	for (size_t i = 0; i < m_tabs.size(); ++i) {
-		m_tabs[i].wrapper = m_tab_bar->add_child(std::move(wrappers[i]));
+		m_tabs[i].wrapper = m_tab_strip->add_child(std::move(wrappers[i]));
 	}
 
 	apply_active_panel();
@@ -337,7 +412,7 @@ void DockNode::accept_panel(Unique<View> panel_view, std::string title, DropZone
 	existing.reserve(m_tabs.size());
 
 	for (auto &tab : m_tabs) {
-		m_tab_bar->remove_child(tab.wrapper);
+		m_tab_strip->remove_child(tab.wrapper);
 		existing.push_back({ m_panel_area->detach_child(tab.panel), tab.title });
 	}
 	m_tabs.clear();

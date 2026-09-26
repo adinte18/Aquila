@@ -72,7 +72,18 @@ class TreeNode : public View {
 	[[nodiscard]] int get_depth() const { return m_depth; }
 
 	void set_selected(bool selected);
+	void set_type_icon(GFX::GfxTexture *icon);
 	void refresh_indicator();
+
+	void set_selectable(bool selectable) { m_selectable = selectable; }
+	[[nodiscard]] bool is_selectable() const { return m_selectable; }
+	[[nodiscard]] View *get_row() const { return m_row; }
+	[[nodiscard]] View *get_actions() const { return m_actions; }
+	[[nodiscard]] Button *get_header() const { return m_header; }
+	[[nodiscard]] View *get_children_container() const { return m_children; }
+	void track_row_hover(View *view);
+
+	Signal<void(bool)> on_row_hover_changed;
 
   protected:
 	TreeView &m_owner;
@@ -86,8 +97,13 @@ class TreeNode : public View {
 	std::string m_label;
 	int m_depth = 0;
 	bool m_expanded = true;
+	GFX::GfxTexture *m_type_icon = nullptr;
+	bool m_selectable = true;
+	int m_row_hover_count = 0;
 
+	View *m_row = nullptr;
 	Button *m_header = nullptr;
+	View *m_actions = nullptr;
 	View *m_children = nullptr;
 };
 

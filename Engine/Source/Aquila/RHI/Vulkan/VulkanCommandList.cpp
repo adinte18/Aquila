@@ -1,4 +1,5 @@
 #include "Aquila/RHI/Vulkan/VulkanCommandList.h"
+#include "Aquila/RHI/Vulkan/VulkanQueryPool.h"
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
 #include "Aquila/RHI/Vulkan/VulkanTexture.h"
 #include "Aquila/RHI/Vulkan/VulkanBuffer.h"
@@ -417,6 +418,20 @@ void VulkanCommandList::dispatch(Uint32 x, Uint32 y, Uint32 z) {
 }
 
 // Debug markers
+
+void VulkanCommandList::reset_queries(IRHIQueryPool &pool, Uint32 first, Uint32 count) {
+	const auto &vk_pool = static_cast<VulkanQueryPool &>(pool);
+	if (vk_pool.get_handle() != VK_NULL_HANDLE && count > 0) {
+		vkCmdResetQueryPool(m_command_buffer, vk_pool.get_handle(), first, count);
+	}
+}
+
+void VulkanCommandList::write_timestamp(IRHIQueryPool &pool, Uint32 index) {
+	const auto &vk_pool = static_cast<VulkanQueryPool &>(pool);
+	if (vk_pool.get_handle() != VK_NULL_HANDLE && index < vk_pool.get_count()) {
+		vkCmdWriteTimestamp(m_command_buffer, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, vk_pool.get_handle(), index);
+	}
+}
 
 void VulkanCommandList::push_debug_group(const char *name) {
 	if (auto fn = m_device.get_debug_begin_label()) {

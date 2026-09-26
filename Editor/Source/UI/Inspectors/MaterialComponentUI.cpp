@@ -18,6 +18,7 @@ MaterialComponentUI::MaterialComponentUI(const ComponentDescriptor &descriptor, 
 void MaterialComponentUI::build(UI::Core::Collapsible *section, UI::Core::PropertyGrid *grid) {
 	ReflectedComponentUI::build(section, grid);
 	m_texture_area = section->add_child<UI::Core::PropertyGrid>();
+	m_texture_area->set_split(grid->is_split());
 }
 
 void MaterialComponentUI::show(Entity entity) {

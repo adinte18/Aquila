@@ -64,6 +64,9 @@ void GridSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_pipeline || !m_pipeline->is_valid()) {
 		return;
 	}
+	if (ctx.settings != nullptr && !ctx.settings->show_grid) {
+		return;
+	}
 
 	auto *frame_data = ctx.frame_data;
 	const Uint32 frame_slot = ctx.frame_slot;

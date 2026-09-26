@@ -27,9 +27,9 @@ struct FontFamily {
 	const char *label;
 };
 
-constexpr FontFamily k_font_families[] = {
-	{ "Lexend", "Lexend" },
-	{ "Inconsolata", "Inconsolata" },
+constexpr FontFamily K_FONT_FAMILIES[] = {
+	{ .id = "Geist", .label = "Geist" },
+	{ .id = "Inconsolata", .label = "Inconsolata" },
 };
 
 } // namespace
@@ -37,14 +37,15 @@ constexpr FontFamily k_font_families[] = {
 SettingsWindow::SettingsWindow() = default;
 SettingsWindow::~SettingsWindow() = default;
 
-void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 height, const std::string &style_path) {
+void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 height,
+						   const std::vector<std::string> &style_paths) {
 	m_texture_cache = texture_cache;
 	if (m_texture_cache != nullptr) {
-		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.png");
+		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.svg");
 	}
 
 	m_canvas = std::make_unique<Canvas>(width, height);
-	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
+	UI::StyleParser::load_files(style_paths, m_canvas->get_style_sheet());
 
 	m_working = Config::get_preferences();
 
@@ -67,8 +68,10 @@ void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 hei
 			 &m_working.fonts.main_family);
 	font_row(interface_section, "Mono font", "Monospace font used by the console and code-style text.",
 			 &m_working.fonts.mono_family);
-	float_row(interface_section, "Interface scale", "Scales the size of all interface text. 1.0 is the default.",
-			  &m_working.ui_scale, 0.75F, 1.75F, 0.01F, 2);
+	float_row(interface_section, "Interface scale",
+			  "Scales the whole interface: text, spacing and sizes. 1.0 is the default. Ctrl+Plus, Ctrl+Minus and "
+			  "Ctrl+0 also change it.",
+			  &m_working.ui_scale, 0.5F, 2.F, 0.01F, 2);
 
 	auto *footer = root->add_child<View>();
 	footer->add_class("settings-footer");
@@ -136,7 +139,7 @@ void SettingsWindow::float_row(View *host, const std::string &label, const std::
 	drag->add_class("settings-field");
 	drag->set_value(*field);
 	drag->on_changed.connect([field](float value) { *field = value; });
-	m_sync.push_back([drag, field] { drag->set_value(*field); });
+	m_sync.emplace_back([drag, field] { drag->set_value(*field); });
 }
 
 void SettingsWindow::font_row(View *host, const std::string &label, const std::string &description,
@@ -145,12 +148,12 @@ void SettingsWindow::font_row(View *host, const std::string &label, const std::s
 
 	auto *dropdown = row->add_child<Dropdown>();
 	dropdown->add_class("settings-field");
-	for (const auto &family : k_font_families) {
+	for (const auto &family : K_FONT_FAMILIES) {
 		dropdown->add_option(family.id, family.label);
 	}
 	dropdown->set_value(*family_field);
 	dropdown->on_changed.connect([family_field](const std::string &id) { *family_field = id; });
-	m_sync.push_back([dropdown, family_field] { dropdown->set_value(*family_field); });
+	m_sync.emplace_back([dropdown, family_field] { dropdown->set_value(*family_field); });
 }
 
 void SettingsWindow::apply() {

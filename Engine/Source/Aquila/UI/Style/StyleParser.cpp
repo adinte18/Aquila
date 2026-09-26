@@ -215,16 +215,31 @@ void StyleParser::apply_property(StyleProperties &props, std::string_view proper
 }
 
 bool StyleParser::load_file(const std::string &path, StyleSheet &sheet) {
-	const std::string src = Platform::Filesystem::VirtualFileSystem::get()->read_text_file(path);
-	if (src.empty()) {
-		AQUILA_LOG_ERROR("StyleParser: cannot open '{}'", path);
-		return false;
-	}
-	return LoadString(src, sheet);
+	return load_files(std::span(&path, 1), sheet);
 }
 
-bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
+bool StyleParser::load_files(std::span<const std::string> paths, StyleSheet &sheet) {
 	sheet.clear();
+
+	bool all_ok = true;
+	for (const std::string &path : paths) {
+		const std::string src = Platform::Filesystem::VirtualFileSystem::get()->read_text_file(path);
+		if (src.empty()) {
+			AQUILA_LOG_ERROR("StyleParser: cannot open '{}'", path);
+			all_ok = false;
+			continue;
+		}
+		if (!LoadString(src, sheet, false)) {
+			all_ok = false;
+		}
+	}
+	return all_ok;
+}
+
+bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet, bool clear_first) {
+	if (clear_first) {
+		sheet.clear();
+	}
 
 	std::string src = ParserHelper::strip_comments(css);
 
@@ -233,8 +248,9 @@ bool StyleParser::LoadString(std::string_view css, StyleSheet &sheet) {
 		sheet.add_variable(name, value);
 	}
 
-	if (!vars.empty()) {
-		src = substitute_variables(std::move(src), vars);
+	const auto &all_vars = sheet.get_variables();
+	if (!all_vars.empty()) {
+		src = substitute_variables(std::move(src), all_vars);
 	}
 
 	size_t i = 0;

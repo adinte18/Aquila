@@ -29,12 +29,14 @@ class GfxContext {
 	[[nodiscard]] Ref<GfxDescriptorSetLayout> create_descriptor_set_layout(const RHI::DescriptorSetLayoutDesc &desc);
 	[[nodiscard]] Ref<GfxDescriptorSet> allocate_descriptor_set(GfxDescriptorSetLayout &layout);
 	[[nodiscard]] Ref<GfxRenderPass> create_render_pass(const RHI::RenderPassDesc &desc);
+	[[nodiscard]] Unique<RHI::IRHIQueryPool> create_timestamp_pool(Uint32 count);
 
 	[[nodiscard]] Ref<GfxCommandList> create_command_list(RHI::CommandListType type, const std::string &name = {});
 	[[nodiscard]] GfxCommandList &acquire_frame_command_list(Uint32 frame_slot);
 
 	void copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset = 0, Uint64 dst_offset = 0);
 	void upload_texture_data(GfxTexture &dst, const void *data, Uint64 byte_size);
+	void upload_texture_mips(GfxTexture &dst, const std::vector<std::vector<Uint8>> &levels);
 
 	void destroy_immediate_texture(GfxTexture &texture);
 	void destroy_immediate_buffer(GfxBuffer &buffer);

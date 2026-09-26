@@ -4,6 +4,7 @@
 #include "Aquila/UI/Widgets/DragFloat.h"
 #include "Aquila/UI/Widgets/DragInt.h"
 #include "Aquila/UI/Widgets/Dropdown.h"
+#include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
 #include "Aquila/UI/Widgets/ReflectedPropertyGrid.h"
 #include "Aquila/UI/Widgets/TextInput.h"
@@ -40,7 +41,7 @@ struct Thing {
 TypeInfo make_type() {
 	TypeInfo info("Thing");
 	TypeBuilder<Thing>(info)
-		.property("Size", &Thing::size, { .min = 0.F, .max = 10.F })
+		.property("Size", &Thing::size, { .min = 0.F, .max = 10.F, .slider = true })
 		.property("Count", &Thing::count)
 		.property("Solid", &Thing::solid)
 		.property("Glowing", &Thing::glowing, { .toggle = true })
@@ -174,5 +175,42 @@ TEST_SUITE("ReflectedPropertyGrid") {
 
 		widget<DragFloat>(reflected, "Size").on_changed(5.F);
 		CHECK(thing.size == doctest::Approx(2.F));
+	}
+
+	TEST_CASE("split mode uses checkboxes, stacked vectors and sliders") {
+		const TypeInfo type = make_type();
+		PropertyGrid grid;
+		grid.set_split(true);
+		ReflectedPropertyGrid reflected(grid, type, nullptr);
+
+		CHECK(dynamic_cast<Checkbox *>(reflected.get_widget("Glowing")) != nullptr);
+		const auto &offset_classes = reflected.get_widget("Offset")->get_classes();
+		CHECK(std::ranges::find(offset_classes, "vec-field-stacked") != offset_classes.end());
+		const auto &size_classes = reflected.get_widget("Size")->get_classes();
+		CHECK(std::ranges::find(size_classes, "drag-float-slider") != size_classes.end());
+	}
+
+	TEST_CASE("split check rows still hide with their property") {
+		const TypeInfo type = make_type();
+		PropertyGrid grid;
+		grid.set_split(true);
+		ReflectedPropertyGrid reflected(grid, type, nullptr);
+		Thing thing;
+		reflected.bind(&thing);
+
+		CHECK(is_hidden(reflected.get_widget("Radius")->get_parent()));
+		widget<Checkbox>(reflected, "Glowing").on_changed(true);
+		CHECK(thing.glowing);
+	}
+
+	TEST_CASE("read-only strings are shown as labels") {
+		TypeInfo type("Thing");
+		TypeBuilder<Thing>(type).read_only("Id", [](const Thing &t) { return t.label + "#1"; });
+		PropertyGrid grid;
+		ReflectedPropertyGrid reflected(grid, type, nullptr);
+		Thing thing;
+		reflected.bind(&thing);
+
+		CHECK(widget<Label>(reflected, "Id").get_text() == "thing#1");
 	}
 }

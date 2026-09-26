@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/OutlineSystem.h"
+#include "Aquila/Scene/Visibility.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
@@ -146,6 +147,9 @@ void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_mask_pipeline || !m_mask_pipeline->is_valid() || !m_outline_pipeline || !m_outline_pipeline->is_valid()) {
 		return;
 	}
+	if (ctx.settings != nullptr && !ctx.settings->show_outline) {
+		return;
+	}
 
 	struct DrawCall {
 		Ref<GFX::GfxMesh> gpu_mesh;
@@ -157,6 +161,9 @@ void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 
 	auto view = ctx.scene->get_registry().view<OutlineComponent, TransformComponent, MeshComponent>();
 	for (auto entity : view) {
+		if (!SceneManagement::is_visible_in_hierarchy(ctx.scene->get_registry(), entity)) {
+			continue;
+		}
 		auto &mesh = view.get<MeshComponent>(entity);
 		if (!mesh.is_valid()) {
 			continue;

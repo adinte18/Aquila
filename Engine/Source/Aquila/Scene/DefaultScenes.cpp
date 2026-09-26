@@ -16,6 +16,16 @@ namespace Aquila::SceneManagement {
 
 using namespace Aquila::SceneManagement::Components;
 
+Ref<Graphics::Material> make_default_material(GFX::GfxContext &ctx) {
+	return Graphics::MaterialFactory::get()->create(ctx, SharedConstants::SHADERS_DIR + "Basic.slang",
+													{
+														.type = Graphics::MaterialType::Lit,
+														.color_formats = { RHI::TextureFormat::RGBA16F },
+														.depth_test = true,
+														.depth_write = true,
+													});
+}
+
 Entity spawn_default_camera(Scene &scene, F32 aspect_ratio) {
 	auto *em = scene.get_entity_manager();
 	auto cam = em->create_entity("Camera");
@@ -34,13 +44,7 @@ void populate_demo_scene(Scene &scene, GFX::GfxContext &ctx, F32 aspect_ratio) {
 	auto *em = scene.get_entity_manager();
 	spawn_default_camera(scene, aspect_ratio);
 
-	auto lit_mat = Graphics::MaterialFactory::get()->create(ctx, SharedConstants::SHADERS_DIR + "Basic.slang",
-															{
-																.type = Graphics::MaterialType::Lit,
-																.color_formats = { RHI::TextureFormat::RGBA16F },
-																.depth_test = true,
-																.depth_write = true,
-															});
+	auto lit_mat = make_default_material(ctx);
 
 	auto add_cube = [&](const char *name, Vec3 pos) {
 		auto entity = em->create_entity(name);

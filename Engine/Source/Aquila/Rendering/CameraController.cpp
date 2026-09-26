@@ -38,6 +38,43 @@ void CameraController::set_viewport_size(Uint32 width, Uint32 height) {
 	m_camera.set_perspective_projection(m_fov, m_aspect, m_near, m_far);
 }
 
+void CameraController::set_fov(F32 fov_degrees) {
+	const F32 fov = Math::clamp(fov_degrees, 1.F, 179.F);
+	if (fov == m_fov) {
+		return;
+	}
+	m_fov = fov;
+	m_camera.set_perspective_projection(m_fov, m_aspect, m_near, m_far);
+	Foundation::FrameScheduler::get()->request_frame();
+}
+
+RenderView CameraController::render_view_from(const Mat4 &world, F32 fov_degrees, F32 near_plane,
+											  F32 far_plane) const {
+	Mat4 basis(1.F);
+	for (int i = 0; i < 3; ++i) {
+		const Vec3 axis = Vec3(world[i]);
+		const F32 length = Math::length(axis);
+		basis[i] = Vec4(length > 1e-6F ? axis / length : Vec3(0.F), 0.F);
+	}
+	basis[3] = world[3];
+
+	RenderView view;
+	view.view = Math::inverse(basis);
+	view.projection = Math::perspective_vulkan(Math::radians(fov_degrees), m_aspect, near_plane, far_plane);
+	view.projection[1][1] *= -1.F;
+	view.position = Vec3(basis[3]);
+	view.right = Vec3(basis[0]);
+	view.up = Vec3(basis[1]);
+	view.forward = Vec3(basis[2]);
+	view.near_plane = near_plane;
+	view.far_plane = far_plane;
+	view.fov = fov_degrees;
+	view.aspect = m_aspect;
+	view.is_orthographic = false;
+	view.valid = true;
+	return view;
+}
+
 void CameraController::set_viewport_rect(Vec2 position, Vec2 size) {
 	m_viewport_pos = position;
 	m_viewport_size = size;
@@ -48,7 +85,7 @@ void CameraController::update(F32 delta_time) {
 	const bool rmb = Input::is_mouse_button_pressed(Events::MouseButton::Right);
 	const bool lmb = Input::is_mouse_button_pressed(Events::MouseButton::Left);
 	const bool alt = Input::is_key_pressed(Events::KeyCode::LeftAlt);
-	const bool over = point_in_rect(mouse, m_viewport_pos, m_viewport_size);
+	const bool over = !m_navigation_blocked && point_in_rect(mouse, m_viewport_pos, m_viewport_size);
 
 	const bool rmb_edge = rmb && !m_prev_rmb;
 	const bool lmb_edge = lmb && !m_prev_lmb;
@@ -86,10 +123,10 @@ void CameraController::update(F32 delta_time) {
 
 	m_camera.rotate(delta.x * kRotateSensitivity, delta.y * kRotateSensitivity);
 
+	m_camera.reset_speed();
+	m_camera.get_movement_speed() = m_move_speed;
 	if (Input::is_key_pressed(Events::KeyCode::LeftShift)) {
 		m_camera.speed_up();
-	} else {
-		m_camera.reset_speed();
 	}
 
 	if (Input::is_key_pressed(Events::KeyCode::W)) {
@@ -119,7 +156,7 @@ void CameraController::update(F32 delta_time) {
 void CameraController::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Events::MouseScrolledEvent>([this](Events::MouseScrolledEvent &scroll) {
-		if (!point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
+		if (m_navigation_blocked || !point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
 			return false;
 		}
 		m_camera.move_forward(scroll.get_y_offset() * kDollyStep);

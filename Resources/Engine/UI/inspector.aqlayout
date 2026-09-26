@@ -1,18 +1,16 @@
-<View id="inspector-root">
-    <View id="inspector-empty">
-        <Label class="inspector-empty-text">Select an actor in the Hierarchy panel to inspect and edit its components.</Label>
-    </View>
-    <ScrollView id="inspector-scroll">
-        <View id="inspector-list">
-            <TextInput id="inspector-name" class="inspector-entity-name"/>
-            <Label id="inspector-uuid" class="inspector-entity-uuid"/>
-            <Button id="inspector-add-component" class="inspector-add-component" src="Engine/UI/Icons/plus.png"> Add Component</Button>
-            <Collapsible id="section-transform" src="Engine/UI/Icons/move-3d.png">Transform</Collapsible>
-            <Collapsible id="section-mesh" src="Engine/UI/Icons/box.png">Mesh</Collapsible>
-            <Collapsible id="section-material" src="Engine/UI/Icons/eclipse.png">Material</Collapsible>
-            <Collapsible id="section-light" src="Engine/UI/Icons/lightbulb.png">Light</Collapsible>
-            <Collapsible id="section-skylight" src="Engine/UI/Icons/eclipse.png">Sky Light</Collapsible>
-            <Collapsible id="section-camera" src="Engine/UI/Icons/video.png">Camera</Collapsible>
+<View id="inspector-root" class="props-root">
+    <View id="props-tabs" class="props-tabs"/>
+    <View class="props-main">
+        <View id="props-head" class="props-head">
+            <Image id="props-head-icon" class="props-head-icon"/>
+            <TextInput id="inspector-name" class="props-name"/>
+            <Label id="inspector-uuid" class="props-uuid"/>
         </View>
-    </ScrollView>
+        <View id="inspector-empty" class="props-empty">
+            <Label class="inspector-empty-text">Select an entity in the Hierarchy to inspect it.</Label>
+        </View>
+        <ScrollView id="inspector-scroll">
+            <View id="inspector-pages" class="props-pages"/>
+        </ScrollView>
+    </View>
 </View>

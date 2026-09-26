@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/SceneFrameData.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/Scene/Scene.h"
 #include "Aquila/Scene/Entity.h"
@@ -363,6 +364,9 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 			if (light_count >= SharedConstants::MAX_LIGHTS) {
 				break;
 			}
+			if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+				continue;
+			}
 			const auto &light = view.get<LightComponent>(entity);
 			const auto &transform = view.get<TransformComponent>(entity);
 			if (!light.m_is_active) {
@@ -397,6 +401,9 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 	{
 		auto view = registry.view<SkyLightComponent>();
 		for (auto entity : view) {
+			if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+				continue;
+			}
 			const auto &sky = view.get<SkyLightComponent>(entity);
 			if (!sky.is_active()) {
 				continue;

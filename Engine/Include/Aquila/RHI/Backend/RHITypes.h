@@ -205,6 +205,14 @@ struct SamplerDesc {
 		return d;
 	}
 
+	static SamplerDesc ui_image(float max_lod) {
+		SamplerDesc d{};
+		d.mipmap_mode = MipmapMode::Linear;
+		d.max_lod = max_lod;
+		d.mip_lod_bias = -0.5F;
+		return d;
+	}
+
 	static SamplerDesc font_atlas() {
 		SamplerDesc d{};
 		d.mag_filter = FilterMode::Linear;

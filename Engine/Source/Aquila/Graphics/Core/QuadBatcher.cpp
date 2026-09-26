@@ -19,7 +19,7 @@ static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *sh
 											const std::vector<GFX::GfxDescriptorSetLayout *> &set_layouts,
 											Uint32 push_constant_size, RHI::TextureFormat color_format,
 											RHI::SampleCount sample_count, RHI::TextureFormat depth_format,
-											RHI::VertexBindingDesc vertex_layout, bool min_sample_shading = false) {
+											RHI::VertexBindingDesc vertex_layout) {
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
 	if (!RHI::VulkanShaderCompiler::compile_file(shader_path, stages, err)) {
@@ -55,7 +55,6 @@ static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *sh
 	desc.blend_attachments = { { true } };
 	desc.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, push_constant_size } };
 	desc.sample_count = sample_count;
-	desc.min_sample_shading = min_sample_shading;
 	desc.custom_vertex_layout = std::move(vertex_layout);
 
 	return ctx.create_graphics_pipeline(desc);
@@ -347,10 +346,9 @@ GFX::GfxPipeline &QuadBatcher::get_or_create_text_pipeline(RHI::TextureFormat fo
 	if (it != m_text_pipelines.end()) {
 		return *it->second;
 	}
-	const bool per_sample_shading = (samples != RHI::SampleCount::X1);
 	m_text_pipelines[key] =
 		build_pipeline(m_ctx, K_TEXT_SHADER, { m_text_data_layout.get() }, sizeof(QuadPushConstants), format, samples,
-					   depth_format, text_vertex_layout(), per_sample_shading);
+					   depth_format, text_vertex_layout());
 	return *m_text_pipelines[key];
 }
 

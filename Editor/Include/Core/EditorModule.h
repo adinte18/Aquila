@@ -2,30 +2,29 @@
 
 #include "Aquila/Application/EngineContext.h"
 #include "Aquila/Application/IModule.h"
+#include "Aquila/Rendering/CameraController.h"
 #include "Aquila/Rendering/IRenderWindowHost.h"
-#include "Aquila/UI/Core/DockWindowManager.h"
+#include "Aquila/Scene/Entity.h"
+#include "Aquila/Scene/SceneStatistics.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Core/UIHost.h"
 #include "Aquila/UI/DevTools/UIDevTools.h"
-#include "Aquila/Rendering/CameraController.h"
-#include "Aquila/Scene/Entity.h"
-#include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Core/ProjectManager.h"
 
-#include <vector>
-
 namespace Aquila::UI::Core {
-class View;
 class DockSpace;
+class DockWindowManager;
+class View;
 }
 
 namespace Editor {
 
-class ViewportPanel;
-class HierarchyPanel;
-class InspectorPanel;
-class ConsolePanel;
+class EditorContext;
+class EditorWindows;
+class Workspaces;
+class StatusBar;
 class SettingsWindow;
 class ProjectLauncher;
 class ProjectManager;
@@ -43,29 +42,37 @@ class EditorModule final : public Aquila::Application::IModule {
 	void on_render_resize(Uint32 width, Uint32 height) override;
 
   private:
+	void register_windows();
+	void register_workspaces();
+
 	F32 window_aspect();
 	void new_empty_scene();
 	void reset_to_demo_scene();
-	void refresh_scene_panels();
-	void request_viewport_pick(Vec2 uv);
+	void scene_replaced();
 	void set_outlined_entity(Aquila::SceneManagement::Entity entity);
 	void setup_editor_ui();
-	void wire_menubar(Aquila::UI::Core::View *layout_root);
+	void wire_main_menu(Aquila::UI::Core::View *layout_root);
 	void open_settings_window();
 	void open_project_launcher();
 	void enter_editor(const ProjectInfo &project);
 	void apply_font_settings();
+	void set_ui_scale(F32 scale);
 
 	Aquila::Application::EngineContext *m_engine = nullptr;
+	Aquila::SceneManagement::StatisticsCollector m_statistics;
+	Unique<StatusBar> m_status_bar;
+	Aquila::UI::Core::PopupMenu *m_main_menu = nullptr;
 	Unique<Aquila::UI::Core::UIHost> m_ui_host;
 	Unique<ProjectManager> m_project_manager;
 	Unique<Aquila::UI::Core::TextureCache> m_texture_cache;
 	Unique<Aquila::Rendering::CameraController> m_editor_camera;
 
-	Unique<ViewportPanel> m_viewport_panel;
-	Unique<HierarchyPanel> m_hierarchy_panel;
-	Unique<InspectorPanel> m_inspector_panel;
-	Unique<ConsolePanel> m_console_panel;
+	Unique<EditorContext> m_context;
+	Unique<EditorWindows> m_windows;
+	Unique<Workspaces> m_workspaces;
+	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
+	Unique<Aquila::UI::Core::DockWindowManager> m_dock_manager;
+
 	Unique<Aquila::UI::DevTools::UIDevTools> m_devtools;
 	Unique<SettingsWindow> m_settings_window;
 	Unique<ProjectLauncher> m_project_launcher;
@@ -74,11 +81,9 @@ class EditorModule final : public Aquila::Application::IModule {
 	Option<ProjectInfo> m_pending_project;
 
 	Aquila::SceneManagement::Entity m_outlined_entity;
+	Option<Aquila::SceneManagement::Entity> m_pending_pick;
 
 	Aquila::UI::Core::LayoutLoader m_layout_loader;
-
-	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
-	Unique<Aquila::UI::Core::DockWindowManager> m_dock_manager;
 };
 
 }

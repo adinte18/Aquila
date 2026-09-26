@@ -15,7 +15,7 @@ class GfxContext;
 namespace Aquila::UI::Core {
 
 struct FontSettings {
-	std::string main_family = "Lexend";
+	std::string main_family = "Geist";
 	std::string mono_family = "Inconsolata";
 	F32 size = 16.F;
 };
@@ -42,6 +42,6 @@ class FontManager {
 	std::unordered_map<std::string, Text::FontAtlas *> m_font_map;
 };
 
-}
+} // namespace Aquila::UI::Core
 
 #endif

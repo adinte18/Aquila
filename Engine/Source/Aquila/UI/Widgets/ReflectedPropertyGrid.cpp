@@ -5,6 +5,7 @@
 #include "Aquila/UI/Widgets/DragFloat.h"
 #include "Aquila/UI/Widgets/DragInt.h"
 #include "Aquila/UI/Widgets/Dropdown.h"
+#include "Aquila/UI/Widgets/Label.h"
 #include "Aquila/UI/Widgets/PropertyGrid.h"
 #include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/UI/Widgets/Toggle.h"
@@ -85,6 +86,7 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 	row.property = &property;
 
 	auto edited = [this, index](const PropertyValue &value) { on_widget_edited(index, value); };
+	const bool split = grid.is_split();
 
 	switch (property.kind) {
 	case PropertyKind::Bool: {
@@ -93,7 +95,9 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value_without_notify(std::get<bool>(value)); };
 		};
-		if (property.hints.toggle) {
+		if (split) {
+			connect(grid.add_check_row<Checkbox>(property.name, false));
+		} else if (property.hints.toggle) {
 			connect(grid.add_row<Toggle>(property.name, false));
 		} else {
 			connect(grid.add_row<Checkbox>(property.name, false));
@@ -103,23 +107,25 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 	case PropertyKind::Int: {
 		auto *field = grid.add_row<DragInt>(property.name);
 		field->set_speed(property.hints.speed);
-		field->on_changed.connect([edited](float value) {
-			edited(PropertyValue{ static_cast<Int32>(std::lround(value)) });
-		});
+		field->on_changed.connect(
+			[edited](float value) { edited(PropertyValue{ static_cast<Int32>(std::lround(value)) }); });
 		row.widget = field;
 		row.show = [field](const PropertyValue &value) { field->set_int_value(std::get<Int32>(value)); };
 		break;
 	}
 	case PropertyKind::Float: {
 		auto *field = grid.add_row<DragFloat>(property.name, drag_config(property.hints));
+		field->set_slider(property.hints.slider);
+		field->set_suffix(std::string(property.hints.unit));
 		field->on_changed.connect([edited](float value) { edited(PropertyValue{ value }); });
 		row.widget = field;
 		row.show = [field](const PropertyValue &value) { field->set_value(std::get<F32>(value)); };
 		break;
 	}
 	case PropertyKind::Vec2: {
-		auto *field = grid.add_row<Vec2Field>(property.name);
+		auto *field = grid.add_stacked_row<Vec2Field>(property.name);
 		field->set_speed(property.hints.speed);
+		field->set_stacked(split);
 		field->on_changed.connect([edited](Vec2 value) { edited(PropertyValue{ value }); });
 		row.widget = field;
 		row.show = [field](const PropertyValue &value) { field->set_value(std::get<Vec2>(value)); };
@@ -132,8 +138,13 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(Vec4(std::get<Vec3>(value), 1.F)); };
 		} else {
-			auto *field = grid.add_row<Vec3Field>(property.name);
+			auto *field = grid.add_stacked_row<Vec3Field>(property.name);
 			field->set_speed(property.hints.speed);
+			field->set_stacked(split);
+			field->set_suffix(std::string(property.hints.unit));
+			if (split) {
+				field->set_precision(property.hints.precision);
+			}
 			field->on_changed.connect([edited](Vec3 value) { edited(PropertyValue{ value }); });
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(std::get<Vec3>(value)); };
@@ -147,8 +158,9 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(std::get<Vec4>(value)); };
 		} else {
-			auto *field = grid.add_row<Vec4Field>(property.name);
+			auto *field = grid.add_stacked_row<Vec4Field>(property.name);
 			field->set_speed(property.hints.speed);
+			field->set_stacked(split);
 			field->on_changed.connect([edited](Vec4 value) { edited(PropertyValue{ value }); });
 			row.widget = field;
 			row.show = [field](const PropertyValue &value) { field->set_value(std::get<Vec4>(value)); };
@@ -156,6 +168,12 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 		break;
 	}
 	case PropertyKind::String: {
+		if (property.hints.read_only) {
+			auto *label = grid.add_row<Label>(property.name, std::string{});
+			row.widget = label;
+			row.show = [label](const PropertyValue &value) { label->set_text(std::get<std::string>(value)); };
+			break;
+		}
 		auto *field = grid.add_row<TextInput>(property.name);
 		field->on_changed.connect([edited](const std::string &value) { edited(PropertyValue{ value }); });
 		row.widget = field;
@@ -175,7 +193,10 @@ void ReflectedPropertyGrid::add_row(PropertyGrid &grid, const Property &property
 	}
 	}
 
+	if (property.hints.read_only && property.kind != PropertyKind::String) {
+		row.widget->set_enabled(false);
+	}
 	m_rows.push_back(std::move(row));
 }
 
-}
+} // namespace Aquila::UI::Core

@@ -8,8 +8,8 @@
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/UI/Widgets/Button.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
-#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/ScrollView.h"
+#include "Aquila/UI/Widgets/TextInput.h"
 
 namespace Editor {
 
@@ -19,13 +19,10 @@ using namespace Aquila::SceneManagement::Components;
 
 HierarchyPanel::HierarchyPanel(EntityManager &entity_manager) : m_entity_manager(entity_manager) {}
 
-void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_root) {
+void HierarchyPanel::build(UI::Core::View *panel, UI::Core::View *overlay_root) {
 	auto ctx_uniq = std::make_unique<UI::Core::PopupMenu>();
 	auto *ctx = dynamic_cast<UI::Core::PopupMenu *>(overlay_root->add_child(std::move(ctx_uniq)));
-	ctx->add_item("Create Empty", [this] {
-		auto entity = m_entity_manager.create_entity("New Entity");
-		m_tree_view->add_entity_node(entity.get_name(), entity);
-	});
+	ctx->add_item("Create Empty", [this] { on_create_requested(); });
 	ctx->add_item("Create Cube", [] { AQUILA_LOG_INFO("HierarchyPanel: Create Cube (not yet implemented)"); });
 
 	{
@@ -63,6 +60,20 @@ void HierarchyPanel::build(UI::Core::DockPanel *panel, UI::Core::View *overlay_r
 		});
 
 		m_tree_view->set_on_background_right_clicked([ctx](Vec2 pos) { ctx->open_at(pos); });
+		scroll->on_context_menu.connect([ctx](Vec2 pos) { ctx->open_at(pos); });
+		m_tree_view->on_visibility_changed.connect([this](Entity entity) { on_visibility_changed(entity); });
+	}
+
+	if (auto *filter = panel->find_by_id<UI::Core::TextInput>("hierarchy-filter")) {
+		filter->set_placeholder("Filter");
+		filter->on_changed.connect([this](const std::string &query) {
+			if (m_tree_view != nullptr) {
+				m_tree_view->apply_filter(query);
+			}
+		});
+	}
+	if (auto *create = panel->find_by_id<UI::Core::Button>("hierarchy-create")) {
+		create->on_click.connect([this] { on_create_requested(); });
 	}
 }
 
@@ -163,6 +174,14 @@ void HierarchyPanel::refresh_entity(Entity entity) {
 	}
 	if (HierarchyTreeNode *node = m_tree_view->find_node_for_entity(entity)) {
 		node->set_label(entity.get_name());
+		m_tree_view->refresh_node_icon(node);
+		m_tree_view->regroup(node);
+	}
+}
+
+void HierarchyPanel::set_entity_icons(const EntityIcons &icons) {
+	if (m_tree_view != nullptr) {
+		m_tree_view->set_entity_icons(icons);
 	}
 }
 

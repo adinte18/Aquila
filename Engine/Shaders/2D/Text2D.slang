@@ -188,7 +188,7 @@ float CalcCoverage(float xcov, float ycov, float xwgt, float ywgt) {
 	}
 
 	float coverage = CalcCoverage(xcov, ycov, xwgt, ywgt);
-	return input.color * coverage;
+	return float4(input.color.rgb, input.color.a * coverage);
 }
 
 #endif // AQUILA_TEXT2D_SLANG

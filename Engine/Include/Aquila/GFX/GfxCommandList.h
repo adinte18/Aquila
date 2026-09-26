@@ -58,6 +58,9 @@ class GfxCommandList {
 
 	void dispatch(Uint32 x, Uint32 y, Uint32 z);
 
+	void reset_queries(RHI::IRHIQueryPool &pool, Uint32 first, Uint32 count);
+	void write_timestamp(RHI::IRHIQueryPool &pool, Uint32 index);
+
 	void push_debug_group(const char *name);
 	void pop_debug_group();
 

@@ -22,7 +22,9 @@ class ReflectedComponentUI : public IComponentUI {
 	bool matches(Aquila::SceneManagement::Entity entity) const override;
 	void build(Aquila::UI::Core::Collapsible *section, Aquila::UI::Core::PropertyGrid *grid) override;
 	void show(Aquila::SceneManagement::Entity entity) override;
-	std::vector<ComponentSignal> signals(Aquila::SceneManagement::Entity entity) const override;
+	void refresh() override;
+	bool is_removable() const override;
+	void remove(Aquila::SceneManagement::Entity entity) override;
 
   protected:
 	[[nodiscard]] const Aquila::SceneManagement::ComponentDescriptor &get_descriptor() const { return m_descriptor; }

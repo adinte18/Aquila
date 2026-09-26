@@ -9,6 +9,7 @@
 
 #include <limits>
 #include <string>
+#include <string_view>
 #include <type_traits>
 #include <variant>
 #include <vector>
@@ -31,7 +32,9 @@ struct PropertyHints {
 	Int32 precision = 2;
 	bool color = false;
 	bool toggle = false;
+	bool slider = false;
 	bool read_only = false;
+	std::string_view unit;
 };
 
 struct Property {

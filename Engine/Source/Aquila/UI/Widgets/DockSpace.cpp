@@ -616,8 +616,8 @@ void apply_child_fractions(const std::vector<DockNode *> &leaves, const std::vec
 	}
 }
 
-void realize_desc(DockNode *node, const DockNodeDesc &desc,
-				  std::unordered_map<std::string, HarvestedPanel> &by_id) {
+void realize_desc(DockNode *node, const DockNodeDesc &desc, std::unordered_map<std::string, HarvestedPanel> &by_id,
+				  const DockSpace::PanelFactory &factory) {
 	if (node == nullptr) {
 		return;
 	}
@@ -625,11 +625,18 @@ void realize_desc(DockNode *node, const DockNodeDesc &desc,
 	if (desc.is_leaf) {
 		for (const std::string &id : desc.panel_ids) {
 			auto it = by_id.find(id);
-			if (it == by_id.end() || !it->second.view) {
+			if (it != by_id.end() && it->second.view) {
+				node->accept_panel(std::move(it->second.view), it->second.title, DropZone::Center);
+				by_id.erase(it);
 				continue;
 			}
-			node->accept_panel(std::move(it->second.view), it->second.title, DropZone::Center);
-			by_id.erase(it);
+			if (!factory) {
+				continue;
+			}
+			if (Unique<DockPanel> created = factory(id)) {
+				std::string title = created->get_title();
+				node->accept_panel(std::move(created), std::move(title), DropZone::Center);
+			}
 		}
 		const int count = node->get_tab_count();
 		if (count > 0) {
@@ -646,7 +653,7 @@ void realize_desc(DockNode *node, const DockNodeDesc &desc,
 		return;
 	}
 	if (desc.children.size() == 1) {
-		realize_desc(node, desc.children[0], by_id);
+		realize_desc(node, desc.children[0], by_id, factory);
 		return;
 	}
 
@@ -667,13 +674,13 @@ void realize_desc(DockNode *node, const DockNodeDesc &desc,
 	apply_child_fractions(leaves, desc.children, dir);
 
 	for (std::size_t i = 0; i < leaves.size() && i < desc.children.size(); ++i) {
-		realize_desc(leaves[i], desc.children[i], by_id);
+		realize_desc(leaves[i], desc.children[i], by_id, factory);
 	}
 }
 
 } // namespace
 
-bool DockSpace::apply_layout(const DockLayoutDesc &desc) {
+bool DockSpace::apply_layout(const DockLayoutDesc &desc, bool discard_unplaced) {
 	if (m_root == nullptr) {
 		return false;
 	}
@@ -685,10 +692,10 @@ bool DockSpace::apply_layout(const DockLayoutDesc &desc) {
 	auto fresh = std::make_unique<DockNode>(&m_drag_ctx);
 	m_root = dynamic_cast<DockNode *>(replace_child(m_root, std::move(fresh)));
 
-	realize_desc(m_root, desc.root, by_id);
+	realize_desc(m_root, desc.root, by_id, m_panel_factory);
 
 	DockNode *fallback = find_first_leaf(m_root);
-	if (fallback != nullptr) {
+	if (fallback != nullptr && !discard_unplaced) {
 		for (auto &entry : by_id) {
 			if (entry.second.view) {
 				fallback->accept_panel(std::move(entry.second.view), entry.second.title, DropZone::Center);
@@ -703,6 +710,72 @@ bool DockSpace::apply_layout(const DockLayoutDesc &desc) {
 
 	invalidate_layout();
 	return true;
+}
+
+void DockSpace::set_tab_bar_decorator(std::function<void(DockNode *, View *)> decorator) {
+	m_drag_ctx.decorate_tab_bar = std::move(decorator);
+	for_each_leaf([](DockNode *leaf) { leaf->decorate_tab_bar(); });
+}
+
+void DockSpace::set_closable_tabs(bool closable, GFX::GfxTexture *close_icon) {
+	m_drag_ctx.closable_tabs = closable;
+	m_drag_ctx.close_icon = close_icon;
+}
+
+namespace {
+
+void visit_leaves(DockNode *node, const std::function<void(DockNode *)> &visit) {
+	if (node == nullptr) {
+		return;
+	}
+	if (node->is_leaf()) {
+		visit(node);
+		return;
+	}
+	for (const auto &child : node->get_children()) {
+		if (auto *dn = view_cast<DockNode>(child.get())) {
+			visit_leaves(dn, visit);
+		}
+	}
+}
+
+} // namespace
+
+void DockSpace::for_each_leaf(const std::function<void(DockNode *)> &visit) const {
+	visit_leaves(m_root, visit);
+}
+
+DockNode *DockSpace::find_node_of(const DockPanel *panel) const {
+	DockNode *found = nullptr;
+	for_each_leaf([&](DockNode *leaf) {
+		if (found == nullptr && leaf->index_of(panel) >= 0) {
+			found = leaf;
+		}
+	});
+	return found;
+}
+
+bool DockSpace::move_panel(DockPanel *panel, DockNode *target, DropZone zone) {
+	DockNode *source = find_node_of(panel);
+	if (source == nullptr || target == nullptr || (source == target && zone == DropZone::Center)) {
+		return false;
+	}
+	std::string title = panel->get_title();
+	Unique<View> owned = source->detach_panel(panel);
+	if (!owned) {
+		return false;
+	}
+	if (source != target && source->is_empty()) {
+		collapse_node(source);
+	}
+	target->accept_panel(std::move(owned), std::move(title), zone);
+	return true;
+}
+
+void DockSpace::close_panel(DockPanel *panel) {
+	if (DockNode *node = find_node_of(panel)) {
+		node->close_panel(panel);
+	}
 }
 
 bool DockSpace::try_dock_external(Unique<View> &panel_view, const std::string &title, Vec2 local_pos) {

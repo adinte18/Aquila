@@ -4,6 +4,8 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/UI/Core/FontManager.h"
 
+#include <vector>
+
 namespace Editor::Config {
 
 constexpr const char *EDITOR_NAME = "Aquila Editor";
@@ -26,7 +28,14 @@ using FontSettings = Aquila::UI::Core::FontSettings;
 struct UISettings {
 	std::string resources_path = "/resources";
 	std::string layout_path = "/resources/Engine/UI/editor.aqlayout";
-	std::string style_path = "/resources/Engine/UI/widget_test.aqstyle";
+	std::vector<std::string> style_paths = {
+		"/resources/Engine/UI/tokens.aqstyle",
+		"/resources/Engine/UI/widgets.aqstyle",
+		"/resources/Engine/UI/dock.aqstyle",
+		"/resources/Engine/UI/launcher.aqstyle",
+		"/resources/Engine/UI/editor_chrome.aqstyle",
+		"/resources/Engine/UI/devtools.aqstyle",
+	};
 };
 
 enum class Theme { Aquila, Aquila2, Dark, Light, Custom };

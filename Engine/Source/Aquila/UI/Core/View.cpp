@@ -4,10 +4,74 @@
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Style/StyleParserHelper.h"
 #include "Aquila/UI/Style/StylePropertyList.h"
+#include "Aquila/Foundation/Macros.h"
+
+#include <charconv>
 
 namespace Aquila::UI::Core {
 
 static Uint32 s_NextStableId = 0;
+
+namespace {
+
+Option<UI::FloatingAttachPoint> parse_attach_point(std::string_view value) {
+	using UI::FloatingAttachPoint;
+	if (value == "left-top") {
+		return FloatingAttachPoint::LeftTop;
+	}
+	if (value == "left-center") {
+		return FloatingAttachPoint::LeftCenter;
+	}
+	if (value == "left-bottom") {
+		return FloatingAttachPoint::LeftBottom;
+	}
+	if (value == "center-top") {
+		return FloatingAttachPoint::CenterTop;
+	}
+	if (value == "center") {
+		return FloatingAttachPoint::Center;
+	}
+	if (value == "center-bottom") {
+		return FloatingAttachPoint::CenterBottom;
+	}
+	if (value == "right-top") {
+		return FloatingAttachPoint::RightTop;
+	}
+	if (value == "right-center") {
+		return FloatingAttachPoint::RightCenter;
+	}
+	if (value == "right-bottom") {
+		return FloatingAttachPoint::RightBottom;
+	}
+	return std::nullopt;
+}
+
+Option<F32> parse_number(std::string_view text) {
+	while (!text.empty() && (text.front() == ' ' || text.front() == ',')) {
+		text.remove_prefix(1);
+	}
+	F32 number = 0.F;
+	const auto [end, error] = std::from_chars(text.data(), text.data() + text.size(), number);
+	if (error != std::errc{}) {
+		return std::nullopt;
+	}
+	return number;
+}
+
+Option<Vec2> parse_vec2(std::string_view text) {
+	const Usize split = text.find_first_of(" ,");
+	if (split == std::string_view::npos) {
+		return std::nullopt;
+	}
+	const Option<F32> x = parse_number(text.substr(0, split));
+	const Option<F32> y = parse_number(text.substr(split));
+	if (!x || !y) {
+		return std::nullopt;
+	}
+	return Vec2{ *x, *y };
+}
+
+} // namespace
 
 View::View() : m_stable_id(++s_NextStableId) {}
 
@@ -78,9 +142,50 @@ void View::apply_xml_attribute(std::string_view name, std::string_view value, IR
 		set_tooltip(std::string(value));
 		return;
 	}
+	if (name.starts_with("float-")) {
+		apply_floating_attribute(name.substr(6), value);
+		return;
+	}
 	StyleProperties props;
 	UI::ParserHelper::apply_declaration(props, name, value);
 	merge_style(props);
+}
+
+void View::apply_floating_attribute(std::string_view name, std::string_view value) {
+	if (!m_floating) {
+		m_floating = FloatingConfig{};
+	}
+
+	if (name == "attach") {
+		if (value == "root") {
+			m_floating->attach_to = UI::FloatingAttachTo::Root;
+		} else if (value == "parent") {
+			m_floating->attach_to = UI::FloatingAttachTo::Parent;
+		} else {
+			AQUILA_LOG_WARNING("View: unknown float-attach '{}'", value);
+		}
+	} else if (name == "element" || name == "parent") {
+		const Option<UI::FloatingAttachPoint> point = parse_attach_point(value);
+		if (!point) {
+			AQUILA_LOG_WARNING("View: unknown float-{} '{}'", name, value);
+			return;
+		}
+		(name == "element" ? m_floating->element_point : m_floating->parent_point) = *point;
+	} else if (name == "offset") {
+		if (const Option<Vec2> offset = parse_vec2(value)) {
+			m_floating->offset = *offset;
+		} else {
+			AQUILA_LOG_WARNING("View: float-offset expects 'x y', got '{}'", value);
+		}
+	} else if (name == "z") {
+		if (const Option<F32> z = parse_number(value)) {
+			m_floating->z_index = static_cast<Int16>(*z);
+		} else {
+			AQUILA_LOG_WARNING("View: float-z expects a number, got '{}'", value);
+		}
+	} else {
+		AQUILA_LOG_WARNING("View: unknown attribute 'float-{}'", name);
+	}
 }
 
 void View::on_style_resolved() {
@@ -362,6 +467,7 @@ void View::on_mouse_leave() {
 	}
 	m_is_hovered = false;
 	mark_style_dirty();
+	on_mouse_left();
 }
 
 void View::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {

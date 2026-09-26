@@ -2,12 +2,20 @@
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
+#include <cmath>
 #include <type_traits>
 
 namespace Aquila::UI::Rendering {
+
+namespace {
+
+constexpr F32 k_glyph_dilation_px = 1.F;
+
+}
 
 void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, Vec4 border_color, Int32 z,
 						 BorderStyle border_style) {
@@ -76,9 +84,10 @@ void DrawList::draw_text(Rect bounds, std::string_view text, Text::FontAtlas *fo
 }
 
 void DrawList::draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint, Vec2 uv_min, Vec2 uv_max, Int32 z) {
+	const Vec2 snapped_size = glm::round(rect.position + rect.size) - glm::round(rect.position);
 	ImageCmd command;
 	command.rect = rect;
-	command.texture = tex;
+	command.texture = Core::TextureCache::resolve_for_size(tex, snapped_size);
 	command.z_order = z;
 	command.tint = tint;
 	command.uv_min = uv_min;
@@ -142,8 +151,8 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					r2d.draw_shadow(spec);
 				} else if constexpr (std::is_same_v<T, ImageCmd>) {
 					Graphics::SpriteSpec spec{};
-					spec.position = c.rect.position;
-					spec.size = c.rect.size;
+					spec.position = glm::round(c.rect.position);
+					spec.size = glm::round(c.rect.position + c.rect.size) - spec.position;
 					spec.tint = c.tint;
 					spec.texture = c.texture;
 					spec.uv_min = c.uv_min;
@@ -175,6 +184,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							}
 						}
 
+						baseline_y = std::round(baseline_y);
 						F32 cursor_x = c.rect.position.x;
 						if (c.align == TextAlign::Center) {
 							cursor_x += (c.rect.size.x - text_width) * 0.5F;
@@ -190,6 +200,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								}
 							}
 						}
+						cursor_x = std::round(cursor_x);
 
 						for (size_t ci = start; ci < end;) {
 							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
@@ -199,13 +210,15 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								continue;
 							}
 							const Text::SlugGlyphData *slug = atlas->get_slug_data(glyph->glyph_id);
-							if (slug != nullptr) {
+							const Vec2 glyph_size = glyph->size_em * scale;
+							if (slug != nullptr && glyph_size.x > 0.F && glyph_size.y > 0.F) {
 								const F32 glyph_x = cursor_x + glyph->bearing_em.x * scale;
 								const F32 glyph_y = baseline_y + glyph->bearing_em.y * scale;
+								const Vec2 em_per_pixel = (slug->em_max - slug->em_min) / glyph_size;
 
 								Graphics::GlyphSpec spec{};
-								spec.position = { glyph_x, glyph_y };
-								spec.size = glyph->size_em * scale;
+								spec.position = Vec2(glyph_x, glyph_y) - Vec2(k_glyph_dilation_px);
+								spec.size = glyph_size + Vec2(2.F * k_glyph_dilation_px);
 								spec.color = c.color;
 								spec.depth = depth;
 								spec.glyph_loc_x = slug->glyph_loc_x;
@@ -213,8 +226,8 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								spec.band_max_x = slug->band_max_x;
 								spec.band_max_y = slug->band_max_y;
 								spec.banding = slug->band_transform;
-								spec.em_min = slug->em_min;
-								spec.em_max = slug->em_max;
+								spec.em_min = slug->em_min - (em_per_pixel * k_glyph_dilation_px);
+								spec.em_max = slug->em_max + (em_per_pixel * k_glyph_dilation_px);
 								spec.curve_texture = curve_texture;
 								spec.band_texture = band_texture;
 								r2d.draw_glyph(spec);

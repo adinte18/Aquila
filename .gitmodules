@@ -19,3 +19,6 @@
 [submodule "Engine/Vendor/VulkanMemoryAllocator"]
 	path = Engine/Vendor/VulkanMemoryAllocator
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator
+[submodule "Engine/Vendor/lunasvg"]
+	path = Engine/Vendor/lunasvg
+	url = https://github.com/sammycage/lunasvg.git

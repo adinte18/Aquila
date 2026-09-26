@@ -46,6 +46,37 @@ template <int N, typename VecT> class VecFieldBase : public Control {
 		}
 	}
 
+	void set_stacked(bool stacked) {
+		constexpr const char *k_axes[] = { "X", "Y", "Z", "W" };
+		set_class("vec-field-stacked", stacked);
+		for (int i = 0; i < N; ++i) {
+			DragFloat *drag = m_components[i];
+			drag->set_label(stacked ? k_axes[i] : "");
+			if (stacked) {
+				drag->set_prefix("");
+			}
+			drag->set_class("vec-stack-first", stacked && i == 0);
+			drag->set_class("vec-stack-middle", stacked && i > 0 && i < N - 1);
+			drag->set_class("vec-stack-last", stacked && i == N - 1);
+			if (auto *labeled = dynamic_cast<LabeledDragFloat *>(drag->get_parent())) {
+				labeled->get_label()->set_hidden(stacked);
+				labeled->set_class("labeled-drag-stacked", stacked);
+			}
+		}
+	}
+
+	void set_suffix(const std::string &suffix) {
+		for (int i = 0; i < N; ++i) {
+			m_components[i]->set_suffix(suffix);
+		}
+	}
+
+	void set_precision(int decimals) {
+		for (int i = 0; i < N; ++i) {
+			m_components[i]->set_precision(decimals);
+		}
+	}
+
 	Signal<void(VecT)> on_changed;
 
   protected:

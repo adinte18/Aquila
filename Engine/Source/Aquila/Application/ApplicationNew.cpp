@@ -21,6 +21,7 @@
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/ShadowSystem.h"
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
+#include "Aquila/Rendering/Systems/DebugViewSystem.h"
 #include "Aquila/Rendering/Systems/ComputeTestSystem.h"
 #include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
@@ -216,6 +217,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::ShadowSystem>();
 	m_object_picking = &m_renderer->add_system<Rendering::ObjectPickingSystem>();
 	m_renderer->add_system<Rendering::GeometrySystem>();
+	m_renderer->add_system<Rendering::DebugViewSystem>();
 	m_renderer->add_system<Rendering::SkySystem>();
 	m_renderer->add_system<Rendering::GridSystem>();
 	m_renderer->add_system<Rendering::OutlineSystem>();

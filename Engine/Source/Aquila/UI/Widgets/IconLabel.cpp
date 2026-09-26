@@ -19,16 +19,19 @@ IconLabel::IconLabel() {
 	m_trailing->add_class("trailing-icon");
 
 	update_icon_visibility();
+	update_label_visibility();
 	update_right_content();
 }
 
 IconLabel::IconLabel(std::string text, Text::FontAtlas *font) : IconLabel() {
 	m_label->set_text(std::move(text));
 	m_label->set_font(font);
+	update_label_visibility();
 }
 
 void IconLabel::set_text(std::string text) {
 	m_label->set_text(std::move(text));
+	update_label_visibility();
 }
 
 void IconLabel::set_shortcut(std::string shortcut) {
@@ -77,6 +80,12 @@ void IconLabel::apply_xml_attribute(std::string_view name, std::string_view valu
 		return;
 	}
 	View::apply_xml_attribute(name, value, resolver);
+}
+
+void IconLabel::update_label_visibility() {
+	StyleProperties sp;
+	sp.display = m_label->get_text().empty() ? Display::None : Display::Flex;
+	m_label->merge_style(sp);
 }
 
 void IconLabel::update_icon_visibility() {

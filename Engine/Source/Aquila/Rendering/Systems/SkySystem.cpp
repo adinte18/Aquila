@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/SkySystem.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -89,12 +90,18 @@ void SkySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_pipeline || !m_pipeline->is_valid() || ctx.scene == nullptr) {
 		return;
 	}
+	if (ctx.settings != nullptr &&
+		(!ctx.settings->show_sky ||
+		 (ctx.settings->debug_view != DebugView::Lit && ctx.settings->debug_view != DebugView::Albedo))) {
+		return;
+	}
 
 	auto &registry = ctx.scene->get_registry();
 	SkyLightComponent *sky = nullptr;
 	for (auto entity : registry.view<SkyLightComponent>()) {
 		auto &candidate = registry.get<SkyLightComponent>(entity);
-		if (candidate.is_active() && candidate.get_source() == SkySource::Procedural) {
+		if (candidate.is_active() && candidate.get_source() == SkySource::Procedural &&
+			SceneManagement::is_visible_in_hierarchy(registry, entity)) {
 			sky = &candidate;
 			break;
 		}

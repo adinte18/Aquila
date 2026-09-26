@@ -5,6 +5,7 @@
 #include "Aquila/Scene/Components/CameraComponent.h"
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/Scene/Scene.h"
@@ -92,5 +93,63 @@ TEST_SUITE("ComponentRegistry") {
 		CHECK_FALSE(range.is_visible(instance));
 		light.set_type(LightComponent::Type::Point);
 		CHECK(range.is_visible(instance));
+	}
+
+	TEST_CASE("components can be removed through their descriptor, except the transform") {
+		Scene scene("Test");
+		Entity entity = scene.get_entity_manager()->create_entity("Thing");
+		entity.add_component<CameraComponent>();
+		const auto &registry = ComponentRegistry::instance();
+
+		const ComponentDescriptor &camera = *registry.find("Camera");
+		REQUIRE(camera.is_removable());
+		camera.remove(entity);
+		CHECK_FALSE(camera.has(entity));
+
+		CHECK_FALSE(registry.find("Transform")->is_removable());
+	}
+
+	TEST_CASE("each descriptor says which part of an entity it belongs to") {
+		const auto &registry = ComponentRegistry::instance();
+		for (const char *name : { "Transform", "Metadata", "Scene Node" }) {
+			CHECK_MESSAGE(registry.find(name)->get_category() == ComponentCategory::Object, name);
+			CHECK_FALSE(registry.find(name)->is_removable());
+		}
+		for (const char *name : { "Mesh", "Material", "Light", "Sky Light", "Camera" }) {
+			CHECK_MESSAGE(registry.find(name)->get_category() == ComponentCategory::General, name);
+		}
+		CHECK(registry.find("Shadows")->get_category() == ComponentCategory::Rendering);
+	}
+
+	TEST_CASE("the shadows view edits the mesh's own flags") {
+		Scene scene("Test");
+		Entity entity = scene.get_entity_manager()->create_entity("Thing");
+		const ComponentDescriptor &shadows = *ComponentRegistry::instance().find("Shadows");
+		CHECK_FALSE(shadows.has(entity));
+
+		auto &mesh = entity.add_component<MeshComponent>();
+		shadows.get_type().find("Cast Shadows")->set(shadows.get(entity), Reflection::PropertyValue{ false });
+		CHECK_FALSE(mesh.cast_shadows);
+	}
+
+	TEST_CASE("metadata exposes the uuid read-only and visibility editable") {
+		Scene scene("Test");
+		Entity entity = scene.get_entity_manager()->create_entity("Thing");
+		const ComponentDescriptor &metadata = *ComponentRegistry::instance().find("Metadata");
+		REQUIRE(metadata.has(entity));
+
+		const Reflection::Property &uuid = *metadata.get_type().find("UUID");
+		CHECK(uuid.hints.read_only);
+		CHECK(std::get<std::string>(uuid.get(metadata.get(entity))) == entity.get_uuid().to_string());
+
+		metadata.get_type().find("Visible")->set(metadata.get(entity), Reflection::PropertyValue{ false });
+		CHECK_FALSE(entity.get_component<MetadataComponent>().is_visible());
+	}
+
+	TEST_CASE("transform values carry blender-style units") {
+		const Reflection::TypeInfo &transform = ComponentRegistry::instance().find("Transform")->get_type();
+		CHECK(transform.find("Position")->hints.unit == "m");
+		CHECK(transform.find("Rotation")->hints.unit == "°");
+		CHECK(transform.find("Scale")->hints.unit.empty());
 	}
 }

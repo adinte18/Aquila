@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -28,6 +29,9 @@ void GeometrySystem::on_init(GFX::GfxContext &ctx) {
 }
 
 void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
+	if (ctx.settings != nullptr && ctx.settings->debug_view != DebugView::Lit) {
+		return;
+	}
 	auto &registry = ctx.scene->get_registry();
 	auto view = registry.view<TransformComponent, MeshComponent>();
 
@@ -41,6 +45,9 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	std::unordered_map<Material *, std::vector<DrawCall>> batches;
 
 	for (auto entity : view) {
+		if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+			continue;
+		}
 		auto &transform = view.get<TransformComponent>(entity);
 		auto &mesh = view.get<MeshComponent>(entity);
 		if (!mesh.is_valid()) {

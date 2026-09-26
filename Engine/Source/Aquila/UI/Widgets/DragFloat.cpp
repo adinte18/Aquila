@@ -1,6 +1,8 @@
 #include "Aquila/UI/Widgets/DragFloat.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 
+#include <cmath>
+
 namespace Aquila::UI::Core {
 
 DragFloat::DragFloat() {
@@ -48,10 +50,27 @@ void DragFloat::set_prefix(std::string prefix) {
 	queue_redraw();
 }
 
+void DragFloat::set_label(std::string label) {
+	m_label = std::move(label);
+	queue_redraw();
+}
+
+void DragFloat::set_suffix(std::string suffix) {
+	m_suffix = std::move(suffix);
+	queue_redraw();
+}
+
+void DragFloat::set_slider(bool slider) {
+	m_slider = slider;
+	set_class("drag-float-slider", slider);
+	queue_redraw();
+}
+
 std::string DragFloat::format_value() const {
 	std::ostringstream ss;
 	ss.precision(m_precision);
-	ss << std::fixed << m_value;
+	const float half_unit = 0.5F * std::pow(10.F, -static_cast<float>(m_precision));
+	ss << std::fixed << (std::abs(m_value) < half_unit ? 0.F : m_value);
 	return m_prefix + ss.str();
 }
 
@@ -199,8 +218,35 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 		}
 	} else {
 		// Drag mode: show the formatted value, optionally a subtle drag indicator.
-		const std::string display = format_value();
+		const std::string display = m_suffix.empty() ? format_value() : format_value() + " " + m_suffix;
+		const bool has_range = m_min > -1e17F && m_max < 1e17F && m_max > m_min;
+		if (m_slider && has_range) {
+			const float fraction = std::clamp((m_value - m_min) / (m_max - m_min), 0.F, 1.F);
+			const float inset = style.border_width;
+			const Rect fill = {
+				.position = { rect.position.x + inset, rect.position.y + inset },
+				.size = { (rect.size.x - (inset * 2.F)) * fraction, rect.size.y - (inset * 2.F) },
+			};
+			if (fill.size.x > 0.5F) {
+				const Vec4 radius = style.border_radius;
+				const bool full = fraction >= 0.999F;
+				draw_list.draw_rect(fill, style.effective_accent_color(),
+									Vec4(radius.x, full ? radius.y : 0.F, full ? radius.z : 0.F, radius.w), 0.F,
+									Vec4(0.F), z);
+			}
+		}
+
+		if (!m_label.empty()) {
+			const Vec4 label_color = Vec4(style.color.r, style.color.g, style.color.b, style.color.a * 0.55F);
+			draw_list.draw_text(text_rect, m_label, font, label_color, font_size, TextAlign::Left, z + 1);
+			draw_list.draw_text(text_rect, display, font, style.color, font_size, TextAlign::Right, z + 1);
+			return;
+		}
+
 		draw_list.draw_text(text_rect, display, font, style.color, font_size, TextAlign::Center, z + 1);
+		if (m_slider) {
+			return;
+		}
 
 		// Small arrows hint that the field is draggable.
 		constexpr float k_arrow_size = 4.F;

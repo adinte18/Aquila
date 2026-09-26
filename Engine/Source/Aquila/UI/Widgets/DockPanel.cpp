@@ -7,6 +7,10 @@ DockPanel::DockPanel(std::string title) : m_title(std::move(title)) {
 	add_class("dock-panel");
 }
 
+DockPanel::~DockPanel() {
+	m_content_owner.reset();
+}
+
 void DockPanel::set_title(std::string title) {
 	m_title = std::move(title);
 }
