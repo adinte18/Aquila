@@ -1,1 +1,21 @@
-<Image id="viewport"/>
+<View id="viewport-root" class="viewport-root">
+    <Image id="viewport-image"/>
+    <OverlayToolbar id="viewport-transform-tools" edge="left" along="8">
+        <Button id="tool-translate" class="overlay-tool" src="Engine/UI/Icons/move-3d.svg" tooltip="Move (W)"/>
+        <Button id="tool-rotate" class="overlay-tool" src="Engine/UI/Icons/rotate-3d.svg" tooltip="Rotate (E)"/>
+        <Button id="tool-scale" class="overlay-tool" src="Engine/UI/Icons/scale-3d.svg" tooltip="Scale (R)"/>
+        <Separator/>
+        <Button id="tool-space" class="overlay-tool" src="Engine/UI/Icons/globe.svg" tooltip="World space (click for local)"/>
+        <Button id="tool-snap" class="overlay-tool" src="Engine/UI/Icons/magnet.svg" tooltip="Snapping: 0.5 m, 15°, 0.1 scale (hold Ctrl to invert)"/>
+    </OverlayToolbar>
+    <OverlayToolbar id="viewport-view-tools" edge="top" along="52">
+        <Dropdown id="viewport-shading" tooltip="Shading"/>
+        <Separator/>
+        <View id="viewport-show" class="overlay-menu">
+            <Button id="viewport-show-button" class="overlay-tool" src="Engine/UI/Icons/eye.svg" tooltip="Show"/>
+        </View>
+        <View id="viewport-camera" class="overlay-menu">
+            <Button id="viewport-camera-button" class="overlay-tool" src="Engine/UI/Icons/video.svg" tooltip="Camera"/>
+        </View>
+    </OverlayToolbar>
+</View>

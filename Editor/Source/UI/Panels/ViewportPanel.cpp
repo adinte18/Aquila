@@ -10,9 +10,9 @@ using namespace Aquila;
 ViewportPanel::ViewportPanel(GFX::GfxTexture &initial_texture) : m_initial_texture(initial_texture) {}
 
 void ViewportPanel::build(UI::Core::View *panel, UI::Core::View *) {
-	m_image = panel->find_by_id<UI::Core::Image>("viewport");
+	m_image = panel->find_by_id<UI::Core::Image>("viewport-image");
 	if (m_image == nullptr) {
-		AQUILA_LOG_ERROR("ViewportPanel: 'viewport' image not found in layout");
+		AQUILA_LOG_ERROR("ViewportPanel: 'viewport-image' not found in layout");
 		return;
 	}
 
