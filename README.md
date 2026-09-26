@@ -7,80 +7,29 @@ The initial idea was to keep it on Vulkan, but I am really veering towards integ
 > **This project is for educational purposes only.**
 > The current state of the engine is not designed to compete with existing game engines, commercial or open-source, nor is that its goal. The primary intent is personal growth and experimentation in the field of graphics programming.
 
-## Build
+## Building
 
-### Configure Presets
-
-#### Windows
-
-| Preset | Build Type |
-|--------|-----------|
-| `windows-editor-debug` | Debug|
-| `windows-editor-release` | Release |
-| `windows-editor-relwithdebinfo` | RelWithDebInfo |
-| `windows-engine-debug` | Debug |
-| `windows-engine-release` | Release |
-| `windows-engine-relwithdebinfo` | RelWithDebInfo |
-
-#### Linux
-
-| Preset | Build Type |
-|--------|-----------|
-| `linux-editor-debug` | Debug |
-| `linux-editor-release` | Release |
-| `linux-editor-relwithdebinfo` | RelWithDebInfo |
-| `linux-engine-debug` | Debug |
-| `linux-engine-release` | Release |
-| `linux-engine-relwithdebinfo` | RelWithDebInfo |
-
-## Usage
-
-### Configure
+You need git, CMake, Ninja and a C++20 compiler. I use clang, gcc should work too. On Linux you also need the X11 dev headers, CMake tells you which ones are missing and how to install them.
 
 ```bash
-cmake --preset <preset-name>
+git clone https://github.com/adinte18/Aquila.git
+cd Aquila
+cmake --preset editor-debug
+cmake --build --preset editor-debug
 ```
 
-### Build
+The first configure takes a while because it pulls the submodules and downloads whatever else is missing (Slang, and the Vulkan loader if you don't have one). If you have the LunarG Vulkan SDK installed it just uses that. Building also runs the tests.
 
-```bash
-cmake --build --preset <preset-name>
-```
+Presets are `editor-debug`, `editor-release` and `editor-relwithdebinfo`, plus the same three starting with `engine-` if you don't want the editor. In release the engine gets built as a shared library and the executables just link against it.
 
-### Example
+Some options if you need them: `AQUILA_FETCH_VULKAN` and `AQUILA_FETCH_SLANG` always download those instead of using the SDK, `AQUILA_VALIDATION_LAYERS` turns the validation layers on or off, and `AQUILA_AUTO_INSTALL` lets CMake install missing system packages for you.
 
-```bash
-cmake --preset windows-engine-debug
-cmake --build --preset windows-engine-debug
-```
-
-## Base Configuration
-
-All presets inherit from `base` which sets:
-
-- **Generator:** Ninja
-- **C Compiler:** clang
-- **C++ Compiler:** clang++
-- **Build directory:** `build/<preset-name>`
+I shifted my work to Linux. Windows should work but I haven't tested the Windows build in a while, let alone this setup. macOS isn't supported just yet, but if there is someone that wants to port it to macOS, you are more than welcome to do so.
 
 ## Dependencies
 
-This project uses a collection of libraries and tools to support Vulkan rendering, model loading, UI, and utility functionality. Below is a list of key dependencies and their versions or commit hashes used at the time of development.
+I am trying to keep the engine dependency free (for the most of it), so this list might shrink overtime, but for now we are using quite a few third party libs to help me with mesh loading, windowing, inputs and GPU memory allocation and more.
 
-### Core Libraries
+GLFW, GLM, Assimp, stb, VulkanMemoryAllocator and lunasvg are submodules. EnTT, nlohmann json, Clay and doctest are single headers in `Engine/Vendor`. Shaders go through Slang.
 
-- [**GLFW**](https://github.com/glfw/glfw) – Windowing and input
-- [**GLM**](https://github.com/g-truc/glm) – Mathematics for graphics
-- [**Assimp**](https://github.com/assimp/assimp) – Model loading
-- [**stb**](https://github.com/nothings/stb) - Image processing
-
-### Header-only Utilities
-
-- [`entt.h`](https://github.com/skypjack/entt) – Entity-Component-System (ECS) framework (WIP)
-- [`json.hpp`](https://github.com/nlohmann/json) – JSON parsing and serialization
-
----
-
-> **Note:** All dependencies are included via submodules or directly in the source tree where applicable.
-
-Thanks for checking it out! Feel free to explore, learn, and build upon it for your own Vulkan journey.
+Thanks for checking it out!
