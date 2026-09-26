@@ -83,13 +83,14 @@ void EditorModule::open_project_launcher() {
 							  Config::get_preferences().ui.style_paths);
 	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
 
-	m_launcher_window = Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_project_launcher, 720, 520, "Aquila - Projects", [this] {
-		m_project_launcher.reset();
-		m_launcher_window = nullptr;
-		if (!m_editor_entered) {
-			m_engine->request_close();
-		}
-	});
+	m_launcher_window = Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_project_launcher, 900,
+															   600, "Aquila - Projects", [this] {
+																   m_project_launcher.reset();
+																   m_launcher_window = nullptr;
+																   if (!m_editor_entered) {
+																	   m_engine->request_close();
+																   }
+															   });
 }
 
 void EditorModule::enter_editor(const ProjectInfo &project) {

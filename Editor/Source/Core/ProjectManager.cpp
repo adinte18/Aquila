@@ -5,6 +5,8 @@
 #include "Aquila/Platform/Filesystem/NativeFileSystem.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 #include "Aquila/Scene/Components/CameraComponent.h"
+#include "Aquila/Scene/Components/LightComponent.h"
+#include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/Entity.h"
 #include "Aquila/Scene/EntityManager.h"
@@ -12,7 +14,9 @@
 
 #include "json.hpp"
 
+#include <algorithm>
 #include <cctype>
+#include <functional>
 #include <chrono>
 
 namespace Editor {
@@ -26,6 +30,38 @@ namespace {
 Uint64 now_seconds() {
 	const auto now = std::chrono::system_clock::now().time_since_epoch();
 	return static_cast<Uint64>(std::chrono::duration_cast<std::chrono::seconds>(now).count());
+}
+
+bool update_project_file(const ProjectInfo &project, const std::function<void(nlohmann::ordered_json &)> &edit) {
+	auto *vfs = VirtualFileSystem::get();
+	nlohmann::ordered_json root =
+		nlohmann::ordered_json::parse(vfs->read_text_file(project.project_file), nullptr, false);
+	if (root.is_discarded()) {
+		return false;
+	}
+	edit(root);
+	return vfs->write_text_file(project.project_file, root.dump(4));
+}
+
+void remove_directory(const std::string &directory) {
+	auto *vfs = VirtualFileSystem::get();
+	for (const std::string &entry : vfs->list_directory(directory)) {
+		const std::string path = directory + "/" + entry;
+		if (vfs->is_directory(path)) {
+			remove_directory(path);
+		} else {
+			vfs->delete_file_aq(path);
+		}
+	}
+	vfs->delete_directory(directory);
+}
+
+std::string trim(const std::string &text) {
+	const auto first = text.find_first_not_of(" \t");
+	if (first == std::string::npos) {
+		return {};
+	}
+	return text.substr(first, text.find_last_not_of(" \t") - first + 1);
 }
 
 } // namespace
@@ -49,7 +85,67 @@ std::string ProjectManager::sanitize(const std::string &name) {
 	return out;
 }
 
-Option<ProjectInfo> ProjectManager::create(const std::string &name) {
+const char *ProjectManager::template_name(ProjectTemplate project_template) {
+	switch (project_template) {
+	case ProjectTemplate::Sandbox:
+		return "Lit sandbox";
+	case ProjectTemplate::Empty:
+		break;
+	}
+	return "Empty";
+}
+
+const char *ProjectManager::template_description(ProjectTemplate project_template) {
+	switch (project_template) {
+	case ProjectTemplate::Sandbox:
+		return "A camera, a directional sun and a procedural sky, ready to fill with meshes.";
+	case ProjectTemplate::Empty:
+		break;
+	}
+	return "A single camera and nothing else. Start from a blank scene.";
+}
+
+std::string ProjectManager::validate_name(const std::string &name) const {
+	if (trim(name).empty()) {
+		return "Enter a project name";
+	}
+	const std::string safe = sanitize(name);
+	if (safe.empty()) {
+		return "Use letters, numbers, spaces, - or _";
+	}
+	if (VirtualFileSystem::get()->exists(std::string(K_ROOT) + "/" + safe + "/project.aqproject")) {
+		return "A project with this name already exists";
+	}
+	return {};
+}
+
+void ProjectManager::touch(ProjectInfo &project) const {
+	project.last_opened = now_seconds();
+	const Uint64 stamp = project.last_opened;
+	update_project_file(project, [stamp](nlohmann::ordered_json &root) { root["last_opened"] = stamp; });
+}
+
+bool ProjectManager::rename(ProjectInfo &project, const std::string &name) const {
+	const std::string clean = trim(name);
+	if (clean.empty()) {
+		return false;
+	}
+	if (!update_project_file(project, [&clean](nlohmann::ordered_json &root) { root["name"] = clean; })) {
+		return false;
+	}
+	project.name = clean;
+	return true;
+}
+
+bool ProjectManager::remove(const ProjectInfo &project) const {
+	if (!VirtualFileSystem::get()->exists(project.project_file)) {
+		return false;
+	}
+	remove_directory(project.directory);
+	return !VirtualFileSystem::get()->exists(project.directory);
+}
+
+Option<ProjectInfo> ProjectManager::create(const std::string &name, ProjectTemplate project_template) {
 	auto *vfs = VirtualFileSystem::get();
 
 	const std::string safe = sanitize(name);
@@ -88,6 +184,12 @@ Option<ProjectInfo> ProjectManager::create(const std::string &name) {
 	camera_component.primary = true;
 	camera.get_component<Components::TransformComponent>().set_local_position({ 0.F, 1.5F, -5.F });
 	scene.set_active_camera(camera);
+	if (project_template == ProjectTemplate::Sandbox) {
+		auto sun = entity_manager->create_entity("Sun");
+		sun.add_component<Components::LightComponent>();
+		auto sky = entity_manager->create_entity("Sky");
+		sky.add_component<Components::SkyLightComponent>();
+	}
 	scene.serialize(info.directory + "/" + scene_file);
 
 	nlohmann::ordered_json root;
@@ -119,6 +221,9 @@ std::vector<ProjectInfo> ProjectManager::list() const {
 		}
 	}
 
+	std::ranges::stable_sort(
+		projects, [](const ProjectInfo &a, const ProjectInfo &b) { return a.last_activity() > b.last_activity(); });
+
 	return projects;
 }
 
@@ -142,6 +247,7 @@ Option<ProjectInfo> ProjectManager::load(const std::string &directory) const {
 	info.project_file = project_file;
 	info.name = root.value("name", std::string());
 	info.created = root.value("created", static_cast<Uint64>(0));
+	info.last_opened = root.value("last_opened", static_cast<Uint64>(0));
 	if (root.contains("scenes") && root["scenes"].is_array()) {
 		info.scenes = root["scenes"].get<std::vector<std::string>>();
 	}
