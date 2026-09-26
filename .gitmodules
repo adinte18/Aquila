@@ -1,15 +1,9 @@
-[submodule "Engine/Vendor/imgui"]
-	path = Engine/Vendor/imgui
-	url = https://github.com/ocornut/imgui.git
 [submodule "Engine/Vendor/glfw"]
 	path = Engine/Vendor/glfw
 	url = https://github.com/glfw/glfw.git
 [submodule "Engine/Vendor/glm"]
 	path = Engine/Vendor/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "Engine/Vendor/ImGuizmo"]
-	path = Engine/Vendor/ImGuizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo.git
 [submodule "Engine/Vendor/assimp"]
 	path = Engine/Vendor/assimp
 	url = https://github.com/assimp/assimp.git

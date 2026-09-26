@@ -7,6 +7,7 @@
 Binaries/
 cmake-build-debug-visual-studio/
 build/
+.deps/
 Resources/Models/
 Resources/EnvMaps/
 

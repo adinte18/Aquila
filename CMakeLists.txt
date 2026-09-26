@@ -217,25 +217,29 @@ add_compile_definitions(
 
 message(STATUS "Aquila Version: ${AQUILA_VERSION_COMPOSED} (${GIT_BRANCH}@${GIT_COMMIT_HASH}${GIT_DIRTY_FLAG})")
 
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
+include(AquilaDependencies)
+
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_definitions(
             DEBUG
             AQUILA_DEBUG
-            ENABLE_VALIDATION_LAYERS
             AQUILA_HOT_RELOAD_ALL_SHADERS
             _DEBUG
     )
-    message(STATUS "Validation layers: ENABLED")
     message(STATUS "Debug symbols: FULL")
     message(STATUS "Shader hot-reload: ALL SHADERS")
 elseif (CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
     add_compile_definitions(
             AQUILA_RELEASE_DEBUG
-            ENABLE_VALIDATION_LAYERS
             AQUILA_HOT_RELOAD_ALL_SHADERS
     )
-    message(STATUS "Validation layers: ENABLED (RelWithDebInfo)")
     message(STATUS "Shader hot-reload: ALL SHADERS")
+endif ()
+
+if (AQUILA_VALIDATION_LAYERS AND CMAKE_BUILD_TYPE MATCHES "^(Debug|RelWithDebInfo)$")
+    add_compile_definitions(ENABLE_VALIDATION_LAYERS)
+    message(STATUS "Validation layers: ENABLED")
 else ()
     message(STATUS "Validation layers: DISABLED")
 endif ()
@@ -274,7 +278,6 @@ if (PROJECT_IS_TOP_LEVEL)
     )
 endif ()
 
-include(cmake/InstallDependencies.cmake)
 
 add_subdirectory(Engine)
 
@@ -290,7 +293,9 @@ if (AQUILA_BUILD_EDITOR)
     )
 endif ()
 
-install(DIRECTORY ${AQUILA_ASSET_PATH}
-        DESTINATION share/aquila/assets
-        PATTERN "*.tmp" EXCLUDE
-)
+if (EXISTS ${AQUILA_ASSET_PATH})
+    install(DIRECTORY ${AQUILA_ASSET_PATH}
+            DESTINATION share/aquila/assets
+            PATTERN "*.tmp" EXCLUDE
+    )
+endif ()

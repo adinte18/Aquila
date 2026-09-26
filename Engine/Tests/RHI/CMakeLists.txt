@@ -25,6 +25,8 @@ target_link_libraries(${TEST_NAME}
     glfw
 )
 
+aquila_deploy_runtime(${TEST_NAME})
+
 add_test(NAME ${TEST_NAME} COMMAND ${TEST_NAME})
 set(ALL_TEST_TARGETS ${ALL_TEST_TARGETS} ${TEST_NAME} PARENT_SCOPE)
 set(ALL_TEST_MODULES ${ALL_TEST_MODULES} "RHI" PARENT_SCOPE)

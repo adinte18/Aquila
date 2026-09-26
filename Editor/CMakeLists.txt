@@ -39,6 +39,7 @@ target_link_libraries(AquilaEditor
     UI
     glfw
 )
+aquila_deploy_runtime(AquilaEditor)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(AquilaEditor PRIVATE
@@ -67,21 +68,18 @@ if (EXISTS ${CMAKE_SOURCE_DIR}/aquila-logo.ico)
     )
 endif()
 
-add_custom_command(TARGET AquilaEditor POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${AQUILA_ASSET_PATH} $<TARGET_FILE_DIR:AquilaEditor>/Assets
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        ${AQUILA_RESOURCES_PATH} $<TARGET_FILE_DIR:AquilaEditor>/Resources
-    COMMENT "Copying assets and resources"
-    VERBATIM
-)
-
-if (WIN32 AND CMAKE_CONFIGURATION_TYPES)
-    add_custom_command(TARGET AquilaEditor POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            $<TARGET_RUNTIME_DLLS:AquilaEditor>
-            $<TARGET_FILE_DIR:AquilaEditor>
-        COMMAND_EXPAND_LISTS
-        COMMENT "Copying runtime DLLs"
-    )
-endif()
+foreach (_aquila_content IN ITEMS Assets Resources)
+    if (_aquila_content STREQUAL "Assets")
+        set(_aquila_content_source ${AQUILA_ASSET_PATH})
+    else ()
+        set(_aquila_content_source ${AQUILA_RESOURCES_PATH})
+    endif ()
+    if (EXISTS ${_aquila_content_source})
+        add_custom_command(TARGET AquilaEditor POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                ${_aquila_content_source} $<TARGET_FILE_DIR:AquilaEditor>/${_aquila_content}
+            COMMENT "Copying ${_aquila_content}"
+            VERBATIM
+        )
+    endif ()
+endforeach ()
