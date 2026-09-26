@@ -68,6 +68,7 @@ enum class KeyCode : Uint16 {
 	RightAlt = 346,
 	KeypadSubtract = 333,
 	KeypadAdd = 334,
+	KeypadEnter = 335,
 };
 
 enum class MouseButton : Uint8 { Left = 0, Right = 1, Middle = 2 };

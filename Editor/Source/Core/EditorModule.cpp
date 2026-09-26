@@ -270,6 +270,17 @@ void EditorModule::on_event(Events::Event &event) {
 		case Events::KeyCode::R:
 			m_context->tools.set_tool(TransformTool::Scale);
 			return true;
+		case Events::KeyCode::X:
+			return m_context->tools.key_handler && m_context->tools.key_handler(TransformKey::X);
+		case Events::KeyCode::Y:
+			return m_context->tools.key_handler && m_context->tools.key_handler(TransformKey::Y);
+		case Events::KeyCode::Z:
+			return m_context->tools.key_handler && m_context->tools.key_handler(TransformKey::Z);
+		case Events::KeyCode::Enter:
+		case Events::KeyCode::KeypadEnter:
+			return m_context->tools.key_handler && m_context->tools.key_handler(TransformKey::Confirm);
+		case Events::KeyCode::Escape:
+			return m_context->tools.key_handler && m_context->tools.key_handler(TransformKey::Cancel);
 		default:
 			return false;
 		}

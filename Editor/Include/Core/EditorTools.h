@@ -6,6 +6,7 @@ namespace Editor {
 
 enum class TransformTool { Translate, Rotate, Scale };
 enum class TransformSpace { World, Local };
+enum class TransformKey { X, Y, Z, Confirm, Cancel };
 
 class EditorTools {
   public:
@@ -27,15 +28,36 @@ class EditorTools {
 
 	void toggle_space() { set_space(m_space == TransformSpace::World ? TransformSpace::Local : TransformSpace::World); }
 
+	void set_snapping(bool snapping) {
+		if (m_snapping == snapping) {
+			return;
+		}
+		m_snapping = snapping;
+		on_snapping_changed(snapping);
+	}
+
+	void toggle_snapping() { set_snapping(!m_snapping); }
+
 	[[nodiscard]] TransformTool get_tool() const { return m_tool; }
 	[[nodiscard]] TransformSpace get_space() const { return m_space; }
+	[[nodiscard]] bool is_snapping() const { return m_snapping; }
+	[[nodiscard]] F32 get_translate_snap() const { return m_translate_snap; }
+	[[nodiscard]] F32 get_rotate_snap_degrees() const { return m_rotate_snap_degrees; }
+	[[nodiscard]] F32 get_scale_snap() const { return m_scale_snap; }
 
 	Signal<void(TransformTool)> on_tool_changed;
 	Signal<void(TransformSpace)> on_space_changed;
+	Signal<void(bool)> on_snapping_changed;
+
+	Delegate<bool(TransformKey)> key_handler;
 
   private:
 	TransformTool m_tool = TransformTool::Translate;
 	TransformSpace m_space = TransformSpace::World;
+	bool m_snapping = false;
+	F32 m_translate_snap = 0.5F;
+	F32 m_rotate_snap_degrees = 15.F;
+	F32 m_scale_snap = 0.1F;
 };
 
 } // namespace Editor

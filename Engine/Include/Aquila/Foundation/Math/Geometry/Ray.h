@@ -196,6 +196,32 @@ struct Ray {
 	}
 
 	F32 distance_to_point(const Vec3 &point) const { return length(point - closest_point_to(point)); }
+
+	[[nodiscard]] Option<F32> closest_param_on_line(const Vec3 &line_origin, const Vec3 &line_direction) const {
+		const Vec3 w = origin - line_origin;
+		const F32 a = Math::dot(line_direction, line_direction);
+		const F32 b = Math::dot(line_direction, direction);
+		const F32 c = Math::dot(direction, direction);
+		const F32 d = Math::dot(line_direction, w);
+		const F32 e = Math::dot(direction, w);
+		const F32 denominator = (a * c) - (b * b);
+		if (Math::abs(denominator) < 1e-6F) {
+			return std::nullopt;
+		}
+		return ((d * c) - (b * e)) / denominator;
+	}
+
+	[[nodiscard]] Option<Vec3> hit_plane(const Vec3 &plane_point, const Vec3 &plane_normal) const {
+		const F32 denominator = Math::dot(plane_normal, direction);
+		if (Math::abs(denominator) < 1e-6F) {
+			return std::nullopt;
+		}
+		const F32 t = Math::dot(plane_point - origin, plane_normal) / denominator;
+		if (t < 0.F) {
+			return std::nullopt;
+		}
+		return get_point(t);
+	}
 };
 
 inline Ray screen_to_world_ray(const Vec2 &screen_pos, const Vec2 &viewport_size, const Mat4 &view_matrix,
