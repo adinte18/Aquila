@@ -6,6 +6,7 @@
 #include "Aquila/RHI/Backend/IRHITexture.h"
 #include "Aquila/RHI/Backend/IRHIDescriptors.h"
 #include "Aquila/RHI/Backend/IRHIPipeline.h"
+#include "Aquila/RHI/Backend/IRHIQueryPool.h"
 
 namespace Aquila::RHI {
 
@@ -55,6 +56,9 @@ class IRHICommandList {
 	virtual void fill_buffer(IRHIBuffer &buffer, Uint64 offset, Uint64 size, Uint32 value) = 0;
 
 	virtual void dispatch(Uint32 x, Uint32 y, Uint32 z) = 0;
+
+	virtual void reset_queries(IRHIQueryPool &pool, Uint32 first, Uint32 count) = 0;
+	virtual void write_timestamp(IRHIQueryPool &pool, Uint32 index) = 0;
 
 	virtual void push_debug_group(const char *name) = 0;
 	virtual void pop_debug_group() = 0;

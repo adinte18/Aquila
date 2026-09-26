@@ -46,6 +46,7 @@ class VulkanDevice final : public IRHIDevice {
 	[[nodiscard]] Unique<IRHIPipeline> create_graphics_pipeline(const GraphicsPipelineDesc &desc) override;
 	[[nodiscard]] Unique<IRHIPipeline> create_compute_pipeline(const ComputePipelineDesc &desc) override;
 	[[nodiscard]] Unique<IRHIRenderPass> create_render_pass(const RHI::RenderPassDesc &desc) override;
+	[[nodiscard]] Unique<IRHIQueryPool> create_timestamp_pool(Uint32 count) override;
 
 	[[nodiscard]] Unique<IRHIDescriptorSetLayout>
 	create_descriptor_set_layout(const DescriptorSetLayoutDesc &desc) override;

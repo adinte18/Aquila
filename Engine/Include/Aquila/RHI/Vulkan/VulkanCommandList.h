@@ -59,6 +59,9 @@ class VulkanCommandList final : public IRHICommandList {
 	void dispatch(Uint32 x, Uint32 y, Uint32 z) override;
 
 	// IRHICommandList
+	void reset_queries(IRHIQueryPool &pool, Uint32 first, Uint32 count) override;
+	void write_timestamp(IRHIQueryPool &pool, Uint32 index) override;
+
 	void push_debug_group(const char *name) override;
 	void pop_debug_group() override;
 

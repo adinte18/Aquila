@@ -1,4 +1,5 @@
 #include "Aquila/RHI/Vulkan/VulkanDevice.h"
+#include "Aquila/RHI/Vulkan/VulkanQueryPool.h"
 #include "Aquila/RHI/Vulkan/VulkanDeletionQueue.h"
 #include "Aquila/Foundation/Profiler.h"
 
@@ -227,6 +228,19 @@ void VulkanDevice::destroy_surface_handle(VkSurfaceKHR surface) const {
 	if (surface != VK_NULL_HANDLE) {
 		vkDestroySurfaceKHR(m_vulkan_instance, surface, nullptr);
 	}
+}
+
+Unique<IRHIQueryPool> VulkanDevice::create_timestamp_pool(Uint32 count) {
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(m_physical_device, &properties);
+	if (properties.limits.timestampComputeAndGraphics == VK_FALSE || count == 0) {
+		return nullptr;
+	}
+	auto pool = std::make_unique<VulkanQueryPool>(m_device, count, static_cast<F64>(properties.limits.timestampPeriod));
+	if (pool->get_count() == 0) {
+		return nullptr;
+	}
+	return pool;
 }
 
 Unique<IRHIRenderPass> VulkanDevice::create_render_pass(const RHI::RenderPassDesc &desc) {

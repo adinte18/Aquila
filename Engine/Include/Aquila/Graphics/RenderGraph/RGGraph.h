@@ -2,6 +2,7 @@
 #include "Aquila/Graphics/RenderGraph/RGRegistry.h"
 #include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
 #include "Aquila/Graphics/RenderGraph/RGCompiler.h"
+#include "Aquila/RHI/Backend/IRHIQueryPool.h"
 
 namespace Aquila::GFX {
 class GfxContext;
@@ -61,6 +62,9 @@ class RenderGraph {
 	/// Compile() must have been called first.
 	void execute(GFX::GfxCommandList &cmd);
 
+	void set_timestamp_pool(RHI::IRHIQueryPool *pool) { m_timestamp_pool = pool; }
+	[[nodiscard]] const std::vector<std::string> &get_timed_passes() const { return m_timed_passes; }
+
 	/// Reset all state for the next frame (releases transient resources).
 	void reset();
 
@@ -72,6 +76,8 @@ class RenderGraph {
 	RGRegistry m_registry;
 	std::vector<RGPassData> m_passes;
 	RGCompiledGraph m_compiled;
+	RHI::IRHIQueryPool *m_timestamp_pool = nullptr;
+	std::vector<std::string> m_timed_passes;
 };
 
 } // namespace Aquila::Graphics::RG

@@ -56,6 +56,10 @@ Ref<GfxDescriptorSetLayout> GfxContext::create_descriptor_set_layout(const RHI::
 Ref<GfxDescriptorSet> GfxContext::allocate_descriptor_set(GfxDescriptorSetLayout &layout) {
 	return Ref<GfxDescriptorSet>(new GfxDescriptorSet(m_device->allocate_descriptor_set(layout.get_rhi())));
 }
+Unique<RHI::IRHIQueryPool> GfxContext::create_timestamp_pool(Uint32 count) {
+	return m_device->create_timestamp_pool(count);
+}
+
 Ref<GfxRenderPass> GfxContext::create_render_pass(const RHI::RenderPassDesc &desc) {
 	return Ref<GfxRenderPass>(new GfxRenderPass(m_device->create_render_pass(desc)));
 }
@@ -101,10 +105,6 @@ void GfxContext::upload_texture_data(GfxTexture &dst, const void *data, Uint64 b
 	destroy_immediate_buffer(*staging);
 }
 
-void GfxContext::copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset, Uint64 dst_offset) {
-	execute_immediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
-		m_device->copy_buffer(cmd.get_rhi(), src.get_rhi(), dst.get_rhi(), size, src_offset, dst_offset);
-	});
 void GfxContext::upload_texture_mips(GfxTexture &dst, const std::vector<std::vector<Uint8>> &levels) {
 	std::vector<Ref<GfxBuffer>> staging;
 	staging.reserve(levels.size());
@@ -133,6 +133,10 @@ void GfxContext::upload_texture_mips(GfxTexture &dst, const std::vector<std::vec
 	}
 }
 
+void GfxContext::copy_buffer(GfxBuffer &src, GfxBuffer &dst, Uint64 size, Uint64 src_offset, Uint64 dst_offset) {
+	execute_immediate(RHI::CommandListType::Transfer, [&](GfxCommandList &cmd) {
+		m_device->copy_buffer(cmd.get_rhi(), src.get_rhi(), dst.get_rhi(), size, src_offset, dst_offset);
+	});
 }
 
 void GfxContext::wait_idle() {

@@ -14,11 +14,20 @@ namespace Aquila::Rendering {
 
 using namespace SceneManagement::Components;
 
+namespace {
+
+constexpr Uint32 k_timestamp_queries = 128;
+
+}
+
 RenderPipeline::RenderPipeline(GFX::GfxContext &ctx, Uint32 width, Uint32 height)
 	: m_ctx(ctx), m_width(width), m_height(height) {
 	SceneFrameData::init(ctx, width, height);
 	Graphics::MaterialFactory::get()->set_scene_layout(SceneFrameData::get()->get_layout());
 	rebuild_targets();
+	for (auto &pool : m_timestamp_pools) {
+		pool = m_ctx.create_timestamp_pool(k_timestamp_queries);
+	}
 }
 
 RenderPipeline::~RenderPipeline() {
@@ -35,6 +44,7 @@ void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 	}
 
 	m_frame_slot = (m_frame_slot + 1) % SharedConstants::MAX_FRAMES_IN_FLIGHT;
+	read_pass_timings(m_frame_slot);
 
 	const RenderView primary = resolve_primary_view(scene);
 	{
@@ -65,9 +75,37 @@ void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 	}
 	{
 		PROFILE_SCOPE("RenderPipeline::GraphExecute");
+		m_graph.set_timestamp_pool(m_timestamp_pools[m_frame_slot].get());
 		m_graph.execute(cmd);
+		m_timed_passes[m_frame_slot] = m_graph.get_timed_passes();
 	}
 	m_graph.reset();
+}
+
+void RenderPipeline::read_pass_timings(Uint32 slot) {
+	RHI::IRHIQueryPool *pool = m_timestamp_pools[slot].get();
+	const std::vector<std::string> &names = m_timed_passes[slot];
+	if (pool == nullptr || names.empty()) {
+		return;
+	}
+
+	std::vector<Uint64> ticks(names.size() * 2);
+	if (!pool->read_timestamps(0, ticks)) {
+		return;
+	}
+
+	const F64 ms_per_tick = pool->get_nanoseconds_per_tick() / 1.0e6;
+	m_pass_timings.clear();
+	m_pass_timings.reserve(names.size());
+	for (Usize i = 0; i < names.size(); ++i) {
+		const Uint64 begin = ticks[i * 2];
+		const Uint64 end = ticks[(i * 2) + 1];
+		const F64 ms = end > begin ? static_cast<F64>(end - begin) * ms_per_tick : 0.0;
+		m_pass_timings.push_back({ .name = names[i], .milliseconds = static_cast<F32>(ms) });
+	}
+	const Uint64 first = ticks.front();
+	const Uint64 last = ticks.back();
+	m_gpu_frame_ms = last > first ? static_cast<F32>(static_cast<F64>(last - first) * ms_per_tick) : 0.F;
 }
 
 void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, F32 delta_time, Uint32 width,
@@ -112,6 +150,8 @@ void RenderPipeline::build_frame_context(SceneManagement::Scene &scene, F32 delt
 	out.delta_time = delta_time;
 	out.frame_data = SceneFrameData::get();
 	out.frame_slot = m_frame_slot;
+	out.settings = &m_settings;
+	m_last_view = primary;
 
 	out.h_scene_color = m_graph.import_texture(m_scene_color.get(), "SceneColor");
 	out.h_depth = m_graph.import_texture(m_depth_tex.get(), "Depth");
@@ -150,8 +190,6 @@ void RenderPipeline::rebuild_targets() {
 		.format = RHI::TextureFormat::R32UI,
 		.usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc,
 		.debug_name = "ObjectPicking",
-	out.settings = &m_settings;
-	m_last_view = primary;
 	});
 }
 

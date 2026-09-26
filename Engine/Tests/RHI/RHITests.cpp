@@ -5,6 +5,8 @@
 
 #include "Aquila/GFX/GfxContext.h"
 
+#include <array>
+
 using namespace Aquila;
 
 namespace {
@@ -301,5 +303,34 @@ TEST_SUITE("CommandList") {
 
 	TEST_CASE("ExecuteImmediate does not crash") {
 		CHECK_NOTHROW(Ctx().execute_immediate(RHI::CommandListType::Transfer, [](GFX::GfxCommandList &) {}));
+	}
+
+	TEST_CASE("Timestamp queries record increasing GPU ticks") {
+		Unique<RHI::IRHIQueryPool> pool = Ctx().create_timestamp_pool(4);
+		if (pool == nullptr) {
+			MESSAGE("Device does not support graphics timestamps; skipping");
+			return;
+		}
+		CHECK(pool->get_count() == 4);
+		CHECK(pool->get_nanoseconds_per_tick() > 0.0);
+
+		Ctx().execute_immediate(RHI::CommandListType::Graphics, [&](GFX::GfxCommandList &cmd) {
+			cmd.reset_queries(*pool, 0, 2);
+			cmd.write_timestamp(*pool, 0);
+			cmd.write_timestamp(*pool, 1);
+		});
+
+		std::array<Uint64, 2> ticks{};
+		REQUIRE(pool->read_timestamps(0, ticks));
+		CHECK(ticks[1] >= ticks[0]);
+	}
+
+	TEST_CASE("Reading beyond the pool fails cleanly") {
+		Unique<RHI::IRHIQueryPool> pool = Ctx().create_timestamp_pool(2);
+		if (pool == nullptr) {
+			return;
+		}
+		std::array<Uint64, 3> ticks{};
+		CHECK_FALSE(pool->read_timestamps(0, ticks));
 	}
 }
