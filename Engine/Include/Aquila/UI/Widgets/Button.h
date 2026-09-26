@@ -19,6 +19,7 @@ class Button : public Control {
 	void set_shortcut(std::string shortcut);
 	void set_reserve_icon_space(bool reserve);
 	void set_trailing_icon(GFX::GfxTexture *texture);
+	[[nodiscard]] IconLabel *get_content() const { return m_content; }
 	Signal<void()> on_click;
 
 	void on_mouse_release(Platform::MouseButton btn, Vec2 pos) override;
