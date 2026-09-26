@@ -106,6 +106,11 @@ add_subdirectory(${VENDOR_DIR}/VulkanMemoryAllocator)
 enable_language(C)
 add_subdirectory(${VENDOR_DIR}/hosek)
 
+set(LUNASVG_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LUNASVG_DISABLE_LOAD_SYSTEM_FONTS ON CACHE BOOL "" FORCE)
+set(USE_SYSTEM_PLUTOVG OFF CACHE BOOL "" FORCE)
+add_subdirectory(${VENDOR_DIR}/lunasvg)
+
 
 add_subdirectory(Source/Aquila/Foundation)
 add_subdirectory(Source/Aquila/Platform)

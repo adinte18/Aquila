@@ -34,6 +34,8 @@ target_link_libraries(${MODULE_NAME}
     Graphics
     Rendering
     Clay
+    PRIVATE
+    lunasvg::lunasvg
 )
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")

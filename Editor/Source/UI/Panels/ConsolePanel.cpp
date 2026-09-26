@@ -61,9 +61,9 @@ ConsolePanel::~ConsolePanel() {
 
 void ConsolePanel::build(UI::Core::View *panel, UI::Core::View * /*overlayRoot*/) {
 	if (m_texture_cache != nullptr) {
-		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.png");
-		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.png");
-		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.png");
+		m_info_icon = m_texture_cache->load("Engine/UI/Icons/info.svg");
+		m_alert_icon = m_texture_cache->load("Engine/UI/Icons/triangle-alert.svg");
+		m_error_icon = m_texture_cache->load("Engine/UI/Icons/circle-x.svg");
 	}
 
 	m_scroll_view = panel->find_by_id<UI::Core::ScrollView>("console-scroll");

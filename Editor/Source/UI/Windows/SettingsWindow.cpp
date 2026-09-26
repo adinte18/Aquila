@@ -41,7 +41,7 @@ void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 hei
 						   const std::vector<std::string> &style_paths) {
 	m_texture_cache = texture_cache;
 	if (m_texture_cache != nullptr) {
-		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.png");
+		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.svg");
 	}
 
 	m_canvas = std::make_unique<Canvas>(width, height);

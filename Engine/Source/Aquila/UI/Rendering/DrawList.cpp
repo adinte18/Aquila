@@ -2,21 +2,22 @@
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
-#include <type_traits>
 #include <cmath>
+#include <type_traits>
 
 namespace Aquila::UI::Rendering {
 
-void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, Vec4 border_color, Int32 z,
 namespace {
 
 constexpr F32 k_glyph_dilation_px = 1.F;
 
 }
 
+void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, Vec4 border_color, Int32 z,
 						 BorderStyle border_style) {
 	RectCmd command;
 	command.rect = rect;
@@ -83,9 +84,10 @@ void DrawList::draw_text(Rect bounds, std::string_view text, Text::FontAtlas *fo
 }
 
 void DrawList::draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint, Vec2 uv_min, Vec2 uv_max, Int32 z) {
+	const Vec2 snapped_size = glm::round(rect.position + rect.size) - glm::round(rect.position);
 	ImageCmd command;
 	command.rect = rect;
-	command.texture = tex;
+	command.texture = Core::TextureCache::resolve_for_size(tex, snapped_size);
 	command.z_order = z;
 	command.tint = tint;
 	command.uv_min = uv_min;
@@ -182,9 +184,9 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							}
 						}
 
+						baseline_y = std::round(baseline_y);
 						F32 cursor_x = c.rect.position.x;
 						if (c.align == TextAlign::Center) {
-						baseline_y = std::round(baseline_y);
 							cursor_x += (c.rect.size.x - text_width) * 0.5F;
 						} else if (c.align == TextAlign::Right) {
 							cursor_x += c.rect.size.x - text_width;
@@ -198,9 +200,9 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								}
 							}
 						}
+						cursor_x = std::round(cursor_x);
 
 						for (size_t ci = start; ci < end;) {
-						cursor_x = std::round(cursor_x);
 							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);
 							ci += (d.size > 0 ? d.size : 1u);
 							const Text::GlyphInfo *glyph = atlas->get_glyph(d.codepoint);
@@ -212,9 +214,9 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							if (slug != nullptr && glyph_size.x > 0.F && glyph_size.y > 0.F) {
 								const F32 glyph_x = cursor_x + glyph->bearing_em.x * scale;
 								const F32 glyph_y = baseline_y + glyph->bearing_em.y * scale;
+								const Vec2 em_per_pixel = (slug->em_max - slug->em_min) / glyph_size;
 
 								Graphics::GlyphSpec spec{};
-								const Vec2 em_per_pixel = (slug->em_max - slug->em_min) / glyph_size;
 								spec.position = Vec2(glyph_x, glyph_y) - Vec2(k_glyph_dilation_px);
 								spec.size = glyph_size + Vec2(2.F * k_glyph_dilation_px);
 								spec.color = c.color;

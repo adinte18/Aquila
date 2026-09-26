@@ -129,7 +129,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 
 	if (texture_cache != nullptr) {
 		auto *image =
-			add_group(content, "Image")->add_child<Image>(texture_cache->load("Engine/UI/Icons/info.png"), Vec4(1.F));
+			add_group(content, "Image")->add_child<Image>(texture_cache->load("Engine/UI/Icons/info.svg"), Vec4(1.F));
 		image->add_class("gallery-image");
 	}
 
@@ -138,7 +138,7 @@ void WidgetGalleryWindow::build(GFX::GfxContext &ctx, TextureCache *texture_cach
 	auto *card = add_group(content, "AssetCard")->add_child<AssetCard>();
 	card->set_asset(AssetPayload{ "textures/wood.png", "texture", "wood.png" });
 	if (texture_cache != nullptr) {
-		card->set_thumbnail(texture_cache->load("Engine/UI/Icons/info.png"));
+		card->set_thumbnail(texture_cache->load("Engine/UI/Icons/info.svg"));
 	}
 
 	auto *tooltip_btn = add_group(content, "Tooltip")->add_child<Button>(std::string("Show tooltip"));
