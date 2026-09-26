@@ -97,11 +97,21 @@ TreeNode::TreeNode(std::string label, TreeView &owner, int depth)
 	: m_owner(owner), m_label(std::move(label)), m_depth(depth) {
 	add_class("tree-node");
 
+	auto row = std::make_unique<View>();
+	row->add_class("tree-node-row");
+	m_row = View::add_child(std::move(row));
+
 	auto header = std::make_unique<Button>();
 	header->add_class("tree-node-header");
 	header->on_click.connect([this] { on_header_clicked(); });
 	header->on_context_menu.connect([this](Vec2 pos) { on_header_right_clicked(pos); });
-	m_header = dynamic_cast<Button *>(View::add_child(std::move(header)));
+	m_header = dynamic_cast<Button *>(m_row->add_child(std::move(header)));
+
+	auto actions = std::make_unique<View>();
+	actions->add_class("tree-node-actions");
+	m_actions = m_row->add_child(std::move(actions));
+
+	track_row_hover(m_header);
 
 	auto children = std::make_unique<View>();
 	children->add_class("tree-node-children");
@@ -155,11 +165,26 @@ void TreeNode::set_expanded(bool expanded) {
 }
 
 void TreeNode::set_selected(bool selected) {
-	if (selected) {
-		m_header->add_class("tree-node-selected");
-	} else {
-		m_header->remove_class("tree-node-selected");
+	m_header->set_class("tree-node-selected", selected);
+	m_row->set_class("tree-node-row-selected", selected);
+}
+
+void TreeNode::track_row_hover(View *view) {
+	if (view == nullptr) {
+		return;
 	}
+	view->on_mouse_entered.connect([this] {
+		if (m_row_hover_count++ == 0) {
+			m_row->add_class("tree-node-row-hover");
+			on_row_hover_changed(true);
+		}
+	});
+	view->on_mouse_left.connect([this] {
+		if (m_row_hover_count > 0 && --m_row_hover_count == 0) {
+			m_row->remove_class("tree-node-row-hover");
+			on_row_hover_changed(false);
+		}
+	});
 }
 
 void TreeNode::apply_state() {
@@ -170,7 +195,9 @@ void TreeNode::apply_state() {
 
 void TreeNode::on_header_clicked() {
 	set_expanded(!m_expanded);
-	m_owner.notify_selected(this);
+	if (m_selectable) {
+		m_owner.notify_selected(this);
+	}
 }
 
 void TreeNode::on_header_right_clicked(Vec2 pos) {

@@ -137,6 +137,7 @@ class View {
 	Signal<void(Vec2)> on_context_menu;
 	Signal<void(Vec2)> on_pressed;
 	Signal<void()> on_mouse_entered;
+	Signal<void()> on_mouse_left;
 	bool is_animation_finished() const { return m_is_animation_finished; }
 
 	[[nodiscard]] bool is_hovered() const { return m_is_hovered; }

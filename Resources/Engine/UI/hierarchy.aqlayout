@@ -1,3 +1,7 @@
 <View id="hierarchy-root">
+    <View id="hierarchy-toolbar" class="hierarchy-toolbar">
+        <TextInput id="hierarchy-filter" class="hierarchy-filter"/>
+        <Button id="hierarchy-create" class="hierarchy-tool-btn" src="Engine/UI/Icons/plus.svg" tooltip="Create entity"/>
+    </View>
     <ScrollView id="hierarchy-scroll"/>
 </View>

@@ -2,7 +2,9 @@
 
 #include "UI/Panels/HierarchyTreeView.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/EntityManager.h"
+#include "Aquila/UI/Widgets/Button.h"
 
 namespace Editor {
 
@@ -15,6 +17,36 @@ HierarchyTreeNode::HierarchyTreeNode(std::string label, HierarchyTreeView &owner
 	  m_hierarchy_view(owner) {
 	m_is_draggable = true;
 	m_is_accepting_payload = true;
+
+	m_eye = get_actions()->add_child<Button>();
+	m_eye->add_class("hierarchy-eye");
+	m_eye->on_click.connect([this] { toggle_visibility(); });
+	track_row_hover(m_eye);
+	on_row_hover_changed.connect([this](bool hovered) {
+		m_row_hovered = hovered;
+		refresh_visibility();
+	});
+}
+
+void HierarchyTreeNode::toggle_visibility() {
+	auto *metadata = m_entity.try_get_component<Components::MetadataComponent>();
+	if (metadata == nullptr) {
+		return;
+	}
+	metadata->set_visible(!metadata->is_visible());
+	refresh_visibility();
+	m_hierarchy_view.on_visibility_changed(m_entity);
+}
+
+void HierarchyTreeNode::refresh_visibility() {
+	const auto *metadata = m_entity.try_get_component<Components::MetadataComponent>();
+	const bool visible = metadata == nullptr || metadata->is_visible();
+	const EntityIcons &icons = m_hierarchy_view.get_icons();
+	const bool shown = m_row_hovered || !visible;
+	m_eye->set_icon(shown ? (visible ? icons.eye : icons.eye_off) : nullptr);
+	m_eye->set_tooltip(visible ? "Hide" : "Show");
+	m_eye->set_class("hierarchy-eye-shown", shown);
+	get_header()->set_class("hierarchy-entity-hidden", !visible);
 }
 
 void HierarchyTreeNode::on_drag_start(DragState &state) {
@@ -53,6 +85,7 @@ void HierarchyTreeNode::on_drop(DragState &state) {
 		new_node->update_depth(get_depth() + 1);
 		set_expanded(true);
 	}
+	m_hierarchy_view.refresh_groups();
 }
 
 } // namespace Editor

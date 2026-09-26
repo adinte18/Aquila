@@ -467,6 +467,7 @@ void View::on_mouse_leave() {
 	}
 	m_is_hovered = false;
 	mark_style_dirty();
+	on_mouse_left();
 }
 
 void View::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
