@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/ShadowSystem.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -69,6 +70,9 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		auto view = registry.view<TransformComponent, MeshComponent>();
 		draw_calls.reserve(view.size_hint());
 		for (auto entity : view) {
+			if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+				continue;
+			}
 			auto &transform = view.get<TransformComponent>(entity);
 			auto &mesh = view.get<MeshComponent>(entity);
 			if (!mesh.is_valid() || !mesh.cast_shadows) {

@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/GeometrySystem.h"
+#include "Aquila/Scene/Visibility.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/GFX/GfxContext.h"
@@ -44,6 +45,9 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		auto &transform = view.get<TransformComponent>(entity);
 		auto &mesh = view.get<MeshComponent>(entity);
 		if (!mesh.is_valid()) {
+		if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
+			continue;
+		}
 			continue;
 		}
 

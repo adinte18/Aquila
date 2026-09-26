@@ -1,4 +1,5 @@
 #include "Aquila/Rendering/Systems/OutlineSystem.h"
+#include "Aquila/Scene/Visibility.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
@@ -160,6 +161,9 @@ void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		auto &mesh = view.get<MeshComponent>(entity);
 		if (!mesh.is_valid()) {
 			continue;
+		if (!SceneManagement::is_visible_in_hierarchy(ctx.scene->get_registry(), entity)) {
+			continue;
+		}
 		}
 
 		auto gpu_mesh = get_or_upload_mesh(mesh.data);
