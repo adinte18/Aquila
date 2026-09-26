@@ -14,6 +14,7 @@ namespace Aquila::UI::Rendering {
 void ViewRenderingSystem::on_init(GFX::GfxContext &ctx) {
 	m_ctx = &ctx;
 	m_r2_d = std::make_unique<Graphics::QuadBatcher>(ctx);
+	m_overlay_r2d = std::make_unique<Graphics::QuadBatcher>(ctx);
 }
 
 void ViewRenderingSystem::rebuild_overlay_resources(Uint32 w, Uint32 h) {
@@ -72,7 +73,7 @@ void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aq
 		rebuild_overlay_resources(w, h);
 	}
 
-	auto *r2d = m_r2_d.get();
+	auto *r2d = m_overlay_r2d.get();
 	auto *swapchain = ctx.swapchain;
 	auto image_index = ctx.swapchain_image_index;
 	auto *overlay_pass = m_overlay_pass.get();

@@ -22,6 +22,7 @@ class ViewRenderingSystem final : public Aquila::Rendering::IRenderingSystem {
 
 	GFX::GfxContext *m_ctx = nullptr;
 	Unique<Graphics::QuadBatcher> m_r2_d;
+	Unique<Graphics::QuadBatcher> m_overlay_r2d;
 	Ref<GFX::GfxTexture> m_msaa_color;
 	Ref<GFX::GfxRenderPass> m_overlay_pass;
 	Uint32 m_width = 0;
