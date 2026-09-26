@@ -27,9 +27,9 @@ struct FontFamily {
 	const char *label;
 };
 
-constexpr FontFamily k_font_families[] = {
-	{ "Lexend", "Lexend" },
-	{ "Inconsolata", "Inconsolata" },
+constexpr FontFamily K_FONT_FAMILIES[] = {
+	{ .id = "Geist", .label = "Geist" },
+	{ .id = "Inconsolata", .label = "Inconsolata" },
 };
 
 } // namespace
@@ -146,7 +146,7 @@ void SettingsWindow::font_row(View *host, const std::string &label, const std::s
 
 	auto *dropdown = row->add_child<Dropdown>();
 	dropdown->add_class("settings-field");
-	for (const auto &family : k_font_families) {
+	for (const auto &family : K_FONT_FAMILIES) {
 		dropdown->add_option(family.id, family.label);
 	}
 	dropdown->set_value(*family_field);
