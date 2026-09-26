@@ -11,6 +11,7 @@
 #include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
 #include "Aquila/UI/Widgets/NumberInput.h"
+#include "Aquila/UI/Widgets/OverlayToolbar.h"
 #include "Aquila/UI/Widgets/DragFloat.h"
 #include "Aquila/UI/Widgets/DragInt.h"
 #include "Aquila/UI/Widgets/Toggle.h"
@@ -474,6 +475,7 @@ void LayoutLoader::register_builtins() {
 	Register<DockSpace>("DockSpace");
 	Register<DockNode>("DockNode");
 	Register<DockPanel>("DockPanel");
+	Register<OverlayToolbar>("OverlayToolbar");
 }
 
 } // namespace Aquila::UI::Core
