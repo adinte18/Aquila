@@ -32,6 +32,11 @@ class DockNode : public View {
 	void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr) override;
 	[[nodiscard]] Option<SplitDirection> get_declared_split() const { return m_declared_split; }
 
+	Unique<View> replace_panel(DockPanel *old_panel, Unique<View> new_view);
+	[[nodiscard]] int index_of(const DockPanel *panel) const;
+	[[nodiscard]] View *get_tab_actions() const { return m_tab_actions; }
+	void decorate_tab_bar();
+
 	void set_active_panel(int index);
 	void set_active_panel_by_ptr(DockPanel *panel);
 	[[nodiscard]] int get_active_panel() const { return m_active_panel; }
@@ -64,6 +69,8 @@ class DockNode : public View {
 	DockDragContext *m_drag_ctx = nullptr;
 	bool m_is_leaf = true;
 	View *m_tab_bar = nullptr;
+	View *m_tab_strip = nullptr;
+	View *m_tab_actions = nullptr;
 	View *m_panel_area = nullptr;
 
 	View *m_zone_center = nullptr;

@@ -2,12 +2,12 @@
 
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Widgets/DockDragContext.h"
+#include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockTypes.h"
 
 namespace Aquila::UI::Core {
 
 class DockNode;
-class DockPanel;
 class DockSplitter;
 struct DockLayoutDesc;
 
@@ -21,7 +21,18 @@ class DockSpace : public View {
 	// Compiles a declared <DockNode>/<DockPanel> child tree into the runtime dock structure.
 	void on_xml_loaded() override;
 
-	bool apply_layout(const DockLayoutDesc &desc);
+	using PanelFactory = Delegate<Unique<DockPanel>(const std::string &panel_id)>;
+
+	bool apply_layout(const DockLayoutDesc &desc, bool discard_unplaced = false);
+
+	void set_panel_factory(PanelFactory factory) { m_panel_factory = std::move(factory); }
+	void set_tab_bar_decorator(std::function<void(DockNode *, View *)> decorator);
+	void set_closable_tabs(bool closable, GFX::GfxTexture *close_icon);
+
+	[[nodiscard]] DockNode *find_node_of(const DockPanel *panel) const;
+	bool move_panel(DockPanel *panel, DockNode *target, DropZone zone = DropZone::Center);
+	void close_panel(DockPanel *panel);
+	void for_each_leaf(const std::function<void(DockNode *)> &visit) const;
 
 	[[nodiscard]] bool has_any_panels() const;
 	[[nodiscard]] DockNode *first_leaf_with_tabs() const;
@@ -63,6 +74,7 @@ class DockSpace : public View {
 	Delegate<void(Vec2)> m_on_external_drag_move;
 	Delegate<void()> m_on_external_drag_clear;
 	bool m_drag_left_canvas = false;
+	PanelFactory m_panel_factory;
 };
 
 } // namespace Aquila::UI::Core

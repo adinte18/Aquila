@@ -1,47 +1,47 @@
 #include "Core/EditorModule.h"
+#include "Core/EditorContext.h"
+#include "Core/EditorWindows.h"
 #include "Core/ProjectManager.h"
+#include "Core/Workspaces.h"
 
 #include "Aquila/Application/ApplicationNew.h"
 
-#include "UI/Panels/ConsolePanel.h"
-#include "UI/Panels/HierarchyPanel.h"
-#include "UI/Panels/HierarchyTreeView.h"
 #include "Aquila/UI/Core/FontManager.h"
 #include "Aquila/UI/DevTools/UIDevTools.h"
-#include "UI/Windows/SettingsWindow.h"
-#include "UI/Windows/ProjectLauncher.h"
-#include "UI/Panels/InspectorPanel.h"
+#include "UI/EditorWindows/ConsoleWindow.h"
+#include "UI/EditorWindows/HierarchyWindow.h"
+#include "UI/EditorWindows/InspectorWindow.h"
+#include "UI/EditorWindows/ViewportWindow.h"
 #include "UI/Panels/StatusBar.h"
-#include "UI/Panels/ViewportPanel.h"
+#include "UI/Windows/ProjectLauncher.h"
+#include "UI/Windows/SettingsWindow.h"
 
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/SharedConstants.h"
-#include "Aquila/Graphics/Material/MaterialFactory.h"
-#include "Aquila/Graphics/Resources/Mesh.h"
-#include "Aquila/Scene/Components/CameraComponent.h"
-#include "Aquila/Scene/Components/LightComponent.h"
-#include "Aquila/Scene/Components/MaterialComponent.h"
-#include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Platform/Events/InputEvent.h"
+#include "Aquila/Platform/Input.h"
+#include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 #include "Aquila/Scene/Components/OutlineComponent.h"
-#include "Aquila/Scene/Components/SkyLightComponent.h"
-#include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/DefaultScenes.h"
 #include "Aquila/Scene/EntityManager.h"
+#include "Aquila/UI/Core/DockLayoutBuilder.h"
+#include "Aquila/UI/Core/DockWindowManager.h"
 #include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/LayoutLoader.h"
 #include "Aquila/UI/Core/UIHost.h"
 #include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Widgets/Button.h"
-#include "Aquila/UI/Widgets/Collapsible.h"
 #include "Aquila/UI/Widgets/ColorPicker.h"
+#include "Aquila/UI/Widgets/DockSpace.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
-#include "Aquila/Platform/Events/InputEvent.h"
-#include "Aquila/Platform/Input.h"
-#include "Aquila/Rendering/Systems/ObjectPickingSystem.h"
 
 #include <algorithm>
-#include <functional>
+#include <cstdlib>
+#include <cstdio>
+#include "Aquila/Scene/Scene.h"
+#include "Aquila/Scene/Components/MetadataComponent.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 
 namespace Editor {
 
@@ -73,6 +73,8 @@ void EditorModule::on_attach(EngineContext &engine) {
 	Aquila::UI::Core::FontManager::get().initialize(m_engine->get_context(), Config::get_preferences().fonts);
 
 	m_project_manager = std::make_unique<ProjectManager>();
+	m_texture_cache = std::make_unique<Aquila::UI::Core::TextureCache>(m_engine->get_context(),
+																	   Config::get_preferences().ui.resources_path);
 
 	open_project_launcher();
 }
@@ -107,16 +109,19 @@ void EditorModule::enter_editor(const ProjectInfo &project) {
 }
 
 void EditorModule::on_detach() {
+	if (m_windows) {
+		m_windows->shutdown();
+	}
+	m_dock_manager.reset();
 	m_settings_window.reset();
 	m_project_launcher.reset();
 	m_devtools.reset();
-	m_hierarchy_panel.reset();
-	m_viewport_panel.reset();
-	m_inspector_panel.reset();
-	m_console_panel.reset();
-	m_texture_cache.reset();
 
 	m_ui_host.reset();
+	m_workspaces.reset();
+	m_windows.reset();
+	m_context.reset();
+	m_texture_cache.reset();
 	Aquila::UI::Core::FontManager::get().shutdown();
 }
 
@@ -127,21 +132,56 @@ void EditorModule::on_pre_render(F32 delta_time) {
 		enter_editor(project);
 	}
 
-	if (m_console_panel) {
-		m_console_panel->flush_pending();
+	if (std::getenv("AQUILA_TEST_SKIP_LAUNCHER") != nullptr && m_windows) {
+		static F32 test_time = 0.F;
+		static int step = 0;
+		test_time += delta_time;
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
+		if (step == 0 && test_time > 1.F) {
+			reset_to_demo_scene();
+			step = 1;
+		} else if (step == 1 && test_time > 2.F) {
+			Entity target;
+			m_engine->get_scene().get_registry().view<entt::entity>().each([&](entt::entity handle) {
+				Entity candidate(handle, &m_engine->get_scene());
+				if (candidate.get_name() == "CubeA") {
+					target = candidate;
+				}
+				if (candidate.get_name() == "PointB") {
+					if (auto *meta = candidate.try_get_component<MetadataComponent>()) {
+						meta->set_visible(false);
+					}
+				}
+			});
+			m_context->selection.select(target);
+			step = 2;
+		} else if (step == 2 && test_time > 3.5F) {
+			auto *root = m_context->overlay_root();
+			for (const char *id : { "inspector-scroll", "inspector-body", "inspector-head", "inspector-list",
+									"section-transform", "inspector-add-component" }) {
+				if (auto *v = root->find_by_id(id)) {
+					const Rect r = v->get_absolute_rect();
+					std::fprintf(
+						stderr, "PROBE %s pos %.0f,%.0f size %.0fx%.0f hidden=%d children=%zu\n", id, r.position.x,
+						r.position.y, r.size.x, r.size.y,
+						std::ranges::find(v->get_classes(), std::string("hidden")) != v->get_classes().end() ? 1 : 0,
+						v->get_children().size());
+				} else {
+					std::fprintf(stderr, "PROBE %s missing\n", id);
+				}
+			}
+			step = 3;
+		}
 	}
-	m_ui_host->update(delta_time);
 
-	if (m_editor_camera && m_viewport_panel) {
-		const Rect viewport = m_viewport_panel->get_content_rect();
-		const auto view_width = static_cast<Uint32>(viewport.size.x);
-		const auto view_height = static_cast<Uint32>(viewport.size.y);
-		m_editor_camera->set_viewport_rect(viewport.position, viewport.size);
-		m_editor_camera->set_viewport_size(view_width, view_height);
-		const auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-		m_editor_camera->set_navigation_blocked(editor_canvas.get_hovered_view() != m_viewport_panel->get_view());
-		m_editor_camera->update(delta_time);
-		m_engine->get_render_pipeline().set_primary_view(m_editor_camera->get_render_view());
+	if (m_pending_pick && m_context) {
+		const Entity picked = *m_pending_pick;
+		m_pending_pick.reset();
+		if (picked.is_valid()) {
+			m_context->selection.select(picked);
+		} else {
+			m_context->selection.clear();
+		}
 	}
 
 	if (m_status_bar && m_status_bar->is_visible()) {
@@ -149,6 +189,11 @@ void EditorModule::on_pre_render(F32 delta_time) {
 		m_status_bar->update(m_statistics.collect(m_engine->get_scene(), m_outlined_entity),
 							 has_selection ? m_outlined_entity.get_name() : std::string());
 	}
+
+	if (m_windows) {
+		m_windows->update(delta_time);
+	}
+	m_ui_host->update(delta_time);
 
 	m_engine->get_window().set_cursor(m_ui_host->get_active_cursor());
 }
@@ -207,7 +252,8 @@ void EditorModule::on_event(Events::Event &event) {
 		}
 	});
 	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
-		if (e.get_mods() != 0 || Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right)) {
+		if (!m_context || e.get_mods() != 0 ||
+			Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right)) {
 			return false;
 		}
 		auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
@@ -216,13 +262,13 @@ void EditorModule::on_event(Events::Event &event) {
 		}
 		switch (e.get_key_code()) {
 		case Events::KeyCode::W:
-			m_tools.set_tool(TransformTool::Translate);
+			m_context->tools.set_tool(TransformTool::Translate);
 			return true;
 		case Events::KeyCode::E:
-			m_tools.set_tool(TransformTool::Rotate);
+			m_context->tools.set_tool(TransformTool::Rotate);
 			return true;
 		case Events::KeyCode::R:
-			m_tools.set_tool(TransformTool::Scale);
+			m_context->tools.set_tool(TransformTool::Scale);
 			return true;
 		default:
 			return false;
@@ -236,12 +282,15 @@ void EditorModule::on_event(Events::Event &event) {
 		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
 			return false;
 		}
-		if (Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right) || Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Left)) {
+		if (Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right) ||
+			Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Left)) {
 			return false;
 		}
-		if (m_inspector_panel != nullptr) {
-			m_inspector_panel->open_add_search(Aquila::Platform::Input::get_mouse_position());
+		auto *inspector = m_windows ? m_windows->find<InspectorWindow>() : nullptr;
+		if (inspector == nullptr) {
+			return false;
 		}
+		inspector->open_add_search(Aquila::Platform::Input::get_mouse_position());
 		return true;
 	});
 }
@@ -256,30 +305,15 @@ void EditorModule::set_outlined_entity(Entity entity) {
 	}
 }
 
-void EditorModule::request_viewport_pick(Vec2 uv) {
-	if (Aquila::Platform::Input::is_key_pressed(Events::KeyCode::LeftAlt)) {
-		return;
-	}
-
-	auto &output = m_engine->get_render_output();
-	const F32 x = uv.x * static_cast<F32>(output.get_width());
-	const F32 y = uv.y * static_cast<F32>(output.get_height());
-	if (x < 0.F || y < 0.F) {
-		return;
-	}
-
-	m_engine->get_object_picking().request_pick(static_cast<Uint32>(x), static_cast<Uint32>(y));
-}
-
-void EditorModule::on_resize(Uint32 width, Uint32 height) {
-	if (m_viewport_panel) {
-		m_viewport_panel->set_texture(&m_engine->get_render_output());
+void EditorModule::on_resize(Uint32, Uint32) {
+	if (m_context) {
+		m_context->on_render_output_changed();
 	}
 }
 
-void EditorModule::on_render_resize(Uint32 width, Uint32 height) {
-	if (m_viewport_panel) {
-		m_viewport_panel->set_texture(&m_engine->get_render_output());
+void EditorModule::on_render_resize(Uint32, Uint32) {
+	if (m_context) {
+		m_context->on_render_output_changed();
 	}
 }
 
@@ -287,27 +321,58 @@ F32 EditorModule::window_aspect() {
 	return static_cast<F32>(m_engine->get_window().get_width()) / static_cast<F32>(m_engine->get_window().get_height());
 }
 
-void EditorModule::refresh_scene_panels() {
-	if (m_hierarchy_panel) {
-		m_hierarchy_panel->rebuild();
-	}
-	if (m_inspector_panel) {
-		m_inspector_panel->clear();
+void EditorModule::scene_replaced() {
+	if (m_context) {
+		m_context->selection.clear();
+		m_context->selection.on_scene_replaced();
 	}
 }
 
 void EditorModule::new_empty_scene() {
 	m_engine->get_scene().clear();
 	SceneManagement::spawn_default_camera(m_engine->get_scene(), window_aspect());
-	refresh_scene_panels();
+	scene_replaced();
 	AQUILA_LOG_INFO("EditorModule: new empty scene");
 }
 
 void EditorModule::reset_to_demo_scene() {
 	m_engine->get_scene().clear();
 	SceneManagement::populate_demo_scene(m_engine->get_scene(), m_engine->get_context(), window_aspect());
-	refresh_scene_panels();
+	scene_replaced();
 	AQUILA_LOG_INFO("EditorModule: reset to demo scene");
+}
+
+void EditorModule::register_windows() {
+	m_windows->add<ViewportWindow>({ .id = "viewport", .title = "Viewport", .icon = "video", .group = "Scene" });
+	m_windows->add<HierarchyWindow>({ .id = "hierarchy", .title = "Hierarchy", .icon = "list-tree", .group = "Scene" });
+	m_windows->add<InspectorWindow>(
+		{ .id = "inspector", .title = "Inspector", .icon = "sliders-horizontal", .group = "Scene" });
+	m_windows->add<ConsoleWindow>({ .id = "console", .title = "Console", .icon = "terminal", .group = "Diagnostics" });
+}
+
+void EditorModule::register_workspaces() {
+	using namespace Aquila::UI::Core::DockLayout;
+
+	m_workspaces->add("Scene",
+					  layout(row({
+						  { 0.18F, tabs({ "hierarchy" }) },
+						  { 0.60F, column({ { 0.74F, tabs({ "viewport" }) }, { 0.26F, tabs({ "console" }) } }) },
+						  { 0.22F, tabs({ "inspector" }) },
+					  })));
+
+	m_workspaces->add(
+		"Layout",
+		layout(row({
+			{ 0.76F, tabs({ "viewport" }) },
+			{ 0.24F, column({ { 0.40F, tabs({ "hierarchy" }) }, { 0.60F, tabs({ "inspector", "console" }) } }) },
+		})));
+
+	m_workspaces->add(
+		"Debug",
+		layout(column({
+			{ 0.60F, row({ { 0.68F, tabs({ "viewport" }) }, { 0.32F, tabs({ "inspector", "hierarchy" }) } }) },
+			{ 0.40F, tabs({ "console" }) },
+		})));
 }
 
 void EditorModule::setup_editor_ui() {
@@ -323,15 +388,19 @@ void EditorModule::setup_editor_ui() {
 			return std::make_unique<Aquila::UI::Core::ColorPicker>(m_engine->get_context());
 		});
 
+	const std::string layout_dir = cfg.ui.layout_path.substr(0, cfg.ui.layout_path.find_last_of('/') + 1);
+	m_context =
+		std::make_unique<EditorContext>(*m_engine, editor_canvas, m_layout_loader, *m_texture_cache, layout_dir);
+	m_context->set_camera(m_editor_camera.get());
+
 	m_layout_loader.register_command("entity.create", [this] {
 		auto entity = m_engine->get_scene().get_entity_manager()->create_entity("New Entity");
-		if (m_hierarchy_panel) {
-			m_hierarchy_panel->add_entity(entity);
-		}
+		m_context->selection.on_entity_created(entity);
+		m_context->selection.select(entity);
 	});
 	m_layout_loader.register_command("console.clear", [this] {
-		if (m_console_panel) {
-			m_console_panel->clear_all();
+		if (auto *console = m_windows->find<ConsoleWindow>()) {
+			console->clear();
 		}
 	});
 
@@ -342,57 +411,45 @@ void EditorModule::setup_editor_ui() {
 	}
 
 	Aquila::UI::Core::View *layout_root = editor_canvas.get_root()->add_child(std::move(root));
+	m_context->set_overlay_root(layout_root);
 
-	auto *hierarchy_panel = layout_root->find_by_id("card-hierarchy");
-	auto *inspector_panel = layout_root->find_by_id("card-inspector");
-	auto *console_panel = layout_root->find_by_id("card-console");
-	if ((hierarchy_panel == nullptr) || (inspector_panel == nullptr) || (console_panel == nullptr)) {
-		AQUILA_LOG_ERROR("EditorModule: editor panels not found, check editor.aqlayout");
+	m_dock_space = layout_root->find_by_id<Aquila::UI::Core::DockSpace>("editor-dock");
+	if (m_dock_space == nullptr) {
+		AQUILA_LOG_ERROR("EditorModule: 'editor-dock' not found, check editor.aqlayout");
 		return;
 	}
 
-	m_hierarchy_panel = std::make_unique<HierarchyPanel>(*m_engine->get_scene().get_entity_manager());
-	m_viewport_panel = std::make_unique<ViewportPanel>(m_engine->get_render_output());
-	m_inspector_panel = std::make_unique<InspectorPanel>(m_engine->get_context(), m_texture_cache.get());
-	m_console_panel = std::make_unique<ConsolePanel>(m_texture_cache.get());
-
-	m_hierarchy_panel->build(hierarchy_panel, layout_root);
-	m_hierarchy_panel->set_tree_icons(m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-right.png"),
-									  m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-down.png"));
-	m_hierarchy_panel->set_entity_icons(EntityIcons{
-		.empty = m_layout_loader.resolve_texture("Engine/UI/Icons/circle-dashed.png"),
-		.mesh = m_layout_loader.resolve_texture("Engine/UI/Icons/cuboid.png"),
-		.light = m_layout_loader.resolve_texture("Engine/UI/Icons/lightbulb.png"),
-		.camera = m_layout_loader.resolve_texture("Engine/UI/Icons/video.png"),
-		.sky = m_layout_loader.resolve_texture("Engine/UI/Icons/sun.png"),
-	});
-	m_viewport_panel->build(layout_root, layout_root);
-	m_inspector_panel->build(inspector_panel, layout_root);
-	m_console_panel->build(console_panel, layout_root);
-
-	m_hierarchy_panel->on_entity_selected.connect([this](Entity entity) { m_inspector_panel->show_entity(entity); });
-	m_hierarchy_panel->on_entity_deselected.connect([this] { m_inspector_panel->clear(); });
-	m_inspector_panel->on_entity_renamed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
-	m_inspector_panel->on_components_changed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
+	m_windows = std::make_unique<EditorWindows>(*m_context);
+	register_windows();
+	m_windows->attach(*m_dock_space);
 
 	m_dock_manager =
 		std::make_unique<Aquila::UI::Core::DockWindowManager>(m_engine->get_window_host(), cfg.ui.style_paths);
 	m_dock_manager->set_main_dock_space(m_dock_space);
 
-	m_viewport_panel->on_clicked_uv.connect([this](Vec2 uv) { request_viewport_pick(uv); });
+	m_context->selection.on_changed.connect([this](Entity entity) { set_outlined_entity(entity); });
 	m_engine->get_object_picking().on_picked.connect([this](Entity entity) {
-		if (entity.is_valid()) {
-			m_hierarchy_panel->select_entity(entity);
-		} else {
-			m_hierarchy_panel->deselect_entity();
-		}
+		m_pending_pick = entity;
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
 	});
 
+	m_workspaces = std::make_unique<Workspaces>(*m_windows);
+	register_workspaces();
+	if (auto *tabs = layout_root->find_by_id("workspace-tabs")) {
+		m_workspaces->build_tabs(*tabs);
+	}
+	m_workspaces->activate("Scene");
+
 	wire_main_menu(layout_root);
-	wire_tools(layout_root);
 	m_status_bar = std::make_unique<StatusBar>();
 	m_status_bar->build(layout_root);
-	wire_cards(layout_root);
+
+	if (auto *settings = layout_root->find_by_id<Aquila::UI::Core::Button>("topbar-settings")) {
+		settings->on_click.connect([this] { open_settings_window(); });
+	}
+	if (auto *reset = layout_root->find_by_id<Aquila::UI::Core::Button>("topbar-reset")) {
+		reset->on_click.connect([this] { m_workspaces->reset_active(); });
+	}
 
 	m_devtools = std::make_unique<Aquila::UI::DevTools::UIDevTools>(Aquila::UI::DevTools::UIDevToolsDesc{
 		.target = editor_canvas,
@@ -414,7 +471,8 @@ void EditorModule::open_settings_window() {
 	m_settings_window->on_applied = [this] { apply_font_settings(); };
 
 	const Aquila::Rendering::RenderWindowId window =
-		Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_settings_window, 560, 640, "Aquila - Settings", [this] { m_settings_window.reset(); });
+		Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_settings_window, 560, 640,
+											   "Aquila - Settings", [this] { m_settings_window.reset(); });
 	m_settings_window->on_request_close = [this, window] { m_engine->get_window_host().request_close(window); };
 }
 
@@ -436,159 +494,52 @@ void EditorModule::apply_font_settings() {
 	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
 }
 
-void EditorModule::wire_tools(Aquila::UI::Core::View *layout_root) {
-	const std::array<std::pair<const char *, TransformTool>, 3> tools = { {
-		{ "tool-translate", TransformTool::Translate },
-		{ "tool-rotate", TransformTool::Rotate },
-		{ "tool-scale", TransformTool::Scale },
-	} };
-	for (Usize i = 0; i < tools.size(); ++i) {
-		m_tool_buttons[i] = layout_root->find_by_id<Aquila::UI::Core::Button>(tools[i].first);
-		if (m_tool_buttons[i] != nullptr) {
-			const TransformTool tool = tools[i].second;
-			m_tool_buttons[i]->on_click.connect([this, tool] { m_tools.set_tool(tool); });
-		}
-	}
-
-	m_space_button = layout_root->find_by_id<Aquila::UI::Core::Button>("tool-space");
-	if (m_space_button != nullptr) {
-		m_space_button->on_click.connect([this] { m_tools.toggle_space(); });
-	}
-
-	m_tools.on_tool_changed.connect([this](TransformTool) { refresh_tool_buttons(); });
-	m_tools.on_space_changed.connect([this](TransformSpace) { refresh_tool_buttons(); });
-	refresh_tool_buttons();
-}
-
-void EditorModule::refresh_tool_buttons() {
-	for (Usize i = 0; i < m_tool_buttons.size(); ++i) {
-		if (m_tool_buttons[i] != nullptr) {
-			m_tool_buttons[i]->set_class("hud-tool-active", static_cast<Usize>(m_tools.get_tool()) == i);
-		}
-	}
-	if (m_space_button != nullptr) {
-		const bool world = m_tools.get_space() == TransformSpace::World;
-		m_space_button->set_icon(
-			m_layout_loader.resolve_texture(world ? "Engine/UI/Icons/globe.png" : "Engine/UI/Icons/cuboid.png"));
-		m_space_button->set_tooltip(world ? "World space (click for local)" : "Local space (click for world)");
-	}
-}
-
-void EditorModule::wire_cards(Aquila::UI::Core::View *layout_root) {
-	using Aquila::UI::Core::Collapsible;
-
-	const std::array<const char *, 2> ids = { "card-hierarchy", "card-inspector" };
-
-	for (Usize i = 0; i < ids.size(); ++i) {
-		m_cards[i].card = layout_root->find_by_id<Collapsible>(ids[i]);
-		set_card_visible(i, true);
-	}
-
-	auto *console_card = layout_root->find_by_id("card-console");
-	auto *console_button = layout_root->find_by_id<Aquila::UI::Core::Button>("hud-console");
-	if (console_card != nullptr && console_button != nullptr) {
-		console_button->on_click.connect([console_card, console_button, shown = true]() mutable {
-			shown = !shown;
-			console_card->set_hidden(!shown);
-			console_button->set_class("hud-tool-active", shown);
-		});
-	}
-
-	auto *rail_left = layout_root->find_by_id("rail-left");
-	auto *rail_right = layout_root->find_by_id("rail-right");
-	auto *swap_icon = m_layout_loader.resolve_texture("Engine/UI/Icons/arrow-left-right.png");
-	if (m_cards[0].card != nullptr) {
-		m_cards[0].card->add_header_action(m_layout_loader.resolve_texture("Engine/UI/Icons/plus.png"), "New entity",
-										  m_layout_loader.resolve_command("entity.create"));
-	}
-	for (Usize i = 0; i < m_cards.size(); ++i) {
-		if (m_cards[i].card != nullptr && rail_left != nullptr && rail_right != nullptr) {
-			Collapsible *card = m_cards[i].card;
-			card->add_header_action(swap_icon, "Move to the other side", [card, rail_left, rail_right] {
-				Aquila::UI::Core::View *from = card->get_parent();
-				Aquila::UI::Core::View *to = from == rail_left ? rail_right : rail_left;
-				if (from == nullptr) {
-					return;
-				}
-				to->add_child(from->detach_child(card));
-			});
-		}
-	}
-
-	auto *chevron_collapsed = m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-right.png");
-	auto *chevron_expanded = m_layout_loader.resolve_texture("Engine/UI/Icons/chevron-down.png");
-	std::function<void(Aquila::UI::Core::View *)> apply_chevrons = [&](Aquila::UI::Core::View *view) {
-		if (auto *collapsible = Aquila::UI::Core::view_cast<Collapsible>(view); collapsible != nullptr && collapsible->is_collapsible()) {
-			collapsible->set_state_icons(chevron_collapsed, chevron_expanded);
-		}
-		for (const auto &child : view->get_children()) {
-			apply_chevrons(child.get());
-		}
-	};
-	apply_chevrons(layout_root);
-
-	if (auto *settings = layout_root->find_by_id<Aquila::UI::Core::Button>("hud-settings")) {
-		settings->on_click.connect([this] { open_settings_window(); });
-	}
-}
-
-void EditorModule::set_card_visible(Usize index, bool visible) {
-	m_cards[index].visible = visible;
-	if (m_cards[index].card != nullptr) {
-		m_cards[index].card->set_hidden(!visible);
-	}
-}
-
-void EditorModule::toggle_card(Usize index) {
-	set_card_visible(index, !m_cards[index].visible);
-}
-
 void EditorModule::wire_main_menu(Aquila::UI::Core::View *layout_root) {
 	using Aquila::UI::Core::PopupMenu;
 
-	auto *menu_button = layout_root->find_by_id<Aquila::UI::Core::Button>("hud-menu");
+	auto *menu_button = layout_root->find_by_id<Aquila::UI::Core::Button>("topbar-menu");
 	if (menu_button == nullptr) {
 		return;
 	}
 
-	auto icon = [this](const char *name) {
-		return m_layout_loader.resolve_texture(std::string("Engine/UI/Icons/") + name);
-	};
-
 	auto popup = std::make_unique<PopupMenu>();
-	popup->set_submenu_icon(icon("chevron-right.png"));
+	popup->set_submenu_icon(m_context->icon("chevron-right"));
 	m_main_menu = dynamic_cast<PopupMenu *>(layout_root->add_child(std::move(popup)));
 
-	PopupMenu *file_menu = m_main_menu->add_submenu("File", icon("folder-open.png"));
-	file_menu->add_item("New scene", "Ctrl+N", icon("layers-plus.png"), [this] { new_empty_scene(); });
-	file_menu->add_item("Open scene", "Ctrl+O", icon("folder-open.png"),
+	PopupMenu *file_menu = m_main_menu->add_submenu("File", m_context->icon("folder-open"));
+	file_menu->add_item("New scene", "Ctrl+N", m_context->icon("layers-plus"), [this] { new_empty_scene(); });
+	file_menu->add_item("Open scene", "Ctrl+O", m_context->icon("folder-open"),
 						[] { AQUILA_LOG_INFO("EditorModule: opening scenes is not available yet"); });
 	file_menu->add_separator();
-	file_menu->add_item("Quit", "Ctrl+X", icon("x.png"), [this] { m_engine->request_close(); });
+	file_menu->add_item("Quit", "Ctrl+X", m_context->icon("x"), [this] { m_engine->request_close(); });
 
-	PopupMenu *edit_menu = m_main_menu->add_submenu("Edit", icon("pencil.png"));
-	edit_menu->add_item("Preferences", "Ctrl+,", icon("settings.png"), [this] { open_settings_window(); });
+	PopupMenu *edit_menu = m_main_menu->add_submenu("Edit", m_context->icon("pencil"));
+	edit_menu->add_item("Preferences", "Ctrl+,", m_context->icon("settings"), [this] { open_settings_window(); });
 	edit_menu->add_separator();
-	edit_menu->add_item("Reset demo scene", {}, icon("refresh-cw.png"), [this] { reset_to_demo_scene(); });
+	edit_menu->add_item("Reset demo scene", {}, m_context->icon("refresh-cw"), [this] { reset_to_demo_scene(); });
 
-	PopupMenu *window_menu = m_main_menu->add_submenu("Window", icon("panel-left.png"));
-	window_menu->add_item("Hierarchy", {}, icon("list-tree.png"), [this] { toggle_card(0); });
-	window_menu->add_item("Inspector", {}, icon("sliders-horizontal.png"), [this] { toggle_card(1); });
-	window_menu->add_item("Status bar", {}, icon("list-tree.png"), [this] {
+	PopupMenu *window_menu = m_main_menu->add_submenu("Window", m_context->icon("panel-left"));
+	for (const EditorWindowType &type : m_windows->get_types()) {
+		window_menu->add_item(type.title, {}, m_context->icon(type.icon),
+							  [this, id = type.id] { m_windows->open(id); });
+	}
+	window_menu->add_separator();
+	window_menu->add_item("Reset workspace", {}, m_context->icon("refresh-cw"),
+						  [this] { m_workspaces->reset_active(); });
+	window_menu->add_item("Status bar", {}, m_context->icon("info"), [this] {
 		if (m_status_bar) {
 			m_status_bar->set_visible(!m_status_bar->is_visible());
 		}
 	});
 	window_menu->add_separator();
-	window_menu->add_item("UI inspector", {}, icon("bug.png"), [this] { m_devtools->open_inspector_window(); });
-	window_menu->add_item("Widget gallery", {}, icon("layers.png"), [this] {
-		m_devtools->open_widget_gallery(m_engine->get_context(), m_texture_cache.get());
-	});
+	window_menu->add_item("UI inspector", {}, m_context->icon("bug"), [this] { m_devtools->open_inspector_window(); });
+	window_menu->add_item("Widget gallery", {}, m_context->icon("layers"),
+						  [this] { m_devtools->open_widget_gallery(m_engine->get_context(), m_texture_cache.get()); });
 
 	menu_button->on_click.connect([this, menu_button] {
 		const Rect rect = menu_button->get_absolute_rect();
-		m_main_menu->open_at({ rect.position.x, rect.position.y + rect.size.y + 8.F });
+		m_main_menu->open_at({ rect.position.x, rect.position.y + rect.size.y + 4.F });
 	});
 }
 
-}
+} // namespace Editor

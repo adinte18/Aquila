@@ -3,6 +3,10 @@
 #include "Aquila/UI/Core/View.h"
 #include <functional>
 
+namespace Aquila::GFX {
+class GfxTexture;
+}
+
 namespace Aquila::UI::Core {
 
 class DockNode;
@@ -19,6 +23,10 @@ struct DockDragContext {
 	std::function<void(Vec2)> on_move;
 	std::function<void(Vec2)> on_release;
 	std::function<void(DockNode *)> on_node_emptied;
+
+	std::function<void(DockNode *, View *)> decorate_tab_bar;
+	GFX::GfxTexture *close_icon = nullptr;
+	bool closable_tabs = false;
 };
 
 } // namespace Aquila::UI::Core

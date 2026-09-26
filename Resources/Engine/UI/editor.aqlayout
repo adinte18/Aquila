@@ -1,10 +1,19 @@
 <View id="root">
 
-    <Image id="viewport"/>
+    <View id="topbar" class="topbar">
+        <Button id="topbar-menu" class="topbar-btn" src="Engine/UI/Icons/menu.svg" tooltip="Menu"/>
+        <View class="topbar-sep"/>
+        <View id="workspace-tabs" class="workspace-tabs"/>
+        <View class="topbar-spacer"/>
+        <Button id="topbar-reset" class="topbar-btn" src="Engine/UI/Icons/refresh-cw.svg" tooltip="Reset this workspace"/>
+        <Button id="topbar-settings" class="topbar-btn" src="Engine/UI/Icons/settings.svg" tooltip="Preferences"/>
+    </View>
 
-    <Button id="hud-menu" class="hud-round" src="Engine/UI/Icons/menu.png" tooltip="Menu" float-attach="root" float-element="left-top" float-parent="left-top" float-offset="12 12" float-z="30"/>
+    <View id="dock-root" class="dock-root">
+        <DockSpace id="editor-dock"/>
+    </View>
 
-    <View id="hud-status" class="hud-status" float-attach="root" float-element="left-bottom" float-parent="left-bottom" float-offset="0 0" float-z="25">
+    <View id="hud-status" class="hud-status">
         <Label id="status-selection" class="status-selection">No selection</Label>
         <View class="status-spacer"/>
         <View class="status-item"><Label class="status-key">Objects</Label><Label id="stat-objects" class="status-value">0</Label></View>
@@ -12,33 +21,5 @@
         <View class="status-item"><Label class="status-key">Vertices</Label><Label id="stat-vertices" class="status-value">0</Label></View>
         <View class="status-item"><Label class="status-key">Triangles</Label><Label id="stat-triangles" class="status-value">0</Label></View>
     </View>
-
-    <View id="rail-left" class="hud-rail" float-attach="root" float-element="left-top" float-parent="left-top" float-offset="12 52" float-z="20">
-        <Collapsible id="card-hierarchy" variant="card" src="Engine/UI/Icons/list-tree.png">Hierarchy
-            <Include src="hierarchy.aqlayout"/>
-        </Collapsible>
-    </View>
-
-    <View id="rail-right" class="hud-rail hud-rail-wide" float-attach="root" float-element="right-top" float-parent="right-top" float-offset="-12 52" float-z="20">
-        <Collapsible id="card-inspector" variant="card" src="Engine/UI/Icons/sliders-horizontal.png">Inspector
-            <Include src="inspector.aqlayout"/>
-        </Collapsible>
-    </View>
-
-    <View id="hud-tools" class="hud-pill" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -36" float-z="20">
-        <Button id="tool-translate" class="hud-tool" src="Engine/UI/Icons/move-3d.png" tooltip="Move (W)"/>
-        <Button id="tool-rotate" class="hud-tool" src="Engine/UI/Icons/rotate-3d.png" tooltip="Rotate (E)"/>
-        <Button id="tool-scale" class="hud-tool" src="Engine/UI/Icons/scale-3d.png" tooltip="Scale (R)"/>
-        <View class="hud-separator"/>
-        <Button id="tool-space" class="hud-tool" src="Engine/UI/Icons/globe.png" tooltip="World space (click for local)"/>
-    </View>
-
-    <Button id="hud-console" class="hud-round hud-tool-active" src="Engine/UI/Icons/terminal.png" tooltip="Show or hide the console" float-attach="root" float-element="right-bottom" float-parent="right-bottom" float-offset="-52 -36" float-z="20"/>
-
-    <Button id="hud-settings" class="hud-round" src="Engine/UI/Icons/settings.png" tooltip="Preferences" float-attach="root" float-element="right-bottom" float-parent="right-bottom" float-offset="-12 -36" float-z="20"/>
-
-    <Collapsible id="card-console" variant="card" reorderable="false" collapsible="false" class="card-console" src="Engine/UI/Icons/terminal.png" float-attach="root" float-element="center-bottom" float-parent="center-bottom" float-offset="0 -92" float-z="20">Console
-        <Include src="console.aqlayout"/>
-    </Collapsible>
 
 </View>
