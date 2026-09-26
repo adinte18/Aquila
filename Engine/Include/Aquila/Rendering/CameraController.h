@@ -23,6 +23,12 @@ class CameraController {
 	void on_event(Platform::Events::Event &event);
 
 	[[nodiscard]] RenderView get_render_view() const;
+	[[nodiscard]] RenderView render_view_from(const Mat4 &world, F32 fov_degrees, F32 near_plane, F32 far_plane) const;
+
+	void set_fov(F32 fov_degrees);
+	[[nodiscard]] F32 get_fov() const { return m_fov; }
+	void set_move_speed(F32 speed) { m_move_speed = speed; }
+	[[nodiscard]] F32 get_move_speed() const { return m_move_speed; }
 
   private:
 	enum class NavMode { None, Fly, Orbit };
@@ -33,6 +39,7 @@ class CameraController {
 	F32 m_near = 0.1F;
 	F32 m_far = 1000.F;
 	F32 m_aspect = 16.F / 9.F;
+	F32 m_move_speed = 5.F;
 
 	Vec2 m_viewport_pos{ 0.F, 0.F };
 	Vec2 m_viewport_size{ 0.F, 0.F };
