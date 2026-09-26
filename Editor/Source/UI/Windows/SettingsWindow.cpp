@@ -68,7 +68,9 @@ void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 hei
 			 &m_working.fonts.main_family);
 	font_row(interface_section, "Mono font", "Monospace font used by the console and code-style text.",
 			 &m_working.fonts.mono_family);
-	float_row(interface_section, "Interface scale", "Scales the whole interface: text, spacing and sizes. 1.0 is the default. Ctrl+Plus, Ctrl+Minus and Ctrl+0 also change it.",
+	float_row(interface_section, "Interface scale",
+			  "Scales the whole interface: text, spacing and sizes. 1.0 is the default. Ctrl+Plus, Ctrl+Minus and "
+			  "Ctrl+0 also change it.",
 			  &m_working.ui_scale, 0.5F, 2.F, 0.01F, 2);
 
 	auto *footer = root->add_child<View>();
@@ -137,7 +139,7 @@ void SettingsWindow::float_row(View *host, const std::string &label, const std::
 	drag->add_class("settings-field");
 	drag->set_value(*field);
 	drag->on_changed.connect([field](float value) { *field = value; });
-	m_sync.push_back([drag, field] { drag->set_value(*field); });
+	m_sync.emplace_back([drag, field] { drag->set_value(*field); });
 }
 
 void SettingsWindow::font_row(View *host, const std::string &label, const std::string &description,
@@ -151,7 +153,7 @@ void SettingsWindow::font_row(View *host, const std::string &label, const std::s
 	}
 	dropdown->set_value(*family_field);
 	dropdown->on_changed.connect([family_field](const std::string &id) { *family_field = id; });
-	m_sync.push_back([dropdown, family_field] { dropdown->set_value(*family_field); });
+	m_sync.emplace_back([dropdown, family_field] { dropdown->set_value(*family_field); });
 }
 
 void SettingsWindow::apply() {
