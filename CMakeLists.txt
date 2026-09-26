@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.26)
+cmake_minimum_required(VERSION 3.27)
 project(Aquila LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 20)
@@ -12,7 +12,18 @@ endif ()
 
 option(AQUILA_BUILD_EDITOR "Build the Aquila editor" ON)
 
+if (CMAKE_BUILD_TYPE MATCHES "^(Release|RelWithDebInfo)$")
+    set(AQUILA_SHARED_ENGINE_DEFAULT ON)
+else ()
+    set(AQUILA_SHARED_ENGINE_DEFAULT OFF)
+endif ()
+option(AQUILA_SHARED_ENGINE "Build the engine as one shared library behind thin executables" ${AQUILA_SHARED_ENGINE_DEFAULT})
+if (AQUILA_SHARED_ENGINE)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+endif ()
+
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
+message(STATUS "Shared engine library: ${AQUILA_SHARED_ENGINE}")
 
 if (MSVC AND NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     message(FATAL_ERROR "MSVC (cl.exe) is not supported. Use Clang/clang-cl or GCC instead.")
@@ -290,6 +301,13 @@ if (AQUILA_BUILD_EDITOR)
             RUNTIME DESTINATION bin
             LIBRARY DESTINATION lib
             ARCHIVE DESTINATION lib
+    )
+endif ()
+
+if (AQUILA_SHARED_ENGINE)
+    install(TARGETS AquilaRuntime
+            RUNTIME DESTINATION bin
+            LIBRARY DESTINATION lib
     )
 endif ()
 

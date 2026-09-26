@@ -29,17 +29,7 @@ target_precompile_headers(AquilaEditor PRIVATE
     ${CMAKE_SOURCE_DIR}/Engine/Include/GraphicsPCH.h
 )
 
-target_link_libraries(AquilaEditor
-    PRIVATE
-    Application
-    GFX
-    Graphics
-    Scene
-    Rendering
-    UI
-    glfw
-)
-aquila_deploy_runtime(AquilaEditor)
+aquila_link_engine(AquilaEditor)
 
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     target_compile_options(AquilaEditor PRIVATE

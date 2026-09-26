@@ -76,17 +76,38 @@ add_subdirectory(Source/Aquila/UI)
 enable_testing()
 add_subdirectory(Tests)
 
+set(AQUILA_ENGINE_MODULES Foundation Platform RHI GFX Graphics Scene Rendering Application UI)
+
+if (AQUILA_SHARED_ENGINE)
+    set(AQUILA_RUNTIME_SOURCE ${CMAKE_CURRENT_BINARY_DIR}/AquilaRuntime.cpp)
+    file(CONFIGURE OUTPUT ${AQUILA_RUNTIME_SOURCE} CONTENT "")
+    add_library(AquilaRuntime SHARED ${AQUILA_RUNTIME_SOURCE})
+    set_target_properties(AquilaRuntime PROPERTIES
+        OUTPUT_NAME "Aquila"
+        WINDOWS_EXPORT_ALL_SYMBOLS ON
+    )
+    target_link_libraries(AquilaRuntime
+        PUBLIC "$<COMPILE_ONLY:${AQUILA_ENGINE_MODULES}>"
+        PRIVATE "$<LINK_LIBRARY:WHOLE_ARCHIVE,${AQUILA_ENGINE_MODULES}>"
+    )
+else ()
+    add_library(AquilaRuntime INTERFACE)
+    target_link_libraries(AquilaRuntime INTERFACE ${AQUILA_ENGINE_MODULES})
+endif ()
+add_library(Aquila::Engine ALIAS AquilaRuntime)
+
+function(aquila_link_engine target)
+    target_link_libraries(${target} PRIVATE Aquila::Engine)
+    aquila_deploy_runtime(${target})
+    if (AQUILA_SHARED_ENGINE)
+        set_target_properties(${target} PROPERTIES INSTALL_RPATH "$ORIGIN/../lib")
+    endif ()
+endfunction()
+
 add_executable(AquilaEngine
     ${ENGINE_ROOT_DIR}/main.cpp
 )
-target_precompile_headers(AquilaEngine REUSE_FROM Application)
-target_link_libraries(AquilaEngine PRIVATE
-    Application
-    GFX
-    Graphics
-    Scene
-    Rendering
-    glfw
-    Vulkan::Headers
+target_precompile_headers(AquilaEngine PRIVATE
+    ${ENGINE_INCLUDE_DIR}/GraphicsPCH.h
 )
-aquila_deploy_runtime(AquilaEngine)
+aquila_link_engine(AquilaEngine)
