@@ -13,6 +13,8 @@
 
 namespace Aquila::SceneManagement {
 
+enum class ComponentCategory : Uint8 { Object, General, Rendering };
+
 class ComponentDescriptor {
   public:
 	explicit ComponentDescriptor(std::string name) : m_type(std::move(name)) {}
@@ -22,6 +24,7 @@ class ComponentDescriptor {
 
 	[[nodiscard]] bool has(Entity entity) const { return m_has(entity); }
 	[[nodiscard]] bool is_removable() const { return m_removable; }
+	[[nodiscard]] ComponentCategory get_category() const { return m_category; }
 	void remove(Entity entity) const { m_remove(entity); }
 	[[nodiscard]] void *get(Entity entity) const { return m_get(entity); }
 	[[nodiscard]] Signal<void()> *get_changed_signal(Entity entity) const { return m_get_changed(entity); }
@@ -31,6 +34,7 @@ class ComponentDescriptor {
 
 	Reflection::TypeInfo m_type;
 	bool m_removable = true;
+	ComponentCategory m_category = ComponentCategory::General;
 	Delegate<bool(Entity)> m_has;
 	Delegate<void(Entity)> m_remove;
 	Delegate<void *(Entity)> m_get;
@@ -41,9 +45,12 @@ class ComponentRegistry {
   public:
 	[[nodiscard]] static ComponentRegistry &instance();
 
-	template <typename T> Reflection::TypeBuilder<T> register_component(std::string name, bool removable = true) {
+	template <typename T>
+	Reflection::TypeBuilder<T> register_component(std::string name, bool removable = true,
+												  ComponentCategory category = ComponentCategory::General) {
 		auto descriptor = std::make_unique<ComponentDescriptor>(std::move(name));
 		descriptor->m_removable = removable;
+		descriptor->m_category = category;
 		descriptor->m_has = [](Entity entity) { return entity.has_component<T>(); };
 		descriptor->m_remove = [](Entity entity) { entity.try_remove_component<T>(); };
 		descriptor->m_get = [](Entity entity) -> void * { return entity.try_get_component<T>(); };

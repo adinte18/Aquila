@@ -66,6 +66,17 @@ template <typename T> class TypeBuilder {
 			});
 	}
 
+	template <typename Getter> TypeBuilder &read_only(std::string name, Getter getter, PropertyHints hints = {}) {
+		using V = std::decay_t<std::invoke_result_t<Getter, const T &>>;
+		hints.read_only = true;
+		return add<V>(
+			std::move(name), hints,
+			[getter](const void *instance) {
+				return detail::to_value<V>(std::invoke(getter, *static_cast<const T *>(instance)));
+			},
+			[](void *, const PropertyValue &) {});
+	}
+
 	TypeBuilder &options(std::vector<EnumOption> options) {
 		last().options = std::move(options);
 		return *this;

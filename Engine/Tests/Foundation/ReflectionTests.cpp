@@ -131,4 +131,17 @@ TEST_SUITE("Reflection") {
 		CHECK_FALSE(detail_property.is_visible(&sample));
 		CHECK(info.find("Amount")->is_visible(&sample));
 	}
+
+	TEST_CASE("read-only properties expose a value and ignore writes") {
+		TypeInfo info("Sample");
+		TypeBuilder<Sample>(info).read_only("Summary", [](const Sample &s) { return s.label + "!"; });
+		const Property &summary = *info.find("Summary");
+		Sample sample;
+
+		CHECK(summary.kind == PropertyKind::String);
+		CHECK(summary.hints.read_only);
+		CHECK(std::get<std::string>(summary.get(&sample)) == "sample!");
+		summary.set(&sample, PropertyValue{ std::string("changed") });
+		CHECK(sample.label == "sample");
+	}
 }

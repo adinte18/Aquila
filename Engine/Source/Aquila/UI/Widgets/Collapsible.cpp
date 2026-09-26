@@ -59,13 +59,7 @@ Collapsible::Collapsible(std::string title) {
 	auto button = std::make_unique<Button>();
 	button->set_text(std::move(title));
 	button->add_class("collapsible-title");
-	button->on_click.connect([this] {
-		if (!m_collapsible) {
-			return;
-		}
-		set_expanded(!m_expanded);
-		on_toggled(m_expanded);
-	});
+	button->on_click.connect([this] { toggle(); });
 	m_title_button = dynamic_cast<Button *>(m_header_bar->add_child(std::move(button)));
 
 	auto grip = std::make_unique<CollapsibleGrip>(this);
@@ -82,15 +76,31 @@ void Collapsible::set_title(std::string title) {
 	m_title_button->set_text(std::move(title));
 }
 
+void Collapsible::set_icon(GFX::GfxTexture *icon) {
+	m_title_button->set_icon(icon);
+}
+
+void Collapsible::toggle() {
+	if (!m_collapsible) {
+		return;
+	}
+	set_expanded(!m_expanded);
+	on_toggled(m_expanded);
+}
+
 void Collapsible::set_reorderable(bool reorderable) {
 	m_reorderable = reorderable;
 	m_grip->set_hidden(!reorderable);
 }
 
 void Collapsible::set_variant(const std::string &variant) {
+	m_variant = variant;
 	add_class(variant);
 	m_header_bar->add_class(variant + "-header");
 	m_title_button->add_class(variant + "-title");
+	if (m_chevron != nullptr) {
+		m_chevron->add_class(variant + "-chevron");
+	}
 	m_grip->add_class(variant + "-grip");
 	m_content->add_class(variant + "-content");
 }
@@ -138,9 +148,26 @@ Button *Collapsible::add_header_action(GFX::GfxTexture *icon, std::string toolti
 	return raw;
 }
 
-void Collapsible::set_state_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded) {
+void Collapsible::set_state_icons(GFX::GfxTexture *collapsed, GFX::GfxTexture *expanded, bool leading) {
 	m_icon_collapsed = collapsed;
 	m_icon_expanded = expanded;
+	m_state_icons_leading = leading;
+	if (leading && m_chevron == nullptr) {
+		auto chevron = std::make_unique<Button>();
+		chevron->add_class("collapsible-chevron");
+		if (!m_variant.empty()) {
+			chevron->add_class(m_variant + "-chevron");
+		}
+		chevron->on_click.connect([this] { toggle(); });
+		m_chevron = dynamic_cast<Button *>(m_header_bar->add_child(std::move(chevron)));
+		m_header_bar->reorder_child(m_chevron, m_title_button);
+	}
+	if (leading) {
+		m_title_button->set_trailing_icon(nullptr);
+	}
+	if (m_chevron != nullptr) {
+		m_chevron->set_hidden(!leading);
+	}
 	apply_state();
 }
 
@@ -148,7 +175,12 @@ void Collapsible::apply_state() {
 	m_content->set_hidden(!m_expanded);
 	set_class("collapsed", !m_expanded);
 	if (m_icon_collapsed != nullptr || m_icon_expanded != nullptr) {
-		m_title_button->set_trailing_icon(m_expanded ? m_icon_expanded : m_icon_collapsed);
+		GFX::GfxTexture *icon = m_expanded ? m_icon_expanded : m_icon_collapsed;
+		if (m_state_icons_leading) {
+			m_chevron->set_icon(icon);
+		} else {
+			m_title_button->set_trailing_icon(icon);
+		}
 	}
 }
 

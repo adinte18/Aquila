@@ -5,6 +5,8 @@
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
+#include "Aquila/Scene/Components/MetadataComponent.h"
+#include "Aquila/Scene/Components/SceneNodeComponent.h"
 #include "Aquila/Scene/Components/SkyLightComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 
@@ -16,20 +18,33 @@ using Reflection::PropertyHints;
 namespace {
 
 void register_builtin_components(ComponentRegistry &registry) {
-	registry.register_component<TransformComponent>("Transform", false)
+	registry.register_component<TransformComponent>("Transform", false, ComponentCategory::Object)
 		.property("Position", &TransformComponent::get_local_position, &TransformComponent::set_local_position,
-				  PropertyHints{ .speed = 0.1F })
+				  PropertyHints{ .speed = 0.05F, .precision = 3, .unit = "m" })
 		.property("Scale", &TransformComponent::get_local_scale, &TransformComponent::set_local_scale,
-				  PropertyHints{ .speed = 0.1F })
+				  PropertyHints{ .speed = 0.01F, .precision = 3 })
 		.property("Rotation", &TransformComponent::get_local_rotation_euler,
-				  &TransformComponent::set_local_rotation_euler, PropertyHints{ .speed = 0.5F });
+				  &TransformComponent::set_local_rotation_euler,
+				  PropertyHints{ .speed = 0.5F, .precision = 1, .unit = "°" });
+
+	registry.register_component<MetadataComponent>("Metadata", false, ComponentCategory::Object)
+		.read_only("UUID", [](const MetadataComponent &metadata) { return metadata.get_id().to_string(); })
+		.property("Visible", &MetadataComponent::is_visible, &MetadataComponent::set_visible);
+
+	registry.register_component<SceneNodeComponent>("Scene Node", false, ComponentCategory::Object)
+		.read_only("Parent",
+				   [](const SceneNodeComponent &node) {
+					   return node.parent.is_null() || !node.parent.exists() ? std::string("None")
+																			 : node.parent.get_name();
+				   })
+		.read_only("Children", [](const SceneNodeComponent &node) { return std::to_string(node.children.size()); });
 
 	registry.register_component<CameraComponent>("Camera")
-		.property("FOV", &CameraComponent::fov, PropertyHints{ .min = 1.F, .max = 179.F, .speed = 0.5F, .precision = 1 })
+		.property("FOV", &CameraComponent::fov, PropertyHints{ .min = 1.F, .max = 179.F, .speed = 0.5F, .precision = 1, .unit = "°" })
 		.property("Near", &CameraComponent::near_plane,
-				  PropertyHints{ .min = 0.001F, .max = 100.F, .speed = 0.01F, .precision = 3 })
+				  PropertyHints{ .min = 0.001F, .max = 100.F, .speed = 0.01F, .precision = 3, .unit = "m" })
 		.property("Far", &CameraComponent::far_plane,
-				  PropertyHints{ .min = 0.1F, .max = 10000.F, .speed = 0.01F, .precision = 1 })
+				  PropertyHints{ .min = 0.1F, .max = 10000.F, .speed = 0.01F, .precision = 1, .unit = "m" })
 		.property("Primary", &CameraComponent::primary, PropertyHints{ .toggle = true })
 		.property("Orthographic", &CameraComponent::is_orthographic);
 
@@ -38,7 +53,7 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.property("Intensity", &LightComponent::get_intensity, &LightComponent::set_intensity,
 				  PropertyHints{ .min = 0.F, .max = 100.F, .speed = 0.5F })
 		.property("Range", &LightComponent::get_range, &LightComponent::set_range,
-				  PropertyHints{ .min = 0.F, .max = 200.F, .speed = 0.5F })
+				  PropertyHints{ .min = 0.F, .max = 200.F, .speed = 0.5F, .unit = "m" })
 		.visible_if([](const LightComponent &light) { return light.get_type() == LightComponent::Type::Point; })
 		.property("Active", &LightComponent::is_active, &LightComponent::set_active, PropertyHints{ .toggle = true });
 
@@ -47,11 +62,11 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.options({ { "Procedural", static_cast<Int32>(SkySource::Procedural) },
 				   { "HDR Image", static_cast<Int32>(SkySource::HdrImage) } })
 		.property("Sun Elevation", &SkyLightComponent::get_sun_elevation, &SkyLightComponent::set_sun_elevation,
-				  PropertyHints{ .min = -10.F, .max = 90.F, .speed = 0.5F, .precision = 1 })
+				  PropertyHints{ .min = -10.F, .max = 90.F, .speed = 0.5F, .precision = 1, .unit = "°" })
 		.property("Sun Azimuth", &SkyLightComponent::get_sun_azimuth, &SkyLightComponent::set_sun_azimuth,
-				  PropertyHints{ .min = 0.F, .max = 360.F, .speed = 1.F, .precision = 1 })
+				  PropertyHints{ .min = 0.F, .max = 360.F, .speed = 1.F, .precision = 1, .unit = "°" })
 		.property("Turbidity", &SkyLightComponent::get_turbidity, &SkyLightComponent::set_turbidity,
-				  PropertyHints{ .min = 1.F, .max = 10.F, .speed = 0.05F, .precision = 2 })
+				  PropertyHints{ .min = 1.F, .max = 10.F, .speed = 0.05F, .precision = 2, .slider = true })
 		.property("Ground Albedo", &SkyLightComponent::get_ground_albedo, &SkyLightComponent::set_ground_albedo,
 				  PropertyHints{ .color = true })
 		.property("Intensity", &SkyLightComponent::get_intensity, &SkyLightComponent::set_intensity,
@@ -63,7 +78,9 @@ void register_builtin_components(ComponentRegistry &registry) {
 			"Render Skybox", [](const SkyLightComponent &sky) { return sky.m_render_skybox; },
 			&SkyLightComponent::set_render_skybox, PropertyHints{ .toggle = true });
 
-	registry.register_component<MeshComponent>("Mesh")
+	registry.register_component<MeshComponent>("Mesh");
+
+	registry.register_component<MeshComponent>("Shadows", false, ComponentCategory::Rendering)
 		.property("Cast Shadows", &MeshComponent::cast_shadows)
 		.property("Receive Shadows", &MeshComponent::receive_shadows);
 
@@ -76,9 +93,9 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.property("Albedo", [](MaterialComponent &m) -> Vec4 & { return m.surface_properties.albedo; },
 				  PropertyHints{ .color = true })
 		.property("Metallic", [](MaterialComponent &m) -> F32 & { return m.surface_properties.metallic; },
-				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3 })
+				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true })
 		.property("Roughness", [](MaterialComponent &m) -> F32 & { return m.surface_properties.roughness; },
-				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3 });
+				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true });
 }
 
 }

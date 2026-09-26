@@ -28,6 +28,9 @@ class DragFloat : public Control {
 	void set_speed(float pixels_per_unit);
 	void set_precision(int decimals);
 	void set_prefix(std::string prefix);
+	void set_label(std::string label);
+	void set_suffix(std::string suffix);
+	void set_slider(bool slider);
 	Signal<void(float)> on_changed;
 
 	[[nodiscard]] float get_value() const { return m_value; }
@@ -52,6 +55,9 @@ class DragFloat : public Control {
 	float m_speed = 1.0F;
 	int m_precision = 3;
 	std::string m_prefix;
+	std::string m_label;
+	std::string m_suffix;
+	bool m_slider = false;
 
   private:
 	enum class Mode { Drag, Edit };

@@ -124,4 +124,18 @@ TEST_SUITE("Collapsible") {
 		card.apply_xml_attribute("collapsible", "false");
 		CHECK_FALSE(card.is_collapsible());
 	}
+
+	TEST_CASE("a leading chevron sits before the title and toggles the section") {
+		Collapsible card("Card");
+		card.set_variant("panel");
+		card.set_state_icons(nullptr, nullptr, true);
+
+		const View &header = *card.View::get_children()[0];
+		auto *chevron = dynamic_cast<Button *>(header.get_children()[0].get());
+		REQUIRE(chevron != nullptr);
+		CHECK(has_class(*chevron, "panel-chevron"));
+
+		chevron->on_click();
+		CHECK_FALSE(card.is_expanded());
+	}
 }

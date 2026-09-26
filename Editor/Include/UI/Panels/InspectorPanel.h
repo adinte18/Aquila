@@ -1,15 +1,10 @@
 #pragma once
 
-#include "Aquila/Foundation/UUID.h"
 #include "Aquila/Scene/Entity.h"
-#include "Aquila/UI/Style/StyleProperties.h"
-#include "Aquila/UI/Widgets/Label.h"
-#include "Aquila/UI/Widgets/ScrollView.h"
 #include "UI/Inspectors/IComponentUI.h"
 #include "UI/Panels/IEditorPanel.h"
 
 #include <string>
-#include <unordered_map>
 #include <vector>
 
 namespace Aquila::GFX {
@@ -22,8 +17,10 @@ class Material;
 namespace Aquila::UI::Core {
 class Button;
 class Collapsible;
+class Image;
+class Label;
 class PopupMenu;
-class PropertyGrid;
+class ScrollView;
 class TextInput;
 class TextureCache;
 class View;
@@ -38,20 +35,23 @@ class InspectorPanel : public IEditorPanel {
 	Signal<void(Aquila::SceneManagement::Entity)> on_entity_renamed;
 	Signal<void(Aquila::SceneManagement::Entity)> on_components_changed;
 	void show_entity(Aquila::SceneManagement::Entity entity);
+	void refresh_values(Aquila::SceneManagement::Entity entity);
 	void clear();
 	void open_add_search(Vec2 canvas_pos);
 
   private:
-	void set_visible(Aquila::UI::Core::View *v, bool visible);
-
-	struct EntityLayout {
-		std::vector<std::string> order;
-		std::unordered_map<std::string, bool> expanded;
+	struct Tab {
+		bool always_visible = false;
+		Aquila::UI::Core::Button *button = nullptr;
+		Aquila::UI::Core::View *page = nullptr;
+		Aquila::UI::Core::View *sections = nullptr;
 	};
 
-	[[nodiscard]] EntityLayout default_layout() const;
-	void apply_layout(const EntityLayout &layout);
-	void capture_layout();
+	struct Section {
+		Usize tab = 0;
+		Aquila::UI::Core::Collapsible *collapsible = nullptr;
+		Unique<IComponentUI> ui;
+	};
 
 	struct AddableComponent {
 		std::string name;
@@ -60,10 +60,20 @@ class InspectorPanel : public IEditorPanel {
 		Delegate<void(Aquila::SceneManagement::Entity)> attach;
 	};
 
-	struct ComponentCategory {
+	struct AddMenuGroup {
 		std::string name;
 		Aquila::GFX::GfxTexture *icon = nullptr;
 	};
+
+	[[nodiscard]] Aquila::GFX::GfxTexture *icon(std::string_view name) const;
+	Usize add_tab(const std::string &title, std::string_view icon_name, bool always_visible);
+	void add_section(Usize tab, const std::string &component, Unique<IComponentUI> ui);
+	void build_tabs_and_sections();
+	void build_add_button(Aquila::UI::Core::View &page);
+	void select_tab(Usize tab);
+	[[nodiscard]] bool tab_has_content(Usize tab) const;
+	void refresh_tabs();
+	void style_dropdowns(Aquila::UI::Core::View &root) const;
 
 	void build_component_registry();
 	Ref<Aquila::Graphics::Material> ensure_default_material();
@@ -75,26 +85,24 @@ class InspectorPanel : public IEditorPanel {
 	Aquila::GFX::GfxContext &m_context;
 	Ref<Aquila::Graphics::Material> m_default_material;
 	Aquila::UI::Core::TextureCache *m_texture_cache = nullptr;
+	Aquila::UI::Core::View *m_tab_strip = nullptr;
+	Aquila::UI::Core::View *m_pages = nullptr;
+	Aquila::UI::Core::View *m_head = nullptr;
+	Aquila::UI::Core::Image *m_head_icon = nullptr;
 	Aquila::UI::Core::ScrollView *m_scroll_view = nullptr;
-	Aquila::UI::Core::View *m_section_list = nullptr;
 	Aquila::UI::Core::View *m_empty_state = nullptr;
 	Aquila::UI::Core::TextInput *m_name_input = nullptr;
-	Aquila::UI::Core::Label *m_actor_uuid = nullptr;
+	Aquila::UI::Core::Label *m_uuid = nullptr;
 	Aquila::UI::Core::Button *m_add_button = nullptr;
 	Aquila::UI::Core::PopupMenu *m_add_popup = nullptr;
 	Aquila::UI::Core::TextInput *m_add_search = nullptr;
 	std::vector<AddableComponent> m_addable;
-	std::vector<ComponentCategory> m_categories;
+	std::vector<AddMenuGroup> m_categories;
 
-	struct Section {
-		Aquila::UI::Core::Collapsible *collapsible = nullptr;
-		std::string id;
-		Unique<IComponentUI> ui;
-	};
+	std::vector<Tab> m_tabs;
 	std::vector<Section> m_sections;
+	Usize m_active_tab = 0;
 
-	std::unordered_map<Aquila::Foundation::UUID, EntityLayout> m_entity_layouts;
-	Aquila::Foundation::UUID m_current_uuid = Aquila::Foundation::UUID::null();
 	Aquila::SceneManagement::Entity m_current_entity;
 	bool m_has_current = false;
 };
