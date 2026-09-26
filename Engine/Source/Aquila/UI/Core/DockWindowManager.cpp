@@ -18,8 +18,8 @@ bool contains_local(Vec2 local, Vec2 size) {
 }
 }
 
-DockWindowManager::DockWindowManager(Aquila::Rendering::IRenderWindowHost &host, std::string style_path)
-	: m_host(host), m_style_path(std::move(style_path)) {}
+DockWindowManager::DockWindowManager(Aquila::Rendering::IRenderWindowHost &host, std::vector<std::string> style_paths)
+	: m_host(host), m_style_paths(std::move(style_paths)) {}
 
 DockWindowManager::~DockWindowManager() = default;
 
@@ -120,7 +120,7 @@ void DockWindowManager::handle_tear_off(Aquila::Rendering::RenderWindowId source
 
 void DockWindowManager::spawn_floating_panel(Unique<View> panel_subtree, std::string title, Vec2 screen_pos) {
 	auto floating = std::make_unique<FloatingPanelWindow>();
-	floating->build(std::move(panel_subtree), title, k_floating_width, k_floating_height, m_style_path);
+	floating->build(std::move(panel_subtree), title, k_floating_width, k_floating_height, m_style_paths);
 	FloatingPanelWindow *panel = floating.get();
 
 	Aquila::Rendering::RenderWindowCallbacks callbacks;

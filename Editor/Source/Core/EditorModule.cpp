@@ -79,7 +79,8 @@ void EditorModule::on_attach(EngineContext &engine) {
 
 void EditorModule::open_project_launcher() {
 	m_project_launcher = std::make_unique<ProjectLauncher>();
-	m_project_launcher->build(m_project_manager.get(), 720, 520, Config::get_preferences().ui.style_path);
+	m_project_launcher->build(m_project_manager.get(), m_texture_cache.get(), 900, 600,
+							  Config::get_preferences().ui.style_paths);
 	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
 
 	m_launcher_window = Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_project_launcher, 720, 520, "Aquila - Projects", [this] {
@@ -171,7 +172,7 @@ void EditorModule::on_event(Events::Event &event) {
 
 		if (e.get_key_code() == Events::KeyCode::F6) {
 			auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-			Aquila::UI::StyleParser::load_file(Config::get_preferences().ui.style_path, canvas.get_style_sheet());
+			Aquila::UI::StyleParser::load_files(Config::get_preferences().ui.style_paths, canvas.get_style_sheet());
 			canvas.reload_styles();
 
 			AQUILA_LOG_INFO("Stylesheet reloaded");
@@ -312,9 +313,7 @@ void EditorModule::setup_editor_ui() {
 	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 	const auto &cfg = Config::get_preferences();
 
-	m_texture_cache = std::make_unique<Aquila::UI::Core::TextureCache>(m_engine->get_context(), cfg.ui.resources_path);
-
-	Aquila::UI::StyleParser::load_file(cfg.ui.style_path, editor_canvas.get_style_sheet());
+	Aquila::UI::StyleParser::load_files(cfg.ui.style_paths, editor_canvas.get_style_sheet());
 
 	m_layout_loader.register_font("regular", Aquila::UI::Core::FontManager::get().get_font("regular"));
 	m_layout_loader.register_texture_cache(m_texture_cache.get());
@@ -375,8 +374,9 @@ void EditorModule::setup_editor_ui() {
 	m_inspector_panel->on_entity_renamed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
 	m_inspector_panel->on_components_changed.connect([this](Entity entity) { m_hierarchy_panel->refresh_entity(entity); });
 
-	m_hierarchy_panel->on_entity_selected.connect([this](Entity entity) { set_outlined_entity(entity); });
-	m_hierarchy_panel->on_entity_deselected.connect([this] { set_outlined_entity(Entity::null()); });
+	m_dock_manager =
+		std::make_unique<Aquila::UI::Core::DockWindowManager>(m_engine->get_window_host(), cfg.ui.style_paths);
+	m_dock_manager->set_main_dock_space(m_dock_space);
 
 	m_viewport_panel->on_clicked_uv.connect([this](Vec2 uv) { request_viewport_pick(uv); });
 	m_engine->get_object_picking().on_picked.connect([this](Entity entity) {
@@ -396,7 +396,7 @@ void EditorModule::setup_editor_ui() {
 	m_devtools = std::make_unique<Aquila::UI::DevTools::UIDevTools>(Aquila::UI::DevTools::UIDevToolsDesc{
 		.target = editor_canvas,
 		.host = m_engine->get_window_host(),
-		.style_path = cfg.ui.style_path,
+		.style_paths = cfg.ui.style_paths,
 	});
 	m_devtools->attach(layout_root);
 
@@ -409,7 +409,7 @@ void EditorModule::open_settings_window() {
 	}
 
 	m_settings_window = std::make_unique<SettingsWindow>();
-	m_settings_window->build(m_texture_cache.get(), 560, 640, Config::get_preferences().ui.style_path);
+	m_settings_window->build(m_texture_cache.get(), 560, 640, Config::get_preferences().ui.style_paths);
 	m_settings_window->on_applied = [this] { apply_font_settings(); };
 
 	const Aquila::Rendering::RenderWindowId window =

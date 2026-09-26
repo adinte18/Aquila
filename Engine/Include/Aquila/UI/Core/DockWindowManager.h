@@ -16,7 +16,7 @@ class View;
 
 class DockWindowManager {
   public:
-	DockWindowManager(Aquila::Rendering::IRenderWindowHost &host, std::string style_path);
+	DockWindowManager(Aquila::Rendering::IRenderWindowHost &host, std::vector<std::string> style_paths);
 	~DockWindowManager();
 
 	AQUILA_NONCOPYABLE(DockWindowManager);
@@ -41,7 +41,7 @@ class DockWindowManager {
 	void dock_back_to_center(Unique<View> content, const std::string &title);
 
 	Aquila::Rendering::IRenderWindowHost &m_host;
-	std::string m_style_path;
+	std::vector<std::string> m_style_paths;
 	DockSpace *m_main_dock_space = nullptr;
 	std::vector<FloatingEntry> m_floating_panels;
 };

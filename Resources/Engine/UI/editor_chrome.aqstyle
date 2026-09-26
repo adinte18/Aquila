@@ -1,0 +1,884 @@
+#root {
+    width: grow;
+    height: grow;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+#hierarchy-root {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+}
+
+#hierarchy-scroll {
+    width: 100%;
+    height: grow;
+}
+
+.hierarchy-toolbar {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 4px;
+    padding: 6px 6px 4px 6px;
+}
+
+.hierarchy-filter {
+    width: grow;
+    height: 24px;
+    font-size: 12px;
+}
+
+.hierarchy-tool-btn {
+    width: 24px;
+    height: 24px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+}
+
+.hierarchy-tool-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.hierarchy-group-header {
+    font-size: 11px;
+    color: var(--text-muted);
+    height: 26px;
+}
+
+.hierarchy-group-header:hover {
+    color: var(--text-dim);
+}
+
+.hierarchy-group-count {
+    font-family: mono;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 0px 6px 0px 0px;
+}
+
+.hierarchy-eye {
+    width: 22px;
+    height: 22px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 3px;
+    transition: 60ms linear;
+}
+
+.hierarchy-eye:hover {
+    background-color: var(--bg-hover);
+}
+
+.hierarchy-eye-shown {
+    background-color: transparent;
+}
+
+.hierarchy-entity-hidden {
+    color: var(--text-muted);
+}
+
+#toolbar {
+    width: 100%;
+    height: 40px;
+    flex-direction: row;
+    align-items: center;
+    background-color: var(--bg-deep);
+    padding: 0px 6px;
+    gap: 0px;
+}
+
+#toolbar-left {
+    flex-direction: row;
+    align-items: center;
+    gap: 0px;
+    width: grow;
+}
+
+#engine-logo {
+    font-family: regular;
+    font-size: 16px;
+    color: var(--text-bright);
+    padding: 4px 10px;
+}
+
+#image-logo {
+    width: 32px;
+    height: 32px;
+}
+
+.menu-bar {
+    gap: 2px;
+}
+
+.menu-bar-item {
+    font-family: regular;
+    font-size: 16px;
+    color: var(--text-dim);
+    padding: 4px 10px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+    background-color: var(--bg-deep);
+    border-width: 0px;
+    border-radius: 4px;
+}
+
+.menu-bar-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.menu-bar-item:pressed {
+    background-color: var(--bg-surface);
+    color: var(--text);
+}
+
+#workspace {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+}
+
+#dock-root {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+}
+
+#viewport-image {
+    width: grow;
+    height: grow;
+    flex-grow: 1;
+}
+
+#console-root {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    background-color: var(--bg-deep);
+}
+
+#console-toolbar {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 32px;
+    padding: 0px 6px;
+    gap: 6px;
+    background-color: var(--bg-panel);
+}
+
+.console-clear-btn {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-bright);
+    padding: 3px 8px;
+    border-radius: 2px;
+    align-items: center;
+    justify-content: center;
+    transition: 60ms ease-out;
+}
+
+.console-clear-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.console-clear-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.console-toolbar-sep {
+    width: 1px;
+    height: 20px;
+    background-color: var(--border-dim);
+}
+
+.console-filter-btn {
+    flex-direction: row;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 6px;
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.console-filter-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.console-filter-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.console-filter-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.console-filter-count {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+#console-scroll {
+    flex-direction: column;
+    width: 100%;
+    padding: 4px 0px;
+}
+
+.console-line {
+    width: 100%;
+    font-family: mono;
+    font-size: 16px;
+    color: var(--text-dim);
+    padding: 1px 8px;
+    white-space: nowrap;
+    overflow: hidden;
+}
+
+.console-info {
+    color: var(--text-dim);
+}
+
+.console-debug {
+    color: var(--text-muted);
+}
+
+.console-trace {
+    color: var(--text-muted);
+}
+
+.console-warning {
+    color: #c9a24a;
+}
+
+.console-error {
+    color: var(--danger);
+}
+
+.console-critical {
+    color: #ff5555;
+}
+
+.props-root {
+    flex-direction: row;
+    width: 100%;
+    height: grow;
+}
+
+.props-tabs {
+    flex-direction: column;
+    align-items: end;
+    width: 30px;
+    height: grow;
+    gap: 2px;
+    padding: 6px 0px;
+    background-color: var(--bg-base);
+}
+
+.props-tab {
+    width: 24px;
+    height: 24px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px 0px 0px 4px;
+    color: var(--text-dim);
+    transition: 60ms ease-out;
+}
+
+.props-tab:hover {
+    background-color: var(--bg-muted);
+    color: var(--text-bright);
+}
+
+.props-tab-active {
+    width: 27px;
+    background-color: var(--bg-panel);
+    color: var(--text-bright);
+}
+
+.props-tab-separator {
+    width: 16px;
+    height: 1px;
+    background-color: var(--border-dim);
+}
+
+.props-main {
+    flex-direction: column;
+    width: grow;
+    height: grow;
+    min-width: 0px;
+}
+
+.props-head {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    gap: 6px;
+    padding: 0px 8px 0px 10px;
+}
+
+.props-head-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.props-name {
+    width: grow;
+    height: 22px;
+    padding: 0px 4px;
+    font-family: medium;
+    font-size: 13px;
+    color: var(--text-bright);
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.props-name:hover {
+    background-color: var(--input-bg);
+}
+
+.props-uuid {
+    font-family: mono;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.props-empty {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    justify-content: center;
+    align-items: center;
+    padding: 24px;
+}
+
+.props-pages {
+    flex-direction: column;
+    width: 100%;
+}
+
+.props-page {
+    flex-direction: column;
+    width: 100%;
+    gap: 6px;
+    padding: 0px 8px 10px 6px;
+}
+
+.props-sections {
+    flex-direction: column;
+    width: 100%;
+    gap: 4px;
+}
+
+.props-panel {
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--bg-base);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.props-panel-header {
+    height: 26px;
+    padding: 0px 2px 0px 0px;
+    background-color: transparent;
+}
+
+.props-panel-chevron {
+    width: 20px;
+    height: 100%;
+    padding: 0px 0px 0px 4px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    color: var(--text-dim);
+}
+
+.props-panel-chevron:hover {
+    color: var(--text-bright);
+    background-color: transparent;
+}
+
+.props-panel-title {
+    height: 100%;
+    gap: 6px;
+    padding: 0px 6px 0px 2px;
+    font-family: medium;
+    font-size: 12px;
+    color: var(--text);
+    background-color: transparent;
+}
+
+.props-panel-title:hover {
+    color: var(--text-bright);
+}
+
+.props-panel-grip {
+    width: 14px;
+    color: var(--text-muted);
+}
+
+.props-panel-content {
+    flex-direction: column;
+    width: 100%;
+    gap: 4px;
+    padding: 2px 8px 8px 8px;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.props-add-component {
+    width: 100%;
+    height: 24px;
+    gap: 6px;
+    padding: 0px 8px;
+    justify-content: start;
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+    background-color: var(--bg-surface);
+    border-width: 0px;
+    border-radius: 4px;
+    transition: 60ms ease-out;
+}
+
+.props-add-component:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.props-add-component:pressed {
+    background-color: var(--bg-muted);
+}
+
+.props-dropdown {
+    height: 20px;
+    min-width: 0px;
+}
+
+.props-dropdown-header {
+    height: 20px;
+    gap: 6px;
+    padding: 0px 6px;
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+}
+
+.props-dropdown-header:hover {
+    background-color: var(--bg-muted);
+    border-color: var(--border-lit);
+}
+
+.inspector-empty-text {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    max-width: 240px;
+    text-align: center;
+    white-space: normal;
+}
+
+.settings-root {
+    width: 100%;
+    height: 100%;
+    flex-direction: column;
+    background-color: var(--bg-base);
+}
+
+.settings-header {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 36px;
+    padding: 0px 14px;
+    background-color: var(--bg-surface);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.settings-title {
+    font-family: regular;
+    font-size: 16px;
+    color: var(--text-bright);
+    width: grow;
+}
+
+.settings-scroll {
+    width: 100%;
+    height: grow;
+}
+
+.settings-content {
+    flex-direction: column;
+    width: 100%;
+    padding: 10px;
+    gap: 8px;
+}
+
+.settings-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 30px;
+    gap: 10px;
+}
+
+.settings-label {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    width: grow;
+    min-width: 0px;
+}
+
+.settings-field {
+    width: 180px;
+    min-width: 0px;
+}
+
+.settings-help {
+    width: 15px;
+    height: 15px;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    transition: 80ms ease-out;
+}
+
+.settings-help:hover {
+    opacity: 1;
+}
+
+.settings-help-icon {
+    width: 15px;
+    height: 15px;
+}
+
+.settings-footer {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 46px;
+    padding: 0px 12px;
+    gap: 8px;
+    background-color: var(--bg-panel);
+    border-color: var(--border);
+    border-width: 1px;
+}
+
+.settings-footer-spacer {
+    width: grow;
+    height: 1px;
+    min-width: 0px;
+}
+
+.settings-btn {
+    padding: 6px 16px;
+    background-color: var(--bg-widget);
+    color: var(--text);
+    border-radius: 3px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+.settings-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.settings-btn:pressed {
+    background-color: var(--bg-surface);
+}
+
+.settings-btn-primary {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+    border-color: var(--accent-muted);
+    border-width: 1px;
+}
+
+.settings-btn-primary:hover {
+    background-color: var(--accent-muted);
+}
+
+@media (max-width: 500px) {
+    #toolbar {
+        height: 36px;
+        padding: 0px 4px;
+    }
+
+    #engine-logo {
+        padding: 3px 6px;
+        font-size: 14px;
+    }
+}
+
+.card {
+    flex-direction: column;
+    width: 100%;
+    height: grow;
+    min-height: 0px;
+    background-color: var(--bg-base);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.collapsed {
+    height: auto;
+}
+
+.card-console {
+    width: 60vw;
+    height: 260px;
+}
+
+.card-header {
+    height: 30px;
+    padding: 0px 4px 0px 2px;
+    background-color: transparent;
+}
+
+.card-title {
+    background-color: transparent;
+    font-size: 13px;
+    color: var(--text-bright);
+    padding: 0px 6px;
+}
+
+.card-content {
+    height: grow;
+    min-height: 0px;
+    padding: 2px 6px 6px 6px;
+    gap: 4px;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.collapsible-action {
+    width: 24px;
+    height: 24px;
+    padding: 0px;
+    background-color: transparent;
+    border-radius: 4px;
+}
+
+.collapsible-action:hover {
+    background-color: var(--bg-hover);
+}
+
+.hierarchy-toolbar-btn {
+    width: grow;
+    height: 26px;
+    background-color: var(--bg-muted);
+    border-radius: 4px;
+}
+
+.hud-round {
+    width: 32px;
+    height: 32px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+}
+
+.hud-round:hover {
+    background-color: var(--bg-hover);
+}
+
+.hud-round:pressed {
+    background-color: var(--bg-surface);
+}
+
+.component {
+    flex-direction: column;
+    width: 100%;
+    background-color: var(--bg-muted);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.component-header {
+    height: 28px;
+    padding: 0px 2px 0px 2px;
+    background-color: transparent;
+}
+
+.component-title {
+    background-color: transparent;
+    font-size: 13px;
+    color: var(--text-bright);
+    padding: 0px 6px;
+}
+
+.component-content {
+    padding: 2px 8px 8px 8px;
+    gap: 6px;
+    background-color: transparent;
+    border-width: 0px;
+}
+
+.hud-status {
+    flex-direction: row;
+    align-items: center;
+    width: 100vw;
+    height: 24px;
+    padding: 0px 12px;
+    gap: 16px;
+    background-color: var(--bg-deep);
+    border-width: 0px;
+}
+
+.status-spacer {
+    width: grow;
+}
+
+.status-item {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-selection {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.status-key {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+}
+
+.status-value {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-bright);
+}
+
+.selectable-text-view {
+    width: grow;
+    font-family: mono;
+    font-size: 14px;
+    color: var(--text);
+    cursor: text;
+    selection-color: var(--selection);
+}
+
+.topbar {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 36px;
+    padding: 0px 6px;
+    gap: 2px;
+    background-color: var(--bg-deep);
+}
+
+.topbar-btn {
+    width: 28px;
+    height: 28px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+    transition: 60ms linear;
+}
+
+.topbar-btn:hover {
+    background-color: var(--bg-hover);
+}
+
+.topbar-sep {
+    width: 1px;
+    height: 18px;
+    background-color: var(--hairline);
+}
+
+.topbar-spacer {
+    width: grow;
+}
+
+.workspace-tabs {
+    flex-direction: row;
+    align-items: center;
+    height: 100%;
+    gap: 2px;
+    padding: 0px 4px;
+}
+
+.workspace-tab {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text-dim);
+    height: 26px;
+    padding: 0px 12px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+    transition: 60ms linear;
+}
+
+.workspace-tab:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.workspace-tab-active {
+    background-color: var(--bg-panel);
+    color: var(--text-bright);
+}
+
+.dock-root {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+    padding: 0px 2px 2px 2px;
+    background-color: var(--bg-deep);
+}
+
+.viewport-root {
+    width: grow;
+    height: grow;
+    flex-direction: column;
+}
+
+.viewport-canvas-layer {
+    font-family: mono;
+    font-size: 12px;
+}

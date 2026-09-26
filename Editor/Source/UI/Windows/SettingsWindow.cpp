@@ -37,14 +37,15 @@ constexpr FontFamily k_font_families[] = {
 SettingsWindow::SettingsWindow() = default;
 SettingsWindow::~SettingsWindow() = default;
 
-void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 height, const std::string &style_path) {
+void SettingsWindow::build(TextureCache *texture_cache, Uint32 width, Uint32 height,
+						   const std::vector<std::string> &style_paths) {
 	m_texture_cache = texture_cache;
 	if (m_texture_cache != nullptr) {
 		m_help_icon = m_texture_cache->load("Engine/UI/Icons/circle-question-mark.png");
 	}
 
 	m_canvas = std::make_unique<Canvas>(width, height);
-	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
+	UI::StyleParser::load_files(style_paths, m_canvas->get_style_sheet());
 
 	m_working = Config::get_preferences();
 

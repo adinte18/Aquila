@@ -30,7 +30,7 @@ class SettingsWindow {
 	~SettingsWindow();
 
 	void build(Aquila::UI::Core::TextureCache *texture_cache, Uint32 width, Uint32 height,
-			   const std::string &style_path);
+			   const std::vector<std::string> &style_paths);
 
 	void update(F32 delta_time);
 	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);

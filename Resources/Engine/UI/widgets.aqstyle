@@ -1,0 +1,1252 @@
+TabView {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+    background-color: var(--bg-panel);
+    border-width: 1px;
+    border-color: var(--border);
+    border-radius: 2px;
+}
+
+.tab-bar {
+    flex-direction: row;
+    width: 100%;
+    height: 30px;
+    background-color: var(--bg-muted);
+    border-color: var(--border-ui);
+    border-width: 1px;
+}
+
+.tab-button {
+    padding: 0px 14px;
+    height: 100%;
+    min-width: 0px;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    background-color: transparent;
+    border-width: 0px;
+    transition: 80ms ease-out;
+}
+
+.tab-button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.tab-active {
+    background-color: var(--bg-base);
+    color: var(--text-bright);
+    border-color: var(--accent);
+    border-width: 1px;
+}
+
+.tab-panels {
+    flex-direction: column;
+    width: grow;
+    flex-grow: 1;
+}
+
+.tab-panel {
+    width: 100%;
+    height: grow;
+    flex-direction: column;
+    flex-grow: 1;
+    background-color: var(--bg-panel);
+}
+
+ProgressBar {
+    width: 100%;
+    height: 14px;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background-color: var(--accent);
+    border-radius: 2px;
+}
+
+ListBox {
+    width: 100%;
+    height: grow;
+    background-color: var(--bg-panel);
+    border-width: 0px;
+    border-color: var(--border-ui);
+    border-radius: 2px;
+    padding: 4px;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.list-item {
+    padding: 6px 10px;
+    width: grow;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.list-item:hover {
+    background-color: var(--bg-hover);
+}
+
+.selected {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.dropdown-header {
+    width: grow;
+    height: 100%;
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+    align-items: center;
+    justify-content: start;
+    padding: 0px 10px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 14px;
+    transition: 60ms ease-out;
+}
+
+.dropdown-header:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-lit);
+}
+
+.tooltip {
+    background-color: var(--bg-deep);
+    border-radius: 6px;
+    padding: 5px 9px;
+}
+
+.tooltip-label {
+    color: var(--text-bright);
+    font-family: regular;
+    font-size: 14px;
+}
+
+Separator {
+    width: 100%;
+    height: 1px;
+    background-color: var(--border-dim);
+}
+
+.separator-v {
+    width: 1px;
+    height: grow;
+    min-width: 0px;
+    min-height: 0px;
+}
+
+ScrollView {
+    overflow: scroll;
+    flex-direction: column;
+    width: grow;
+    height: grow;
+}
+
+.scroll-inner {
+    flex-direction: column;
+    width: grow;
+}
+
+.scroll-bar-track {
+    width: 12px;
+    flex-direction: column;
+    align-items: center;
+    padding: 0px 3px;
+    background-color: transparent;
+}
+
+.scroll-bar-thumb {
+    width: 100%;
+    background-color: var(--bg-lit);
+    border-radius: 3px;
+}
+
+.scroll-bar-thumb:hover {
+    background-color: var(--text-muted);
+}
+
+.scroll-bar-thumb:pressed {
+    background-color: var(--text-dim);
+}
+
+MenuBar {
+    flex-direction: row;
+    align-items: center;
+    width: grow;
+}
+
+.property-value {
+    flex-grow: 1;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+}
+
+Dropdown {
+    min-width: 120px;
+    height: 28px;
+    flex-direction: column;
+}
+
+AssetSlot {
+    width: 100%;
+    min-height: 60px;
+    flex-direction: row;
+    background-color: var(--bg-surface);
+    border-width: 2px;
+    border-color: var(--border-dim);
+    border-style: dashed;
+    border-radius: 2px;
+    align-items: center;
+    justify-content: center;
+    transition: 80ms ease-out;
+}
+
+AssetSlot:hover {
+    border-color: var(--border-lit);
+    background-color: var(--bg-hover);
+}
+
+.asset-slot-filled {
+    border-style: solid;
+    border-color: var(--accent);
+}
+
+.asset-slot-label {
+    flex-grow: 1;
+}
+
+AssetCard {
+    flex-direction: column;
+    align-items: center;
+    background-color: var(--bg-surface);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 2px;
+    padding: 10px;
+    gap: 8px;
+    transition: 80ms ease-out;
+}
+
+AssetCard:hover {
+    background-color: var(--bg-hover);
+    border-color: var(--border-lit);
+}
+
+.asset-card-name {
+    font-family: regular;
+    font-size: 16px;
+    color: var(--text-bright);
+}
+
+.asset-card-type {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+}
+
+.asset-card-thumbnail {
+    width: 48px;
+    height: 48px;
+    border-radius: 2px;
+    background-color: var(--bg-muted);
+}
+
+.menu-dropdown,
+.dropdown-popup,
+ContextMenu {
+    flex-direction: column;
+    min-width: 140px;
+    background-color: var(--bg-deep);
+    padding: 6px 6px;
+    gap: 4px;
+}
+
+.menu-item,
+.dropdown-option,
+.context-item {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    padding: 5px 14px;
+    width: grow;
+    border-radius: 4px;
+    transition: 60ms ease-out;
+    justify-content: start;
+    background-color: var(--bg-deep);
+}
+
+.menu-item:hover,
+.dropdown-option:hover,
+.context-item:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.menu-item:pressed,
+.dropdown-option:pressed,
+.context-item:pressed {
+    background-color: var(--bg-lit);
+    color: var(--text-bright);
+}
+
+.menu-separator {
+    height: 1px;
+    width: 100%;
+    background-color: var(--border-dim);
+}
+
+.drag-ghost {
+    flex-direction: row;
+    align-items: center;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-bright);
+    background-color: var(--bg-surface);
+    border-width: 1px;
+    border-color: var(--border-lit);
+    border-radius: 4px;
+    padding: 4px 10px;
+}
+
+.menu-search {
+    width: grow;
+    height: 26px;
+    font-family: regular;
+    font-size: 14px;
+    selection-color: var(--selection);
+    placeholder-color: var(--text-muted);
+}
+
+IconLabel {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+.icon {
+    width: 14px;
+    height: 14px;
+}
+
+.trailing-icon {
+    width: 14px;
+    height: 14px;
+}
+
+.icon-label-spacer {
+    width: grow;
+    min-width: 24px;
+    min-height: 0px;
+}
+
+.shortcut {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.collapsible-header {
+    flex-direction: row;
+    width: 100%;
+    height: 24px;
+    padding: 0px 2px;
+    background-color: var(--bg-surface);
+    align-items: center;
+}
+
+.collapsible-title {
+    width: grow;
+    height: 100%;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    background-color: var(--bg-surface);
+    border-width: 0px;
+    padding: 0px 6px;
+    align-items: center;
+    justify-content: start;
+    transition: 60ms linear;
+}
+
+.collapsible-title:hover {
+    color: var(--text-bright);
+}
+
+.collapsible-grip {
+    width: 18px;
+    height: 100%;
+    color: var(--text-muted);
+    transition: 60ms ease-out;
+    opacity: 1;
+}
+
+.collapsible-grip:hover {
+    color: var(--text-dim);
+}
+
+.collapsible-drop-slot {
+    width: 100%;
+    background-color: var(--accent-dark);
+    border-color: var(--accent);
+    border-width: 1px;
+    border-style: dashed;
+    border-radius: 2px;
+}
+
+.collapsible-content {
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    background-color: var(--bg-muted);
+    border-color: var(--border-ui);
+    border-width: 1px;
+    padding: 10px;
+    gap: 5px;
+}
+
+OverlayToolbar {
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+    box-shadow: var(--shadow-sm);
+}
+
+.overlay-toolbar-dragging {
+    border-color: var(--accent-muted);
+    opacity: 0.85;
+}
+
+.overlay-toolbar-grip {
+    color: var(--text-muted);
+    cursor: move;
+    border-radius: 3px;
+}
+
+.overlay-toolbar-grip:hover {
+    color: var(--text-dim);
+    background-color: var(--bg-muted);
+}
+
+.overlay-toolbar-grip-vertical {
+    width: 26px;
+    height: 10px;
+}
+
+.overlay-toolbar-grip-horizontal {
+    width: 10px;
+    height: 26px;
+}
+
+.overlay-toolbar-separator-horizontal {
+    width: 18px;
+    height: 1px;
+    background-color: var(--hairline);
+}
+
+.overlay-toolbar-separator-vertical {
+    width: 1px;
+    height: 18px;
+    background-color: var(--hairline);
+}
+
+.overlay-toolbar-dock-hint {
+    background-color: var(--accent);
+    opacity: 0.7;
+}
+
+.overlay-tool {
+    width: 26px;
+    height: 26px;
+    padding: 0px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+    color: var(--text-dim);
+    transition: 80ms ease-out;
+}
+
+.overlay-tool:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.overlay-tool:pressed {
+    background-color: var(--bg-surface);
+}
+
+.overlay-tool-active {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.overlay-dropdown {
+    height: 26px;
+    min-width: 0px;
+}
+
+.overlay-dropdown-header {
+    height: 26px;
+    gap: 6px;
+    padding: 0px 8px;
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+    background-color: transparent;
+    border-width: 0px;
+    border-radius: 4px;
+}
+
+.overlay-dropdown-header:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+.overlay-dropdown-popup {
+    min-width: 170px;
+}
+
+.overlay-menu {
+    flex-direction: column;
+}
+
+.overlay-popover {
+    flex-direction: column;
+    min-width: 170px;
+    gap: 2px;
+    padding: 6px;
+    background-color: var(--bg-deep);
+    border-width: 1px;
+    border-color: var(--hairline);
+    border-radius: 6px;
+}
+
+.overlay-popover-wide {
+    min-width: 280px;
+}
+
+.overlay-popover-title {
+    font-family: medium;
+    font-size: 11px;
+    color: var(--text-muted);
+    padding: 2px 4px 4px 4px;
+}
+
+.overlay-check-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    height: 24px;
+    gap: 8px;
+    padding: 0px 4px;
+    border-radius: 4px;
+}
+
+.overlay-check-row:hover {
+    background-color: var(--bg-muted);
+}
+
+.overlay-check {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+.overlay-check-text {
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.property-grid {
+    flex-direction: column;
+    width: 100%;
+    gap: 4px;
+}
+
+.property-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    gap: 8px;
+}
+
+.property-label {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text-dim);
+    width: 84px;
+}
+
+.property-row-stacked {
+    flex-direction: column;
+    align-items: start;
+    width: 100%;
+    gap: 3px;
+}
+
+.property-label-stacked {
+    width: grow;
+}
+
+.property-separator {
+    width: 100%;
+    height: 1px;
+    background-color: var(--hairline);
+}
+
+.property-grid-split {
+    gap: 3px;
+}
+
+.property-split-row {
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+    min-height: 20px;
+    gap: 8px;
+}
+
+.property-split-row-top {
+    align-items: start;
+}
+
+.property-split-label {
+    width: 38%;
+    height: 20px;
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text-dim);
+    text-align: right;
+}
+
+.property-split-value {
+    width: grow;
+    min-width: 0px;
+}
+
+.property-split-check-text {
+    width: grow;
+    font-family: regular;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.split-DragFloat,
+.split-DragInt,
+.vec-stack-first,
+.vec-stack-middle,
+.vec-stack-last {
+    height: 20px;
+    font-family: mono;
+    font-size: 12px;
+    color: var(--text);
+    background-color: var(--bg-surface);
+    border-width: 0px;
+    border-radius: 4px;
+}
+
+.split-DragFloat:hover,
+.split-DragInt:hover,
+.vec-stack-first:hover,
+.vec-stack-middle:hover,
+.vec-stack-last:hover {
+    background-color: var(--bg-hover);
+}
+
+.split-DragFloat:focus,
+.split-DragInt:focus,
+.vec-stack-first:focus,
+.vec-stack-middle:focus,
+.vec-stack-last:focus {
+    background-color: var(--input-bg);
+}
+
+.vec-stack-first {
+    border-radius: 4px 4px 0px 0px;
+}
+
+.vec-stack-middle {
+    border-radius: 0px;
+}
+
+.vec-stack-last {
+    border-radius: 0px 0px 4px 4px;
+}
+
+.vec-field-stacked {
+    flex-direction: column;
+    gap: 1px;
+}
+
+.labeled-drag-stacked {
+    width: 100%;
+    gap: 0px;
+}
+
+.drag-float-slider {
+    accent-color: var(--accent-muted);
+}
+
+.split-Checkbox {
+    width: 16px;
+    height: 16px;
+    border-radius: 2px;
+}
+
+.split-Label {
+    height: 20px;
+    font-family: mono;
+    font-size: 12px;
+    color: var(--text);
+}
+
+.split-TextInput {
+    height: 20px;
+    padding: 0px 6px;
+    font-size: 12px;
+}
+
+Button {
+    align-items: center;
+    justify-content: center;
+    padding: 5px 12px;
+    background-color: var(--bg-widget);
+    color: var(--text);
+    border-width: 0px;
+    font-family: regular;
+    font-size: 14px;
+    transition: 80ms ease-out;
+}
+
+Button:hover {
+    background-color: var(--bg-hover);
+    color: var(--text-bright);
+}
+
+Button:pressed {
+    background-color: var(--bg-surface);
+}
+
+Collapsible {
+    flex-direction: column;
+    width: 100%;
+}
+
+ColorPicker {
+    flex-direction: column;
+    width: grow;
+}
+
+TextInput {
+    overflow: hidden;
+    width: grow;
+    min-width: 0px;
+    height: 22px;
+    padding: 10px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 13px;
+    transition: 60ms ease-out;
+}
+
+TextInput:focus {
+    border-color: var(--accent);
+}
+
+.text-input {
+    selection-color: var(--selection);
+    placeholder-color: var(--text-muted);
+}
+
+.drag-float {
+    selection-color: var(--selection);
+}
+
+Checkbox {
+    width: 16px;
+    height: 16px;
+    background-color: var(--input-bg);
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: var(--border-dim);
+    color: var(--accent);
+    transition: 80ms ease-out;
+}
+
+Checkbox:hover {
+    background-color: var(--bg-surface);
+    border-color: var(--border-lit);
+}
+
+Checkbox:pressed {
+    background-color: var(--input-bg);
+    border-color: var(--border-lit);
+}
+
+Slider {
+    width: grow;
+    min-width: 0px;
+    height: 16px;
+    color: var(--accent);
+}
+
+.slider {
+    accent-color: var(--accent);
+}
+
+Toggle {
+    width: 38px;
+    height: 20px;
+}
+
+.toggle {
+    accent-color: var(--bg-surface);
+    color: var(--text-bright);
+}
+
+.toggle-on {
+    accent-color: var(--accent);
+}
+
+DragFloat {
+    width: grow;
+    height: 22px;
+    min-width: 0px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 13px;
+    transition: 60ms ease-out;
+}
+
+DragInt {
+    width: grow;
+    height: 22px;
+    min-width: 0px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 13px;
+    transition: 60ms ease-out;
+}
+
+NumberInput {
+    width: grow;
+    height: 22px;
+    min-width: 0px;
+    padding: 0px 8px;
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 4px;
+    color: var(--text);
+    font-family: regular;
+    font-size: 13px;
+    transition: 60ms ease-out;
+}
+
+NumberInput:focus {
+    border-color: var(--accent);
+}
+
+DragFloat:hover {
+    border-color: var(--border-lit);
+    background-color: var(--bg-muted);
+}
+
+DragFloat:focus {
+    border-color: var(--accent);
+}
+
+Vec2Field {
+    flex-direction: row;
+    gap: 4px;
+    width: grow;
+}
+
+Vec3Field {
+    flex-direction: row;
+    gap: 4px;
+    width: grow;
+}
+
+Vec4Field {
+    flex-direction: row;
+    gap: 4px;
+    width: grow;
+}
+
+.labeled-drag {
+    flex-direction: row;
+    align-items: center;
+    width: grow;
+    gap: 3px;
+}
+
+.vec-label {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-bright);
+    width: auto;
+    height: 20px;
+    border-radius: 2px;
+    align-items: center;
+    justify-content: center;
+}
+
+.vec-drag {
+    width: grow;
+    height: 22px;
+}
+
+.vec-drag-x {
+    border-color: var(--axis-x);
+}
+
+.vec-drag-y {
+    border-color: var(--axis-y);
+}
+
+.vec-drag-z {
+    border-color: var(--axis-z);
+}
+
+.vec-drag-x:hover {
+    border-color: var(--axis-x-hover);
+}
+
+.vec-drag-y:hover {
+    border-color: var(--axis-y-hover);
+}
+
+.vec-drag-z:hover {
+    border-color: var(--axis-z-hover);
+}
+
+.tree-view-content{
+    flex-direction: column;
+    width: grow;
+    gap: 2px;
+}
+
+.tree-view {
+    flex-direction: column;
+    width: grow;
+    height: auto;
+    padding: 2px;
+}
+
+.tree-node {
+    flex-direction: column;
+    width: grow;
+}
+
+.tree-node-children {
+    flex-direction: column;
+    width: grow;
+    gap: 2px;
+    padding: 0px 0px 0px 14px;
+}
+
+.tree-node-row {
+    flex-direction: row;
+    align-items: center;
+    width: grow;
+    height: 26px;
+    padding: 0px 4px 0px 0px;
+    border-radius: 4px;
+    transition: 60ms linear;
+}
+
+.tree-node-row-hover {
+    background-color: var(--bg-muted);
+}
+
+.tree-node-row-selected {
+    background-color: var(--accent-dark);
+}
+
+.tree-node-header {
+    font-family: regular;
+    font-size: 13px;
+    color: var(--text);
+    width: grow;
+    height: 100%;
+    padding: 0px 8px;
+    align-items: center;
+    justify-content: start;
+    background-color: transparent;
+}
+
+.tree-node-header:hover {
+    background-color: transparent;
+    color: var(--text-bright);
+}
+
+.tree-node-header:pressed {
+    background-color: transparent;
+}
+
+.tree-node-selected {
+    color: var(--text-bright);
+}
+
+.tree-node-actions {
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+}
+
+.drag-target {
+    border-width: 2px;
+    border-color: var(--accent);
+    border-radius: 2px;
+}
+
+.color-picker {
+    flex-direction: column;
+    width: grow;
+}
+
+.cp-swatch {
+    width: grow;
+    height: 24px;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: var(--line-inset);
+    padding: 0px;
+}
+
+.cp-popup {
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px;
+    width: 220px;
+    background-color: var(--bg-panel);
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: var(--line-soft);
+}
+
+.cp-sv-area {
+    width: grow;
+    height: 140px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cp-hue-row {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    width: grow;
+}
+
+.cp-hue-bar {
+    width: grow;
+    height: 12px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cp-preview {
+    width: 28px;
+    height: 28px;
+    border-radius: 2px;
+    border-width: 1px;
+    border-color: var(--line-inset);
+}
+
+.cp-alpha-bar {
+    width: grow;
+    height: 12px;
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.cp-mode-row {
+    flex-direction: row;
+    gap: 3px;
+    width: grow;
+}
+
+.cp-mode-btn {
+    width: grow;
+    height: 22px;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-dim);
+    background-color: var(--bg-widget);
+    border-width: 1px;
+    border-color: var(--border-ui);
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.cp-mode-btn:hover {
+    background-color: var(--bg-hover);
+    color: var(--text);
+}
+
+.cp-mode-active {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+    border-color: var(--accent-muted);
+}
+
+.cp-mode-active:hover {
+    background-color: var(--accent-dark);
+    color: var(--text-bright);
+}
+
+.cp-ch-row {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    width: grow;
+}
+
+.cp-ch-lbl {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-muted);
+    width: 12px;
+}
+
+.cp-ch-slider {
+    width: grow;
+    height: 14px;
+}
+
+.cp-ch-input {
+    width: 38px;
+    height: 20px;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.cp-ch-input:focus {
+    border-color: var(--accent);
+}
+
+.cp-hex-row {
+    flex-direction: row;
+    gap: 6px;
+    align-items: center;
+    width: grow;
+    display: none;
+}
+
+.cp-hex-lbl {
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text-muted);
+    width: 8px;
+}
+
+.cp-hex-input {
+    width: grow;
+    height: 20px;
+    font-family: regular;
+    font-size: 14px;
+    color: var(--text);
+    background-color: var(--input-bg);
+    border-width: 1px;
+    border-color: var(--input-border);
+    border-radius: 2px;
+    transition: 60ms ease-out;
+}
+
+.cp-hex-input:focus {
+    border-color: var(--accent);
+}
+
+@container (max-width: 220px) {
+    .property-row {
+        flex-direction: column;
+        align-items: start;
+        gap: 3px;
+    }
+
+    .property-label {
+        width: 100%;
+        font-size: 14px;
+    }
+}
+
+@container (max-width: 180px) {
+    Vec3Field {
+        flex-direction: column;
+    }
+
+    Vec2Field {
+        flex-direction: column;
+    }
+
+    Vec4Field {
+        flex-direction: column;
+    }
+
+    .labeled-drag {
+        width: 100%;
+    }
+
+    .collapsible-content {
+        padding: 4px;
+        gap: 3px;
+    }
+}
+
+@container (max-width: 130px) {
+    .collapsible-header {
+        height: 22px;
+        font-size: 14px;
+        padding: 0px 6px;
+    }
+
+    DragFloat {
+        height: 20px;
+        font-size: 14px;
+    }
+}

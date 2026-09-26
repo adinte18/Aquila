@@ -18,10 +18,10 @@ FloatingPanelWindow::FloatingPanelWindow() = default;
 FloatingPanelWindow::~FloatingPanelWindow() = default;
 
 void FloatingPanelWindow::build(Unique<View> panel_subtree, const std::string &title, Uint32 width, Uint32 height,
-								const std::string &style_path) {
+								const std::vector<std::string> &style_paths) {
 	m_title = title;
 	m_canvas = std::make_unique<Canvas>(width, height);
-	StyleParser::load_file(style_path, m_canvas->get_style_sheet());
+	StyleParser::load_files(style_paths, m_canvas->get_style_sheet());
 
 	auto *root = m_canvas->get_root();
 	root->add_class("floating-panel-root");

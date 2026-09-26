@@ -186,10 +186,10 @@ View *make_view(View *parent, const char *cls) {
 UIDebugWindow::UIDebugWindow() = default;
 UIDebugWindow::~UIDebugWindow() = default;
 
-void UIDebugWindow::build(Canvas *target, Uint32 width, Uint32 height, const std::string &style_path) {
+void UIDebugWindow::build(Canvas *target, Uint32 width, Uint32 height, const std::vector<std::string> &style_paths) {
 	m_target = target;
 	m_canvas = std::make_unique<Canvas>(width, height);
-	UI::StyleParser::load_file(style_path, m_canvas->get_style_sheet());
+	UI::StyleParser::load_files(style_paths, m_canvas->get_style_sheet());
 
 	auto *root = m_canvas->get_root();
 	root->set_id("inspector-root");

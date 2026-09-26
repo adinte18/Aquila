@@ -4,6 +4,7 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 
 #include <string>
+#include <vector>
 
 namespace Aquila::Graphics {
 class QuadBatcher;
@@ -25,7 +26,7 @@ class FloatingPanelWindow {
 	~FloatingPanelWindow();
 
 	void build(Unique<View> panel_subtree, const std::string &title, Uint32 width, Uint32 height,
-			   const std::string &style_path);
+			   const std::vector<std::string> &style_paths);
 
 	void update(F32 delta_time);
 	void render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd);

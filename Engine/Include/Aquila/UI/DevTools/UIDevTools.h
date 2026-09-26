@@ -6,6 +6,7 @@
 #include "Aquila/UI/Core/View.h"
 
 #include <string>
+#include <vector>
 
 namespace Aquila::GFX {
 class GfxContext;
@@ -34,7 +35,7 @@ class WidgetGalleryWindow;
 struct UIDevToolsDesc {
 	Core::Canvas &target;
 	Aquila::Rendering::IRenderWindowHost &host;
-	std::string style_path;
+	std::vector<std::string> style_paths;
 };
 
 class UIDevTools {
@@ -58,7 +59,7 @@ class UIDevTools {
 
 	Core::Canvas &m_target;
 	Aquila::Rendering::IRenderWindowHost &m_host;
-	std::string m_style_path;
+	std::vector<std::string> m_style_paths;
 
 	Unique<UIDebugPanel> m_panel;
 	Unique<UIDebugWindow> m_inspector;

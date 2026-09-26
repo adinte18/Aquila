@@ -54,6 +54,7 @@ class StyleSheet {
 
 	void add_variable(std::string name, std::string value);
 	[[nodiscard]] const std::string *get_variable(std::string_view name) const;
+	[[nodiscard]] const std::unordered_map<std::string, std::string> &get_variables() const { return m_variables; }
 
 	[[nodiscard]] const std::vector<StyleRule> &get_rules() const { return m_rules; }
 	[[nodiscard]] const std::vector<MediaBlock> &get_media_blocks() const { return m_media_blocks; }
