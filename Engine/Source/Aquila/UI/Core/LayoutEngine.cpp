@@ -202,7 +202,7 @@ void LayoutEngine::run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 
 	Clay_SetCurrentContext(static_cast<Clay_Context *>(m_clay_ctx));
 	Clay_SetLayoutDimensions({ static_cast<F32>(m_width), static_cast<F32>(m_height) });
 	Clay_SetPointerState({ mouse_pos.x, mouse_pos.y }, mouse_down);
-	Clay_UpdateScrollContainers(true, { scroll_delta.x, scroll_delta.y }, delta_time);
+	Clay_UpdateScrollContainers(false, { scroll_delta.x, scroll_delta.y }, delta_time);
 	Clay_BeginLayout();
 	//
 	layout_pass(root);
