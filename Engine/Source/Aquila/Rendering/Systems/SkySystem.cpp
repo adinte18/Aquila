@@ -90,6 +90,11 @@ void SkySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_pipeline || !m_pipeline->is_valid() || ctx.scene == nullptr) {
 		return;
 	}
+	if (ctx.settings != nullptr &&
+		(!ctx.settings->show_sky ||
+		 (ctx.settings->debug_view != DebugView::Lit && ctx.settings->debug_view != DebugView::Albedo))) {
+		return;
+	}
 
 	auto &registry = ctx.scene->get_registry();
 	SkyLightComponent *sky = nullptr;

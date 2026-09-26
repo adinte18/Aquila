@@ -6,6 +6,7 @@
 #include "Aquila/Rendering/Renderers/IRenderer.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/Rendering/RenderView.h"
+#include "Aquila/Rendering/RenderSettings.h"
 #include "Aquila/GFX/GfxTexture.h"
 
 namespace Aquila::GFX {
@@ -47,6 +48,9 @@ class RenderPipeline {
 	[[nodiscard]] Uint32 get_width() const { return m_width; }
 	[[nodiscard]] Uint32 get_height() const { return m_height; }
 
+	[[nodiscard]] RenderSettings &get_settings() { return m_settings; }
+	[[nodiscard]] const RenderView &get_last_view() const { return m_last_view; }
+
   private:
 	void build_frame_context(SceneManagement::Scene &scene, F32 delta_time, const RenderView &primary,
 							 FrameContext &out);
@@ -72,3 +76,5 @@ class RenderPipeline {
 };
 
 } // namespace Aquila::Rendering
+	RenderSettings m_settings;
+	RenderView m_last_view;

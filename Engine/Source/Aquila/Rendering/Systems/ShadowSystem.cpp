@@ -87,7 +87,7 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 
 	auto *frame_data = ctx.frame_data;
 	const Uint32 frame_slot = ctx.frame_slot;
-	const bool enabled = frame_data->shadows_enabled();
+	const bool enabled = frame_data->shadows_enabled() && (ctx.settings == nullptr || ctx.settings->show_shadows);
 	const F32 size = static_cast<F32>(SceneFrameData::kShadowMapSize);
 	const auto &cascade_vp = frame_data->get_cascade_view_proj();
 

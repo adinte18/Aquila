@@ -147,6 +147,9 @@ void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	if (!m_mask_pipeline || !m_mask_pipeline->is_valid() || !m_outline_pipeline || !m_outline_pipeline->is_valid()) {
 		return;
 	}
+	if (ctx.settings != nullptr && !ctx.settings->show_outline) {
+		return;
+	}
 
 	struct DrawCall {
 		Ref<GFX::GfxMesh> gpu_mesh;
@@ -158,12 +161,12 @@ void OutlineSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 
 	auto view = ctx.scene->get_registry().view<OutlineComponent, TransformComponent, MeshComponent>();
 	for (auto entity : view) {
-		auto &mesh = view.get<MeshComponent>(entity);
-		if (!mesh.is_valid()) {
-			continue;
 		if (!SceneManagement::is_visible_in_hierarchy(ctx.scene->get_registry(), entity)) {
 			continue;
 		}
+		auto &mesh = view.get<MeshComponent>(entity);
+		if (!mesh.is_valid()) {
+			continue;
 		}
 
 		auto gpu_mesh = get_or_upload_mesh(mesh.data);

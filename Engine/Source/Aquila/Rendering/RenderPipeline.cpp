@@ -150,6 +150,8 @@ void RenderPipeline::rebuild_targets() {
 		.format = RHI::TextureFormat::R32UI,
 		.usage = RHI::TextureUsage::ColorAttachment | RHI::TextureUsage::TransferSrc,
 		.debug_name = "ObjectPicking",
+	out.settings = &m_settings;
+	m_last_view = primary;
 	});
 }
 

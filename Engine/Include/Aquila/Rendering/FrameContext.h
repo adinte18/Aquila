@@ -2,6 +2,7 @@
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Graphics/RenderGraph/RGTypes.h"
 #include "Aquila/Rendering/LightData.h"
+#include "Aquila/Rendering/RenderSettings.h"
 
 #include <array>
 
@@ -44,6 +45,8 @@ struct FrameContext {
 
 	SceneFrameData *frame_data = nullptr;
 	Uint32 frame_slot = 0;
+
+	const RenderSettings *settings = nullptr;
 };
 
 } // namespace Aquila::Rendering
