@@ -150,8 +150,7 @@ void VulkanPipeline::default_pipeline_config(VulkanPipelineConfig &config_info) 
 	config_info.depth_stencil_info.front = {};
 	config_info.depth_stencil_info.back = {};
 
-	config_info.dynamic_state_enables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR,
-									   VK_DYNAMIC_STATE_LINE_WIDTH };
+	config_info.dynamic_state_enables = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 	config_info.dynamic_state_create_info.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
 	config_info.dynamic_state_create_info.pDynamicStates = config_info.dynamic_state_enables.data();
 	config_info.dynamic_state_create_info.dynamicStateCount = static_cast<uint32_t>(config_info.dynamic_state_enables.size());
