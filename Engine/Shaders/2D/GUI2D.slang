@@ -2,14 +2,22 @@
 #define AQUILA_GUI2D_SLANG
 
 struct VSInput {
-	[[vk::location(0)]] float3 position : POSITION;
-	[[vk::location(1)]] float4 color : COLOR;
-	[[vk::location(2)]] float2 uv : TEXCOORD0;
-	[[vk::location(3)]] float2 size : TEXCOORD1;
-	[[vk::location(4)]] float4 radius : TEXCOORD2;
-	[[vk::location(5)]] float borderWidth : TEXCOORD3;
-	[[vk::location(6)]] float4 borderColor : TEXCOORD4;
-	[[vk::location(8)]] float borderStyle : TEXCOORD5;
+	[[vk::location(0)]]
+	float3 position : POSITION;
+	[[vk::location(1)]]
+	float4 color : COLOR;
+	[[vk::location(2)]]
+	float2 uv : TEXCOORD0;
+	[[vk::location(3)]]
+	float2 size : TEXCOORD1;
+	[[vk::location(4)]]
+	float4 radius : TEXCOORD2;
+	[[vk::location(5)]]
+	float borderWidth : TEXCOORD3;
+	[[vk::location(6)]]
+	float4 borderColor : TEXCOORD4;
+	[[vk::location(8)]]
+	float borderStyle : TEXCOORD5;
 };
 
 struct VSOutput {
@@ -30,7 +38,8 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants pc;
 
-[shader("vertex")] VSOutput main(VSInput input) {
+[shader("vertex")]
+VSOutput main(VSInput input) {
 	VSOutput output;
 	float4 pos = float4(input.position, 1.0);
 	output.position = mul(pc.viewProjection, pos);
@@ -67,7 +76,8 @@ float perimeterCoord(float2 point, float2 halfSize) {
 	return 4.0 * halfSize.x + 2.0 * halfSize.y + (halfSize.y - point.y);
 }
 
-[shader("fragment")] float4 main(VSOutput input) : SV_Target {
+[shader("fragment")]
+float4 main(VSOutput input) : SV_Target {
 	float2 localPos = (input.uv - 0.5) * input.size;
 	float2 halfSize = input.size * 0.5;
 

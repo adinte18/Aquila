@@ -19,7 +19,8 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants pc;
 
-[shader("vertex")] VSOutput main(VSInput input) {
+[shader("vertex")]
+VSOutput main(VSInput input) {
 	VSOutput output;
 	float4 pos = float4(input.position, 1.0);
 	output.position = mul(pc.viewProjection, pos);
@@ -28,8 +29,8 @@ PushConstants pc;
 	return output;
 }
 
-	[shader("fragment")] float4 main(VSOutput input)
-	: SV_Target {
+[shader("fragment")]
+float4 main(VSOutput input) : SV_Target {
 	return input.color;
 }
 

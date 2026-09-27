@@ -6,10 +6,14 @@ import Utility.FrameData;
 import Utility.SurfaceData;
 
 // set 1: material textures
-[[vk::binding(0, 1)]] Sampler2D albedoMap;
-[[vk::binding(1, 1)]] Sampler2D normalMap;
-[[vk::binding(2, 1)]] Sampler2D aoMap;
-[[vk::binding(3, 1)]] Sampler2D emissiveMap;
+[[vk::binding(0, 1)]]
+Sampler2D albedoMap;
+[[vk::binding(1, 1)]]
+Sampler2D normalMap;
+[[vk::binding(2, 1)]]
+Sampler2D aoMap;
+[[vk::binding(3, 1)]]
+Sampler2D emissiveMap;
 
 struct PushConstants {
 	column_major float4x4 modelMatrix;
@@ -21,31 +25,47 @@ struct PushConstants {
 PushConstants push;
 
 struct VSInput {
-	[[vk::location(0)]] float3 position : POSITION;
-	[[vk::location(1)]] float3 color : COLOR;
-	[[vk::location(2)]] float3 normal : NORMAL;
-	[[vk::location(3)]] float4 tangent : TANGENT; // w = bitangent sign
-	[[vk::location(4)]] float2 uv : TEXCOORD0;
+	[[vk::location(0)]]
+	float3 position : POSITION;
+	[[vk::location(1)]]
+	float3 color : COLOR;
+	[[vk::location(2)]]
+	float3 normal : NORMAL;
+	[[vk::location(3)]]
+	float4 tangent : TANGENT; // w = bitangent sign
+	[[vk::location(4)]]
+	float2 uv : TEXCOORD0;
 };
 
 struct VSOutput {
 	float4 sv_position : SV_Position;
-	[[vk::location(0)]] float3 fragColor : TEXCOORD0;
-	[[vk::location(1)]] float3 fragPosWorld : TEXCOORD1;
-	[[vk::location(2)]] float3 fragNormal : TEXCOORD2;
-	[[vk::location(3)]] float3 fragTangent : TEXCOORD3;
-	[[vk::location(4)]] float3 fragBitangent : TEXCOORD4;
-	[[vk::location(5)]] float2 fragUV : TEXCOORD5;
+	[[vk::location(0)]]
+	float3 fragColor : TEXCOORD0;
+	[[vk::location(1)]]
+	float3 fragPosWorld : TEXCOORD1;
+	[[vk::location(2)]]
+	float3 fragNormal : TEXCOORD2;
+	[[vk::location(3)]]
+	float3 fragTangent : TEXCOORD3;
+	[[vk::location(4)]]
+	float3 fragBitangent : TEXCOORD4;
+	[[vk::location(5)]]
+	float2 fragUV : TEXCOORD5;
 };
 
 struct FSOutput {
-	[[vk::location(0)]] float4 outPosition : SV_Target0; // xyz=worldPos,  w=metallic
-	[[vk::location(1)]] float4 outNormal : SV_Target1;	 // xyz=normal,    w=roughness
-	[[vk::location(2)]] float4 outAlbedo : SV_Target2;	 // xyz=albedo,    w=ao
-	[[vk::location(3)]] float4 outEmissive : SV_Target3; // xyz=emissive,  w=emissiveIntensity
+	[[vk::location(0)]]
+	float4 outPosition : SV_Target0; // xyz=worldPos,  w=metallic
+	[[vk::location(1)]]
+	float4 outNormal : SV_Target1; // xyz=normal,    w=roughness
+	[[vk::location(2)]]
+	float4 outAlbedo : SV_Target2; // xyz=albedo,    w=ao
+	[[vk::location(3)]]
+	float4 outEmissive : SV_Target3; // xyz=emissive,  w=emissiveIntensity
 };
 
-[shader("vertex")] VSOutput vertexMain(VSInput IN) {
+[shader("vertex")]
+VSOutput vertexMain(VSInput IN) {
 	VSOutput OUT;
 
 	float4 posWorld = mul(push.modelMatrix, float4(IN.position, 1.0));
@@ -72,7 +92,8 @@ struct FSOutput {
 	return OUT;
 }
 
-	[shader("fragment")] FSOutput fragmentMain(VSOutput IN) {
+[shader("fragment")]
+FSOutput fragmentMain(VSOutput IN) {
 	AqSurfaceData surf = AQ_GetSurface(push.materialIndex);
 
 	float3x3 TBN = float3x3(normalize(IN.fragTangent), normalize(IN.fragBitangent), normalize(IN.fragNormal));

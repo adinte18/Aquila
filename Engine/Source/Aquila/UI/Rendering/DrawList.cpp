@@ -28,26 +28,26 @@ void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, V
 	command.border_style = border_style;
 	command.z_order = z;
 
-	m_commands.push_back(command);
+	m_commands.emplace_back(command);
 }
 
 void DrawList::draw_line(Vec2 from, Vec2 to, float width, Vec4 color, Int32 z) {
 	Vec2 delta = to - from;
 	float length = Math::length(delta);
-	if (length < 0.5f) {
+	if (length < 0.5F) {
 		return;
 	}
 
-	Vec2 center = (from + to) * 0.5f;
+	Vec2 center = (from + to) * 0.5F;
 	float angle = Math::atan2(delta.y, delta.x);
 
 	RectCmd command;
-	command.rect = { center - Vec2(length * 0.5f, width * 0.5f), { length, width } };
+	command.rect = { .position = center - Vec2(length * 0.5F, width * 0.5F), .size = { length, width } };
 	command.color = color;
 	command.rotation = angle;
 	command.z_order = z;
 
-	m_commands.push_back(command);
+	m_commands.emplace_back(command);
 }
 
 void DrawList::draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spread, Vec4 color, Vec4 radius, Int32 z) {
@@ -56,11 +56,11 @@ void DrawList::draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spre
 	command.color = color;
 	command.radius = radius;
 	command.offset = offset;
-	command.original_half_size = { widget_rect.size.x * 0.5f + spread, widget_rect.size.y * 0.5f + spread };
+	command.original_half_size = { (widget_rect.size.x * 0.5F) + spread, (widget_rect.size.y * 0.5F) + spread };
 	command.blur = blur;
 	command.z_order = z;
 
-	m_commands.push_back(command);
+	m_commands.emplace_back(command);
 }
 
 void DrawList::draw_text(Rect bounds, std::string_view text, Text::FontAtlas *font, Vec4 color, float font_size,
@@ -80,7 +80,7 @@ void DrawList::draw_text(Rect bounds, std::string_view text, Text::FontAtlas *fo
 	command.font_size = font_size;
 	command.align = align;
 	command.wrap = wrap;
-	m_commands.push_back(std::move(command));
+	m_commands.emplace_back(std::move(command));
 }
 
 void DrawList::draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint, Vec2 uv_min, Vec2 uv_max, Int32 z) {
@@ -93,14 +93,14 @@ void DrawList::draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint, Vec2 uv_mi
 	command.uv_min = uv_min;
 	command.uv_max = uv_max;
 
-	m_commands.push_back(command);
+	m_commands.emplace_back(command);
 }
 
 void DrawList::push_clip(Rect clip_rect) {
 	m_clip_stack.push_back(clip_rect);
 	ClipPushCmd cmd;
 	cmd.rect = clip_rect;
-	m_commands.push_back(cmd);
+	m_commands.emplace_back(cmd);
 }
 
 void DrawList::pop_clip() {
@@ -110,7 +110,7 @@ void DrawList::pop_clip() {
 
 	ClipPopCmd cmd;
 	cmd.rect = m_clip_stack.empty() ? Rect{} : m_clip_stack.back();
-	m_commands.push_back(cmd);
+	m_commands.emplace_back(cmd);
 }
 
 void DrawList::sort() {
@@ -272,7 +272,11 @@ void DrawList::submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 								++i;
 							}
 							const size_t word_end = i;
-							const F32 word_w = atlas->measure_text(std::string_view(s).substr(word_start, word_end - word_start), render_size).x;
+							const F32 word_w =
+								atlas
+									->measure_text(std::string_view(s).substr(word_start, word_end - word_start),
+												   render_size)
+									.x;
 							if (line_start == std::string::npos) {
 								line_start = word_start;
 								line_end = word_end;

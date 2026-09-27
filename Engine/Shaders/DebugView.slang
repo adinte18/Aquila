@@ -29,20 +29,28 @@ struct PushConstants {
 PushConstants push;
 
 struct VSInput {
-	[[vk::location(0)]] float3 position : POSITION;
-	[[vk::location(1)]] float3 color : COLOR;
-	[[vk::location(2)]] float3 normal : NORMAL;
-	[[vk::location(3)]] float4 tangent : TANGENT;
-	[[vk::location(4)]] float2 uv : TEXCOORD0;
+	[[vk::location(0)]]
+	float3 position : POSITION;
+	[[vk::location(1)]]
+	float3 color : COLOR;
+	[[vk::location(2)]]
+	float3 normal : NORMAL;
+	[[vk::location(3)]]
+	float4 tangent : TANGENT;
+	[[vk::location(4)]]
+	float2 uv : TEXCOORD0;
 };
 
 struct VSOutput {
 	float4 sv_position : SV_Position;
-	[[vk::location(0)]] float3 worldPos : TEXCOORD0;
-	[[vk::location(1)]] float3 normal : TEXCOORD1;
+	[[vk::location(0)]]
+	float3 worldPos : TEXCOORD0;
+	[[vk::location(1)]]
+	float3 normal : TEXCOORD1;
 };
 
-[shader("vertex")] VSOutput main(VSInput IN) {
+[shader("vertex")]
+VSOutput main(VSInput IN) {
 	VSOutput OUT;
 	float4 worldPos = mul(push.model, float4(IN.position, 1.0));
 	OUT.sv_position = mul(GetMainCamera().viewProjection, worldPos);
@@ -66,7 +74,8 @@ float3 HeatRamp(float t) {
 	return lerp(warm, hot, (t - 0.66) / 0.34);
 }
 
-[shader("fragment")] float4 main(VSOutput IN) : SV_Target {
+[shader("fragment")]
+float4 main(VSOutput IN) : SV_Target {
 	float3 N = normalize(IN.normal);
 	float3 V = normalize(GetCameraPosition() - IN.worldPos);
 	float facing = 0.55 + 0.45 * saturate(dot(N, V));

@@ -32,6 +32,6 @@ namespace Aquila::Rendering {
 	return (2.F * distance * tan_half_fov) / Math::max(viewport.size.y, 1.F);
 }
 
-}
+} // namespace Aquila::Rendering
 
 #endif
