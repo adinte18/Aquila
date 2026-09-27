@@ -14,6 +14,7 @@ namespace Aquila::UI::Rendering {
 namespace {
 
 constexpr F32 k_glyph_dilation_px = 1.F;
+constexpr F32 k_wrap_tolerance_px = 0.5F;
 
 }
 
@@ -297,7 +298,7 @@ void DrawList::submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 								line_start = word_start;
 								line_end = word_end;
 								line_w = word_w;
-							} else if (line_w + space_w + word_w <= max_w) {
+							} else if (line_w + space_w + word_w <= max_w + k_wrap_tolerance_px) {
 								line_end = word_end;
 								line_w += space_w + word_w;
 							} else {
