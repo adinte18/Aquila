@@ -15,6 +15,14 @@ static constexpr const char *K_GUI_SHADER = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
 static constexpr const char *K_TEXT_SHADER = AQUILA_SHADERS_DIR "2D/Text2D.slang";
 static constexpr const char *K_SHADOW_SHADER = AQUILA_SHADERS_DIR "2D/Shadow2D.slang";
 
+static constexpr Vec2 K_QUAD_UVS[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
+static constexpr Vec4 K_LOCAL_CORNERS[4] = {
+	{ -0.5F, -0.5F, 0.F, 1.F },
+	{ 0.5F, -0.5F, 0.F, 1.F },
+	{ 0.5F, 0.5F, 0.F, 1.F },
+	{ -0.5F, 0.5F, 0.F, 1.F },
+};
+
 static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *shader_path,
 											const std::vector<GFX::GfxDescriptorSetLayout *> &set_layouts,
 											Uint32 push_constant_size, RHI::TextureFormat color_format,
@@ -302,66 +310,50 @@ void QuadBatcher::execute_replay(GFX::GfxCommandList &cmd) {
 	}
 }
 
-GFX::GfxPipeline &QuadBatcher::get_or_create_flat_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
-														   RHI::TextureFormat depth_format) {
-	PipelineKey key{ format, samples, depth_format };
-	auto it = m_flat_pipelines.find(key);
-	if (it != m_flat_pipelines.end()) {
+GFX::GfxPipeline &QuadBatcher::get_or_create_pipeline(PipelineCache &cache, const char *shader_path,
+													GFX::GfxDescriptorSetLayout *set_layout,
+													RHI::VertexBindingDesc (*vertex_layout)(), const PipelineKey &key) {
+	auto it = cache.find(key);
+	if (it != cache.end()) {
 		return *it->second;
 	}
-	m_flat_pipelines[key] = build_pipeline(m_ctx, K_FLAT_SHADER, {}, sizeof(QuadPushConstants), format, samples,
-										   depth_format, quad_vertex_layout());
-	return *m_flat_pipelines[key];
+	std::vector<GFX::GfxDescriptorSetLayout *> set_layouts;
+	if (set_layout != nullptr) {
+		set_layouts.push_back(set_layout);
+	}
+	cache[key] = build_pipeline(m_ctx, shader_path, set_layouts, sizeof(QuadPushConstants), key.color_format,
+								key.sample_count, key.depth_format, vertex_layout());
+	return *cache[key];
+}
+
+GFX::GfxPipeline &QuadBatcher::get_or_create_flat_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+														   RHI::TextureFormat depth_format) {
+	return get_or_create_pipeline(m_flat_pipelines, K_FLAT_SHADER, nullptr, quad_vertex_layout,
+								  { format, samples, depth_format });
 }
 
 GFX::GfxPipeline &QuadBatcher::get_or_create_texture_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 															  RHI::TextureFormat depth_format) {
-	PipelineKey key{ format, samples, depth_format };
-	auto it = m_texture_pipelines.find(key);
-	if (it != m_texture_pipelines.end()) {
-		return *it->second;
-	}
-	m_texture_pipelines[key] =
-		build_pipeline(m_ctx, K_TEXTURE_SHADER, { m_texture_layout.get() }, sizeof(QuadPushConstants), format, samples,
-					   depth_format, quad_vertex_layout());
-	return *m_texture_pipelines[key];
+	return get_or_create_pipeline(m_texture_pipelines, K_TEXTURE_SHADER, m_texture_layout.get(), quad_vertex_layout,
+								  { format, samples, depth_format });
 }
 
 GFX::GfxPipeline &QuadBatcher::get_or_create_gui_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 														  RHI::TextureFormat depth_format) {
-	PipelineKey key{ format, samples, depth_format };
-	auto it = m_gui_pipelines.find(key);
-	if (it != m_gui_pipelines.end()) {
-		return *it->second;
-	}
-	m_gui_pipelines[key] = build_pipeline(m_ctx, K_GUI_SHADER, {}, sizeof(QuadPushConstants), format, samples,
-										  depth_format, quad_vertex_layout());
-	return *m_gui_pipelines[key];
+	return get_or_create_pipeline(m_gui_pipelines, K_GUI_SHADER, nullptr, quad_vertex_layout,
+								  { format, samples, depth_format });
 }
 
 GFX::GfxPipeline &QuadBatcher::get_or_create_text_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 														   RHI::TextureFormat depth_format) {
-	PipelineKey key{ format, samples, depth_format };
-	auto it = m_text_pipelines.find(key);
-	if (it != m_text_pipelines.end()) {
-		return *it->second;
-	}
-	m_text_pipelines[key] =
-		build_pipeline(m_ctx, K_TEXT_SHADER, { m_text_data_layout.get() }, sizeof(QuadPushConstants), format, samples,
-					   depth_format, text_vertex_layout());
-	return *m_text_pipelines[key];
+	return get_or_create_pipeline(m_text_pipelines, K_TEXT_SHADER, m_text_data_layout.get(), text_vertex_layout,
+								  { format, samples, depth_format });
 }
 
 GFX::GfxPipeline &QuadBatcher::get_or_create_shadow_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 															 RHI::TextureFormat depth_format) {
-	PipelineKey key{ format, samples, depth_format };
-	auto it = m_shadow_pipelines.find(key);
-	if (it != m_shadow_pipelines.end()) {
-		return *it->second;
-	}
-	m_shadow_pipelines[key] = build_pipeline(m_ctx, K_SHADOW_SHADER, {}, sizeof(QuadPushConstants), format, samples,
-											 depth_format, quad_vertex_layout());
-	return *m_shadow_pipelines[key];
+	return get_or_create_pipeline(m_shadow_pipelines, K_SHADOW_SHADER, nullptr, quad_vertex_layout,
+								  { format, samples, depth_format });
 }
 
 void QuadBatcher::draw_shadow(const ShadowSpec &spec) {
@@ -375,8 +367,6 @@ void QuadBatcher::draw_shadow(const ShadowSpec &spec) {
 	}
 	m_batch_type = BatchType::Shadow;
 
-	static constexpr Vec2 k_u_vs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-
 	const float x0 = spec.position.x;
 	const float y0 = spec.position.y;
 	const float x1 = x0 + spec.size.x;
@@ -389,28 +379,28 @@ void QuadBatcher::draw_shadow(const ShadowSpec &spec) {
 
 	v[0] = { .position = { x0, y0, z },
 			 .color = spec.color,
-			 .uv = k_u_vs[0],
+			 .uv = K_QUAD_UVS[0],
 			 .size = spec.size,
 			 .radius = spec.radius,
 			 .border_width = spec.blur,
 			 .border_color = enc };
 	v[1] = { .position = { x1, y0, z },
 			 .color = spec.color,
-			 .uv = k_u_vs[1],
+			 .uv = K_QUAD_UVS[1],
 			 .size = spec.size,
 			 .radius = spec.radius,
 			 .border_width = spec.blur,
 			 .border_color = enc };
 	v[2] = { .position = { x1, y1, z },
 			 .color = spec.color,
-			 .uv = k_u_vs[2],
+			 .uv = K_QUAD_UVS[2],
 			 .size = spec.size,
 			 .radius = spec.radius,
 			 .border_width = spec.blur,
 			 .border_color = enc };
 	v[3] = { .position = { x0, y1, z },
 			 .color = spec.color,
-			 .uv = k_u_vs[3],
+			 .uv = K_QUAD_UVS[3],
 			 .size = spec.size,
 			 .radius = spec.radius,
 			 .border_width = spec.blur,
@@ -434,24 +424,16 @@ void QuadBatcher::draw_rect(const RectSpec &spec) {
 	}
 	m_batch_type = needed;
 
-	static constexpr Vec2 k_u_vs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
-
 	QuadVertex *v = m_quad_write_ptr;
 	m_quad_write_ptr += 4;
 
 	if (spec.rotation != 0.F) {
-		static constexpr Vec4 k_local_corners[4] = {
-			{ -0.5F, -0.5F, 0.F, 1.F },
-			{ 0.5F, -0.5F, 0.F, 1.F },
-			{ 0.5F, 0.5F, 0.F, 1.F },
-			{ -0.5F, 0.5F, 0.F, 1.F },
-		};
 		Mat4 transform = build_quad_transform(spec.position, spec.size, spec.rotation, spec.depth);
 		for (Uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
-			Vec4 world_pos = transform * k_local_corners[i];
+			Vec4 world_pos = transform * K_LOCAL_CORNERS[i];
 			v[i] = { .position = Vec3(world_pos),
 					 .color = spec.color,
-					 .uv = k_u_vs[i],
+					 .uv = K_QUAD_UVS[i],
 					 .size = spec.size,
 					 .radius = spec.radius,
 					 .border_width = spec.border_width,
@@ -465,28 +447,28 @@ void QuadBatcher::draw_rect(const RectSpec &spec) {
 		const float z = spec.depth;
 		v[0] = { .position = { x0, y0, z },
 				 .color = spec.color,
-				 .uv = k_u_vs[0],
+				 .uv = K_QUAD_UVS[0],
 				 .size = spec.size,
 				 .radius = spec.radius,
 				 .border_width = spec.border_width,
 				 .border_color = spec.border_color };
 		v[1] = { .position = { x1, y0, z },
 				 .color = spec.color,
-				 .uv = k_u_vs[1],
+				 .uv = K_QUAD_UVS[1],
 				 .size = spec.size,
 				 .radius = spec.radius,
 				 .border_width = spec.border_width,
 				 .border_color = spec.border_color };
 		v[2] = { .position = { x1, y1, z },
 				 .color = spec.color,
-				 .uv = k_u_vs[2],
+				 .uv = K_QUAD_UVS[2],
 				 .size = spec.size,
 				 .radius = spec.radius,
 				 .border_width = spec.border_width,
 				 .border_color = spec.border_color };
 		v[3] = { .position = { x0, y1, z },
 				 .color = spec.color,
-				 .uv = k_u_vs[3],
+				 .uv = K_QUAD_UVS[3],
 				 .size = spec.size,
 				 .radius = spec.radius,
 				 .border_width = spec.border_width,
@@ -529,15 +511,9 @@ void QuadBatcher::draw_sprite(const SpriteSpec &spec) {
 	m_quad_write_ptr += 4;
 
 	if (spec.rotation != 0.F) {
-		static constexpr Vec4 k_local_corners[4] = {
-			{ -0.5F, -0.5F, 0.F, 1.F },
-			{ 0.5F, -0.5F, 0.F, 1.F },
-			{ 0.5F, 0.5F, 0.F, 1.F },
-			{ -0.5F, 0.5F, 0.F, 1.F },
-		};
 		Mat4 transform = build_quad_transform(spec.position, spec.size, spec.rotation, spec.depth);
 		for (Uint32 i = 0; i < SharedConstants::VERTS_PER_QUAD; ++i) {
-			Vec4 world_pos = transform * k_local_corners[i];
+			Vec4 world_pos = transform * K_LOCAL_CORNERS[i];
 			v[i] = { .position = Vec3(world_pos), .color = spec.tint, .uv = uvs[i] };
 		}
 	} else {

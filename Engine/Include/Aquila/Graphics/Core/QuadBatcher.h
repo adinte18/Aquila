@@ -155,6 +155,8 @@ class QuadBatcher {
 		}
 	};
 
+	using PipelineCache = std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash>;
+
 	enum class BatchType : Uint8 { Flat, GUI, Texture, Text, Shadow };
 
 	struct ReplayEntry {
@@ -173,6 +175,9 @@ class QuadBatcher {
 	void start_batch();
 	void register_shader_hot_reload();
 	[[nodiscard]] Mat4 build_quad_transform(Vec2 position, Vec2 size, float rotation, float depth) const;
+	GFX::GfxPipeline &get_or_create_pipeline(PipelineCache &cache, const char *shader_path,
+										   GFX::GfxDescriptorSetLayout *set_layout,
+										   RHI::VertexBindingDesc (*vertex_layout)(), const PipelineKey &key);
 	GFX::GfxDescriptorSet &get_or_create_texture_set(GFX::GfxTexture &texture);
 	GFX::GfxDescriptorSet &get_or_create_text_data_set(GFX::GfxTexture &curve_texture, GFX::GfxTexture &band_texture);
 
@@ -197,11 +202,11 @@ class QuadBatcher {
 	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_texture_set_cache;
 	std::unordered_map<GFX::GfxTexture *, Ref<GFX::GfxDescriptorSet>> m_text_data_set_cache;
 
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_flat_pipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_texture_pipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_gui_pipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_text_pipelines;
-	std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash> m_shadow_pipelines;
+	PipelineCache m_flat_pipelines;
+	PipelineCache m_texture_pipelines;
+	PipelineCache m_gui_pipelines;
+	PipelineCache m_text_pipelines;
+	PipelineCache m_shadow_pipelines;
 
 	std::vector<Uint64> m_watch_ids;
 
