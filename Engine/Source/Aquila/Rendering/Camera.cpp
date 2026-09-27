@@ -79,10 +79,10 @@ void Camera::rotate(const double yaw, const double pitch) {
 }
 
 void Camera::update_free_mode_look_direction() {
-	const F32 c1 = std::cos(m_rotation.y);
-	const F32 s1 = std::sin(m_rotation.y);
-	const F32 c2 = std::cos(m_rotation.x);
-	const F32 s2 = std::sin(m_rotation.x);
+	const F32 c1 = Math::cos(m_rotation.y);
+	const F32 s1 = Math::sin(m_rotation.y);
+	const F32 c2 = Math::cos(m_rotation.x);
+	const F32 s2 = Math::sin(m_rotation.x);
 
 	Vec3 forward = Math::normalize(Vec3(c2 * s1, -s2, c1 * c2));
 	m_orbit_target = m_position + forward * m_orbit_radius;
@@ -103,7 +103,7 @@ void Camera::set_orthographic_projection(F32 left, F32 right, F32 top, F32 botto
 }
 
 void Camera::set_perspective_projection(F32 fov_y, F32 aspect, F32 near_plane, F32 far_plane) {
-	AQUILA_ASSERT(std::abs(aspect - Math::EPSILON) > 0.0F, "Aspect ratio must not be zero");
+	AQUILA_ASSERT(Math::abs(aspect - Math::EPSILON) > 0.0F, "Aspect ratio must not be zero");
 
 	this->m_aspect_ratio = aspect;
 	this->m_fov = fov_y;
@@ -114,74 +114,17 @@ void Camera::set_perspective_projection(F32 fov_y, F32 aspect, F32 near_plane, F
 
 void Camera::set_view_direction(Vec3 position, Vec3 direction, Vec3 up) {
 	m_view_matrix = Math::look_in_direction(position, direction, up);
-
-	const Vec3 w = Math::normalize(direction);
-	const Vec3 u = Math::normalize(Math::cross(w, up));
-	const Vec3 v = Math::cross(w, u);
-
-	m_inverse_view_matrix = Mat4{ 1.F };
-	m_inverse_view_matrix[0][0] = u.x;
-	m_inverse_view_matrix[0][1] = u.y;
-	m_inverse_view_matrix[0][2] = u.z;
-	m_inverse_view_matrix[1][0] = v.x;
-	m_inverse_view_matrix[1][1] = v.y;
-	m_inverse_view_matrix[1][2] = v.z;
-	m_inverse_view_matrix[2][0] = w.x;
-	m_inverse_view_matrix[2][1] = w.y;
-	m_inverse_view_matrix[2][2] = w.z;
-	m_inverse_view_matrix[3][0] = position.x;
-	m_inverse_view_matrix[3][1] = position.y;
-	m_inverse_view_matrix[3][2] = position.z;
+	m_inverse_view_matrix = Math::inverse_view(m_view_matrix, position);
 }
 
 void Camera::set_view_target(Vec3 position, Vec3 target, Vec3 up) {
 	m_view_matrix = Math::look_at(position, target, up);
-
-	const Vec3 w = Math::normalize(target - position);
-	const Vec3 u = Math::normalize(Math::cross(w, up));
-	const Vec3 v = Math::cross(w, u);
-
-	m_inverse_view_matrix = Mat4{ 1.F };
-	m_inverse_view_matrix[0][0] = u.x;
-	m_inverse_view_matrix[0][1] = u.y;
-	m_inverse_view_matrix[0][2] = u.z;
-	m_inverse_view_matrix[1][0] = v.x;
-	m_inverse_view_matrix[1][1] = v.y;
-	m_inverse_view_matrix[1][2] = v.z;
-	m_inverse_view_matrix[2][0] = w.x;
-	m_inverse_view_matrix[2][1] = w.y;
-	m_inverse_view_matrix[2][2] = w.z;
-	m_inverse_view_matrix[3][0] = position.x;
-	m_inverse_view_matrix[3][1] = position.y;
-	m_inverse_view_matrix[3][2] = position.z;
+	m_inverse_view_matrix = Math::inverse_view(m_view_matrix, position);
 }
 
 void Camera::set_view_yxz(Vec3 position, Vec3 rotation) {
 	m_view_matrix = Math::view_from_euler(position, rotation);
-
-	const F32 c3 = std::cos(rotation.z);
-	const F32 s3 = std::sin(rotation.z);
-	const F32 c2 = std::cos(rotation.x);
-	const F32 s2 = std::sin(rotation.x);
-	const F32 c1 = std::cos(rotation.y);
-	const F32 s1 = std::sin(rotation.y);
-	const Vec3 u{ (c1 * c3 + s1 * s2 * s3), (c2 * s3), (c1 * s2 * s3 - c3 * s1) };
-	const Vec3 v{ (c3 * s1 * s2 - c1 * s3), (c2 * c3), (c1 * c3 * s2 + s1 * s3) };
-	const Vec3 w{ (c2 * s1), (-s2), (c1 * c2) };
-
-	m_inverse_view_matrix = Mat4{ 1.F };
-	m_inverse_view_matrix[0][0] = u.x;
-	m_inverse_view_matrix[0][1] = u.y;
-	m_inverse_view_matrix[0][2] = u.z;
-	m_inverse_view_matrix[1][0] = v.x;
-	m_inverse_view_matrix[1][1] = v.y;
-	m_inverse_view_matrix[1][2] = v.z;
-	m_inverse_view_matrix[2][0] = w.x;
-	m_inverse_view_matrix[2][1] = w.y;
-	m_inverse_view_matrix[2][2] = w.z;
-	m_inverse_view_matrix[3][0] = position.x;
-	m_inverse_view_matrix[3][1] = position.y;
-	m_inverse_view_matrix[3][2] = position.z;
+	m_inverse_view_matrix = Math::inverse_view(m_view_matrix, position);
 }
 
 void Camera::set_orbit_target(const Vec3 &target) {
@@ -194,7 +137,7 @@ void Camera::set_orbit_target(const Vec3 &target) {
 	}
 
 	m_orbit_pitch = std::asin(offset.y / m_orbit_radius);
-	m_orbit_yaw = std::atan2(offset.x, offset.z);
+	m_orbit_yaw = Math::atan2(offset.x, offset.z);
 
 	update_orbit_position();
 }
@@ -202,19 +145,19 @@ void Camera::set_orbit_target(const Vec3 &target) {
 void Camera::orbit_rotate(const F32 delta_yaw, const F32 delta_pitch) {
 	m_orbit_yaw += delta_yaw;
 	m_orbit_pitch += delta_pitch;
-	m_orbit_pitch = std::clamp(m_orbit_pitch, -Math::HALF_PI + 0.01F, Math::HALF_PI - 0.01F);
+	m_orbit_pitch = Math::clamp(m_orbit_pitch, -Math::HALF_PI + 0.01F, Math::HALF_PI - 0.01F);
 	update_orbit_position();
 }
 
 void Camera::orbit_zoom(const F32 delta_radius) {
-	m_orbit_radius = std::max(m_orbit_radius + delta_radius, 0.1F);
+	m_orbit_radius = Math::max(m_orbit_radius + delta_radius, 0.1F);
 	update_orbit_position();
 }
 
 void Camera::update_orbit_position() {
-	m_position.x = m_orbit_target.x + m_orbit_radius * std::cos(m_orbit_pitch) * std::sin(m_orbit_yaw);
-	m_position.y = m_orbit_target.y + m_orbit_radius * std::sin(m_orbit_pitch);
-	m_position.z = m_orbit_target.z + m_orbit_radius * std::cos(m_orbit_pitch) * std::cos(m_orbit_yaw);
+	m_position.x = m_orbit_target.x + m_orbit_radius * Math::cos(m_orbit_pitch) * Math::sin(m_orbit_yaw);
+	m_position.y = m_orbit_target.y + m_orbit_radius * Math::sin(m_orbit_pitch);
+	m_position.z = m_orbit_target.z + m_orbit_radius * Math::cos(m_orbit_pitch) * Math::cos(m_orbit_yaw);
 
 	recalculate_view();
 }
@@ -225,7 +168,7 @@ void Camera::recalculate_view() {
 
 	Vec3 forward = m_direction;
 	m_rotation.x = std::asin(-forward.y);
-	m_rotation.y = std::atan2(forward.x, forward.z);
+	m_rotation.y = Math::atan2(forward.x, forward.z);
 	m_rotation.z = 0.0F;
 }
 
