@@ -480,11 +480,21 @@ void LayoutEngine::layout_pass(View *node) {
 		const bool parent_row = is_row(parent_style.flex_direction);
 		const bool width_grows = parent_row ? grow_main : stretch;
 		const bool height_grows = parent_row ? stretch : grow_main;
+		auto grow_from = [&](Clay_SizingAxis current, const StyleLength &min_len, const StyleLength &max_len) {
+			Clay_SizingAxis axis = to_c_sizing_axis(StyleLength::grow(), min_len, max_len, vw_px, vh_px);
+			if (current.type == CLAY__SIZING_TYPE_FIXED) {
+				axis.size.minMax.min = Math::max(axis.size.minMax.min, current.size.minMax.min);
+				if (axis.size.minMax.max > 0.F) {
+					axis.size.minMax.min = Math::min(axis.size.minMax.min, axis.size.minMax.max);
+				}
+			}
+			return axis;
+		};
 		if (width_grows && cs.width.unit == LengthUnit::Auto) {
-			layout.sizing.width = to_c_sizing_axis(StyleLength::grow(), cs.min_width, cs.max_width, vw_px, vh_px);
+			layout.sizing.width = grow_from(layout.sizing.width, cs.min_width, cs.max_width);
 		}
 		if (height_grows && cs.height.unit == LengthUnit::Auto) {
-			layout.sizing.height = to_c_sizing_axis(StyleLength::grow(), cs.min_height, cs.max_height, vw_px, vh_px);
+			layout.sizing.height = grow_from(layout.sizing.height, cs.min_height, cs.max_height);
 		}
 	}
 
