@@ -643,23 +643,50 @@ void TransformGizmo::draw_constraint(UI::Rendering::DrawList &draw_list) const {
 	}
 	const Frame &f = m_drag.frame;
 	const Usize axis = axis_of(m_drag.handle);
-	const Vec3 origin = m_frame.origin;
-	const Vec3 direction = f.axes[axis];
+	const Mat4 view_projection = f.view.projection * f.view.view;
+	const Vec4 base = view_projection * Vec4(m_frame.origin, 1.F);
+	if (base.w <= 1e-5F) {
+		return;
+	}
+	const Vec4 toward = view_projection * Vec4(f.axes[axis], 0.F);
+	const Vec2 half_size = f.viewport.size * 0.5F;
+	const Vec2 center = f.viewport.position + (((Vec2(base) / base.w) + Vec2(1.F)) * half_size);
+	const Vec2 tangent = ((Vec2(toward) * base.w) - (Vec2(base) * toward.w)) * half_size;
+	if (Math::length(tangent) < 1e-6F) {
+		return;
+	}
+	const Vec2 direction = Math::normalize(tangent);
 
-	auto far_point = [&](F32 sign) -> Option<Vec2> {
-		for (const F32 scale : { 400.F, 60.F, 12.F, 3.F }) {
-			if (const Option<Vec2> point = Rendering::project_to_screen(
-					f.view, f.viewport, origin + (direction * (sign * scale * f.length)))) {
-				return point;
+	F32 start = std::numeric_limits<F32>::lowest();
+	F32 stop = std::numeric_limits<F32>::max();
+	const Vec2 low = f.viewport.position;
+	const Vec2 high = f.viewport.position + f.viewport.size;
+	for (int k = 0; k < 2; ++k) {
+		if (Math::abs(direction[k]) < 1e-6F) {
+			if (center[k] < low[k] || center[k] > high[k]) {
+				return;
 			}
+			continue;
 		}
-		return std::nullopt;
-	};
+		const F32 a = (low[k] - center[k]) / direction[k];
+		const F32 b = (high[k] - center[k]) / direction[k];
+		start = Math::max(start, Math::min(a, b));
+		stop = Math::min(stop, Math::max(a, b));
+	}
 
-	const Option<Vec2> a = far_point(-1.F);
-	const Option<Vec2> b = far_point(1.F);
-	if (a && b) {
-		draw_list.draw_line(*a, *b, 1.5F, Vec4(Vec3(k_axis_colors[axis]), 0.8F), 0);
+	if (Math::abs(toward.w) > 1e-6F) {
+		const Vec2 vanishing = f.viewport.position + (((Vec2(toward) / toward.w) + Vec2(1.F)) * half_size);
+		const F32 along = Math::dot(vanishing - center, direction);
+		if (along > 0.F) {
+			stop = Math::min(stop, along);
+		} else {
+			start = Math::max(start, along);
+		}
+	}
+
+	if (start < stop) {
+		draw_list.draw_line(center + (direction * start), center + (direction * stop), 1.5F,
+							Vec4(Vec3(k_axis_colors[axis]), 0.8F), 1);
 	}
 }
 
