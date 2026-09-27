@@ -3,6 +3,7 @@
 #include "Aquila/UI/Text/FontAtlas.h"
 
 #include <algorithm>
+#include <unordered_map>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-designated-field-initializers"
@@ -69,13 +70,25 @@ static Clay_TextAlignment to_clay_text_align(TextAlign align) {
 	}
 }
 
+static constexpr F32 k_font_size_units = 100.F;
+
+static uint16_t to_clay_font_size(F32 font_size) {
+	return static_cast<uint16_t>(Math::clamp(Math::round(font_size * k_font_size_units), 0.F, 65535.F));
+}
+
+static uint16_t to_clay_font_id(const Text::FontAtlas *font) {
+	static std::unordered_map<const Text::FontAtlas *, uint16_t> ids;
+	const auto [it, inserted] = ids.try_emplace(font, static_cast<uint16_t>(ids.size()));
+	return it->second;
+}
+
 static Clay_Dimensions measure_clay_text(Clay_StringSlice text, Clay_TextElementConfig *config, void * /*userData*/) {
 	auto *font = static_cast<Text::FontAtlas *>(config->userData);
 	if (font == nullptr || text.length <= 0) {
 		return { 0.F, 0.F };
 	}
 	const std::string_view slice(text.chars, static_cast<size_t>(text.length));
-	const Vec2 dims = font->measure_text(slice, static_cast<F32>(config->fontSize));
+	const Vec2 dims = font->measure_text(slice, static_cast<F32>(config->fontSize) / k_font_size_units);
 	return { dims.x, dims.y };
 }
 
@@ -417,7 +430,8 @@ void LayoutEngine::layout_pass(View *node) {
 			};
 			Clay_TextElementConfig text_config{};
 			text_config.userData = text_run.font;
-			text_config.fontSize = static_cast<uint16_t>(text_run.font_size);
+			text_config.fontId = to_clay_font_id(text_run.font);
+			text_config.fontSize = to_clay_font_size(text_run.font_size);
 			text_config.wrapMode = CLAY_TEXT_WRAP_WORDS;
 			text_config.textAlignment = to_clay_text_align(text_run.align);
 			Clay__OpenTextElement(text_string, text_config);
