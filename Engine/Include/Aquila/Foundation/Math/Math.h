@@ -35,12 +35,28 @@ AQUILA_FORCE_INLINE bool approx_equal(const F32 a, const F32 b, const F32 epsilo
 	return std::abs(a - b) < epsilon;
 }
 
-AQUILA_FORCE_INLINE F32 radians(const F32 degrees) {
+template <typename T> AQUILA_FORCE_INLINE T radians(const T &degrees) {
 	return glm::radians(degrees);
 }
 
-AQUILA_FORCE_INLINE F32 degrees(const F32 radians) {
+template <typename T> AQUILA_FORCE_INLINE T degrees(const T &radians) {
 	return glm::degrees(radians);
+}
+
+template <typename T> AQUILA_FORCE_INLINE T sin(const T &angle) {
+	return glm::sin(angle);
+}
+
+template <typename T> AQUILA_FORCE_INLINE T cos(const T &angle) {
+	return glm::cos(angle);
+}
+
+template <typename T> AQUILA_FORCE_INLINE T tan(const T &angle) {
+	return glm::tan(angle);
+}
+
+AQUILA_FORCE_INLINE F32 atan2(const F32 y, const F32 x) {
+	return std::atan2(y, x);
 }
 
 AQUILA_FORCE_INLINE F32 mod(const F32 a, const F32 b) {
@@ -82,6 +98,10 @@ template <typename T> AQUILA_FORCE_INLINE T ceil(const T &v) {
 	return glm::ceil(v);
 }
 
+template <typename T> AQUILA_FORCE_INLINE T round(const T &v) {
+	return glm::round(v);
+}
+
 template <typename T> AQUILA_FORCE_INLINE T sign(const T &v) {
 	return glm::sign(v);
 }
@@ -116,6 +136,10 @@ AQUILA_FORCE_INLINE Vec3 cross(const Vec3 &a, const Vec3 &b) {
 	return glm::cross(a, b);
 }
 
+AQUILA_FORCE_INLINE F32 cross(const Vec2 &a, const Vec2 &b) {
+	return (a.x * b.y) - (a.y * b.x);
+}
+
 template <typename T> AQUILA_FORCE_INLINE F32 length(const T &v) {
 	return glm::length(v);
 }
@@ -142,20 +166,16 @@ template <typename T> AQUILA_FORCE_INLINE T refract(const T &v, const T &normal,
 
 // Matrix ops
 
-AQUILA_FORCE_INLINE Vec4 mat_mul_vec(const Mat4 &m, const Vec4 &v) {
-	return m * v;
-}
-
-AQUILA_FORCE_INLINE Mat4 mat_mul(const Mat4 &a, const Mat4 &b) {
-	return a * b;
-}
-
-AQUILA_FORCE_INLINE Mat4 inverse(const Mat4 &m) {
+template <typename T> AQUILA_FORCE_INLINE T inverse(const T &m) {
 	return glm::inverse(m);
 }
 
-AQUILA_FORCE_INLINE Mat4 transpose(const Mat4 &m) {
+template <typename T> AQUILA_FORCE_INLINE T transpose(const T &m) {
 	return glm::transpose(m);
+}
+
+AQUILA_FORCE_INLINE Quaternion angle_axis(const F32 angle, const Vec3 &axis) {
+	return glm::angleAxis(angle, axis);
 }
 
 // Projection matrices (Vulkan)
@@ -195,11 +215,7 @@ inline Mat4 infinite_perspective_vulkan(const F32 fov_y, const F32 aspect, const
 
 // View matrices
 
-inline Mat4 look_at(const Vec3 &position, const Vec3 &target, const Vec3 &up) {
-	const Vec3 w = normalize(target - position);
-	const Vec3 u = normalize(cross(w, up));
-	const Vec3 v = cross(w, u);
-
+inline Mat4 view_from_basis(const Vec3 &u, const Vec3 &v, const Vec3 &w, const Vec3 &position) {
 	Mat4 result(1.0F);
 	result[0][0] = u.x;
 	result[1][0] = u.y;
@@ -216,25 +232,26 @@ inline Mat4 look_at(const Vec3 &position, const Vec3 &target, const Vec3 &up) {
 	return result;
 }
 
+inline Mat4 inverse_view(const Mat4 &view, const Vec3 &position) {
+	Mat4 result(transpose(Mat3(view)));
+	result[3] = Vec4(position, 1.0F);
+	return result;
+}
+
+inline Mat4 look_at(const Vec3 &position, const Vec3 &target, const Vec3 &up) {
+	const Vec3 w = normalize(target - position);
+	const Vec3 u = normalize(cross(w, up));
+	const Vec3 v = cross(w, u);
+
+	return view_from_basis(u, v, w, position);
+}
+
 inline Mat4 look_in_direction(const Vec3 &position, const Vec3 &direction, const Vec3 &world_up = Vec3(0, -1, 0)) {
 	const Vec3 w = normalize(direction);
 	const Vec3 u = normalize(cross(w, world_up));
 	const Vec3 v = cross(w, u);
 
-	Mat4 result(1.0F);
-	result[0][0] = u.x;
-	result[1][0] = u.y;
-	result[2][0] = u.z;
-	result[0][1] = v.x;
-	result[1][1] = v.y;
-	result[2][1] = v.z;
-	result[0][2] = w.x;
-	result[1][2] = w.y;
-	result[2][2] = w.z;
-	result[3][0] = -dot(u, position);
-	result[3][1] = -dot(v, position);
-	result[3][2] = -dot(w, position);
-	return result;
+	return view_from_basis(u, v, w, position);
 }
 
 inline Mat4 view_from_euler(const Vec3 &position, const Vec3 &rotation) {
@@ -249,20 +266,7 @@ inline Mat4 view_from_euler(const Vec3 &position, const Vec3 &rotation) {
 	const Vec3 v = { (c3 * s1 * s2) - (c1 * s3), c2 * c3, (c1 * c3 * s2) + (s1 * s3) };
 	const Vec3 w = { c2 * s1, -s2, c1 * c2 };
 
-	Mat4 result(1.0F);
-	result[0][0] = u.x;
-	result[1][0] = u.y;
-	result[2][0] = u.z;
-	result[0][1] = v.x;
-	result[1][1] = v.y;
-	result[2][1] = v.z;
-	result[0][2] = w.x;
-	result[1][2] = w.y;
-	result[2][2] = w.z;
-	result[3][0] = -dot(u, position);
-	result[3][1] = -dot(v, position);
-	result[3][2] = -dot(w, position);
-	return result;
+	return view_from_basis(u, v, w, position);
 }
 
 // Geometry utilities
@@ -274,8 +278,7 @@ inline std::array<Vec4, 8> extract_frustum_corners(const Mat4 &proj_view) {
 	for (int z = 0; z < 2; ++z) {
 		for (int y = 0; y < 2; ++y) {
 			for (int x = 0; x < 2; ++x) {
-				Vec4 pt =
-					mat_mul_vec(inv, Vec4((x != 0) ? 1.F : -1.F, (y != 0) ? 1.F : -1.F, (z != 0) ? 1.F : 0.F, 1.F));
+				Vec4 pt = inv * Vec4((x != 0) ? 1.F : -1.F, (y != 0) ? 1.F : -1.F, (z != 0) ? 1.F : 0.F, 1.F);
 				corners[idx++] = pt / pt.w;
 			}
 		}
@@ -297,7 +300,7 @@ inline void compute_light_space_aabb(const std::array<Vec4, 8> &corners, const M
 	out_min = Vec3(std::numeric_limits<F32>::max());
 	out_max = Vec3(std::numeric_limits<F32>::lowest());
 	for (const auto &corner : corners) {
-		const Vec4 ls = mat_mul_vec(light_view, corner);
+		const Vec4 ls = light_view * corner;
 		const Vec3 lsp = Vec3(ls.x, ls.y, ls.z);
 		out_min = min(out_min, lsp);
 		out_max = max(out_max, lsp);
@@ -311,25 +314,12 @@ inline Mat4 build_light_view_matrix(const Vec3 &light_direction, const Vec3 &foc
 		world_up = Vec3(0.F, 0.F, 1.F);
 	}
 
-	const Vec3 w = normalize(light_dir);
+	const Vec3 w = light_dir;
 	const Vec3 u = normalize(cross(w, world_up));
 	const Vec3 v = cross(w, u);
 	const Vec3 light_pos = focus_point - light_dir * distance;
 
-	Mat4 result(1.0F);
-	result[0][0] = u.x;
-	result[1][0] = u.y;
-	result[2][0] = u.z;
-	result[0][1] = v.x;
-	result[1][1] = v.y;
-	result[2][1] = v.z;
-	result[0][2] = w.x;
-	result[1][2] = w.y;
-	result[2][2] = w.z;
-	result[3][0] = -dot(u, light_pos);
-	result[3][1] = -dot(v, light_pos);
-	result[3][2] = -dot(w, light_pos);
-	return result;
+	return view_from_basis(u, v, w, light_pos);
 }
 
 inline void snap_to_texel_grid(F32 &min, F32 &max, const F32 world_units_per_texel) {
@@ -359,6 +349,13 @@ AQUILA_FORCE_INLINE F32 distance_to_plane(const Vec3 &point, const Vec3 &normal,
 
 AQUILA_FORCE_INLINE Vec3 project_onto_plane(const Vec3 &point, const Vec3 &normal, const Vec3 &plane_point) {
 	return point - normal * distance_to_plane(point, normal, plane_point);
+}
+
+AQUILA_FORCE_INLINE F32 distance_to_segment(const Vec2 &point, const Vec2 &a, const Vec2 &b) {
+	const Vec2 ab = b - a;
+	const F32 length_squared = dot(ab, ab);
+	const F32 t = length_squared > 0.F ? clamp(dot(point - a, ab) / length_squared, 0.F, 1.F) : 0.F;
+	return length(point - (a + (ab * t)));
 }
 
 AQUILA_FORCE_INLINE Vec3 barycentric(const Vec3 &p, const Vec3 &a, const Vec3 &b, const Vec3 &c) {
