@@ -19,8 +19,8 @@ class EntityManager;
 
 class Scene final {
   public:
-	explicit Scene();
-	explicit Scene(const std::string &name);
+	Scene();
+	Scene(std::string name);
 
 	AQUILA_NONCOPYABLE(Scene);
 	AQUILA_NONMOVEABLE(Scene);
@@ -43,9 +43,7 @@ class Scene final {
 	void mark_transform_dirty(entt::entity entity);
 
 	bool serialize(const std::string &filepath);
-	bool deserialize(const std::string &filepath, Assets::AssetManager &asset_manager);
-
-	void set_asset_manager(Assets::AssetManager *asset_manager) { m_asset_manager = asset_manager; }
+	bool deserialize(const std::string &filepath);
 
 	void set_active_camera(Entity camera_entity);
 
@@ -56,7 +54,6 @@ class Scene final {
   private:
 	Foundation::UUID m_scene_id;
 	entt::entity m_active_camera_entity = entt::null;
-	Assets::AssetManager *m_asset_manager = nullptr;
 	Foundation::DirtySet<entt::entity> m_dirty_transforms;
 
 	void on_transform_construct(entt::registry &registry, entt::entity entity);

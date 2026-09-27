@@ -47,7 +47,7 @@ Scene *SceneManager::create_scene(const std::string &name) {
 	return m_scenes[handle].get();
 }
 
-Scene *SceneManager::load_scene(const std::string &filepath, Assets::AssetManager &asset_manager) {
+Scene *SceneManager::load_scene(const std::string &filepath) {
 	if (!validate_scene_file(filepath)) {
 		AQUILA_LOG_ERROR("Failed to validate scene file: {}", filepath);
 		return nullptr;
@@ -57,7 +57,7 @@ Scene *SceneManager::load_scene(const std::string &filepath, Assets::AssetManage
 	auto handle = scene->get_handle();
 
 	// Deserialize scene data
-	if (!scene->deserialize(filepath, asset_manager)) {
+	if (!scene->deserialize(filepath)) {
 		AQUILA_LOG_ERROR("Failed to deserialize scene from: {}", filepath);
 		return nullptr;
 	}
@@ -71,10 +71,9 @@ Scene *SceneManager::load_scene(const std::string &filepath, Assets::AssetManage
 	return m_scenes[handle].get();
 }
 
-Scene *SceneManager::load_scene_async(const std::string &filepath, Assets::AssetManager &asset_manager,
-									  const Delegate<void(Scene *)> &on_loaded) {
+Scene *SceneManager::load_scene_async(const std::string &filepath, const Delegate<void(Scene *)> &on_loaded) {
 	// For now, just load synchronously lol
-	Scene *scene = load_scene(filepath, asset_manager);
+	Scene *scene = load_scene(filepath);
 
 	if ((scene != nullptr) && on_loaded) {
 		on_loaded(scene);
@@ -87,7 +86,7 @@ Scene *SceneManager::load_scene_async(const std::string &filepath, Assets::Asset
 
 void SceneManager::enqueue_scene(Unique<Scene> scene, const Delegate<void(Scene *)> &on_activated) {
 	m_scenes[scene->get_handle()] = std::move(scene);
-	m_on_scene_activated = std::move(on_activated);
+	m_on_scene_activated = on_activated;
 }
 
 void SceneManager::change_scene(const Foundation::UUID &handle) {
@@ -170,7 +169,7 @@ void SceneManager::activate_scene(Scene *scene) {
 	activate_scene(scene->get_handle());
 }
 
-Scene *SceneManager::load_scene_in_background(const std::string &filepath, Assets::AssetManager &asset_manager) {
+Scene *SceneManager::load_scene_in_background(const std::string &filepath) {
 	if (!validate_scene_file(filepath)) {
 		AQUILA_LOG_ERROR("Failed to validate scene file: {}", filepath);
 		return nullptr;
@@ -180,7 +179,7 @@ Scene *SceneManager::load_scene_in_background(const std::string &filepath, Asset
 	auto scene = std::make_unique<Scene>();
 
 	// Deserialize scene data
-	if (!scene->deserialize(filepath, asset_manager)) {
+	if (!scene->deserialize(filepath)) {
 		AQUILA_LOG_ERROR("Failed to deserialize scene from: {}", filepath);
 		return nullptr;
 	}
@@ -238,8 +237,7 @@ bool SceneManager::save_active_scene(const std::string &filepath) {
 	return save_scene(m_active_scene->get_handle(), filepath);
 }
 
-Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, Assets::AssetManager &asset_manager,
-									 const std::string &new_name) {
+Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, const std::string &new_name) {
 	Scene *source_scene = get_scene(handle);
 	if (source_scene == nullptr) {
 		AQUILA_LOG_ERROR("Source scene not found with handle: {}", handle.to_string());
@@ -259,7 +257,7 @@ Scene *SceneManager::duplicate_scene(const Foundation::UUID &handle, Assets::Ass
 	}
 
 	// Deserialize into duplicate
-	if (!duplicate_scene->deserialize(temp_path, asset_manager)) {
+	if (!duplicate_scene->deserialize(temp_path)) {
 		AQUILA_LOG_ERROR("Failed to deserialize into duplicate scene");
 		return nullptr;
 	}

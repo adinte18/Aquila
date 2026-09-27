@@ -1,7 +1,6 @@
 #ifndef MESH_COMPONENT_H
 #define MESH_COMPONENT_H
 
-#include "Aquila/Assets/AssetManager.h"
 #include "Aquila/Graphics/Material/MaterialLibrary.h"
 #include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Graphics/Material/Material.h"
@@ -109,9 +108,7 @@ struct MeshComponent {
 	/**
 	 * @brief Check if submesh has a material asset reference
 	 */
-	bool has_material_asset(Uint32 submesh_index = 0) const {
-		return material_asset_paths.contains(submesh_index);
-	}
+	bool has_material_asset(Uint32 submesh_index = 0) const { return material_asset_paths.contains(submesh_index); }
 
 	/**
 	 * @brief Check if submesh has a loaded material instance
@@ -175,7 +172,7 @@ struct MeshComponent {
 	 * @return Material to use for rendering
 	 */
 	Ref<Graphics::Material> get_render_material(uint32_t submesh_index = 0,
-											  Ref<Graphics::Material> fallback_material = nullptr) const {
+												Ref<Graphics::Material> fallback_material = nullptr) const {
 		if (has_material(submesh_index)) {
 			return get_material(submesh_index);
 		}

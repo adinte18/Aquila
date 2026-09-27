@@ -1,7 +1,5 @@
 #include "Aquila/Scene/Scene.h"
 
-#include "Aquila/Assets/AssetManager.h"
-#include <algorithm>
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Scene/Components/LightComponent.h"
@@ -15,13 +13,11 @@
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 
 namespace Aquila::SceneManagement {
-Scene::Scene() {
-	m_scene_id = Foundation::UUID::generate();
+Scene::Scene() : m_scene_name("Unnamed scene"), m_scene_id(Foundation::UUID::generate()) {
 	on_start();
 }
 
-Scene::Scene(const std::string &name) : m_scene_name(name) {
-	m_scene_id = Foundation::UUID::generate();
+Scene::Scene(std::string name) : m_scene_name(std::move(name)), m_scene_id(Foundation::UUID::generate()) {
 	on_start();
 }
 
@@ -179,9 +175,9 @@ void Scene::set_active_camera(Entity camera_entity) {
 Entity Scene::get_active_camera_entity() const {
 	// Wrap the entt::entity in an Entity object
 	if (m_active_camera_entity != entt::null) {
-		return Entity(m_active_camera_entity, const_cast<Scene *>(this));
+		return { m_active_camera_entity, const_cast<Scene *>(this) };
 	}
-	return Entity(); // Return invalid entity
+	return {}; // Return invalid entity
 }
 
 bool Scene::has_active_camera() const {
@@ -201,10 +197,10 @@ Entity Scene::find_primary_camera() const {
 	for (auto entity : view) {
 		const auto &cam = view.get<Components::CameraComponent>(entity);
 		if (cam.primary) {
-			return Entity(entity, const_cast<Scene *>(this));
+			return { entity, const_cast<Scene *>(this) };
 		}
 	}
-	return Entity(); // Return invalid entity if no primary camera found
+	return {}; // Return invalid entity if no primary camera found
 }
 
 bool Scene::serialize(const std::string &filepath) {
@@ -315,18 +311,6 @@ bool Scene::serialize(const std::string &filepath) {
 											   { "OrthoBottom", cam.ortho_bottom } };
 		}
 
-		// Serialize SkyLightComponent
-		// if (entity.HasComponent<Components::SkyLightComponent>()) {
-		// 	auto &skyLight = entity.GetComponent<Components::SkyLightComponent>();
-		// 	entityJson["SkyLightComponent"] = {
-		// 		{ "Active", skyLight.IsActive() },
-		// 		{ "Intensity", skyLight.GetIntensity() },
-		// 		{ "Tint", { skyLight.GetTint().r, skyLight.GetTint().g, skyLight.GetTint().b } },
-		// 		{ "RenderSkybox", skyLight.ShouldRenderSkybox() },
-		// 		{ "HDRTexturePath", skyLight.GetHDRTexture() ? skyLight.GetHDRTexture()->GetRHI(). : "" }
-		// 	};
-		// }
-
 		// Serialize MaterialComponent
 		if (entity.has_component<Components::MaterialComponent>()) {
 			auto &mat_comp = entity.get_component<Components::MaterialComponent>();
@@ -350,7 +334,7 @@ bool Scene::serialize(const std::string &filepath) {
 	return true;
 }
 
-bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset_manager) {
+bool Scene::deserialize(const std::string &filepath) {
 	AQUILA_ASSERT(m_entity_manager != nullptr, "EntityManager is nullptr");
 
 	auto vfs_file =
@@ -449,9 +433,6 @@ bool Scene::deserialize(const std::string &filepath, Assets::AssetManager &asset
 			if (std::string mesh_path = mesh_json.value("Path", ""); !mesh_path.empty()) {
 				if (mesh_path.starts_with("procedural://")) {
 					std::string type = mesh_path.substr(13);
-					// meshComp.data = assetManager.CreateProceduralMesh(type);
-				} else {
-					// meshComp.data = assetManager.LoadMesh(meshPath);
 				}
 			}
 

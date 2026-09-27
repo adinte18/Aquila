@@ -3,10 +3,6 @@
 
 #include "Aquila/Scene/Scene.h"
 
-namespace Aquila::Assets {
-class AssetManager; // Forward declaration
-}
-
 namespace Aquila::SceneManagement {
 
 class SceneManager {
@@ -22,9 +18,8 @@ class SceneManager {
 
 	// Scene Creation & Loading
 	Scene *create_scene(const std::string &name);
-	Scene *load_scene(const std::string &filepath, Assets::AssetManager &asset_manager);
-	Scene *load_scene_async(const std::string &filepath, Assets::AssetManager &asset_manager,
-							const Delegate<void(Scene *)> &on_loaded = nullptr);
+	Scene *load_scene(const std::string &filepath);
+	Scene *load_scene_async(const std::string &filepath, const Delegate<void(Scene *)> &on_loaded = nullptr);
 
 	// Scene Management
 	void enqueue_scene(Unique<Scene> scene, const Delegate<void(Scene *)> &on_activated = nullptr);
@@ -36,8 +31,7 @@ class SceneManager {
 	// Scene Operations
 	bool save_scene(const Foundation::UUID &handle, const std::string &filepath);
 	bool save_active_scene(const std::string &filepath);
-	Scene *duplicate_scene(const Foundation::UUID &handle, Assets::AssetManager &asset_manager,
-						   const std::string &new_name = "");
+	Scene *duplicate_scene(const Foundation::UUID &handle, const std::string &new_name = "");
 
 	// Scene Change Requests
 	void request_scene_change(const Foundation::UUID &handle);
@@ -49,7 +43,7 @@ class SceneManager {
 	void activate_scene(Scene *scene);
 
 	// Loading without activation
-	Scene *load_scene_in_background(const std::string &filepath, Assets::AssetManager &asset_manager);
+	Scene *load_scene_in_background(const std::string &filepath);
 
 	// Query inactive scenes
 	std::vector<Scene *> get_inactive_scenes() const;
