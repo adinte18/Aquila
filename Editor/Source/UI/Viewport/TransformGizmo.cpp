@@ -728,11 +728,8 @@ void TransformGizmo::draw_rotate(UI::Rendering::DrawList &draw_list) const {
 		}
 		const Vec4 color = color_for(handle, k_axis_colors[axis]);
 		const auto &points = m_frame.rings[axis];
-		const auto &front = m_frame.ring_front[axis];
 		for (Usize s = 0; s + 1 < points.size(); ++s) {
-			const bool visible = m_active || front[s] || front[s + 1];
-			const Vec4 segment = visible ? color : Vec4(Vec3(color), 0.2F);
-			draw_list.draw_line(points[s], points[s + 1], visible ? 2.5F : 1.5F, segment, visible ? 2 : 1);
+			draw_list.draw_line(points[s], points[s + 1], 2.5F, color, 2);
 		}
 	}
 
