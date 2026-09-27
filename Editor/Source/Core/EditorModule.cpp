@@ -36,9 +36,6 @@
 #include "Aquila/UI/Widgets/PopupMenu.h"
 #include "Aquila/UI/Widgets/TextInput.h"
 
-#include <algorithm>
-#include <cstdlib>
-#include <cstdio>
 #include "Aquila/Scene/Scene.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Foundation/FrameScheduler.h"
@@ -130,48 +127,6 @@ void EditorModule::on_pre_render(F32 delta_time) {
 		const ProjectInfo project = *m_pending_project;
 		m_pending_project.reset();
 		enter_editor(project);
-	}
-
-	if (std::getenv("AQUILA_TEST_SKIP_LAUNCHER") != nullptr && m_windows) {
-		static F32 test_time = 0.F;
-		static int step = 0;
-		test_time += delta_time;
-		Aquila::Foundation::FrameScheduler::get()->request_frame();
-		if (step == 0 && test_time > 1.F) {
-			reset_to_demo_scene();
-			step = 1;
-		} else if (step == 1 && test_time > 2.F) {
-			Entity target;
-			m_engine->get_scene().get_registry().view<entt::entity>().each([&](entt::entity handle) {
-				Entity candidate(handle, &m_engine->get_scene());
-				if (candidate.get_name() == "CubeA") {
-					target = candidate;
-				}
-				if (candidate.get_name() == "PointB") {
-					if (auto *meta = candidate.try_get_component<MetadataComponent>()) {
-						meta->set_visible(false);
-					}
-				}
-			});
-			m_context->selection.select(target);
-			step = 2;
-		} else if (step == 2 && test_time > 3.5F) {
-			auto *root = m_context->overlay_root();
-			for (const char *id : { "inspector-scroll", "inspector-body", "inspector-head", "inspector-list",
-									"section-transform", "inspector-add-component" }) {
-				if (auto *v = root->find_by_id(id)) {
-					const Rect r = v->get_absolute_rect();
-					std::fprintf(
-						stderr, "PROBE %s pos %.0f,%.0f size %.0fx%.0f hidden=%d children=%zu\n", id, r.position.x,
-						r.position.y, r.size.x, r.size.y,
-						std::ranges::find(v->get_classes(), std::string("hidden")) != v->get_classes().end() ? 1 : 0,
-						v->get_children().size());
-				} else {
-					std::fprintf(stderr, "PROBE %s missing\n", id);
-				}
-			}
-			step = 3;
-		}
 	}
 
 	if (m_pending_pick && m_context) {
