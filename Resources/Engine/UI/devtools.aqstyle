@@ -391,7 +391,6 @@
     font-size: 11px;
     color: var(--text-dim);
     width: grow;
-    white-space: nowrap;
 }
 
 .bm-wrap {

@@ -243,7 +243,6 @@
     font-size: 16px;
     color: var(--text-dim);
     padding: 1px 8px;
-    white-space: nowrap;
     overflow: hidden;
 }
 

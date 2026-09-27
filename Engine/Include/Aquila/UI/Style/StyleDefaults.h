@@ -49,6 +49,6 @@ AQUILA_INLINE constexpr TransitionEasing TRANSITION_EASE = TransitionEasing::Eas
 
 AQUILA_INLINE constexpr F32 FONT_SIZE = 16.F;
 
-AQUILA_INLINE constexpr WhiteSpace WHITE_SPACE = WhiteSpace::Nowrap;
+AQUILA_INLINE constexpr WhiteSpace WHITE_SPACE = WhiteSpace::Normal;
 
 } // namespace Aquila::UI::StyleDefaults
