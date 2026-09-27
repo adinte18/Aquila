@@ -377,8 +377,10 @@ void QuadBatcher::draw_shadow(const ShadowSpec &spec) {
 
 	static constexpr Vec2 k_u_vs[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
 
-	const float x0 = spec.position.x, y0 = spec.position.y;
-	const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
+	const float x0 = spec.position.x;
+	const float y0 = spec.position.y;
+	const float x1 = x0 + spec.size.x;
+	const float y1 = y0 + spec.size.y;
 	const float z = spec.depth;
 	const Vec4 enc = { spec.offset.x, spec.offset.y, spec.original_half_size.x, spec.original_half_size.y };
 
@@ -456,8 +458,10 @@ void QuadBatcher::draw_rect(const RectSpec &spec) {
 					 .border_color = spec.border_color };
 		}
 	} else {
-		const float x0 = spec.position.x, y0 = spec.position.y;
-		const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
+		const float x0 = spec.position.x;
+		const float y0 = spec.position.y;
+		const float x1 = x0 + spec.size.x;
+		const float y1 = y0 + spec.size.y;
 		const float z = spec.depth;
 		v[0] = { .position = { x0, y0, z },
 				 .color = spec.color,
@@ -537,8 +541,10 @@ void QuadBatcher::draw_sprite(const SpriteSpec &spec) {
 			v[i] = { .position = Vec3(world_pos), .color = spec.tint, .uv = uvs[i] };
 		}
 	} else {
-		const float x0 = spec.position.x, y0 = spec.position.y;
-		const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
+		const float x0 = spec.position.x;
+		const float y0 = spec.position.y;
+		const float x1 = x0 + spec.size.x;
+		const float y1 = y0 + spec.size.y;
 		const float z = spec.depth;
 		v[0] = { .position = { x0, y0, z }, .color = spec.tint, .uv = uvs[0] };
 		v[1] = { .position = { x1, y0, z }, .color = spec.tint, .uv = uvs[1] };
@@ -574,8 +580,10 @@ void QuadBatcher::draw_glyph(const GlyphSpec &spec) {
 	const float em_y0 = spec.flip_y ? spec.em_min.y : spec.em_max.y;
 	const float em_y1 = spec.flip_y ? spec.em_max.y : spec.em_min.y;
 
-	const float x0 = spec.position.x, y0 = spec.position.y;
-	const float x1 = x0 + spec.size.x, y1 = y0 + spec.size.y;
+	const float x0 = spec.position.x;
+	const float y0 = spec.position.y;
+	const float x1 = x0 + spec.size.x;
+	const float y1 = y0 + spec.size.y;
 	const float z = spec.depth;
 
 	TextVertex *v = m_text_write_ptr;

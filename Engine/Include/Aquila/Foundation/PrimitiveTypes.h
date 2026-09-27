@@ -62,4 +62,10 @@ AQUILA_FORCE_INLINE bool has_flag(OpenMode mode, OpenMode flag) {
 
 enum class Priority : Uint8 { VeryHigh = BIT(1), High = BIT(2), Medium = BIT(3), Low = BIT(4) };
 
+struct DefaultValue {
+	template <typename T> constexpr operator T() const noexcept { return T{}; }
+};
+
+AQUILA_INLINE constexpr DefaultValue DEFAULT_VALUE;
+
 #endif

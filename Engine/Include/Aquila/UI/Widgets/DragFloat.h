@@ -14,7 +14,7 @@ class DragFloat : public Control {
 		float step = 0.F;
 		float speed = 1.F;
 		int precision = 3;
-		std::string prefix;
+		std::string prefix{};
 	};
 
 	DragFloat();

@@ -1,6 +1,6 @@
 #pragma once
 #include "Aquila/Foundation/Defines.h"
-#include "Aquila/Foundation/Math/Math.h"
+#include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
@@ -8,24 +8,21 @@
 #include "Aquila/GFX/GfxTexture.h"
 #include "Aquila/GFX/GfxPipeline.h"
 #include "Aquila/GFX/GfxDescriptorSet.h"
-#include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
-#include <array>
-#include <vector>
 
 namespace Aquila::Graphics {
 
 struct QuadVertex {
-	Vec3 position;
-	Uint32 glyph_id = 0;
-	Vec4 color;
-	Vec2 uv;
-	Vec2 size;
-	Vec4 radius;
-	float border_width;
-	float border_style{};
+	Vec3 position = DEFAULT_VALUE;
+	Uint32 glyph_id = DEFAULT_VALUE;
+	Vec4 color = DEFAULT_VALUE;
+	Vec2 uv = DEFAULT_VALUE;
+	Vec2 size = DEFAULT_VALUE;
+	Vec4 radius = DEFAULT_VALUE;
+	float border_width = DEFAULT_VALUE;
+	float border_style = DEFAULT_VALUE;
 	float pad1[2]{};
-	Vec4 border_color;
+	Vec4 border_color = DEFAULT_VALUE;
 };
 
 struct QuadPushConstants {
@@ -158,14 +155,14 @@ class QuadBatcher {
 		}
 	};
 
-	enum class BatchType { Flat, GUI, Texture, Text, Shadow };
+	enum class BatchType : Uint8 { Flat, GUI, Texture, Text, Shadow };
 
 	struct ReplayEntry {
-		GFX::GfxPipeline *pipeline;
-		GFX::GfxDescriptorSet *desc_set; // null for pipelines with no descriptor set
-		bool is_text_buffer; // selects text VB vs quad VB
-		Uint32 index_count;
-		Int32 vertex_offset;
+		GFX::GfxPipeline *pipeline{};
+		GFX::GfxDescriptorSet *desc_set{}; // null for pipelines with no descriptor set
+		bool is_text_buffer{}; // selects text VB vs quad VB
+		Uint32 index_count{};
+		Int32 vertex_offset{};
 		bool is_scissor = false;
 		Int32 scissor_x = 0;
 		Int32 scissor_y = 0;

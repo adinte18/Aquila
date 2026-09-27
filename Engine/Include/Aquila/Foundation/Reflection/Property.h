@@ -34,7 +34,7 @@ struct PropertyHints {
 	bool toggle = false;
 	bool slider = false;
 	bool read_only = false;
-	std::string_view unit;
+	std::string_view unit{};
 };
 
 struct Property {
@@ -98,8 +98,8 @@ template <typename V> V from_value(const PropertyValue &value) {
 	}
 }
 
-}
+} // namespace detail
 
-}
+} // namespace Aquila::Reflection
 
 #endif

@@ -430,8 +430,8 @@ struct RenderPassDepthAttachmentDesc {
 };
 
 struct RenderPassDesc {
-	std::vector<RenderPassColorAttachmentDesc> color_attachments;
-	std::optional<RenderPassDepthAttachmentDesc> depth_attachment;
+	std::vector<RenderPassColorAttachmentDesc> color_attachments{};
+	std::optional<RenderPassDepthAttachmentDesc> depth_attachment{};
 	bool use_swapchain = false;
 	// When true, colorAttachments[0].texture is the MSAA render target and the
 	// swapchain image (passed to Begin()) is used as the resolve destination.

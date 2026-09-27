@@ -362,11 +362,11 @@ void LayoutEngine::layout_pass(View *node) {
 		};
 
 		const Clay_FloatingElementConfig float_cfg = {
-			.offset = { fc.offset.x, fc.offset.y },
+			.offset = { .x = fc.offset.x, .y = fc.offset.y },
 			.zIndex = fc.z_index,
-			.attachTo = fc.attach_to == FloatingAttachTo::Root ? CLAY_ATTACH_TO_ROOT : CLAY_ATTACH_TO_PARENT,
 			.attachPoints = { .element = to_point(fc.element_point), .parent = to_point(fc.parent_point) },
 			.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
+			.attachTo = fc.attach_to == FloatingAttachTo::Root ? CLAY_ATTACH_TO_ROOT : CLAY_ATTACH_TO_PARENT,
 		};
 
 		switch (cs.overflow) {

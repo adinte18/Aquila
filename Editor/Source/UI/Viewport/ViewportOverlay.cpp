@@ -18,19 +18,19 @@ using SceneManagement::Components::TransformComponent;
 
 namespace {
 
-constexpr F32 k_axis_widget_radius = 34.F;
-constexpr F32 k_axis_widget_margin = 16.F;
-constexpr F32 k_axis_bubble = 8.F;
-constexpr F32 k_action_safe = 0.05F;
-constexpr F32 k_title_safe = 0.10F;
+constexpr F32 K_AXIS_WIDGET_RADIUS = 34.F;
+constexpr F32 K_AXIS_WIDGET_MARGIN = 16.F;
+constexpr F32 K_AXIS_BUBBLE = 8.F;
+constexpr F32 K_ACTION_SAFE = 0.05F;
+constexpr F32 K_TITLE_SAFE = 0.10F;
 
-constexpr std::array<Vec4, 3> k_axis_colors = {
+constexpr std::array<Vec4, 3> K_AXIS_COLORS = {
 	Vec4(0.86F, 0.36F, 0.36F, 1.F),
 	Vec4(0.42F, 0.74F, 0.40F, 1.F),
 	Vec4(0.33F, 0.55F, 0.90F, 1.F),
 };
-constexpr std::array<const char *, 3> k_axis_names = { "X", "Y", "Z" };
-constexpr Usize k_max_listed_passes = 10;
+constexpr std::array<const char *, 3> K_AXIS_NAMES = { "X", "Y", "Z" };
+constexpr Usize K_MAX_LISTED_PASSES = 10;
 
 std::string with_separators(Uint64 value) {
 	std::string digits = std::to_string(value);
@@ -46,7 +46,7 @@ std::string milliseconds(F32 value) {
 	return buffer.data();
 }
 
-}
+} // namespace
 
 ViewportOverlay::ViewportOverlay(EditorContext &context) : ViewportCanvas(9), m_context(context) {
 	add_class("viewport-overlay");
@@ -105,8 +105,8 @@ void ViewportOverlay::draw_centered_text(UI::Rendering::DrawList &draw_list, Vec
 }
 
 void ViewportOverlay::draw_axis_widget(UI::Rendering::DrawList &draw_list) const {
-	const Vec2 center = { m_viewport.right() - k_axis_widget_margin - k_axis_widget_radius - k_axis_bubble,
-						  m_viewport.top() + k_axis_widget_margin + k_axis_widget_radius + k_axis_bubble };
+	const Vec2 center = { m_viewport.right() - K_AXIS_WIDGET_MARGIN - K_AXIS_WIDGET_RADIUS - K_AXIS_BUBBLE,
+						  m_viewport.top() + K_AXIS_WIDGET_MARGIN + K_AXIS_WIDGET_RADIUS + K_AXIS_BUBBLE };
 
 	struct Bubble {
 		Usize axis;
@@ -123,27 +123,28 @@ void ViewportOverlay::draw_axis_widget(UI::Rendering::DrawList &draw_list) const
 			bubbles[(axis * 2) + static_cast<Usize>(side)] = {
 				.axis = axis,
 				.positive = side == 0,
-				.position = center + (offset * k_axis_widget_radius),
+				.position = center + (offset * K_AXIS_WIDGET_RADIUS),
 				.depth = Math::dot(direction, m_view.forward),
 			};
 		}
 	}
 	std::ranges::sort(bubbles, [](const Bubble &a, const Bubble &b) { return a.depth > b.depth; });
 
-	draw_list.draw_rect({ .position = center - Vec2(k_axis_widget_radius + k_axis_bubble + 4.F),
-						  .size = Vec2((k_axis_widget_radius + k_axis_bubble + 4.F) * 2.F) },
-						Vec4(1.F, 1.F, 1.F, 0.04F), Vec4(k_axis_widget_radius + k_axis_bubble + 4.F), 0.F, Vec4(0.F), 0);
+	draw_list.draw_rect({ .position = center - Vec2(K_AXIS_WIDGET_RADIUS + K_AXIS_BUBBLE + 4.F),
+						  .size = Vec2((K_AXIS_WIDGET_RADIUS + K_AXIS_BUBBLE + 4.F) * 2.F) },
+						Vec4(1.F, 1.F, 1.F, 0.04F), Vec4(K_AXIS_WIDGET_RADIUS + K_AXIS_BUBBLE + 4.F), 0.F, Vec4(0.F),
+						0);
 
 	for (const Bubble &bubble : bubbles) {
-		const Vec4 color = k_axis_colors[bubble.axis];
-		const Rect rect = { .position = bubble.position - Vec2(k_axis_bubble), .size = Vec2(k_axis_bubble * 2.F) };
+		const Vec4 color = K_AXIS_COLORS[bubble.axis];
+		const Rect rect = { .position = bubble.position - Vec2(K_AXIS_BUBBLE), .size = Vec2(K_AXIS_BUBBLE * 2.F) };
 		if (bubble.positive) {
 			draw_list.draw_line(center, bubble.position, 2.F, color, 1);
-			draw_list.draw_rect(rect, color, Vec4(k_axis_bubble), 0.F, Vec4(0.F), 2);
-			draw_centered_text(draw_list, bubble.position, k_axis_names[bubble.axis], 11.F, Vec4(0.08F, 0.08F, 0.08F, 1.F),
-							   3);
+			draw_list.draw_rect(rect, color, Vec4(K_AXIS_BUBBLE), 0.F, Vec4(0.F), 2);
+			draw_centered_text(draw_list, bubble.position, K_AXIS_NAMES[bubble.axis], 11.F,
+							   Vec4(0.08F, 0.08F, 0.08F, 1.F), 3);
 		} else {
-			draw_list.draw_rect(rect, Vec4(Vec3(color), 0.25F), Vec4(k_axis_bubble), 1.F, Vec4(Vec3(color), 0.7F), 2);
+			draw_list.draw_rect(rect, Vec4(Vec3(color), 0.25F), Vec4(K_AXIS_BUBBLE), 1.F, Vec4(Vec3(color), 0.7F), 2);
 		}
 	}
 }
@@ -169,8 +170,8 @@ void ViewportOverlay::draw_safe_frame(UI::Rendering::DrawList &draw_list) const 
 		return Rect{ .position = glm::round(m_viewport.position + margin),
 					 .size = glm::round(m_viewport.size - (margin * 2.F)) };
 	};
-	draw_list.draw_rect(inset(k_action_safe), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.35F), 0);
-	draw_list.draw_rect(inset(k_title_safe), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.2F), 0);
+	draw_list.draw_rect(inset(K_ACTION_SAFE), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.35F), 0);
+	draw_list.draw_rect(inset(K_TITLE_SAFE), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.2F), 0);
 
 	const Vec2 center = glm::round(m_viewport.center());
 	const Vec4 cross = Vec4(1.F, 1.F, 1.F, 0.35F);
@@ -185,8 +186,8 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 	}
 
 	struct Row {
-		std::string left;
-		std::string right;
+		std::string left{};
+		std::string right{};
 		F32 bar = -1.F;
 		bool header = false;
 	};
@@ -219,7 +220,7 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 			std::vector<Rendering::RenderPipeline::PassTiming> passes = m_debug.passes;
 			std::ranges::sort(passes, [](const auto &a, const auto &b) { return a.milliseconds > b.milliseconds; });
 			const F32 slowest = std::max(passes.front().milliseconds, 0.001F);
-			for (Usize i = 0; i < std::min(passes.size(), k_max_listed_passes); ++i) {
+			for (Usize i = 0; i < std::min(passes.size(), K_MAX_LISTED_PASSES); ++i) {
 				rows.push_back({ .left = passes[i].name,
 								 .right = milliseconds(passes[i].milliseconds),
 								 .bar = passes[i].milliseconds / slowest });
@@ -267,4 +268,4 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 	}
 }
 
-}
+} // namespace Editor

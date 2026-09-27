@@ -22,7 +22,7 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.property("Position", &TransformComponent::get_local_position, &TransformComponent::set_local_position,
 				  PropertyHints{ .speed = 0.05F, .precision = 3, .unit = "m" })
 		.property("Scale", &TransformComponent::get_local_scale, &TransformComponent::set_local_scale,
-				  PropertyHints{ .speed = 0.01F, .precision = 3 })
+				  PropertyHints{ .speed = 0.01F, .precision = 3, .unit = "m" })
 		.property("Rotation", &TransformComponent::get_local_rotation_euler,
 				  &TransformComponent::set_local_rotation_euler,
 				  PropertyHints{ .speed = 0.5F, .precision = 1, .unit = "°" });
@@ -40,7 +40,8 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.read_only("Children", [](const SceneNodeComponent &node) { return std::to_string(node.children.size()); });
 
 	registry.register_component<CameraComponent>("Camera")
-		.property("FOV", &CameraComponent::fov, PropertyHints{ .min = 1.F, .max = 179.F, .speed = 0.5F, .precision = 1, .unit = "°" })
+		.property("FOV", &CameraComponent::fov,
+				  PropertyHints{ .min = 1.F, .max = 179.F, .speed = 0.5F, .precision = 1, .unit = "°" })
 		.property("Near", &CameraComponent::near_plane,
 				  PropertyHints{ .min = 0.001F, .max = 100.F, .speed = 0.01F, .precision = 3, .unit = "m" })
 		.property("Far", &CameraComponent::far_plane,
@@ -59,8 +60,8 @@ void register_builtin_components(ComponentRegistry &registry) {
 
 	registry.register_component<SkyLightComponent>("Sky Light")
 		.property("Source", &SkyLightComponent::get_source, &SkyLightComponent::set_source)
-		.options({ { "Procedural", static_cast<Int32>(SkySource::Procedural) },
-				   { "HDR Image", static_cast<Int32>(SkySource::HdrImage) } })
+		.options({ { .name = "Procedural", .value = static_cast<Int32>(SkySource::Procedural) },
+				   { .name = "HDR Image", .value = static_cast<Int32>(SkySource::HdrImage) } })
 		.property("Sun Elevation", &SkyLightComponent::get_sun_elevation, &SkyLightComponent::set_sun_elevation,
 				  PropertyHints{ .min = -10.F, .max = 90.F, .speed = 0.5F, .precision = 1, .unit = "°" })
 		.property("Sun Azimuth", &SkyLightComponent::get_sun_azimuth, &SkyLightComponent::set_sun_azimuth,
@@ -86,19 +87,22 @@ void register_builtin_components(ComponentRegistry &registry) {
 
 	registry.register_component<MaterialComponent>("Material")
 		.property("Type", &MaterialComponent::type)
-		.options({ { "PBR", static_cast<Int32>(Graphics::MaterialType::PBR) },
-				   { "Lit", static_cast<Int32>(Graphics::MaterialType::Lit) },
-				   { "Unlit", static_cast<Int32>(Graphics::MaterialType::Unlit) },
-				   { "Custom", static_cast<Int32>(Graphics::MaterialType::Custom) } })
-		.property("Albedo", [](MaterialComponent &m) -> Vec4 & { return m.surface_properties.albedo; },
-				  PropertyHints{ .color = true })
-		.property("Metallic", [](MaterialComponent &m) -> F32 & { return m.surface_properties.metallic; },
-				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true })
-		.property("Roughness", [](MaterialComponent &m) -> F32 & { return m.surface_properties.roughness; },
-				  PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true });
+		.options({ { .name = "PBR", .value = static_cast<Int32>(Graphics::MaterialType::PBR) },
+				   { .name = "Lit", .value = static_cast<Int32>(Graphics::MaterialType::Lit) },
+				   { .name = "Unlit", .value = static_cast<Int32>(Graphics::MaterialType::Unlit) },
+				   { .name = "Custom", .value = static_cast<Int32>(Graphics::MaterialType::Custom) } })
+		.property(
+			"Albedo", [](MaterialComponent &m) -> Vec4 & { return m.surface_properties.albedo; },
+			PropertyHints{ .color = true })
+		.property(
+			"Metallic", [](MaterialComponent &m) -> F32 & { return m.surface_properties.metallic; },
+			PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true })
+		.property(
+			"Roughness", [](MaterialComponent &m) -> F32 & { return m.surface_properties.roughness; },
+			PropertyHints{ .min = 0.F, .max = 1.F, .speed = 0.01F, .precision = 3, .slider = true });
 }
 
-}
+} // namespace
 
 ComponentRegistry &ComponentRegistry::instance() {
 	static ComponentRegistry registry;
@@ -118,4 +122,4 @@ const ComponentDescriptor *ComponentRegistry::find(std::string_view name) const 
 	return nullptr;
 }
 
-}
+} // namespace Aquila::SceneManagement
