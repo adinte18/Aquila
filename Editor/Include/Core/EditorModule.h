@@ -11,7 +11,9 @@
 #include "Aquila/UI/Core/UIHost.h"
 #include "Aquila/UI/DevTools/UIDevTools.h"
 #include "Aquila/UI/Widgets/PopupMenu.h"
+#include "Core/EditorWindows.h"
 #include "Core/ProjectManager.h"
+#include "Aquila/UI/Core/DockLayoutSerializer.h"
 
 namespace Aquila::UI::Core {
 class DockSpace;
@@ -40,6 +42,13 @@ class EditorModule final : public Aquila::Application::IModule {
 	void on_event(Aquila::Platform::Events::Event &event) override;
 	void on_resize(Uint32 width, Uint32 height) override;
 	void on_render_resize(Uint32 width, Uint32 height) override;
+
+	template <typename T> void add_window(EditorWindowType type) {
+		type.create = [](EditorContext &context) -> Unique<EditorWindow> { return std::make_unique<T>(context); };
+		add_window_type(std::move(type));
+	}
+	void add_window_type(EditorWindowType type);
+	void add_workspace(std::string name, Aquila::UI::Core::DockLayoutDesc preset);
 
   private:
 	void register_windows();
@@ -72,6 +81,8 @@ class EditorModule final : public Aquila::Application::IModule {
 	Unique<EditorContext> m_context;
 	Unique<EditorWindows> m_windows;
 	Unique<Workspaces> m_workspaces;
+	std::vector<EditorWindowType> m_pending_window_types;
+	std::vector<std::pair<std::string, Aquila::UI::Core::DockLayoutDesc>> m_pending_workspaces;
 	Aquila::UI::Core::DockSpace *m_dock_space = nullptr;
 	Unique<Aquila::UI::Core::DockWindowManager> m_dock_manager;
 

@@ -14,6 +14,10 @@ void Workspaces::add(std::string name, Aquila::UI::Core::DockLayoutDesc preset) 
 		return;
 	}
 	m_entries.push_back({ .name = std::move(name), .preset = std::move(preset) });
+	if (m_tab_container != nullptr) {
+		create_tab(m_entries.back());
+		refresh_tabs();
+	}
 }
 
 Workspaces::Entry *Workspaces::find(std::string_view name) {
@@ -22,13 +26,18 @@ Workspaces::Entry *Workspaces::find(std::string_view name) {
 }
 
 void Workspaces::build_tabs(Aquila::UI::Core::View &container) {
+	m_tab_container = &container;
 	for (Entry &entry : m_entries) {
-		auto *tab = container.add_child<Aquila::UI::Core::Button>(entry.name);
-		tab->add_class("workspace-tab");
-		tab->on_click.connect([this, name = entry.name] { activate(name); });
-		entry.tab = tab;
+		create_tab(entry);
 	}
 	refresh_tabs();
+}
+
+void Workspaces::create_tab(Entry &entry) {
+	auto *tab = m_tab_container->add_child<Aquila::UI::Core::Button>(entry.name);
+	tab->add_class("workspace-tab");
+	tab->on_click.connect([this, name = entry.name] { activate(name); });
+	entry.tab = tab;
 }
 
 void Workspaces::activate(std::string_view name) {
