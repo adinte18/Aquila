@@ -3,11 +3,15 @@ set(MODULE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Engine/Include)
 set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(Clay INTERFACE)
-target_include_directories(Clay INTERFACE ${CMAKE_SOURCE_DIR}/Engine/Vendor)
+target_include_directories(Clay SYSTEM INTERFACE ${CMAKE_SOURCE_DIR}/Engine/Vendor)
 
 file(GLOB_RECURSE MODULE_SOURCES ${MODULE_SOURCE_DIR}/*.cpp)
 
 add_library(${MODULE_NAME} STATIC ${MODULE_SOURCES})
+
+set_source_files_properties(${MODULE_SOURCE_DIR}/Core/LayoutEngine.cpp PROPERTIES
+    COMPILE_OPTIONS -Wno-missing-field-initializers
+)
 
 set_target_properties(${MODULE_NAME} PROPERTIES
     OUTPUT_NAME "AquilaGUI"
@@ -43,6 +47,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -Wall -Wextra -Wpedantic
         -Wno-unused-parameter
         -fcolor-diagnostics
+        -Werror=missing-designated-field-initializers
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer -fno-inline>
         $<$<CONFIG:Release>:-O3>
     )

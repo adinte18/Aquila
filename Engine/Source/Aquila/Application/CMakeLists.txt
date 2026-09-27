@@ -44,6 +44,7 @@ if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
         -Wall -Wextra -Wpedantic
         -Wno-unused-parameter
         -fcolor-diagnostics
+        -Werror=missing-designated-field-initializers
         $<$<CONFIG:Debug>:-O0 -g3 -fno-omit-frame-pointer -fno-inline>
         $<$<CONFIG:Release>:-O3>
     )
