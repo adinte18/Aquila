@@ -43,11 +43,13 @@ class Workspaces {
 	};
 
 	Entry *find(std::string_view name);
+	void create_tab(Entry &entry);
 	void refresh_tabs();
 
 	EditorWindows &m_windows;
 	std::vector<Entry> m_entries;
 	std::string m_active;
+	Aquila::UI::Core::View *m_tab_container = nullptr;
 };
 
 }

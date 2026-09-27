@@ -314,6 +314,22 @@ void EditorModule::register_windows() {
 	m_windows->add<ConsoleWindow>({ .id = "console", .title = "Console", .icon = "terminal", .group = "Diagnostics" });
 }
 
+void EditorModule::add_window_type(EditorWindowType type) {
+	if (m_windows) {
+		m_windows->add(std::move(type));
+		return;
+	}
+	m_pending_window_types.push_back(std::move(type));
+}
+
+void EditorModule::add_workspace(std::string name, Aquila::UI::Core::DockLayoutDesc preset) {
+	if (m_workspaces) {
+		m_workspaces->add(std::move(name), std::move(preset));
+		return;
+	}
+	m_pending_workspaces.emplace_back(std::move(name), std::move(preset));
+}
+
 void EditorModule::register_workspaces() {
 	using namespace Aquila::UI::Core::DockLayout;
 
@@ -385,6 +401,10 @@ void EditorModule::setup_editor_ui() {
 
 	m_windows = std::make_unique<EditorWindows>(*m_context);
 	register_windows();
+	for (EditorWindowType &type : m_pending_window_types) {
+		m_windows->add(std::move(type));
+	}
+	m_pending_window_types.clear();
 	m_windows->attach(*m_dock_space);
 
 	m_dock_manager =
@@ -399,6 +419,10 @@ void EditorModule::setup_editor_ui() {
 
 	m_workspaces = std::make_unique<Workspaces>(*m_windows);
 	register_workspaces();
+	for (auto &[name, preset] : m_pending_workspaces) {
+		m_workspaces->add(std::move(name), std::move(preset));
+	}
+	m_pending_workspaces.clear();
 	if (auto *tabs = layout_root->find_by_id("workspace-tabs")) {
 		m_workspaces->build_tabs(*tabs);
 	}
