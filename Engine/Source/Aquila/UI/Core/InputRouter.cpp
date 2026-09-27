@@ -95,6 +95,7 @@ void InputRouter::on_event(Platform::Events::Event &e) {
 		m_drag_source_candidate = nullptr;
 		m_canvas.dismiss_popups_outside(m_hovered_view);
 		if (!m_hovered_view) {
+			set_focus(nullptr);
 			return false;
 		}
 		set_focus(m_hovered_view);

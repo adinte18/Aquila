@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/UI/Core/View.h"
+#include <unordered_map>
 #include <vector>
 
 namespace Aquila::UI::Core {
@@ -27,6 +28,10 @@ class LayoutEngine {
   private:
 	void layout_pass(View *node);
 	void update_rects(View *node, Vec2 parent_clay_pos = {}, Vec2 accumulated_offset = {});
+	[[nodiscard]] std::vector<View *> flow_children(View *node) const;
+	[[nodiscard]] std::vector<Uint32> compute_wrap_lines(View *node) const;
+	[[nodiscard]] bool wrap_lines_changed() const;
+	[[nodiscard]] F32 resolve_offset(const StyleLength &len, F32 parent_size) const;
 
 	void *m_clay_ctx = nullptr;
 	std::vector<Uint8> m_clay_memory;
@@ -34,6 +39,7 @@ class LayoutEngine {
 	Uint32 m_height;
 	bool m_size_changed = false;
 	std::vector<View *> m_resized_nodes;
+	std::unordered_map<const View *, std::vector<Uint32>> m_wrap_lines;
 };
 
 } // namespace Aquila::UI::Core

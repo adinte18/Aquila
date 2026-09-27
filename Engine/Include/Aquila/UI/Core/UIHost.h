@@ -24,8 +24,8 @@ struct UIHostDesc {
 	Aquila::Rendering::Renderer2D &renderer_2d;
 	Uint32 width = 0;
 	Uint32 height = 0;
-	std::function<std::string()> clipboard_get;
-	std::function<void(const std::string &)> clipboard_set;
+	std::function<std::string()> clipboard_get{};
+	std::function<void(const std::string &)> clipboard_set{};
 };
 
 class UIHost {

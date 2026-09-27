@@ -10,8 +10,8 @@ namespace Aquila::UI::Core {
 enum class UILayer : Uint8 {
 	WorldSpace = 0,
 	ScreenCamera = 1,
-	ScreenOverlay = 2,
-	Editor = 3,
+	Editor = 2,
+	ScreenOverlay = 3,
 	Count // keep track of how many layers we have
 };
 
@@ -24,7 +24,7 @@ class CanvasManager : public Foundation::Singleton<CanvasManager> {
 	void compute();
 
 	void render_layers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
-	void resize(Uint32 width, Uint32 height);
+	void resize_layers(UILayer from, UILayer to, Uint32 width, Uint32 height);
 
 	bool is_any_layer_dirty(UILayer from, UILayer to) const;
 	void clear_layer_dirty_flags(UILayer from, UILayer to);

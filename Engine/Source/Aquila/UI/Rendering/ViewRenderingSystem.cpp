@@ -64,13 +64,14 @@ void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aq
 		return;
 	}
 
-	const Uint32 w = ctx.width;
-	const Uint32 h = ctx.height;
+	const Uint32 w = ctx.swapchain->get_width();
+	const Uint32 h = ctx.swapchain->get_height();
 
 	if (!m_overlay_pass || w != m_width || h != m_height) {
 		m_width = w;
 		m_height = h;
 		rebuild_overlay_resources(w, h);
+		Core::CanvasManager::get()->resize_layers(Core::UILayer::Editor, Core::UILayer::ScreenOverlay, w, h);
 	}
 
 	auto *r2d = m_overlay_r2d.get();
@@ -88,18 +89,18 @@ void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aq
 		[r2d, swapchain, image_index, overlay_pass, w, h](GFX::GfxCommandList &cmd, Graphics::RG::RGRegistry &) {
 			const Mat4 ortho = glm::ortho(0.F, static_cast<float>(w), static_cast<float>(h), 0.F, -1.F, 1.F);
 			const bool dirty =
-				Core::CanvasManager::get()->is_any_layer_dirty(Core::UILayer::ScreenOverlay, Core::UILayer::Editor);
+				Core::CanvasManager::get()->is_any_layer_dirty(Core::UILayer::Editor, Core::UILayer::ScreenOverlay);
 
 			overlay_pass->begin(cmd, swapchain, image_index);
 			if (dirty) {
 				PROFILE_SCOPE("UIOverlay::DirtyRebuild");
 				r2d->begin_capture();
 				r2d->begin(cmd, RHI::TextureFormat::BGRA8, RHI::SampleCount::X4, ortho);
-				Core::CanvasManager::get()->render_layers(*r2d, cmd, Core::UILayer::ScreenOverlay,
-														  Core::UILayer::Editor);
+				Core::CanvasManager::get()->render_layers(*r2d, cmd, Core::UILayer::Editor,
+														  Core::UILayer::ScreenOverlay);
 				r2d->end();
-				Core::CanvasManager::get()->clear_layer_dirty_flags(Core::UILayer::ScreenOverlay,
-																	Core::UILayer::Editor);
+				Core::CanvasManager::get()->clear_layer_dirty_flags(Core::UILayer::Editor,
+																	Core::UILayer::ScreenOverlay);
 			} else {
 				PROFILE_SCOPE("UIOverlay::Replay");
 				r2d->execute_replay(cmd);
@@ -109,7 +110,7 @@ void ViewRenderingSystem::blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aq
 }
 
 void ViewRenderingSystem::on_resize(Uint32 width, Uint32 height) {
-	Core::CanvasManager::get()->resize(width, height);
+	Core::CanvasManager::get()->resize_layers(Core::UILayer::WorldSpace, Core::UILayer::ScreenCamera, width, height);
 }
 
 } // namespace Aquila::UI::Rendering

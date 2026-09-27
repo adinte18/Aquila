@@ -180,7 +180,7 @@ void RenderPipeline::rebuild_targets() {
 		.width = m_width,
 		.height = m_height,
 		.format = RHI::TextureFormat::Depth32,
-		.usage = RHI::TextureUsage::DepthAttachment,
+		.usage = RHI::TextureUsage::DepthAttachment | RHI::TextureUsage::Sampled,
 		.debug_name = "Depth",
 	});
 

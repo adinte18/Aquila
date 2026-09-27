@@ -30,9 +30,9 @@ class DrawCompositor {
   private:
 	void rebuild_lists(View *root);
 	void compose_draw_list();
-	void cull(View *node, Int32 parent_effective_z, const Rect *clip_rect);
+	void cull(View *node, Int32 parent_effective_z, const Rect *clip_rect, F32 parent_opacity);
 	void collect_layer_subtree(View *node, const Rect *clip_rect);
-	void emit_floating_layer(View *node, const Rect *clip_rect);
+	void emit_floating_layer(View *node, const Rect *clip_rect, F32 parent_opacity);
 
 	struct HitTestItem {
 		View *view;

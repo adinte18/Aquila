@@ -56,9 +56,9 @@ void CanvasManager::clear_layer_dirty_flags(UILayer from, UILayer to) {
 	}
 }
 
-void CanvasManager::resize(Uint32 width, Uint32 height) {
-	for (auto &layer : m_layers) {
-		layer->resize(width, height);
+void CanvasManager::resize_layers(UILayer from, UILayer to, Uint32 width, Uint32 height) {
+	for (int i = static_cast<int>(from); i <= static_cast<int>(to); i++) {
+		m_layers[i]->resize(width, height);
 	}
 }
 

@@ -182,7 +182,8 @@ class View {
 		return false;
 	}
 
-	virtual void apply_xml_attribute(std::string_view name, std::string_view value, IResourceResolver *resolver = nullptr);
+	virtual void apply_xml_attribute(std::string_view name, std::string_view value,
+									 IResourceResolver *resolver = nullptr);
 
 	virtual void apply_xml_text_content(std::string_view text) { (void)text; }
 

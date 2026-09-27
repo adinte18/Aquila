@@ -8,8 +8,9 @@ namespace Aquila::UI::Core {
 using namespace Aquila::UI::Rendering;
 
 Canvas::Canvas(Uint32 width, Uint32 height)
-	: m_width(width), m_height(height), m_layout_engine(width, height), m_input_router(*this, m_draw_compositor) {
+	: m_layout_engine(width, height), m_input_router(*this, m_draw_compositor), m_width(width), m_height(height) {
 	m_root = std::make_unique<View>();
+	m_root->set_skip_hit_test(true);
 	m_root->set_canvas(this);
 
 	m_draw_compositor.set_canvas_size(width, height);
@@ -384,6 +385,7 @@ void Canvas::resize(Uint32 width, Uint32 height) {
 	m_height = height;
 	m_draw_compositor.set_canvas_size(width, height);
 	m_layout_dirty = true;
+	m_draw_list_dirty = true;
 	mark_dirty();
 	// @media rules depend on viewport size — re-resolve all styles on resize.
 	if (m_style_engine.get_style_sheet().has_media_blocks()) {

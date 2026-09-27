@@ -50,7 +50,7 @@ Quaternion rotation_of(const Mat4 &matrix) {
 	return glm::quat_cast(basis);
 }
 
-}
+} // namespace
 
 TransformGizmo::TransformGizmo(EditorContext &context) : ViewportCanvas(10), m_context(context) {
 	add_class("transform-gizmo");
@@ -249,7 +249,7 @@ TransformGizmo::Handle TransformGizmo::pick(Vec2 point) const {
 
 bool TransformGizmo::snapping() const {
 	const bool control = Platform::Input::is_key_pressed(Platform::Events::KeyCode::LeftControl) ||
-						 Platform::Input::is_key_pressed(Platform::Events::KeyCode::RightControl);
+		Platform::Input::is_key_pressed(Platform::Events::KeyCode::RightControl);
 	return m_context.tools.is_snapping() != control;
 }
 
@@ -516,8 +516,7 @@ void TransformGizmo::apply_rotate(Vec2 mouse) {
 	}
 	m_drag.applied_angle = angle;
 
-	const Vec3 rotation_axis =
-		around_view ? Math::normalize(Math::cross(f.view.up, f.view.right)) : world_axis;
+	const Vec3 rotation_axis = around_view ? Math::normalize(Math::cross(f.view.up, f.view.right)) : world_axis;
 	const Quaternion parent_rotation = rotation_of(m_drag.parent_world);
 	const Vec3 parent_axis = Math::normalize(Math::inverse(parent_rotation) * rotation_axis);
 	const Quaternion rotation = Math::angle_axis(angle, parent_axis) * m_drag.start_rotation;
@@ -599,8 +598,8 @@ std::string TransformGizmo::readout() const {
 			std::snprintf(buffer.data(), buffer.size(), "Rot: %.1f°  around %s %s%s",
 						  Math::degrees(m_drag.applied_angle), space, k_axis_names[axis], snap);
 		} else {
-			std::snprintf(buffer.data(), buffer.size(), "Rot: %.1f°  around view%s", Math::degrees(m_drag.applied_angle),
-						  snap);
+			std::snprintf(buffer.data(), buffer.size(), "Rot: %.1f°  around view%s",
+						  Math::degrees(m_drag.applied_angle), snap);
 		}
 		break;
 	case TransformTool::Scale:
@@ -649,8 +648,8 @@ void TransformGizmo::draw_constraint(UI::Rendering::DrawList &draw_list) const {
 
 	auto far_point = [&](F32 sign) -> Option<Vec2> {
 		for (const F32 scale : { 400.F, 60.F, 12.F, 3.F }) {
-			if (const Option<Vec2> point =
-					Rendering::project_to_screen(f.view, f.viewport, origin + (direction * (sign * scale * f.length)))) {
+			if (const Option<Vec2> point = Rendering::project_to_screen(
+					f.view, f.viewport, origin + (direction * (sign * scale * f.length)))) {
 				return point;
 			}
 		}
@@ -679,7 +678,7 @@ void TransformGizmo::draw_translate(UI::Rendering::DrawList &draw_list) const {
 	for (Usize axis = 0; axis < 3; ++axis) {
 		const Handle handle = axis_handle(axis);
 		const bool shown = !active_axis_only || handle == m_drag.handle ||
-						   (is_plane(m_drag.handle) && axis != normal_of(m_drag.handle));
+			(is_plane(m_drag.handle) && axis != normal_of(m_drag.handle));
 		if (!m_frame.axis_visible[axis] || !shown) {
 			continue;
 		}
@@ -781,4 +780,4 @@ void TransformGizmo::draw_readout(UI::Rendering::DrawList &draw_list) const {
 						Vec4(0.93F, 0.93F, 0.93F, 1.F), text_size, UI::TextAlign::Left, 5);
 }
 
-}
+} // namespace Editor

@@ -173,10 +173,7 @@ void EditorModule::on_event(Events::Event &event) {
 		}
 
 		if (e.get_key_code() == Events::KeyCode::F6) {
-			auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-			Aquila::UI::StyleParser::load_files(Config::get_preferences().ui.style_paths, canvas.get_style_sheet());
-			canvas.reload_styles();
-
+			load_styles();
 			AQUILA_LOG_INFO("Stylesheet reloaded");
 			return true;
 		}
@@ -346,7 +343,7 @@ void EditorModule::setup_editor_ui() {
 	auto &editor_canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
 	const auto &cfg = Config::get_preferences();
 
-	Aquila::UI::StyleParser::load_files(cfg.ui.style_paths, editor_canvas.get_style_sheet());
+	load_styles();
 
 	m_layout_loader.register_font("regular", Aquila::UI::Core::FontManager::get().get_font("regular"));
 	m_layout_loader.register_texture_cache(m_texture_cache.get());
@@ -428,6 +425,21 @@ void EditorModule::setup_editor_ui() {
 	editor_canvas.reload_styles();
 }
 
+void EditorModule::load_styles() {
+	const auto &style_paths = Config::get_preferences().ui.style_paths;
+	for (Uint8 layer = 0; layer < static_cast<Uint8>(Aquila::UI::Core::UILayer::Count); ++layer) {
+		auto &canvas = m_ui_host->get_canvas(static_cast<Aquila::UI::Core::UILayer>(layer));
+		Aquila::UI::StyleParser::load_files(style_paths, canvas.get_style_sheet());
+	}
+	reload_styles();
+}
+
+void EditorModule::reload_styles() {
+	for (Uint8 layer = 0; layer < static_cast<Uint8>(Aquila::UI::Core::UILayer::Count); ++layer) {
+		m_ui_host->get_canvas(static_cast<Aquila::UI::Core::UILayer>(layer)).reload_styles();
+	}
+}
+
 void EditorModule::open_settings_window() {
 	if (m_settings_window) {
 		return;
@@ -449,7 +461,7 @@ void EditorModule::set_ui_scale(F32 scale) {
 	prefs.save_to_file();
 
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
-	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
+	reload_styles();
 	AQUILA_LOG_INFO("EditorModule: interface scale {:.2f}", prefs.ui_scale);
 }
 
@@ -458,7 +470,7 @@ void EditorModule::apply_font_settings() {
 
 	Aquila::UI::Core::FontManager::get().reload(m_engine->get_context(), prefs.fonts);
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);
-	m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor).reload_styles();
+	reload_styles();
 }
 
 void EditorModule::wire_main_menu(Aquila::UI::Core::View *layout_root) {

@@ -53,4 +53,4 @@ std::string_view entity_icon(Aquila::SceneManagement::Entity entity) {
 	return k_empty_entity_icon;
 }
 
-}
+} // namespace Editor

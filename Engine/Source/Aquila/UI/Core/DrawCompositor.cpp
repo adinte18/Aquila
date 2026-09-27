@@ -3,6 +3,36 @@
 
 namespace Aquila::UI::Core {
 
+static Rendering::DrawCmd with_opacity(const Rendering::DrawCmd &cmd, F32 opacity) {
+	Rendering::DrawCmd faded = cmd;
+	std::visit(
+		[opacity](auto &c) {
+			using T = std::decay_t<decltype(c)>;
+			if constexpr (std::is_same_v<T, Rendering::RectCmd>) {
+				c.color.a *= opacity;
+				c.border_color.a *= opacity;
+			} else if constexpr (std::is_same_v<T, Rendering::ShadowCmd> || std::is_same_v<T, Rendering::TextCmd>) {
+				c.color.a *= opacity;
+			} else if constexpr (std::is_same_v<T, Rendering::ImageCmd>) {
+				c.tint.a *= opacity;
+			}
+		},
+		faded);
+	return faded;
+}
+
+static F32 node_opacity(const View *node) {
+	return Math::clamp(node->get_display_style().opacity, 0.F, 1.F);
+}
+
+static F32 ancestor_opacity(const View *node) {
+	F32 opacity = 1.F;
+	for (const View *p = node->get_parent(); p != nullptr; p = p->get_parent()) {
+		opacity *= node_opacity(p);
+	}
+	return opacity;
+}
+
 static void gather_floating_roots(View *node, std::vector<View *> &roots) {
 	if (node->get_display_style().display == Display::None) {
 		return;
@@ -31,7 +61,7 @@ void DrawCompositor::rebuild_lists(View *root) {
 	{
 		const Rect canvas_bounds = { .position = { 0.F, 0.F },
 									 .size = { static_cast<F32>(m_width), static_cast<F32>(m_height) } };
-		cull(root, 0, &canvas_bounds);
+		cull(root, 0, &canvas_bounds, 1.F);
 	}
 	gather_floating_roots(root, m_float_roots);
 	std::ranges::stable_sort(m_float_roots.begin(), m_float_roots.end(),
@@ -50,7 +80,7 @@ void DrawCompositor::compose_draw_list() {
 		}
 	}
 	for (View *float_root : m_float_roots) {
-		emit_floating_layer(float_root, nullptr);
+		emit_floating_layer(float_root, nullptr, ancestor_opacity(float_root));
 	}
 }
 
@@ -94,7 +124,7 @@ bool DrawCompositor::rebuild_dirty(View *root) {
 	return false;
 }
 
-void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip_rect) {
+void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip_rect, F32 parent_opacity) {
 	if (node->get_display_style().display == Display::None) {
 		return;
 	}
@@ -110,13 +140,14 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 	}
 
 	const Int32 effective_z = parent_effective_z + node->get_computed_style().z_index;
+	const F32 opacity = parent_opacity * node_opacity(node);
 	const Int32 bucket_idx =
 		Math::clamp(effective_z, SharedConstants::Z_MIN, SharedConstants::Z_MAX) - SharedConstants::Z_MIN;
 
 	if (clip_rect == nullptr || clip_rect->overlaps(node->get_absolute_rect())) {
 		if (auto it = m_per_node_cmds.find(node); it != m_per_node_cmds.end()) {
 			for (const DrawCmd &cmd : it->second) {
-				m_z_buckets[bucket_idx].push_back(cmd);
+				m_z_buckets[bucket_idx].push_back(opacity < 1.F ? with_opacity(cmd, opacity) : cmd);
 			}
 		}
 		const Rect item_clip = clip_rect != nullptr
@@ -146,7 +177,7 @@ void DrawCompositor::cull(View *node, Int32 parent_effective_z, const Rect *clip
 	}
 
 	for (const auto &child : node->get_children()) {
-		cull(child.get(), effective_z, child_clip);
+		cull(child.get(), effective_z, child_clip, opacity);
 	}
 
 	if (clips_children) {
@@ -186,7 +217,7 @@ void DrawCompositor::collect_layer_subtree(View *node, const Rect *clip_rect) {
 	}
 }
 
-void DrawCompositor::emit_floating_layer(View *node, const Rect *clip_rect) {
+void DrawCompositor::emit_floating_layer(View *node, const Rect *clip_rect, F32 parent_opacity) {
 	if (node->get_display_style().display == Display::None) {
 		return;
 	}
@@ -194,9 +225,10 @@ void DrawCompositor::emit_floating_layer(View *node, const Rect *clip_rect) {
 		return;
 	}
 
+	const F32 opacity = parent_opacity * node_opacity(node);
 	if (auto it = m_per_node_cmds.find(node); it != m_per_node_cmds.end()) {
 		for (const DrawCmd &cmd : it->second) {
-			m_draw_list.append_cmd(cmd);
+			m_draw_list.append_cmd(opacity < 1.F ? with_opacity(cmd, opacity) : cmd);
 		}
 	}
 
@@ -219,7 +251,7 @@ void DrawCompositor::emit_floating_layer(View *node, const Rect *clip_rect) {
 
 	for (const auto &child : node->get_children()) {
 		if (!child->has_floating()) {
-			emit_floating_layer(child.get(), child_clip);
+			emit_floating_layer(child.get(), child_clip, opacity);
 		}
 	}
 

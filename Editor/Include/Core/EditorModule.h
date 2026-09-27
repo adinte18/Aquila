@@ -51,6 +51,8 @@ class EditorModule final : public Aquila::Application::IModule {
 	void scene_replaced();
 	void set_outlined_entity(Aquila::SceneManagement::Entity entity);
 	void setup_editor_ui();
+	void load_styles();
+	void reload_styles();
 	void wire_main_menu(Aquila::UI::Core::View *layout_root);
 	void open_settings_window();
 	void open_project_launcher();

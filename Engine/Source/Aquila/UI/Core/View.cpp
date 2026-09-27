@@ -81,11 +81,11 @@ static F32 apply_easing(F32 t, UI::TransitionEasing easing) {
 	case UI::TransitionEasing::EaseIn:
 		return t * t;
 	case UI::TransitionEasing::EaseOut:
-		return 1.F - (1.F - t) * (1.F - t);
+		return 1.F - ((1.F - t) * (1.F - t));
 	case UI::TransitionEasing::EaseInOut:
-		return t < 0.5F ? 2.F * t * t : 1.F - (-2.F * t + 2.F) * (-2.F * t + 2.F) * 0.5F;
+		return t < 0.5F ? 2.F * t * t : 1.F - (((-2.F * t) + 2.F) * (-2.F * t + 2.F) * 0.5F);
 	case UI::TransitionEasing::Ease:
-		return t * t * (3.F - 2.F * t);
+		return t * t * (3.F - (2.F * t));
 	case UI::TransitionEasing::Linear:
 	default:
 		return t;

@@ -1,5 +1,8 @@
 #include "Aquila/UI/Core/LayoutEngine.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Text/FontAtlas.h"
+
+#include <algorithm>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wmissing-designated-field-initializers"
@@ -89,7 +92,7 @@ static F32 to_absolute_px(const StyleLength &len, F32 vw_px, F32 vh_px) {
 	}
 }
 
-static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 vw_px, F32 vh_px, F32 flex_grow = 0.F) {
+static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 vw_px, F32 vh_px) {
 	switch (len.unit) {
 	case LengthUnit::Pixel:
 		return CLAY_SIZING_FIXED(len.value);
@@ -100,7 +103,7 @@ static Clay_SizingAxis to_c_sizing(const StyleLength &len, F32 vw_px, F32 vh_px,
 	case LengthUnit::Percent:
 		return CLAY_SIZING_PERCENT(len.value / 100.F);
 	case LengthUnit::Grow:
-		return CLAY_SIZING_GROW(.min = flex_grow);
+		return CLAY_SIZING_GROW(0);
 	case LengthUnit::Auto:
 	default:
 		return CLAY_SIZING_FIT(0, 0);
@@ -115,7 +118,7 @@ static Clay_Padding to_clay_padding(const StyleEdges &edges) {
 }
 
 static Clay_SizingAxis to_c_sizing_axis(const StyleLength &len, const StyleLength &min_len, const StyleLength &max_len,
-										F32 vw_px, F32 vh_px, F32 flex_grow) {
+										F32 vw_px, F32 vh_px) {
 	if (len.unit == LengthUnit::Vw || len.unit == LengthUnit::Vh) {
 		F32 value = to_absolute_px(len, vw_px, vh_px);
 		const F32 min_px = to_absolute_px(min_len, vw_px, vh_px);
@@ -129,7 +132,7 @@ static Clay_SizingAxis to_c_sizing_axis(const StyleLength &len, const StyleLengt
 		return CLAY_SIZING_FIXED(value);
 	}
 
-	Clay_SizingAxis axis = to_c_sizing(len, vw_px, vh_px, flex_grow);
+	Clay_SizingAxis axis = to_c_sizing(len, vw_px, vh_px);
 	if (len.unit == LengthUnit::Auto || len.unit == LengthUnit::Grow) {
 		const F32 min_px = to_absolute_px(min_len, vw_px, vh_px);
 		const F32 max_px = to_absolute_px(max_len, vw_px, vh_px);
@@ -143,19 +146,45 @@ static Clay_SizingAxis to_c_sizing_axis(const StyleLength &len, const StyleLengt
 	return axis;
 }
 
+static bool is_row(FlexDirection direction) {
+	return direction == FlexDirection::Row || direction == FlexDirection::RowReverse;
+}
+
+static bool is_reverse(FlexDirection direction) {
+	return direction == FlexDirection::RowReverse || direction == FlexDirection::ColumnReverse;
+}
+
+static JustifyContent main_justify(const ComputedStyle &cs) {
+	if (!is_reverse(cs.flex_direction) || cs.justify == JustifyContent::Center) {
+		return cs.justify;
+	}
+	return cs.justify == JustifyContent::Start ? JustifyContent::End : JustifyContent::Start;
+}
+
+static bool is_in_flow(const View *view) {
+	return view->get_display_style().display != Display::None && !view->has_floating() &&
+		view->get_display_style().position != Position::Absolute;
+}
+
 static Clay_LayoutConfig to_clay_layout(const ComputedStyle &cs, F32 vw_px, F32 vh_px) {
-	const bool is_row = (cs.flex_direction == FlexDirection::Row || cs.flex_direction == FlexDirection::RowReverse);
-	const Clay_LayoutAlignmentX align_x = is_row ? justify_to_align_x(cs.justify) : align_to_align_x(cs.align);
-	const Clay_LayoutAlignmentY align_y = is_row ? align_to_align_y(cs.align) : justify_to_align_y(cs.justify);
+	const bool row = is_row(cs.flex_direction);
+	const JustifyContent justify = main_justify(cs);
+	const Clay_LayoutAlignmentX align_x = row ? justify_to_align_x(justify) : align_to_align_x(cs.align);
+	const Clay_LayoutAlignmentY align_y = row ? align_to_align_y(cs.align) : justify_to_align_y(justify);
 
 	Clay_LayoutConfig layout = {
-		.sizing = { .width = to_c_sizing_axis(cs.width, cs.min_width, cs.max_width, vw_px, vh_px, cs.flex_grow),
-					.height = to_c_sizing_axis(cs.height, cs.min_height, cs.max_height, vw_px, vh_px, cs.flex_grow) },
+		.sizing = { .width = to_c_sizing_axis(cs.width, cs.min_width, cs.max_width, vw_px, vh_px),
+					.height = to_c_sizing_axis(cs.height, cs.min_height, cs.max_height, vw_px, vh_px) },
 		.padding = to_clay_padding(cs.padding),
 		.childGap = static_cast<uint16_t>(cs.gap),
 		.childAlignment = { .x = align_x, .y = align_y },
-		.layoutDirection = is_row ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
+		.layoutDirection = row ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
 	};
+
+	if (cs.wrap == FlexWrap::Wrap) {
+		layout.childAlignment = { .x = CLAY_ALIGN_X_LEFT, .y = CLAY_ALIGN_Y_TOP };
+		layout.layoutDirection = row ? CLAY_TOP_TO_BOTTOM : CLAY_LEFT_TO_RIGHT;
+	}
 
 	return layout;
 }
@@ -203,14 +232,94 @@ void LayoutEngine::run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 
 	Clay_SetLayoutDimensions({ static_cast<F32>(m_width), static_cast<F32>(m_height) });
 	Clay_SetPointerState({ mouse_pos.x, mouse_pos.y }, mouse_down);
 	Clay_UpdateScrollContainers(false, { scroll_delta.x, scroll_delta.y }, delta_time);
-	Clay_BeginLayout();
-	//
-	layout_pass(root);
-	//
-	Clay_EndLayout(delta_time);
 	m_size_changed = false;
 	m_resized_nodes.clear();
-	update_rects(root);
+	constexpr int k_max_wrap_passes = 3;
+	for (int pass = 0; pass < k_max_wrap_passes; ++pass) {
+		m_wrap_lines.clear();
+		Clay_BeginLayout();
+		layout_pass(root);
+		Clay_EndLayout(pass == 0 ? delta_time : 0.F);
+		update_rects(root);
+		if (!wrap_lines_changed()) {
+			break;
+		}
+	}
+}
+
+F32 LayoutEngine::resolve_offset(const StyleLength &len, F32 parent_size) const {
+	switch (len.unit) {
+	case LengthUnit::Pixel:
+		return len.value;
+	case LengthUnit::Percent:
+		return len.value / 100.F * parent_size;
+	case LengthUnit::Vw:
+		return len.value * static_cast<F32>(m_width) / 100.F;
+	case LengthUnit::Vh:
+		return len.value * static_cast<F32>(m_height) / 100.F;
+	default:
+		return 0.F;
+	}
+}
+
+std::vector<View *> LayoutEngine::flow_children(View *node) const {
+	std::vector<View *> children;
+	for (const auto &child : node->get_children()) {
+		if (is_in_flow(child.get())) {
+			children.push_back(child.get());
+		}
+	}
+	if (is_reverse(node->get_display_style().flex_direction)) {
+		std::ranges::reverse(children);
+	}
+	return children;
+}
+
+std::vector<Uint32> LayoutEngine::compute_wrap_lines(View *node) const {
+	const ComputedStyle &cs = node->get_display_style();
+	const bool row = is_row(cs.flex_direction);
+	const std::vector<View *> children = flow_children(node);
+	if (children.empty()) {
+		return {};
+	}
+
+	auto pixels = [](const StyleLength &l) { return l.unit == LengthUnit::Pixel ? l.value : 0.F; };
+	const Vec2 size = node->get_layout_rect().size;
+	const F32 available = row ? size.x - pixels(cs.padding.left) - pixels(cs.padding.right)
+							  : size.y - pixels(cs.padding.top) - pixels(cs.padding.bottom);
+	if (available <= 0.F) {
+		return { static_cast<Uint32>(children.size()) };
+	}
+
+	std::vector<Uint32> lines;
+	Uint32 count = 0;
+	F32 used = 0.F;
+	for (View *child : children) {
+		const ComputedStyle &child_style = child->get_display_style();
+		const StyleLength &main_len = row ? child_style.width : child_style.height;
+		const F32 extent = main_len.unit == LengthUnit::Pixel
+			? main_len.value
+			: (row ? child->get_layout_rect().size.x : child->get_layout_rect().size.y);
+		const F32 needed = count == 0 ? extent : used + cs.gap + extent;
+		if (count > 0 && needed > available) {
+			lines.push_back(count);
+			count = 0;
+			used = 0.F;
+		}
+		used = count == 0 ? extent : used + cs.gap + extent;
+		++count;
+	}
+	lines.push_back(count);
+	return lines;
+}
+
+bool LayoutEngine::wrap_lines_changed() const {
+	for (const auto &[node, lines] : m_wrap_lines) {
+		if (compute_wrap_lines(const_cast<View *>(node)) != lines) {
+			return true;
+		}
+	}
+	return false;
 }
 
 void LayoutEngine::scroll_into_view(View *target) {
@@ -314,8 +423,39 @@ void LayoutEngine::layout_pass(View *node) {
 			Clay__OpenTextElement(text_string, text_config);
 			return;
 		}
+		if (cs.wrap != FlexWrap::Wrap) {
+			for (View *child : flow_children(node)) {
+				layout_pass(child);
+			}
+		} else {
+			const std::vector<View *> children = flow_children(node);
+			const std::vector<Uint32> lines = compute_wrap_lines(node);
+			m_wrap_lines[node] = lines;
+			const bool row = is_row(cs.flex_direction);
+			const JustifyContent justify = main_justify(cs);
+			const Clay_LayoutConfig line_layout = {
+				.sizing = { .width = row ? CLAY_SIZING_GROW(0) : CLAY_SIZING_FIT(0, 0),
+							.height = row ? CLAY_SIZING_FIT(0, 0) : CLAY_SIZING_GROW(0) },
+				.childGap = static_cast<uint16_t>(cs.gap),
+				.childAlignment = { .x = row ? justify_to_align_x(justify) : align_to_align_x(cs.align),
+									.y = row ? align_to_align_y(cs.align) : justify_to_align_y(justify) },
+				.layoutDirection = row ? CLAY_LEFT_TO_RIGHT : CLAY_TOP_TO_BOTTOM,
+			};
+			Usize next = 0;
+			for (Usize line = 0; line < lines.size(); ++line) {
+				const Clay_ElementId line_id = CLAY_SIDI(CLAY_STRING("aquila-wrap-line"),
+														 (node->get_stable_id() * 1024u) + static_cast<Uint32>(line));
+				CLAY(line_id, { .layout = line_layout }) {
+					for (Uint32 i = 0; i < lines[line] && next < children.size(); ++i) {
+						layout_pass(children[next++]);
+					}
+				}
+			}
+		}
 		for (const auto &child : node->get_children()) {
-			layout_pass(child.get());
+			if (!is_in_flow(child.get())) {
+				layout_pass(child.get());
+			}
 		}
 	};
 
@@ -332,7 +472,68 @@ void LayoutEngine::layout_pass(View *node) {
 		}
 	}
 
+	View *parent = node->get_parent();
+	if (parent != nullptr && cs.position != Position::Absolute && !node->has_floating()) {
+		const ComputedStyle &parent_style = parent->get_display_style();
+		const bool grow_main = cs.flex_grow > 0.F;
+		const bool stretch = parent_style.align == AlignItems::Stretch;
+		const bool parent_row = is_row(parent_style.flex_direction);
+		const bool width_grows = parent_row ? grow_main : stretch;
+		const bool height_grows = parent_row ? stretch : grow_main;
+		if (width_grows && cs.width.unit == LengthUnit::Auto) {
+			layout.sizing.width = to_c_sizing_axis(StyleLength::grow(), cs.min_width, cs.max_width, vw_px, vh_px);
+		}
+		if (height_grows && cs.height.unit == LengthUnit::Auto) {
+			layout.sizing.height = to_c_sizing_axis(StyleLength::grow(), cs.min_height, cs.max_height, vw_px, vh_px);
+		}
+	}
+
 	const Clay_AspectRatioElementConfig aspect_cfg = { cs.aspect_ratio };
+
+	if (!node->has_floating() && cs.position == Position::Absolute) {
+		const Vec2 parent_size = parent != nullptr ? parent->get_layout_rect().size
+												   : Vec2(static_cast<F32>(m_width), static_cast<F32>(m_height));
+		const bool from_right = cs.left.unit == LengthUnit::Auto && cs.right.unit != LengthUnit::Auto;
+		const bool from_bottom = cs.top.unit == LengthUnit::Auto && cs.bottom.unit != LengthUnit::Auto;
+		const Clay_FloatingAttachPointType point = from_right
+			? (from_bottom ? CLAY_ATTACH_POINT_RIGHT_BOTTOM : CLAY_ATTACH_POINT_RIGHT_TOP)
+			: (from_bottom ? CLAY_ATTACH_POINT_LEFT_BOTTOM : CLAY_ATTACH_POINT_LEFT_TOP);
+		const Clay_FloatingElementConfig float_cfg = {
+			.offset = { .x = from_right ? -resolve_offset(cs.right, parent_size.x) : resolve_offset(cs.left, parent_size.x),
+						.y = from_bottom ? -resolve_offset(cs.bottom, parent_size.y)
+										 : resolve_offset(cs.top, parent_size.y) },
+			.zIndex = static_cast<int16_t>(Math::clamp(cs.z_index, -32768, 32767)),
+			.attachPoints = { .element = point, .parent = point },
+			.pointerCaptureMode = CLAY_POINTER_CAPTURE_MODE_CAPTURE,
+			.attachTo = CLAY_ATTACH_TO_PARENT,
+		};
+		switch (cs.overflow) {
+		case Overflow::Scroll:
+			CLAY(clay_id,
+				 { .layout = layout,
+				   .aspectRatio = aspect_cfg,
+				   .floating = float_cfg,
+				   .clip = { .horizontal = true, .vertical = true, .childOffset = Clay_GetScrollOffset() } }) {
+				emit_content();
+			}
+			break;
+		case Overflow::Hidden:
+			CLAY(clay_id,
+				 { .layout = layout,
+				   .aspectRatio = aspect_cfg,
+				   .floating = float_cfg,
+				   .clip = { .horizontal = true, .vertical = false } }) {
+				emit_content();
+			}
+			break;
+		default:
+			CLAY(clay_id, { .layout = layout, .aspectRatio = aspect_cfg, .floating = float_cfg }) {
+				emit_content();
+			}
+			break;
+		}
+		return;
+	}
 
 	if (node->has_floating()) {
 		const FloatingConfig &fc = node->get_floating();
@@ -439,7 +640,22 @@ void LayoutEngine::update_rects(View *node, Vec2 parent_clay_pos, Vec2 accumulat
 	const Clay_ElementData data = Clay_GetElementData(clay_id);
 
 	Vec2 clay_pos = parent_clay_pos;
-	const Vec2 subtree_offset = accumulated_offset + node->get_layout_anim_offset();
+	Vec2 relative_offset = {};
+	if (cs.position == Position::Relative) {
+		const View *parent = node->get_parent();
+		const Vec2 parent_size = parent != nullptr ? parent->get_layout_rect().size : Vec2(0.F);
+		if (cs.left.unit != LengthUnit::Auto) {
+			relative_offset.x = resolve_offset(cs.left, parent_size.x);
+		} else if (cs.right.unit != LengthUnit::Auto) {
+			relative_offset.x = -resolve_offset(cs.right, parent_size.x);
+		}
+		if (cs.top.unit != LengthUnit::Auto) {
+			relative_offset.y = resolve_offset(cs.top, parent_size.y);
+		} else if (cs.bottom.unit != LengthUnit::Auto) {
+			relative_offset.y = -resolve_offset(cs.bottom, parent_size.y);
+		}
+	}
+	const Vec2 subtree_offset = accumulated_offset + node->get_layout_anim_offset() + relative_offset;
 	if (data.found) {
 		const Clay_BoundingBox &bb = data.boundingBox;
 		clay_pos = { bb.x, bb.y };
