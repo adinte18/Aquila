@@ -11,7 +11,8 @@ static Rendering::DrawCmd with_opacity(const Rendering::DrawCmd &cmd, F32 opacit
 			if constexpr (std::is_same_v<T, Rendering::RectCmd>) {
 				c.color.a *= opacity;
 				c.border_color.a *= opacity;
-			} else if constexpr (std::is_same_v<T, Rendering::ShadowCmd> || std::is_same_v<T, Rendering::TextCmd>) {
+			} else if constexpr (std::is_same_v<T, Rendering::ShadowCmd> || std::is_same_v<T, Rendering::TextCmd> ||
+								 std::is_same_v<T, Rendering::PointCmd>) {
 				c.color.a *= opacity;
 			} else if constexpr (std::is_same_v<T, Rendering::ImageCmd>) {
 				c.tint.a *= opacity;
