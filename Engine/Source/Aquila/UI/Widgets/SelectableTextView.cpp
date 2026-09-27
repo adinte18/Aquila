@@ -2,6 +2,7 @@
 
 #include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/UI/Core/Clipboard.h"
 #include "Aquila/UI/Rendering/DrawList.h"
@@ -24,6 +25,8 @@ void SelectableTextView::clear() {
 	m_lines.clear();
 	m_colors.clear();
 	m_tags.clear();
+	m_rows.clear();
+	m_wrapped_lines = 0;
 	m_selection = {};
 	invalidate_layout();
 }
@@ -36,6 +39,11 @@ void SelectableTextView::remove_front(Int32 count) {
 	m_lines.erase(m_lines.begin(), m_lines.begin() + count);
 	m_colors.erase(m_colors.begin(), m_colors.begin() + count);
 	m_tags.erase(m_tags.begin(), m_tags.begin() + count);
+	std::erase_if(m_rows, [count](const Row &row) { return row.line < count; });
+	for (Row &row : m_rows) {
+		row.line -= count;
+	}
+	m_wrapped_lines = m_wrapped_lines > static_cast<Usize>(count) ? m_wrapped_lines - static_cast<Usize>(count) : 0;
 
 	auto shift = [count](Text::TextPosition &position) {
 		position.line -= count;
@@ -70,36 +78,93 @@ F32 SelectableTextView::line_height() const {
 }
 
 Vec2 SelectableTextView::get_intrinsic_size() const {
-	return { -1.F, line_height() * static_cast<F32>(m_lines.size()) };
+	return { -1.F, line_height() * static_cast<F32>(rows().size()) };
 }
 
-F32 SelectableTextView::width_of(const std::string &line, Int32 columns) const {
+const std::vector<SelectableTextView::Row> &SelectableTextView::rows() const {
+	const F32 width = get_layout_rect().size.x;
 	Text::FontAtlas *font = get_resolved_font();
-	if (font == nullptr || columns <= 0) {
+	const F32 size = get_display_style().font_size;
+	if (width != m_rows_width || font != m_rows_font || size != m_rows_size) {
+		m_rows.clear();
+		m_wrapped_lines = 0;
+		m_rows_width = width;
+		m_rows_font = font;
+		m_rows_size = size;
+	}
+	for (; m_wrapped_lines < m_lines.size(); ++m_wrapped_lines) {
+		wrap_line(m_wrapped_lines, width, font, size);
+	}
+	return m_rows;
+}
+
+void SelectableTextView::wrap_line(Usize index, F32 width, Text::FontAtlas *font, F32 size) const {
+	const std::string &text = m_lines[index];
+	const Int32 line = static_cast<Int32>(index);
+	const Int32 length = static_cast<Int32>(text.size());
+	if (font == nullptr || width <= 0.F || length == 0) {
+		m_rows.push_back({ line, 0, length });
+		return;
+	}
+
+	font->ensure_glyphs(text);
+	const F32 scale = size > 0.F ? size : SharedConstants::FONT_DEFAULT_SIZE;
+	Int32 begin = 0;
+	while (begin < length) {
+		F32 x = 0.F;
+		Int32 end = begin;
+		Int32 after_space = -1;
+		while (end < length) {
+			const Foundation::Utf8::Decoded decoded = Foundation::Utf8::decode(text, static_cast<Usize>(end));
+			const Int32 next = end + static_cast<Int32>(decoded.size > 0 ? decoded.size : 1U);
+			const Text::GlyphInfo *glyph = font->get_glyph(decoded.codepoint);
+			const F32 advance = glyph != nullptr ? glyph->advance_em * scale : 0.F;
+			const bool space = decoded.codepoint == ' ';
+			if (!space && end > begin && x + advance > width) {
+				break;
+			}
+			x += advance;
+			end = next;
+			if (space) {
+				after_space = end;
+			}
+		}
+		if (end < length && after_space > begin) {
+			end = after_space;
+		}
+		m_rows.push_back({ line, begin, end });
+		begin = end;
+	}
+}
+
+F32 SelectableTextView::width_of(std::string_view text) const {
+	Text::FontAtlas *font = get_resolved_font();
+	if (font == nullptr || text.empty()) {
 		return 0.F;
 	}
-	const F32 size = get_display_style().font_size;
-	return font->measure_text(std::string_view(line).substr(0, static_cast<Usize>(columns)), size).x;
+	return font->measure_text(text, get_display_style().font_size).x;
 }
 
 Text::TextPosition SelectableTextView::position_at(Vec2 canvas_pos) const {
-	if (m_lines.empty()) {
+	const std::vector<Row> &all = rows();
+	if (all.empty()) {
 		return {};
 	}
 	const Rect rect = get_absolute_rect();
-	const F32 height = line_height();
-	const Int32 line = std::clamp(static_cast<Int32>(Math::floor((canvas_pos.y - rect.position.y) / height)), 0,
-								  get_line_count() - 1);
+	const Int32 index = std::clamp(static_cast<Int32>(Math::floor((canvas_pos.y - rect.position.y) / line_height())),
+								   0, static_cast<Int32>(all.size()) - 1);
+	const Row &row = all[static_cast<Usize>(index)];
 	Text::FontAtlas *font = get_resolved_font();
 	if (font == nullptr) {
-		return { line, 0 };
+		return { row.line, row.begin };
 	}
 	const F32 size = get_display_style().font_size;
-	const std::string &text = m_lines[static_cast<Usize>(line)];
-	const Int32 column = Text::column_at(text, canvas_pos.x - rect.position.x, [font, size](std::string_view part) {
-		return font->measure_text(part, size).x;
+	const std::string_view part = std::string_view(m_lines[static_cast<Usize>(row.line)])
+									  .substr(static_cast<Usize>(row.begin), static_cast<Usize>(row.end - row.begin));
+	const Int32 column = Text::column_at(part, canvas_pos.x - rect.position.x, [font, size](std::string_view text) {
+		return font->measure_text(text, size).x;
 	});
-	return { line, column };
+	return { row.line, row.begin + column };
 }
 
 Rect SelectableTextView::visible_rect() const {
@@ -159,7 +224,8 @@ void SelectableTextView::on_draw_self(Rendering::DrawList &draw_list) {
 	View::on_draw_self(draw_list);
 
 	Text::FontAtlas *font = get_resolved_font();
-	if (font == nullptr || m_lines.empty()) {
+	const std::vector<Row> &all = rows();
+	if (font == nullptr || all.empty()) {
 		return;
 	}
 
@@ -170,8 +236,9 @@ void SelectableTextView::on_draw_self(Rendering::DrawList &draw_list) {
 	const Vec4 default_color = get_display_style().color;
 	const Vec4 selection_color = get_display_style().effective_selection_color();
 
+	const Int32 row_count = static_cast<Int32>(all.size());
 	const Int32 first = std::max(0, static_cast<Int32>(Math::floor((visible.position.y - rect.position.y) / height)));
-	const Int32 last = std::min(get_line_count() - 1,
+	const Int32 last = std::min(row_count - 1,
 								static_cast<Int32>(Math::ceil((visible.position.y + visible.size.y - rect.position.y) / height)));
 
 	const Text::TextPosition selection_begin = m_selection.begin();
@@ -179,43 +246,54 @@ void SelectableTextView::on_draw_self(Rendering::DrawList &draw_list) {
 	const bool has_selection = !m_selection.is_empty();
 
 	for (Int32 index = first; index <= last; ++index) {
-		const std::string &text = m_lines[static_cast<Usize>(index)];
+		const Row &row = all[static_cast<Usize>(index)];
+		const Usize line = static_cast<Usize>(row.line);
+		const std::string_view text = m_lines[line];
+		const Int32 length = static_cast<Int32>(text.size());
 		const F32 top = rect.position.y + static_cast<F32>(index) * height;
+		auto x_of = [&](Int32 column) {
+			return width_of(text.substr(static_cast<Usize>(row.begin), static_cast<Usize>(column - row.begin)));
+		};
 
-		if (has_selection && index >= selection_begin.line && index <= selection_end.line) {
-			const Int32 from = index == selection_begin.line ? selection_begin.column : 0;
-			const Int32 to = index == selection_end.line ? selection_end.column : static_cast<Int32>(text.size());
-			const F32 start_x = width_of(text, from);
-			F32 end_x = width_of(text, to);
-			if (index != selection_end.line) {
-				end_x += size * 0.5F;
-			}
-			if (end_x > start_x) {
-				draw_list.draw_rect({ { rect.position.x + start_x, top }, { end_x - start_x, height } }, selection_color,
-									Vec4(0.F), 0.F, Vec4(0.F), 2);
+		if (has_selection && row.line >= selection_begin.line && row.line <= selection_end.line) {
+			const Int32 from = std::max(row.begin, row.line == selection_begin.line ? selection_begin.column : 0);
+			const Int32 to = std::min(row.end, row.line == selection_end.line ? selection_end.column : length);
+			if (to >= from) {
+				const F32 start_x = x_of(from);
+				F32 end_x = x_of(to);
+				if (row.line != selection_end.line && row.end == length) {
+					end_x += size * 0.5F;
+				}
+				if (end_x > start_x) {
+					draw_list.draw_rect({ { rect.position.x + start_x, top }, { end_x - start_x, height } },
+										selection_color, Vec4(0.F), 0.F, Vec4(0.F), 2);
+				}
 			}
 		}
 
-		const Vec4 color = m_colors[static_cast<Usize>(index)].a > 0.F ? m_colors[static_cast<Usize>(index)] : default_color;
-		const Tag &tag = m_tags[static_cast<Usize>(index)];
-		const Int32 tag_end = tag.begin + tag.length;
-		if (tag.length <= 0 || tag_end > static_cast<Int32>(text.size())) {
-			draw_list.draw_text({ { rect.position.x, top }, { rect.size.x, height } }, text, font, color, size,
+		auto draw_segment = [&](Int32 from, Int32 to, const Vec4 &color) {
+			if (to <= from) {
+				return;
+			}
+			const F32 x = x_of(from);
+			draw_list.draw_text({ { rect.position.x + x, top }, { rect.size.x - x, height } },
+								text.substr(static_cast<Usize>(from), static_cast<Usize>(to - from)), font, color, size,
 								UI::TextAlign::Left, 3, false);
+		};
+
+		const Vec4 color = m_colors[line].a > 0.F ? m_colors[line] : default_color;
+		const Tag &tag = m_tags[line];
+		const Int32 tag_end = tag.begin + tag.length;
+		if (tag.length <= 0 || tag_end > length) {
+			draw_segment(row.begin, row.end, color);
 			continue;
 		}
 
-		const std::string before = text.substr(0, static_cast<Usize>(tag.begin));
-		const std::string tagged = text.substr(static_cast<Usize>(tag.begin), static_cast<Usize>(tag.length));
-		const std::string after = text.substr(static_cast<Usize>(tag_end));
-		const F32 tag_x = width_of(text, tag.begin);
-		const F32 after_x = width_of(text, tag_end);
-		draw_list.draw_text({ { rect.position.x, top }, { rect.size.x, height } }, before, font, color, size,
-							UI::TextAlign::Left, 3, false);
-		draw_list.draw_text({ { rect.position.x + tag_x, top }, { rect.size.x - tag_x, height } }, tagged, font,
-							tag.color, size, UI::TextAlign::Left, 3, false);
-		draw_list.draw_text({ { rect.position.x + after_x, top }, { rect.size.x - after_x, height } }, after, font,
-							color, size, UI::TextAlign::Left, 3, false);
+		const Int32 tag_from = std::clamp(tag.begin, row.begin, row.end);
+		const Int32 tag_to = std::clamp(tag_end, row.begin, row.end);
+		draw_segment(row.begin, tag_from, color);
+		draw_segment(tag_from, tag_to, tag.color);
+		draw_segment(tag_to, row.end, color);
 	}
 }
 

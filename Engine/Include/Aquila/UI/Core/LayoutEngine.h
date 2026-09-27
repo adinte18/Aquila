@@ -31,6 +31,7 @@ class LayoutEngine {
 	[[nodiscard]] std::vector<View *> flow_children(View *node) const;
 	[[nodiscard]] std::vector<Uint32> compute_wrap_lines(View *node) const;
 	[[nodiscard]] bool wrap_lines_changed() const;
+	[[nodiscard]] bool intrinsic_sizes_changed() const;
 	[[nodiscard]] F32 resolve_offset(const StyleLength &len, F32 parent_size) const;
 
 	void *m_clay_ctx = nullptr;
@@ -40,6 +41,7 @@ class LayoutEngine {
 	bool m_size_changed = false;
 	std::vector<View *> m_resized_nodes;
 	std::unordered_map<const View *, std::vector<Uint32>> m_wrap_lines;
+	std::unordered_map<const View *, Vec2> m_intrinsic_sizes;
 };
 
 } // namespace Aquila::UI::Core
