@@ -174,6 +174,12 @@ void InspectorPanel::build_tabs_and_sections() {
 		}
 		add_section(tab_for(descriptor->get_category()), descriptor->get_name(), std::move(ui));
 	}
+	for (const auto &descriptor : registry.get_all()) {
+		if (std::ranges::find(k_component_order, descriptor->get_name()) != k_component_order.end()) {
+			continue;
+		}
+		add_section(tab_for(descriptor->get_category()), descriptor->get_name(), make_ui(*descriptor));
+	}
 	build_add_button(*m_tabs[components_tab].page);
 	select_tab(components_tab);
 }
@@ -314,6 +320,22 @@ void InspectorPanel::build_component_registry() {
 						  [](Entity e) { e.add_component<SkyLightComponent>(); } });
 	m_addable.push_back({ "Camera", "Camera", [](Entity e) { return e.has_component<CameraComponent>(); },
 						  [](Entity e) { e.add_component<CameraComponent>(); } });
+
+	bool has_other = false;
+	for (const auto &descriptor : ComponentRegistry::instance().get_all()) {
+		const std::string &name = descriptor->get_name();
+		if (std::ranges::find(k_component_order, name) != k_component_order.end() || !descriptor->can_add() ||
+			!descriptor->is_removable()) {
+			continue;
+		}
+		const ComponentDescriptor *other = descriptor.get();
+		m_addable.push_back({ name, "Other", [other](Entity e) { return other->has(e); },
+							  [other](Entity e) { other->add(e); } });
+		has_other = true;
+	}
+	if (has_other) {
+		m_categories.push_back({ "Other", icon("box") });
+	}
 }
 
 Ref<Graphics::Material> InspectorPanel::ensure_default_material() {

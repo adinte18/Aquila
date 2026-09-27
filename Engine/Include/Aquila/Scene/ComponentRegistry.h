@@ -26,6 +26,12 @@ class ComponentDescriptor {
 	[[nodiscard]] bool is_removable() const { return m_removable; }
 	[[nodiscard]] ComponentCategory get_category() const { return m_category; }
 	void remove(Entity entity) const { m_remove(entity); }
+	[[nodiscard]] bool can_add() const { return static_cast<bool>(m_add); }
+	void add(Entity entity) const {
+		if (m_add) {
+			m_add(entity);
+		}
+	}
 	[[nodiscard]] void *get(Entity entity) const { return m_get(entity); }
 	[[nodiscard]] Signal<void()> *get_changed_signal(Entity entity) const { return m_get_changed(entity); }
 
@@ -37,6 +43,7 @@ class ComponentDescriptor {
 	ComponentCategory m_category = ComponentCategory::General;
 	Delegate<bool(Entity)> m_has;
 	Delegate<void(Entity)> m_remove;
+	Delegate<void(Entity)> m_add;
 	Delegate<void *(Entity)> m_get;
 	Delegate<Signal<void()> *(Entity)> m_get_changed;
 };
@@ -53,6 +60,9 @@ class ComponentRegistry {
 		descriptor->m_category = category;
 		descriptor->m_has = [](Entity entity) { return entity.has_component<T>(); };
 		descriptor->m_remove = [](Entity entity) { entity.try_remove_component<T>(); };
+		if constexpr (std::is_default_constructible_v<T>) {
+			descriptor->m_add = [](Entity entity) { entity.get_or_emplace<T>(); };
+		}
 		descriptor->m_get = [](Entity entity) -> void * { return entity.try_get_component<T>(); };
 		descriptor->m_get_changed = [](Entity entity) -> Signal<void()> * {
 			if constexpr (requires(T &component) {
