@@ -1,5 +1,6 @@
 #include "Aquila/UI/Widgets/ColorPicker.h"
 #include "Aquila/Foundation/Color.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 
 namespace Aquila::UI::Core {
@@ -59,8 +60,8 @@ class ColorPicker::PickerArea : public View {
   private:
 	void pick(Vec2 abs_pos) {
 		const Rect r = get_absolute_rect();
-		Vec2 n = (abs_pos - r.position) / glm::max(r.size, Vec2(1.F));
-		n = glm::clamp(n, Vec2(0.F), Vec2(1.F));
+		Vec2 n = (abs_pos - r.position) / Math::max(r.size, Vec2(1.F));
+		n = Math::clamp(n, Vec2(0.F), Vec2(1.F));
 		if (m_is1_d) {
 			n.y = 0.F;
 		}
@@ -90,7 +91,7 @@ std::string ColorPicker::fmt_int(int v) {
 }
 
 std::string ColorPicker::fmt_hex(Vec4 c) {
-	auto ch = [](float v) { return static_cast<int>(std::round(std::clamp(v, 0.F, 1.F) * 255.F)); };
+	auto ch = [](float v) { return static_cast<int>(Math::round(Math::clamp(v, 0.F, 1.F) * 255.F)); };
 	std::ostringstream ss;
 	ss << std::uppercase << std::hex << std::setfill('0') << std::setw(2) << ch(c.r) << std::setw(2) << ch(c.g)
 	   << std::setw(2) << ch(c.b) << std::setw(2) << ch(c.a);
@@ -203,7 +204,7 @@ void ColorPicker::sync_channel_displays() {
 		vals[3] = m_color.a * 255.F;
 		for (int i = 0; i < 4; ++i) {
 			m_ch[i].slider->set_value_without_notify(vals[i]);
-			m_ch[i].input->set_text(fmt_int(static_cast<int>(std::round(vals[i]))));
+			m_ch[i].input->set_text(fmt_int(static_cast<int>(Math::round(vals[i]))));
 		}
 	} else if (m_mode == Mode::HSV) {
 		vals[0] = m_h * 360.F;
@@ -212,11 +213,11 @@ void ColorPicker::sync_channel_displays() {
 		vals[3] = m_color.a * 255.F;
 		for (int i = 0; i < 4; ++i) {
 			m_ch[i].slider->set_value_without_notify(vals[i]);
-			m_ch[i].input->set_text(fmt_int(static_cast<int>(std::round(vals[i]))));
+			m_ch[i].input->set_text(fmt_int(static_cast<int>(Math::round(vals[i]))));
 		}
 	} else { // HEX
 		m_ch[3].slider->set_value_without_notify(m_color.a * 255.F);
-		m_ch[3].input->set_text(fmt_int(static_cast<int>(std::round(m_color.a * 255.F))));
+		m_ch[3].input->set_text(fmt_int(static_cast<int>(Math::round(m_color.a * 255.F))));
 	}
 }
 
@@ -444,7 +445,7 @@ void ColorPicker::init() {
 			hue->m_is1_d = true;
 			hue->m_indicator = { m_h, 0.F };
 			hue->m_on_pick = [this](Vec2 n) {
-				const bool changed = std::abs(n.x - m_h) > 1e-4F;
+				const bool changed = Math::abs(n.x - m_h) > 1e-4F;
 				m_h = n.x;
 				const Vec3 rgb = hsv_to_rgb(m_h, m_s, m_v);
 				m_color.r = rgb.r;
@@ -525,7 +526,7 @@ void ColorPicker::init() {
 
 		const int idx = i;
 		m_ch[i].slider->on_changed.connect([this, idx](float val) {
-			m_ch[idx].input->set_text(fmt_int(static_cast<int>(std::round(val))));
+			m_ch[idx].input->set_text(fmt_int(static_cast<int>(Math::round(val))));
 			apply_channel_value(idx, val);
 		});
 		m_ch[i].input->on_submit.connect([this, idx](const std::string &s) {

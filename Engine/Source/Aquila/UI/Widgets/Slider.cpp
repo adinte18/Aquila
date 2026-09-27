@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/Slider.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::UI::Core {
 
@@ -12,9 +13,9 @@ Slider::Slider() {
 }
 
 float Slider::coerce(const float &value) const {
-	float clamped = std::clamp(value, m_min, m_max);
+	float clamped = Math::clamp(value, m_min, m_max);
 	if (m_step > 0.F) {
-		clamped = std::round((clamped - m_min) / m_step) * m_step + m_min;
+		clamped = Math::round((clamped - m_min) / m_step) * m_step + m_min;
 	}
 	return clamped;
 }
@@ -34,12 +35,12 @@ float Slider::value_from_x(float x) const {
 	const Rect rect = get_absolute_rect();
 	const float left = rect.position.x + K_HANDLE_PAD;
 	const float right = rect.position.x + rect.size.x - K_HANDLE_PAD;
-	const float t = std::clamp((x - left) / (right - left), 0.F, 1.F);
+	const float t = Math::clamp((x - left) / (right - left), 0.F, 1.F);
 	float raw = m_min + t * (m_max - m_min);
 	if (m_step > 0.F) {
-		raw = std::round((raw - m_min) / m_step) * m_step + m_min;
+		raw = Math::round((raw - m_min) / m_step) * m_step + m_min;
 	}
-	return std::clamp(raw, m_min, m_max);
+	return Math::clamp(raw, m_min, m_max);
 }
 
 void Slider::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {

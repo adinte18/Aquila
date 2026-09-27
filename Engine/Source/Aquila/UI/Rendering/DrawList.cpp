@@ -1,4 +1,5 @@
 #include "Aquila/UI/Rendering/DrawList.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
 #include "Aquila/Graphics/Core/QuadBatcher.h"
@@ -6,7 +7,6 @@
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
-#include <cmath>
 #include <type_traits>
 
 namespace Aquila::UI::Rendering {
@@ -33,13 +33,13 @@ void DrawList::draw_rect(Rect rect, Vec4 color, Vec4 radius, F32 border_width, V
 
 void DrawList::draw_line(Vec2 from, Vec2 to, float width, Vec4 color, Int32 z) {
 	Vec2 delta = to - from;
-	float length = glm::length(delta);
+	float length = Math::length(delta);
 	if (length < 0.5f) {
 		return;
 	}
 
 	Vec2 center = (from + to) * 0.5f;
-	float angle = std::atan2(delta.y, delta.x);
+	float angle = Math::atan2(delta.y, delta.x);
 
 	RectCmd command;
 	command.rect = { center - Vec2(length * 0.5f, width * 0.5f), { length, width } };
@@ -84,7 +84,7 @@ void DrawList::draw_text(Rect bounds, std::string_view text, Text::FontAtlas *fo
 }
 
 void DrawList::draw_image(Rect rect, GFX::GfxTexture *tex, Vec4 tint, Vec2 uv_min, Vec2 uv_max, Int32 z) {
-	const Vec2 snapped_size = glm::round(rect.position + rect.size) - glm::round(rect.position);
+	const Vec2 snapped_size = Math::round(rect.position + rect.size) - Math::round(rect.position);
 	ImageCmd command;
 	command.rect = rect;
 	command.texture = Core::TextureCache::resolve_for_size(tex, snapped_size);
@@ -151,8 +151,8 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 					r2d.draw_shadow(spec);
 				} else if constexpr (std::is_same_v<T, ImageCmd>) {
 					Graphics::SpriteSpec spec{};
-					spec.position = glm::round(c.rect.position);
-					spec.size = glm::round(c.rect.position + c.rect.size) - spec.position;
+					spec.position = Math::round(c.rect.position);
+					spec.size = Math::round(c.rect.position + c.rect.size) - spec.position;
 					spec.tint = c.tint;
 					spec.texture = c.texture;
 					spec.uv_min = c.uv_min;
@@ -184,7 +184,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 							}
 						}
 
-						baseline_y = std::round(baseline_y);
+						baseline_y = Math::round(baseline_y);
 						F32 cursor_x = c.rect.position.x;
 						if (c.align == TextAlign::Center) {
 							cursor_x += (c.rect.size.x - text_width) * 0.5F;
@@ -200,7 +200,7 @@ void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
 								}
 							}
 						}
-						cursor_x = std::round(cursor_x);
+						cursor_x = Math::round(cursor_x);
 
 						for (size_t ci = start; ci < end;) {
 							const Foundation::Utf8::Decoded d = Foundation::Utf8::decode(c.text, ci);

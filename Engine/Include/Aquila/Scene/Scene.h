@@ -39,7 +39,7 @@ class Scene final {
 	[[nodiscard]] Foundation::UUID get_handle() const;
 
 	void update_transform_hierarchy();
-	void update_transform_recursive(Entity entity, const glm::mat4 &parent_world);
+	void update_transform_recursive(Entity entity, const Mat4 &parent_world);
 	void mark_transform_dirty(entt::entity entity);
 
 	bool serialize(const std::string &filepath);

@@ -199,9 +199,9 @@ static GpuCameraData build_camera_data(const RenderView &view, Uint32 index, Uin
 	data.view = view.view;
 	data.projection = view.projection;
 	data.view_projection = data.projection * data.view;
-	data.inverse_view = glm::inverse(data.view);
-	data.inverse_projection = glm::inverse(data.projection);
-	data.inverse_view_projection = glm::inverse(data.view_projection);
+	data.inverse_view = Math::inverse(data.view);
+	data.inverse_projection = Math::inverse(data.projection);
+	data.inverse_view_projection = Math::inverse(data.view_projection);
 	data.prev_view_projection = data.view_projection;
 
 	data.position = Vec4(view.position, 0.F);
@@ -231,8 +231,8 @@ static GpuLightData build_light_data(const LightComponent &light, const Transfor
 
 	switch (light.m_type) {
 	case LightComponent::Type::Spot: {
-		data.m_cos_inner_angle = glm::cos(glm::radians(light.m_inner_cone_angle));
-		data.m_cos_outer_angle = glm::cos(glm::radians(light.m_outer_cone_angle));
+		data.m_cos_inner_angle = Math::cos(Math::radians(light.m_inner_cone_angle));
+		data.m_cos_outer_angle = Math::cos(Math::radians(light.m_outer_cone_angle));
 		break;
 	}
 	case LightComponent::Type::Area: {
@@ -273,14 +273,14 @@ static GpuShadowData compute_shadow_data(const RenderView &camera, const Vec3 &l
 	F32 splits[SHADOW_CASCADE_COUNT];
 	for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
 		const F32 p = static_cast<F32>(i + 1) / static_cast<F32>(SHADOW_CASCADE_COUNT);
-		const F32 log_split = near_plane * std::pow(far_plane / near_plane, p);
+		const F32 log_split = near_plane * Math::pow(far_plane / near_plane, p);
 		const F32 uni_split = near_plane + (far_plane - near_plane) * p;
 		splits[i] = kSplitLambda * log_split + (1.0F - kSplitLambda) * uni_split;
 	}
 
 	const Mat4 cam_view = camera.view;
 	const Vec3 ld = Math::normalize(light_dir);
-	Vec3 up = (std::abs(ld.y) > 0.99F) ? Vec3(0.F, 0.F, 1.F) : Vec3(0.F, 1.F, 0.F);
+	Vec3 up = (Math::abs(ld.y) > 0.99F) ? Vec3(0.F, 0.F, 1.F) : Vec3(0.F, 1.F, 0.F);
 
 	F32 last_split = near_plane;
 	for (Uint32 i = 0; i < SHADOW_CASCADE_COUNT; ++i) {
@@ -301,7 +301,7 @@ static GpuShadowData compute_shadow_data(const RenderView &camera, const Vec3 &l
 		for (const auto &corner : corners) {
 			radius = Math::max(radius, Math::length(Vec3(corner) - center));
 		}
-		radius = std::ceil(radius * 16.0F) / 16.0F;
+		radius = Math::ceil(radius * 16.0F) / 16.0F;
 
 		const F32 back_dist = radius * 3.0F;
 		const Vec3 eye = center - ld * back_dist;
@@ -311,7 +311,7 @@ static GpuShadowData compute_shadow_data(const RenderView &camera, const Vec3 &l
 		Mat4 view_proj = light_proj * light_view;
 		Vec4 origin = view_proj * Vec4(0.F, 0.F, 0.F, 1.F);
 		origin *= static_cast<F32>(shadow_map_size) / 2.0F;
-		const Vec2 rounded = glm::round(Vec2(origin.x, origin.y));
+		const Vec2 rounded = Math::round(Vec2(origin.x, origin.y));
 		const Vec2 offset = (rounded - Vec2(origin.x, origin.y)) * (2.0F / static_cast<F32>(shadow_map_size));
 		light_proj[3][0] += offset.x;
 		light_proj[3][1] += offset.y;

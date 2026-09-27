@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Widgets/DragFloat.h"
 
 namespace Aquila::UI::Core {
@@ -11,7 +12,7 @@ class DragInt : public DragFloat {
 	[[nodiscard]] std::string_view get_type_name() const override { return "DragInt"; }
 
 	void set_int_value(int value) { set_value(static_cast<float>(value)); }
-	[[nodiscard]] int get_int_value() const { return static_cast<int>(std::round(get_value())); }
+	[[nodiscard]] int get_int_value() const { return static_cast<int>(Math::round(get_value())); }
 	void set_int_range(int min, int max) { set_range(static_cast<float>(min), static_cast<float>(max)); }
 
   protected:

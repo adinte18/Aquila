@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/ProgressBar.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::UI::Core {
 
@@ -13,7 +14,7 @@ ProgressBar::ProgressBar() {
 }
 
 void ProgressBar::set_value(float value) {
-	m_value = std::clamp(value, 0.F, 1.F);
+	m_value = Math::clamp(value, 0.F, 1.F);
 
 	StyleProperties sp;
 	sp.width = StyleLength::percent(m_value * 100.F);

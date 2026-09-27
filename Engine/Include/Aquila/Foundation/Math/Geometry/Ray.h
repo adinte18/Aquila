@@ -137,7 +137,7 @@ struct Ray {
 	bool intersect_plane(const Vec3 &plane_normal, F32 plane_distance, F32 &distance) const {
 		const F32 denom = Math::dot(plane_normal, direction);
 
-		if (abs(denom) < 1e-6F) {
+		if (Math::abs(denom) < Math::EPSILON) {
 			return false;
 		}
 
@@ -205,7 +205,7 @@ struct Ray {
 		const F32 d = Math::dot(line_direction, w);
 		const F32 e = Math::dot(direction, w);
 		const F32 denominator = (a * c) - (b * b);
-		if (Math::abs(denominator) < 1e-6F) {
+		if (Math::abs(denominator) < Math::EPSILON) {
 			return std::nullopt;
 		}
 		return ((d * c) - (b * e)) / denominator;
@@ -213,7 +213,7 @@ struct Ray {
 
 	[[nodiscard]] Option<Vec3> hit_plane(const Vec3 &plane_point, const Vec3 &plane_normal) const {
 		const F32 denominator = Math::dot(plane_normal, direction);
-		if (Math::abs(denominator) < 1e-6F) {
+		if (Math::abs(denominator) < Math::EPSILON) {
 			return std::nullopt;
 		}
 		const F32 t = Math::dot(plane_point - origin, plane_normal) / denominator;
@@ -253,7 +253,7 @@ inline Ray camera_ray(const Vec2 &screen_pos, const Vec2 &viewport_size, const V
 	const F32 x = (2.0F * screen_pos.x) / viewport_size.x - 1.0F;
 	const F32 y = 1.0F - (2.0F * screen_pos.y) / viewport_size.y;
 
-	const F32 tan_half_fov = tan(Math::radians(fov) / 2.0F);
+	const F32 tan_half_fov = Math::tan(Math::radians(fov) / 2.0F);
 	const Vec3 ray_dir =
 		normalize(camera_forward + (x * aspect_ratio * tan_half_fov) * camera_right + (y * tan_half_fov) * camera_up);
 

@@ -252,7 +252,7 @@ void Collapsible::update_drag() {
 
 	const F32 container_height = m_container->get_absolute_rect().size.y;
 	const F32 item_height = get_absolute_rect().size.y;
-	const F32 max_offset_y = std::max(0.0F, container_height - item_height);
+	const F32 max_offset_y = Math::max(0.0F, container_height - item_height);
 	const F32 offset_y = Math::clamp(desired_top - m_container->get_absolute_position().y, 0.0F, max_offset_y);
 
 	FloatingConfig floating = get_floating();
@@ -313,7 +313,7 @@ void Collapsible::tick_flip(F32 delta_time) {
 		return;
 	}
 
-	const F32 blend = std::min(delta_time * K_FLIP_SPEED, 1.0F);
+	const F32 blend = Math::min(delta_time * K_FLIP_SPEED, 1.0F);
 	bool any_active = false;
 
 	for (const auto &child : m_container->get_children()) {

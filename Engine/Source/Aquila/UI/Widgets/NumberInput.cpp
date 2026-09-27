@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/NumberInput.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::UI::Core {
 
@@ -7,14 +8,14 @@ NumberInput::NumberInput() {
 }
 
 void NumberInput::set_value(double value) {
-	m_value = std::clamp(value, m_min, m_max);
+	m_value = Math::clamp(value, m_min, m_max);
 	update_display_text();
 }
 
 void NumberInput::set_range(double min, double max) {
 	m_min = min;
 	m_max = max;
-	m_value = std::clamp(m_value, m_min, m_max);
+	m_value = Math::clamp(m_value, m_min, m_max);
 	update_display_text();
 }
 
@@ -54,7 +55,7 @@ void NumberInput::on_focus_lost() {
 void NumberInput::commit_text() {
 	try {
 		const double parsed = std::stod(m_state.text);
-		m_value = std::clamp(parsed, m_min, m_max);
+		m_value = Math::clamp(parsed, m_min, m_max);
 		on_value_changed(m_value);
 	} catch (...) {
 	}

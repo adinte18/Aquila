@@ -1,6 +1,7 @@
 #ifndef AQUILA_COLOR_H
 #define AQUILA_COLOR_H
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/Math/MathTypes.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 
@@ -66,7 +67,7 @@ constexpr const char *BRIGHT_WHITE = "\033[97m";
 // HSV <-> RGB conversions. All values in [0, 1].
 
 inline Vec3 hsv_to_rgb(float h, float s, float v) {
-	if (s < 1e-6F) {
+	if (s < Math::EPSILON) {
 		return { v, v, v };
 	}
 	h = std::fmod(h, 1.F) * 6.F;
@@ -96,8 +97,8 @@ inline Vec3 rgb_to_hsv(float r, float g, float b) {
 	const float mn = std::min({ r, g, b });
 	const float d = mx - mn;
 	float h = 0.F;
-	const float s = (mx > 1e-6F) ? d / mx : 0.F;
-	if (d > 1e-6F) {
+	const float s = (mx > Math::EPSILON) ? d / mx : 0.F;
+	if (d > Math::EPSILON) {
 		if (mx == r) {
 			h = ((g - b) / d / 6.F) + (g < b ? 1.F : 0.F);
 		} else if (mx == g) {

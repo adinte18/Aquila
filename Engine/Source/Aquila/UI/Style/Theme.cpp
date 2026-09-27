@@ -1,4 +1,5 @@
 #include "Aquila/UI/Style/Theme.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Style/StyleSheet.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
 #include <cstdio>
@@ -51,8 +52,8 @@ static std::string fmt_float(float v) {
 
 static std::string fmt_color(const Vec4 &c) {
 	char buf[64];
-	std::snprintf(buf, sizeof(buf), "rgba(%.3f, %.3f, %.3f, %.3f)", std::clamp(c.r, 0.F, 1.F),
-				  std::clamp(c.g, 0.F, 1.F), std::clamp(c.b, 0.F, 1.F), std::clamp(c.a, 0.F, 1.F));
+	std::snprintf(buf, sizeof(buf), "rgba(%.3f, %.3f, %.3f, %.3f)", Math::clamp(c.r, 0.F, 1.F),
+				  Math::clamp(c.g, 0.F, 1.F), Math::clamp(c.b, 0.F, 1.F), Math::clamp(c.a, 0.F, 1.F));
 	return buf;
 }
 

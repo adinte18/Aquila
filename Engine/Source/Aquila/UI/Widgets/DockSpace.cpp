@@ -1,5 +1,6 @@
 #include "Aquila/UI/Widgets/DockSpace.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Math/Rect.h"
 #include "Aquila/UI/Core/Canvas.h"
@@ -605,7 +606,7 @@ void apply_child_fractions(const std::vector<DockNode *> &leaves, const std::vec
 		} else {
 			sp.flex_grow = 0.F;
 			const F32 fraction = (i < children.size()) ? children[i].fraction : 0.F;
-			const F32 pct = std::clamp(fraction * 100.F, 1.F, 99.F);
+			const F32 pct = Math::clamp(fraction * 100.F, 1.F, 99.F);
 			if (dir == SplitDirection::Horizontal) {
 				sp.width = StyleLength::percent(pct);
 			} else {

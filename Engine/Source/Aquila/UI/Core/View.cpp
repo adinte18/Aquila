@@ -5,6 +5,7 @@
 #include "Aquila/UI/Style/StyleParserHelper.h"
 #include "Aquila/UI/Style/StylePropertyList.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 #include <charconv>
 
@@ -121,14 +122,14 @@ void View::update_animation(F32 delta_time) {
 		return;
 	}
 
-	m_transition_timer = std::min(m_transition_timer + delta_time, duration_sec);
+	m_transition_timer = Math::min(m_transition_timer + delta_time, duration_sec);
 	const F32 raw = m_transition_timer / duration_sec;
 	const F32 alpha = apply_easing(raw, m_computed_style.transition_easing);
 
 	m_display_style = m_computed_style;
 
 #define AQ_STYLE_PROP(css, sp, cs, layout, anim, inherit) \
-	AQ_STYLE_WHEN(anim, m_display_style.cs = glm::mix(m_animation_from.cs, m_computed_style.cs, alpha);)
+	AQ_STYLE_WHEN(anim, m_display_style.cs = Math::lerp(m_animation_from.cs, m_computed_style.cs, alpha);)
 	AQ_STYLE_PROPERTY_LIST
 #undef AQ_STYLE_PROP
 

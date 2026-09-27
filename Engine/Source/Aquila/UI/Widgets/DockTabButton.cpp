@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/DockTabButton.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::UI::Core {
 
@@ -22,7 +23,7 @@ void DockTabButton::on_mouse_move(Vec2 pos) {
 	}
 
 	if (!m_dragging) {
-		if (glm::length(pos - m_press_pos) < K_DRAG_THRESHOLD) {
+		if (Math::length(pos - m_press_pos) < K_DRAG_THRESHOLD) {
 			return;
 		}
 		m_dragging = true;

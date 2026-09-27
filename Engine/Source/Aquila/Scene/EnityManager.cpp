@@ -1,4 +1,5 @@
 #include "Aquila/Scene/EntityManager.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Scene/Components/MetadataComponent.h"
 #include "Aquila/Scene/Components/SceneNodeComponent.h"
@@ -283,7 +284,7 @@ void EntityManager::attach_to(Entity parent, Entity node) {
 
 	// Store the current world transform before reparenting
 	Vec3 world_pos = node_transform->get_world_position();
-	glm::quat world_rot = node_transform->get_world_rotation();
+	Quaternion world_rot = node_transform->get_world_rotation();
 	Vec3 world_scale = node_transform->get_world_scale();
 
 	// if has parent -> detach from parent
@@ -304,8 +305,8 @@ void EntityManager::attach_to(Entity parent, Entity node) {
 	Vec3 local_pos = Vec3(local_pos4);
 
 	// Calculate local rotation
-	glm::quat parent_world_rot = parent_transform->get_world_rotation();
-	glm::quat local_rot = inverse(parent_world_rot) * world_rot;
+	Quaternion parent_world_rot = parent_transform->get_world_rotation();
+	Quaternion local_rot = Math::inverse(parent_world_rot) * world_rot;
 
 	// Calculate local scale
 	Vec3 parent_world_scale = parent_transform->get_world_scale();

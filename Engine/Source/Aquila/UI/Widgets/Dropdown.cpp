@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/Dropdown.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Core/IResourceResolver.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 
@@ -135,7 +136,7 @@ Vec2 Dropdown::get_intrinsic_size() const {
 			return;
 		}
 		font->ensure_glyphs(text);
-		widest = std::max(widest, font->measure_text(text, font_size).x);
+		widest = Math::max(widest, font->measure_text(text, font_size).x);
 	};
 
 	consider(m_placeholder);
@@ -156,10 +157,10 @@ Vec2 Dropdown::get_intrinsic_size() const {
 		if (const IconLabel *content = m_header->get_content()) {
 			const F32 gap = content->get_display_style().gap;
 			if (m_icon != nullptr || has_any_icon()) {
-				chrome += std::max(content->get_icon()->get_display_style().width.resolve(0.F), font_size) + gap;
+				chrome += Math::max(content->get_icon()->get_display_style().width.resolve(0.F), font_size) + gap;
 			}
 			if (m_chevron != nullptr) {
-				chrome += std::max(content->get_icon()->get_display_style().width.resolve(0.F), font_size) + gap;
+				chrome += Math::max(content->get_icon()->get_display_style().width.resolve(0.F), font_size) + gap;
 			}
 		}
 	}

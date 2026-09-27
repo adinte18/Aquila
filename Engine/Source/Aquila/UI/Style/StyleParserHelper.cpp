@@ -1,4 +1,5 @@
 #include "Aquila/UI/Style/StyleParserHelper.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/Macros.h"
 
 namespace Aquila::UI::ParserHelper {
@@ -305,7 +306,7 @@ Option<BoxShadow> parse_one_shadow(std::string_view raw) {
 	out.offset.x = px(lengths[0]);
 	out.offset.y = px(lengths[1]);
 	if (lengths.size() >= 3) {
-		out.blur = std::max(0.F, px(lengths[2]));
+		out.blur = Math::max(0.F, px(lengths[2]));
 	}
 	if (lengths.size() >= 4) {
 		out.spread = px(lengths[3]);

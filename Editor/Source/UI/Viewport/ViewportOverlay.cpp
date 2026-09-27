@@ -100,7 +100,7 @@ void ViewportOverlay::draw_centered_text(UI::Rendering::DrawList &draw_list, Vec
 	}
 	atlas->ensure_glyphs(text);
 	const Vec2 extent = atlas->measure_text(text, size);
-	const Rect bounds = { .position = glm::round(center - (extent * 0.5F)), .size = extent };
+	const Rect bounds = { .position = Math::round(center - (extent * 0.5F)), .size = extent };
 	draw_list.draw_text(bounds, text, atlas, color, size, UI::TextAlign::Left, z);
 }
 
@@ -158,7 +158,7 @@ void ViewportOverlay::draw_selection_label(UI::Rendering::DrawList &draw_list) c
 	atlas->ensure_glyphs(m_label);
 	const Vec2 extent = atlas->measure_text(m_label, size);
 	const Vec2 padding(6.F, 2.F);
-	const Rect box = { .position = glm::round(*m_label_anchor + Vec2(14.F, -30.F)), .size = extent + (padding * 2.F) };
+	const Rect box = { .position = Math::round(*m_label_anchor + Vec2(14.F, -30.F)), .size = extent + (padding * 2.F) };
 	draw_list.draw_rect(box, Vec4(0.06F, 0.06F, 0.06F, 0.75F), Vec4(3.F), 0.F, Vec4(0.F), 1);
 	draw_list.draw_text({ .position = box.position + padding, .size = extent }, m_label, atlas,
 						Vec4(0.93F, 0.93F, 0.93F, 1.F), size, UI::TextAlign::Left, 2);
@@ -167,13 +167,13 @@ void ViewportOverlay::draw_selection_label(UI::Rendering::DrawList &draw_list) c
 void ViewportOverlay::draw_safe_frame(UI::Rendering::DrawList &draw_list) const {
 	auto inset = [&](F32 fraction) {
 		const Vec2 margin = m_viewport.size * fraction;
-		return Rect{ .position = glm::round(m_viewport.position + margin),
-					 .size = glm::round(m_viewport.size - (margin * 2.F)) };
+		return Rect{ .position = Math::round(m_viewport.position + margin),
+					 .size = Math::round(m_viewport.size - (margin * 2.F)) };
 	};
 	draw_list.draw_rect(inset(K_ACTION_SAFE), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.35F), 0);
 	draw_list.draw_rect(inset(K_TITLE_SAFE), Vec4(0.F), Vec4(0.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.2F), 0);
 
-	const Vec2 center = glm::round(m_viewport.center());
+	const Vec2 center = Math::round(m_viewport.center());
 	const Vec4 cross = Vec4(1.F, 1.F, 1.F, 0.35F);
 	draw_list.draw_line(center - Vec2(8.F, 0.F), center + Vec2(8.F, 0.F), 1.F, cross, 0);
 	draw_list.draw_line(center - Vec2(0.F, 8.F), center + Vec2(0.F, 8.F), 1.F, cross, 0);
@@ -219,7 +219,7 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 		} else {
 			std::vector<Rendering::RenderPipeline::PassTiming> passes = m_debug.passes;
 			std::ranges::sort(passes, [](const auto &a, const auto &b) { return a.milliseconds > b.milliseconds; });
-			const F32 slowest = std::max(passes.front().milliseconds, 0.001F);
+			const F32 slowest = Math::max(passes.front().milliseconds, 0.001F);
 			for (Usize i = 0; i < std::min(passes.size(), K_MAX_LISTED_PASSES); ++i) {
 				rows.push_back({ .left = passes[i].name,
 								 .right = milliseconds(passes[i].milliseconds),
@@ -233,17 +233,17 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 	}
 
 	const F32 size = font_size();
-	const F32 line = std::round((atlas->get_line_height() * size) + 4.F);
+	const F32 line = Math::round((atlas->get_line_height() * size) + 4.F);
 	const Vec2 padding(10.F, 8.F);
 	F32 width = 220.F;
 	for (const Row &row : rows) {
 		atlas->ensure_glyphs(row.left);
 		atlas->ensure_glyphs(row.right);
-		width = std::max(width, atlas->measure_text(row.left, size).x + atlas->measure_text(row.right, size).x + 32.F);
+		width = Math::max(width, atlas->measure_text(row.left, size).x + atlas->measure_text(row.right, size).x + 32.F);
 	}
 	width += padding.x * 2.F;
 	const F32 height = (line * static_cast<F32>(rows.size())) + (padding.y * 2.F);
-	const Rect panel = { .position = glm::round(Vec2(m_viewport.left() + 10.F, m_viewport.bottom() - 10.F - height)),
+	const Rect panel = { .position = Math::round(Vec2(m_viewport.left() + 10.F, m_viewport.bottom() - 10.F - height)),
 						 .size = Vec2(width, height) };
 	draw_list.draw_rect(panel, Vec4(0.06F, 0.06F, 0.06F, 0.78F), Vec4(5.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.06F), 4);
 
@@ -261,7 +261,7 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 		}
 		if (row.bar >= 0.F) {
 			draw_list.draw_rect({ .position = { bounds.position.x, y + line - 3.F },
-								  .size = { std::max(inner_width * row.bar, 1.F), 2.F } },
+								  .size = { Math::max(inner_width * row.bar, 1.F), 2.F } },
 								bar_color, Vec4(1.F), 0.F, Vec4(0.F), 5);
 		}
 		y += line;

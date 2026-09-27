@@ -1,12 +1,11 @@
 #include "Aquila/UI/Widgets/SelectableTextView.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/UI/Core/Clipboard.h"
 #include "Aquila/UI/Rendering/DrawList.h"
 #include "Aquila/UI/Text/FontAtlas.h"
-
-#include <cmath>
 
 namespace Aquila::UI::Core {
 
@@ -89,7 +88,7 @@ Text::TextPosition SelectableTextView::position_at(Vec2 canvas_pos) const {
 	}
 	const Rect rect = get_absolute_rect();
 	const F32 height = line_height();
-	const Int32 line = std::clamp(static_cast<Int32>(std::floor((canvas_pos.y - rect.position.y) / height)), 0,
+	const Int32 line = std::clamp(static_cast<Int32>(Math::floor((canvas_pos.y - rect.position.y) / height)), 0,
 								  get_line_count() - 1);
 	Text::FontAtlas *font = get_resolved_font();
 	if (font == nullptr) {
@@ -171,9 +170,9 @@ void SelectableTextView::on_draw_self(Rendering::DrawList &draw_list) {
 	const Vec4 default_color = get_display_style().color;
 	const Vec4 selection_color = get_display_style().effective_selection_color();
 
-	const Int32 first = std::max(0, static_cast<Int32>(std::floor((visible.position.y - rect.position.y) / height)));
+	const Int32 first = std::max(0, static_cast<Int32>(Math::floor((visible.position.y - rect.position.y) / height)));
 	const Int32 last = std::min(get_line_count() - 1,
-								static_cast<Int32>(std::ceil((visible.position.y + visible.size.y - rect.position.y) / height)));
+								static_cast<Int32>(Math::ceil((visible.position.y + visible.size.y - rect.position.y) / height)));
 
 	const Text::TextPosition selection_begin = m_selection.begin();
 	const Text::TextPosition selection_end = m_selection.end();

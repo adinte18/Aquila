@@ -1,4 +1,5 @@
 #include "Aquila/UI/Core/TextureCache.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/Platform/Filesystem/VirtualFileSystem.h"
@@ -157,8 +158,8 @@ GFX::GfxTexture *TextureCache::load_vector(const std::string &resolved, const st
 	}
 	source->document->applyStyleSheet("svg { color: #ffffff; }");
 
-	const Uint32 width = std::max(1U, static_cast<Uint32>(std::ceil(source->document->width())));
-	const Uint32 height = std::max(1U, static_cast<Uint32>(std::ceil(source->document->height())));
+	const Uint32 width = std::max(1U, static_cast<Uint32>(Math::ceil(source->document->width())));
+	const Uint32 height = std::max(1U, static_cast<Uint32>(Math::ceil(source->document->height())));
 	Ref<GFX::GfxTexture> tex = rasterize(*source, width, height);
 	if (!tex) {
 		return nullptr;
@@ -236,8 +237,8 @@ GFX::GfxTexture *TextureCache::resolve_for_size(GFX::GfxTexture *texture, Vec2 p
 		return texture;
 	}
 	constexpr F32 k_max_raster_size = 4096.F;
-	const Uint32 width = static_cast<Uint32>(std::min(std::round(pixel_size.x), k_max_raster_size));
-	const Uint32 height = static_cast<Uint32>(std::min(std::round(pixel_size.y), k_max_raster_size));
+	const Uint32 width = static_cast<Uint32>(Math::min(Math::round(pixel_size.x), k_max_raster_size));
+	const Uint32 height = static_cast<Uint32>(Math::min(Math::round(pixel_size.y), k_max_raster_size));
 	return owner->second->vector_at_size(texture, width, height);
 }
 

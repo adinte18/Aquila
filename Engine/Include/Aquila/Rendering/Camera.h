@@ -47,9 +47,9 @@ class Camera {
 	[[nodiscard]] CameraType get_type() const { return m_camera_type; }
 	[[nodiscard]] bool &orbit_around_entity() { return m_orbit_around_entity; }
 	[[nodiscard]] Vec3 get_target() const { return m_orbit_target; }
-	[[nodiscard]] Vec3 get_right_vector() const { return glm::normalize(Vec3(m_view_matrix[0])); }
-	[[nodiscard]] Vec3 get_up_vector() const { return glm::normalize(Vec3(m_view_matrix[1])); }
-	[[nodiscard]] Vec3 get_forward_vector() const { return glm::normalize(Vec3(m_view_matrix[2])); }
+	[[nodiscard]] Vec3 get_right_vector() const { return Math::normalize(Vec3(m_view_matrix[0])); }
+	[[nodiscard]] Vec3 get_up_vector() const { return Math::normalize(Vec3(m_view_matrix[1])); }
+	[[nodiscard]] Vec3 get_forward_vector() const { return Math::normalize(Vec3(m_view_matrix[2])); }
 	void set_position(const Vec3 pos) { m_position = pos; }
 	void set_rotation_speed(const F32 speed) { m_rotation_speed = speed; }
 

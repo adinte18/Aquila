@@ -1,7 +1,7 @@
 #ifndef TRANSFORM_COMPONENT_H
 #define TRANSFORM_COMPONENT_H
 
-#include "Aquila/Foundation/Math/MathTypes.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/Foundation/Signal.h"
 #include "glm/gtc/quaternion.hpp"
@@ -26,7 +26,7 @@ struct TransformComponent {
 	}
 
 	void set_local_rotation_euler(const Vec3 &rotation){
-		m_local_rotation = glm::quat(glm::radians(rotation));
+		m_local_rotation = Quaternion(Math::radians(rotation));
 		mark_world_matrix_dirty();
 	}
 
@@ -37,7 +37,7 @@ struct TransformComponent {
 
 	[[nodiscard]] const Vec3 &get_local_position() const { return m_local_position; }
 	[[nodiscard]] const Quaternion &get_local_rotation() const { return m_local_rotation; }
-	[[nodiscard]] Vec3 get_local_rotation_euler() const { return glm::degrees(glm::eulerAngles(m_local_rotation)); }
+	[[nodiscard]] Vec3 get_local_rotation_euler() const { return Math::degrees(glm::eulerAngles(m_local_rotation)); }
 	[[nodiscard]] const Vec3 &get_local_scale() const { return m_local_scale; }
 
 	// Mutable versions only when you need to modify directly
@@ -54,27 +54,27 @@ struct TransformComponent {
 		return m_local_scale;
 	}
 
-	[[nodiscard]] glm::mat4 get_local_transform_matrix() const {
-		glm::mat4 translation_matrix = glm::translate(glm::mat4(1.0F), m_local_position);
-		glm::mat4 rotation_matrix = glm::toMat4(m_local_rotation);
-		glm::mat4 scale_matrix = glm::scale(glm::mat4(1.0F), m_local_scale);
+	[[nodiscard]] Mat4 get_local_transform_matrix() const {
+		Mat4 translation_matrix = glm::translate(Mat4(1.0F), m_local_position);
+		Mat4 rotation_matrix = glm::toMat4(m_local_rotation);
+		Mat4 scale_matrix = glm::scale(Mat4(1.0F), m_local_scale);
 		return translation_matrix * rotation_matrix * scale_matrix;
 	}
 
-	void update_world_matrix(const glm::mat4 &parent_matrix = glm::mat4(1.0F)) {
+	void update_world_matrix(const Mat4 &parent_matrix = Mat4(1.0F)) {
 		m_world_matrix = parent_matrix * get_local_transform_matrix();
 		m_world_matrix_dirty = false;
 	}
 
 	// Get world matrix (const version - use cached value)
-	[[nodiscard]] const glm::mat4 &get_world_matrix() const {
+	[[nodiscard]] const Mat4 &get_world_matrix() const {
 		AQUILA_ASSERT(!m_world_matrix_dirty, "World matrix is dirty! Call UpdateWorldMatrix() before rendering.");
 		return m_world_matrix;
 	}
 
 	// Get world matrix (mutable version - lazy update)
 	// WARNING: Only use this outside of render loops!
-	const glm::mat4 &get_world_matrix_lazy() {
+	const Mat4 &get_world_matrix_lazy() {
 		if (m_world_matrix_dirty) {
 			update_world_matrix(m_parent_matrix);
 		}
@@ -87,9 +87,9 @@ struct TransformComponent {
 	// Extract world scale from world matrix
 	[[nodiscard]] Vec3 get_world_scale() const {
 		Vec3 scale;
-		scale.x = glm::length(Vec3(m_world_matrix[0]));
-		scale.y = glm::length(Vec3(m_world_matrix[1]));
-		scale.z = glm::length(Vec3(m_world_matrix[2]));
+		scale.x = Math::length(Vec3(m_world_matrix[0]));
+		scale.y = Math::length(Vec3(m_world_matrix[1]));
+		scale.z = Math::length(Vec3(m_world_matrix[2]));
 		return scale;
 	}
 
@@ -108,12 +108,12 @@ struct TransformComponent {
 
 	[[nodiscard]] Mat3 get_normal_matrix() const {
 		Mat3 normal_matrix = Mat3(m_world_matrix);
-		return glm::transpose(glm::inverse(normal_matrix));
+		return Math::transpose(Math::inverse(normal_matrix));
 	}
 
 	[[nodiscard]] Mat3 get_normal_matrix_fast() const { return Mat3(m_world_matrix); }
 
-	void set_parent_matrix(const glm::mat4 &parent_matrix) {
+	void set_parent_matrix(const Mat4 &parent_matrix) {
 		m_parent_matrix = parent_matrix;
 		mark_world_matrix_dirty();
 	}
@@ -133,8 +133,8 @@ struct TransformComponent {
 	Vec3 m_local_position{ 0.F };
 	Quaternion m_local_rotation{ 1.F, 0.F, 0.F, 0.F };
 	Vec3 m_local_scale{ 1.F };
-	glm::mat4 m_world_matrix{ 1.F };
-	glm::mat4 m_parent_matrix{ 1.F };
+	Mat4 m_world_matrix{ 1.F };
+	Mat4 m_parent_matrix{ 1.F };
 	bool m_world_matrix_dirty{ true };
 	std::function<void()> m_on_dirty;
 };

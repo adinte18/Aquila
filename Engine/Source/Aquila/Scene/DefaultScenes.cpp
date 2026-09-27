@@ -1,5 +1,6 @@
 #include "Aquila/Scene/DefaultScenes.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
@@ -66,7 +67,7 @@ void populate_demo_scene(Scene &scene, GFX::GfxContext &ctx, F32 aspect_ratio) {
 	{
 		auto e = em->create_entity("SunLight");
 		auto &light = e.add_component<LightComponent>(LightComponent::Type::Directional, Vec3(1.0F, 0.95F, 0.8F), 1.0F);
-		light.set_direction(glm::normalize(Vec3(0.4F, -1.0F, 0.6F)));
+		light.set_direction(Math::normalize(Vec3(0.4F, -1.0F, 0.6F)));
 	}
 	{
 		auto e = em->create_entity("PointA");

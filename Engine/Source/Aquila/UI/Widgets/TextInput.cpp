@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/TextInput.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
@@ -49,7 +50,7 @@ void TextInput::clamp_scroll_offset(Text::FontAtlas *font, float scale, float vi
 	} else if (cursor_x - m_scroll_offset_x > visible_width) {
 		m_scroll_offset_x = cursor_x - visible_width;
 	}
-	m_scroll_offset_x = std::max(0.F, m_scroll_offset_x);
+	m_scroll_offset_x = Math::max(0.F, m_scroll_offset_x);
 }
 
 void TextInput::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {

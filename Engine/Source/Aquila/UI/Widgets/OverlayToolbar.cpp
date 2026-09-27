@@ -168,8 +168,8 @@ void OverlayToolbar::drag_to(Vec2 cursor) {
 	const Rect area = parent->get_absolute_rect();
 	const Vec2 size = get_layout_rect().size;
 	Vec2 top_left = cursor - m_grab_offset - area.position;
-	top_left.x = Math::clamp(top_left.x, 0.F, std::max(0.F, area.size.x - size.x));
-	top_left.y = Math::clamp(top_left.y, 0.F, std::max(0.F, area.size.y - size.y));
+	top_left.x = Math::clamp(top_left.x, 0.F, Math::max(0.F, area.size.x - size.x));
+	top_left.y = Math::clamp(top_left.y, 0.F, Math::max(0.F, area.size.y - size.y));
 
 	FloatingConfig floating;
 	floating.attach_to = FloatingAttachTo::Parent;
@@ -215,7 +215,7 @@ F32 OverlayToolbar::clamp_along(OverlayEdge edge, F32 along, Vec2 size) const {
 	}
 	const Vec2 area = parent->get_absolute_rect().size;
 	const F32 room = is_horizontal_edge(edge) ? area.x - size.x : area.y - size.y;
-	return Math::clamp(along, m_margin, std::max(m_margin, room - m_margin));
+	return Math::clamp(along, m_margin, Math::max(m_margin, room - m_margin));
 }
 
 void OverlayToolbar::apply_orientation() {

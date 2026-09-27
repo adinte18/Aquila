@@ -8,10 +8,8 @@
 #include "Aquila/UI/Text/FontAtlas.h"
 #include "Core/EditorContext.h"
 
-#include <cmath>
 #include <cstdio>
 #include <limits>
-#include <numbers>
 
 namespace Editor {
 
@@ -28,7 +26,6 @@ constexpr F32 k_plane_offset = 0.3F;
 constexpr F32 k_plane_half_px = 7.F;
 constexpr F32 k_min_axis_px = 14.F;
 constexpr int k_ring_segments = 64;
-constexpr F32 k_two_pi = 2.F * std::numbers::pi_v<F32>;
 
 constexpr std::array<Vec4, 3> k_axis_colors = {
 	Vec4(0.86F, 0.36F, 0.36F, 1.F),
@@ -38,45 +35,19 @@ constexpr std::array<Vec4, 3> k_axis_colors = {
 constexpr Vec4 k_center_color = Vec4(0.92F, 0.92F, 0.92F, 1.F);
 constexpr std::array<const char *, 3> k_axis_names = { "X", "Y", "Z" };
 
-F32 distance_to_segment(Vec2 point, Vec2 a, Vec2 b) {
-	const Vec2 ab = b - a;
-	const F32 length_squared = Math::dot(ab, ab);
-	const F32 t = length_squared > 0.F ? Math::clamp(Math::dot(point - a, ab) / length_squared, 0.F, 1.F) : 0.F;
-	return Math::length(point - (a + (ab * t)));
-}
-
 F32 snap_value(F32 value, F32 step) {
-	return step > 0.F ? std::round(value / step) * step : value;
-}
-
-F32 wrap_angle(F32 angle) {
-	constexpr F32 k_pi = std::numbers::pi_v<F32>;
-	while (angle > k_pi) {
-		angle -= k_two_pi;
-	}
-	while (angle < -k_pi) {
-		angle += k_two_pi;
-	}
-	return angle;
-}
-
-F32 cross2(Vec2 a, Vec2 b) {
-	return (a.x * b.y) - (a.y * b.x);
+	return step > 0.F ? Math::round(value / step) * step : value;
 }
 
 Quaternion rotation_of(const Mat4 &matrix) {
 	Mat3 basis(matrix);
 	for (int i = 0; i < 3; ++i) {
 		const F32 length = Math::length(basis[i]);
-		if (length > 1e-6F) {
+		if (length > Math::EPSILON) {
 			basis[i] /= length;
 		}
 	}
 	return glm::quat_cast(basis);
-}
-
-void request_frame() {
-	Foundation::FrameScheduler::get()->request_frame();
 }
 
 }
@@ -136,7 +107,7 @@ TransformGizmo::Frame TransformGizmo::compute_frame(const Rect &viewport, const 
 		if (local_axes) {
 			const Vec3 column = Vec3(world[i]);
 			const F32 length = Math::length(column);
-			axis = length > 1e-6F ? column / length : axis;
+			axis = length > Math::EPSILON ? column / length : axis;
 		}
 		frame.axes[static_cast<Usize>(i)] = axis;
 	}
@@ -173,8 +144,8 @@ TransformGizmo::Frame TransformGizmo::compute_frame(const Rect &viewport, const 
 		points.reserve(k_ring_segments + 1);
 		front.reserve(k_ring_segments + 1);
 		for (int s = 0; s <= k_ring_segments; ++s) {
-			const F32 angle = (static_cast<F32>(s) / static_cast<F32>(k_ring_segments)) * k_two_pi;
-			const Vec3 offset = ((u * std::cos(angle)) + (v * std::sin(angle))) * frame.length;
+			const F32 angle = (static_cast<F32>(s) / static_cast<F32>(k_ring_segments)) * Math::TAU;
+			const Vec3 offset = ((u * Math::cos(angle)) + (v * Math::sin(angle))) * frame.length;
 			const Option<Vec2> projected = Rendering::project_to_screen(view, viewport, frame.origin + offset);
 			points.push_back(projected.value_or(frame.center));
 			front.push_back(Math::dot(offset, view.forward) <= 0.F);
@@ -238,7 +209,7 @@ TransformGizmo::Handle TransformGizmo::pick(Vec2 point) const {
 				if (!front[s] && !front[s + 1]) {
 					continue;
 				}
-				const F32 distance = distance_to_segment(point, points[s], points[s + 1]);
+				const F32 distance = Math::distance_to_segment(point, points[s], points[s + 1]);
 				if (distance < best_distance) {
 					best_distance = distance;
 					best = axis_handle(axis);
@@ -267,7 +238,7 @@ TransformGizmo::Handle TransformGizmo::pick(Vec2 point) const {
 		if (!m_frame.axis_visible[axis]) {
 			continue;
 		}
-		const F32 distance = distance_to_segment(point, m_frame.center, m_frame.tips[axis]);
+		const F32 distance = Math::distance_to_segment(point, m_frame.center, m_frame.tips[axis]);
 		if (distance < best_distance) {
 			best_distance = distance;
 			best = axis_handle(axis);
@@ -362,11 +333,11 @@ bool TransformGizmo::begin(Handle handle, Vec2 mouse, bool modal, bool local_axe
 				nearest = s;
 			}
 		}
-		const F32 theta = (static_cast<F32>(nearest) / static_cast<F32>(k_ring_segments)) * k_two_pi;
+		const F32 theta = (static_cast<F32>(nearest) / static_cast<F32>(k_ring_segments)) * Math::TAU;
 		const Vec3 u = f.axes[(axis + 1) % 3];
 		const Vec3 v = f.axes[(axis + 2) % 3];
-		const Vec3 radial = (u * std::cos(theta)) + (v * std::sin(theta));
-		const Vec3 tangent = (v * std::cos(theta)) - (u * std::sin(theta));
+		const Vec3 radial = (u * Math::cos(theta)) + (v * Math::sin(theta));
+		const Vec3 tangent = (v * Math::cos(theta)) - (u * Math::sin(theta));
 		const Vec3 point = f.origin + (radial * f.length);
 		const Option<Vec2> a = Rendering::project_to_screen(f.view, f.viewport, point);
 		const Option<Vec2> b = Rendering::project_to_screen(f.view, f.viewport, point + (tangent * f.length * 0.1F));
@@ -380,9 +351,9 @@ bool TransformGizmo::begin(Handle handle, Vec2 mouse, bool modal, bool local_axe
 	}
 
 	const Vec2 from_center = mouse - f.center;
-	m_drag.previous_angle = std::atan2(from_center.y, from_center.x);
+	m_drag.previous_angle = Math::atan2(from_center.y, from_center.x);
 	m_active = true;
-	request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 	return true;
 }
 
@@ -460,7 +431,7 @@ void TransformGizmo::finish() {
 	if (m_drag.entity.exists()) {
 		m_context.selection.on_entity_modified(m_drag.entity);
 	}
-	request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 }
 
 void TransformGizmo::apply_translate(Vec2 mouse) {
@@ -524,16 +495,16 @@ void TransformGizmo::apply_rotate(Vec2 mouse) {
 		if (Math::length(from_center) < 2.F) {
 			return;
 		}
-		const F32 current = std::atan2(from_center.y, from_center.x);
-		m_drag.total_angle += wrap_angle(current - m_drag.previous_angle);
+		const F32 current = Math::atan2(from_center.y, from_center.x);
+		m_drag.total_angle += Math::angle_difference(m_drag.previous_angle, current);
 		m_drag.previous_angle = current;
 
 		const Vec3 u = around_view ? f.view.up : f.axes[(axis + 1) % 3];
 		const Vec3 v = around_view ? f.view.right : f.axes[(axis + 2) % 3];
 		const Option<Vec2> a = Rendering::project_to_screen(f.view, f.viewport, f.origin + (u * f.length));
 		const Option<Vec2> b = Rendering::project_to_screen(
-			f.view, f.viewport, f.origin + (((u * std::cos(0.2F)) + (v * std::sin(0.2F))) * f.length));
-		F32 orientation = a && b ? cross2(*a - f.center, *b - f.center) : 0.F;
+			f.view, f.viewport, f.origin + (((u * Math::cos(0.2F)) + (v * Math::sin(0.2F))) * f.length));
+		F32 orientation = a && b ? Math::cross(*a - f.center, *b - f.center) : 0.F;
 		if (Math::abs(orientation) < 1e-3F) {
 			orientation = Math::dot(world_axis, f.view.forward) < 0.F ? -1.F : 1.F;
 		}
@@ -548,8 +519,8 @@ void TransformGizmo::apply_rotate(Vec2 mouse) {
 	const Vec3 rotation_axis =
 		around_view ? Math::normalize(Math::cross(f.view.up, f.view.right)) : world_axis;
 	const Quaternion parent_rotation = rotation_of(m_drag.parent_world);
-	const Vec3 parent_axis = Math::normalize(glm::inverse(parent_rotation) * rotation_axis);
-	const Quaternion rotation = glm::angleAxis(angle, parent_axis) * m_drag.start_rotation;
+	const Vec3 parent_axis = Math::normalize(Math::inverse(parent_rotation) * rotation_axis);
+	const Quaternion rotation = Math::angle_axis(angle, parent_axis) * m_drag.start_rotation;
 	m_drag.entity.get_component<TransformComponent>().set_local_rotation(Math::normalize(rotation));
 	publish_change();
 }
@@ -596,7 +567,7 @@ void TransformGizmo::apply_scale(Vec2 mouse) {
 
 void TransformGizmo::publish_change() {
 	m_context.selection.on_entity_transformed(m_drag.entity);
-	request_frame();
+	Foundation::FrameScheduler::get()->request_frame();
 }
 
 Vec4 TransformGizmo::color_for(Handle handle, Vec4 base) const {
@@ -749,13 +720,13 @@ void TransformGizmo::draw_rotate(UI::Rendering::DrawList &draw_list) const {
 		const Vec3 u = f.axes[(axis + 1) % 3];
 		const Vec3 v = f.axes[(axis + 2) % 3];
 		const Vec4 fill = Vec4(Vec3(k_axis_colors[axis]), 0.9F);
-		const int steps =
-			std::max(2, static_cast<int>(std::abs(m_drag.applied_angle) / k_two_pi * static_cast<F32>(k_ring_segments)));
+		const int steps = Math::max(
+			2, static_cast<int>(Math::abs(m_drag.applied_angle) / Math::TAU * static_cast<F32>(k_ring_segments)));
 		Option<Vec2> previous;
 		for (int s = 0; s <= steps; ++s) {
 			const F32 theta =
 				m_drag.ring_start_angle + (m_drag.applied_angle * static_cast<F32>(s) / static_cast<F32>(steps));
-			const Vec3 point = f.origin + (((u * std::cos(theta)) + (v * std::sin(theta))) * (f.length * 0.8F));
+			const Vec3 point = f.origin + (((u * Math::cos(theta)) + (v * Math::sin(theta))) * (f.length * 0.8F));
 			const Option<Vec2> projected = Rendering::project_to_screen(f.view, f.viewport, point);
 			if (projected && previous) {
 				draw_list.draw_line(*previous, *projected, 5.F, fill, 3);
@@ -804,7 +775,7 @@ void TransformGizmo::draw_readout(UI::Rendering::DrawList &draw_list) const {
 	const Rect viewport = m_frame.viewport;
 	position.x = Math::min(position.x, viewport.right() - size.x - (padding.x * 2.F) - 4.F);
 	position.y = Math::min(position.y, viewport.bottom() - size.y - (padding.y * 2.F) - 4.F);
-	const Rect box = { .position = glm::round(position), .size = size + (padding * 2.F) };
+	const Rect box = { .position = Math::round(position), .size = size + (padding * 2.F) };
 	draw_list.draw_rect(box, Vec4(0.06F, 0.06F, 0.06F, 0.92F), Vec4(4.F), 1.F, Vec4(1.F, 1.F, 1.F, 0.08F), 4);
 	draw_list.draw_text({ .position = box.position + padding, .size = size }, text, atlas,
 						Vec4(0.93F, 0.93F, 0.93F, 1.F), text_size, UI::TextAlign::Left, 5);

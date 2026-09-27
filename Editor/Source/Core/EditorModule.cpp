@@ -1,4 +1,5 @@
 #include "Core/EditorModule.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Core/EditorContext.h"
 #include "Core/EditorWindows.h"
 #include "Core/ProjectManager.h"
@@ -444,7 +445,7 @@ void EditorModule::open_settings_window() {
 
 void EditorModule::set_ui_scale(F32 scale) {
 	auto &prefs = Config::get_preferences();
-	prefs.ui_scale = std::clamp(scale, 0.5F, 2.F);
+	prefs.ui_scale = Math::clamp(scale, 0.5F, 2.F);
 	prefs.save_to_file();
 
 	Aquila::UI::Core::FontRegistry::set_ui_scale(prefs.ui_scale);

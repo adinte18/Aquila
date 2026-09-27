@@ -1,5 +1,6 @@
 #include "Aquila/UI/DevTools/UIDebugWindow.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Platform/Events/Event.h"
 #include "Aquila/Platform/Events/WindowEvent.h"
 #include "Aquila/UI/Core/Canvas.h"
@@ -163,7 +164,7 @@ std::string len_str(StyleLength l) {
 }
 
 std::string color_str(Vec4 c) {
-	auto ch = [](float v) { return static_cast<int>(std::clamp(v, 0.F, 1.F) * 255.F + 0.5F); };
+	auto ch = [](float v) { return static_cast<int>(Math::clamp(v, 0.F, 1.F) * 255.F + 0.5F); };
 	char buf[40];
 	std::snprintf(buf, sizeof(buf), "#%02X%02X%02X%02X", ch(c.r), ch(c.g), ch(c.b), ch(c.a));
 	return buf;

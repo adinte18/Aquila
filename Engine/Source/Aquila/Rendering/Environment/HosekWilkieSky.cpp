@@ -16,8 +16,8 @@ using SceneManagement::Components::SHCoefficients;
 namespace {
 
 F32 radiance_internal(const Vec4 &a, const Vec4 &b, F32 c8, F32 theta, F32 gamma) {
-	const F32 cos_gamma = std::cos(gamma);
-	const F32 cos_theta = std::cos(theta);
+	const F32 cos_gamma = Math::cos(gamma);
+	const F32 cos_theta = Math::cos(theta);
 	const F32 exp_m = std::exp(b.x * gamma);
 	const F32 ray_m = cos_gamma * cos_gamma;
 	const F32 mie_m = (1.0F + cos_gamma * cos_gamma) / Math::pow(1.0F + c8 * c8 - 2.0F * c8 * cos_gamma, 1.5F);
@@ -108,7 +108,7 @@ SHCoefficients HosekWilkieSky::bake_sh(const GpuSkyData &data, int samples) {
 		const F32 cos_theta = 2.0F * u2 - 1.0F;
 		const F32 sin_theta = Math::sqrt(Math::max(0.0F, 1.0F - cos_theta * cos_theta));
 
-		const Vec3 dir(sin_theta * std::cos(phi), cos_theta, sin_theta * std::sin(phi));
+		const Vec3 dir(sin_theta * Math::cos(phi), cos_theta, sin_theta * Math::sin(phi));
 		const Vec3 color = evaluate(data, dir);
 
 		std::array<F32, 9> basis{};

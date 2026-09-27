@@ -132,7 +132,7 @@ void Scene::update_transform_hierarchy() {
 		}
 
 		Entity entity(e, this);
-		glm::mat4 parent_world(1.0F);
+		Mat4 parent_world(1.0F);
 		auto *node = entity.try_get_component<Components::SceneNodeComponent>();
 		if ((node != nullptr) && !node->parent.is_null()) {
 			auto *parent_transform = node->parent.try_get_component<Components::TransformComponent>();
@@ -146,7 +146,7 @@ void Scene::update_transform_hierarchy() {
 	m_dirty_transforms.clear();
 }
 
-void Scene::update_transform_recursive(Entity entity, const glm::mat4 &parent_world) {
+void Scene::update_transform_recursive(Entity entity, const Mat4 &parent_world) {
 	if (!entity.is_valid()) {
 		return;
 	}

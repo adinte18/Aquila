@@ -54,7 +54,7 @@ RenderView CameraController::render_view_from(const Mat4 &world, F32 fov_degrees
 	for (int i = 0; i < 3; ++i) {
 		const Vec3 axis = Vec3(world[i]);
 		const F32 length = Math::length(axis);
-		basis[i] = Vec4(length > 1e-6F ? axis / length : Vec3(0.F), 0.F);
+		basis[i] = Vec4(length > Math::EPSILON ? axis / length : Vec3(0.F), 0.F);
 	}
 	basis[3] = world[3];
 

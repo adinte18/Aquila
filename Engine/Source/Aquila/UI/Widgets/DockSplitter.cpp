@@ -1,5 +1,6 @@
 #include "Aquila/UI/Widgets/DockSplitter.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Widgets/DockNode.h"
 
 namespace Aquila::UI::Core {
@@ -108,11 +109,11 @@ void DockSplitter::on_mouse_move(Vec2 pos) {
 	// Each side must stay at least kMin pixels wide/tall regardless of layout context.
 	constexpr float k_min = 60.F;
 	const float min_px = k_min;
-	const float max_px = std::max(min_px, parent_px - 5.F - k_min);
+	const float max_px = Math::max(min_px, parent_px - 5.F - k_min);
 
 	StyleProperties sp;
 	if (m_resize_before) {
-		const float new_px = std::clamp(m_before_grow_start + delta, min_px, max_px);
+		const float new_px = Math::clamp(m_before_grow_start + delta, min_px, max_px);
 		const float new_pct = new_px / parent_px * 100.F;
 		if (m_dir == SplitDirection::Horizontal) {
 			sp.width = StyleLength::percent(new_pct);
@@ -121,7 +122,7 @@ void DockSplitter::on_mouse_move(Vec2 pos) {
 		}
 		before->merge_style(sp);
 	} else {
-		const float new_px = std::clamp(m_after_grow_start - delta, min_px, max_px);
+		const float new_px = Math::clamp(m_after_grow_start - delta, min_px, max_px);
 		const float new_pct = new_px / parent_px * 100.F;
 		if (m_dir == SplitDirection::Horizontal) {
 			sp.width = StyleLength::percent(new_pct);

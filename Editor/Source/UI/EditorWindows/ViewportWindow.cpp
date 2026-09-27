@@ -59,10 +59,6 @@ constexpr std::array<ShowToggle, 4> k_show_toggles = { {
 	{ "Selection Outline", &Rendering::RenderSettings::show_outline },
 } };
 
-void request_frame() {
-	Foundation::FrameScheduler::get()->request_frame();
-}
-
 }
 
 ViewportWindow::ViewportWindow(EditorContext &context) : EditorWindow(context) {}
@@ -225,7 +221,7 @@ void ViewportWindow::wire_shading(UI::Core::View &content) {
 	shading->set_value(std::to_string(static_cast<Uint32>(settings.debug_view)));
 	shading->on_changed.connect([&settings](const std::string &value) {
 		settings.debug_view = static_cast<Rendering::DebugView>(std::stoul(value));
-		request_frame();
+		Foundation::FrameScheduler::get()->request_frame();
 	});
 }
 
@@ -251,7 +247,7 @@ void ViewportWindow::wire_show_menu(UI::Core::View &content) {
 		row->add_child<UI::Core::Label>(std::string(toggle.label))->add_class("overlay-check-text");
 		check->on_changed.connect([&settings, flag = toggle.flag](const bool &enabled) {
 			settings.*flag = enabled;
-			request_frame();
+			Foundation::FrameScheduler::get()->request_frame();
 		});
 	}
 
@@ -274,7 +270,7 @@ void ViewportWindow::wire_show_menu(UI::Core::View &content) {
 			check->on_changed.connect([this, flag](const bool &enabled) {
 				m_overlay->options().*flag = enabled;
 				m_debug_refresh_timer = 0.F;
-				request_frame();
+				Foundation::FrameScheduler::get()->request_frame();
 			});
 		}
 	}
@@ -367,7 +363,7 @@ void ViewportWindow::wire_camera_menu(UI::Core::View &content) {
 		m_camera_button->set_class("overlay-tool-active", m_view_camera.is_valid());
 		m_fov_field->set_enabled(!m_view_camera.is_valid());
 		m_speed_field->set_enabled(!m_view_camera.is_valid());
-		request_frame();
+		Foundation::FrameScheduler::get()->request_frame();
 	});
 
 	m_camera_button->on_click.connect([this] {

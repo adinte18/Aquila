@@ -1,8 +1,8 @@
 #include "Aquila/UI/Style/StyleSheet.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Core/FontRegistry.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Style/StylePropertyList.h"
-#include <cmath>
 
 namespace Aquila::UI {
 
@@ -18,7 +18,7 @@ bool MediaCondition::evaluate(float w, float h) const {
 	case Op::GreaterEq:
 		return v >= value;
 	case Op::Equal:
-		return std::abs(v - value) < 0.5F;
+		return Math::abs(v - value) < 0.5F;
 	}
 	return false;
 }

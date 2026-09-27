@@ -1,4 +1,5 @@
 #include "Aquila/UI/Widgets/DragInt.h"
+#include "Aquila/Foundation/Math/Math.h"
 
 namespace Aquila::UI::Core {
 
@@ -13,7 +14,7 @@ std::string DragInt::format_value() const {
 
 void DragInt::on_value_committed() {
 	// Round to nearest integer after every drag tick.
-	m_value = std::round(m_value);
+	m_value = Math::round(m_value);
 }
 
 } // namespace Aquila::UI::Core

@@ -1,11 +1,10 @@
 #ifndef SKYLIGHT_COMPONENT_H
 #define SKYLIGHT_COMPONENT_H
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
 #include "Aquila/GFX/GfxTexture.h"
-
-#include <cmath>
 
 namespace Aquila::SceneManagement::Components {
 
@@ -56,10 +55,10 @@ struct SkyLightComponent {
 	[[nodiscard]] bool should_render_skybox() const noexcept { return m_render_skybox && m_is_active; }
 
 	[[nodiscard]] Vec3 get_sun_direction() const noexcept {
-		const F32 elevation = m_sun_elevation * (3.14159265359F / 180.0F);
-		const F32 azimuth = m_sun_azimuth * (3.14159265359F / 180.0F);
-		const F32 cos_elevation = std::cos(elevation);
-		return Vec3(cos_elevation * std::sin(azimuth), std::sin(elevation), cos_elevation * std::cos(azimuth));
+		const F32 elevation = Math::radians(m_sun_elevation);
+		const F32 azimuth = Math::radians(m_sun_azimuth);
+		const F32 cos_elevation = Math::cos(elevation);
+		return Vec3(cos_elevation * Math::sin(azimuth), Math::sin(elevation), cos_elevation * Math::cos(azimuth));
 	}
 
 	[[nodiscard]] const Ref<GFX::GfxTexture> &get_hdr_texture() const noexcept { return m_hdr_texture; }

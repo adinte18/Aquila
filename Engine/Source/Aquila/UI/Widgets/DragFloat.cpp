@@ -1,7 +1,6 @@
 #include "Aquila/UI/Widgets/DragFloat.h"
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
-
-#include <cmath>
 
 namespace Aquila::UI::Core {
 
@@ -19,9 +18,9 @@ DragFloat::DragFloat(const Config &config) : DragFloat() {
 }
 
 void DragFloat::set_value(float value) {
-	m_value = std::clamp(value, m_min, m_max);
+	m_value = Math::clamp(value, m_min, m_max);
 	if (m_step > 0.F) {
-		m_value = std::round(m_value / m_step) * m_step;
+		m_value = Math::round(m_value / m_step) * m_step;
 	}
 	queue_redraw();
 }
@@ -69,8 +68,8 @@ void DragFloat::set_slider(bool slider) {
 std::string DragFloat::format_value() const {
 	std::ostringstream ss;
 	ss.precision(m_precision);
-	const float half_unit = 0.5F * std::pow(10.F, -static_cast<float>(m_precision));
-	ss << std::fixed << (std::abs(m_value) < half_unit ? 0.F : m_value);
+	const float half_unit = 0.5F * Math::pow(10.F, -static_cast<float>(m_precision));
+	ss << std::fixed << (Math::abs(m_value) < half_unit ? 0.F : m_value);
 	return m_prefix + ss.str();
 }
 
@@ -130,7 +129,7 @@ void DragFloat::on_mouse_move(Vec2 pos) {
 		return;
 	}
 	const float delta = (pos.x - m_drag_start_x) * m_speed;
-	if (!m_has_dragged && std::abs(pos.x - m_drag_start_x) > K_DRAG_THRESHOLD) {
+	if (!m_has_dragged && Math::abs(pos.x - m_drag_start_x) > K_DRAG_THRESHOLD) {
 		m_has_dragged = true;
 	}
 	if (m_has_dragged) {
@@ -221,7 +220,7 @@ void DragFloat::on_draw_self(Rendering::DrawList &draw_list) {
 		const std::string display = m_suffix.empty() ? format_value() : format_value() + " " + m_suffix;
 		const bool has_range = m_min > -1e17F && m_max < 1e17F && m_max > m_min;
 		if (m_slider && has_range) {
-			const float fraction = std::clamp((m_value - m_min) / (m_max - m_min), 0.F, 1.F);
+			const float fraction = Math::clamp((m_value - m_min) / (m_max - m_min), 0.F, 1.F);
 			const float inset = style.border_width;
 			const Rect fill = {
 				.position = { rect.position.x + inset, rect.position.y + inset },

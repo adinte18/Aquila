@@ -1,5 +1,6 @@
 #include "Aquila/Graphics/Resources/Mesh.h"
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "assimp/Importer.hpp"
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
@@ -68,23 +69,23 @@ void Mesh::load(const std::string &filepath) {
 
 			for (Uint32 j = 0; j < mesh->mNumVertices; j++) {
 				RHI::Vertex v{};
-				v.pos = glm::vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.F);
+				v.pos = Vec4(mesh->mVertices[j].x, mesh->mVertices[j].y, mesh->mVertices[j].z, 1.F);
 				v.normals = mesh->HasNormals()
-					? glm::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
+					? Math::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z))
 					: Vec3(0, 1, 0);
 				v.texcoord = mesh->HasTextureCoords(0)
 					? Vec2(mesh->mTextureCoords[0][j].x, mesh->mTextureCoords[0][j].y)
 					: Vec2(0);
 
 				if (mesh->HasTangentsAndBitangents()) {
-					Vec3 t = glm::normalize(Vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z));
+					Vec3 t = Math::normalize(Vec3(mesh->mTangents[j].x, mesh->mTangents[j].y, mesh->mTangents[j].z));
 					Vec3 b =
-						glm::normalize(Vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y, mesh->mBitangents[j].z));
-					Vec3 n = glm::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
-					F32 h = (glm::dot(glm::cross(n, t), b) < 0.F) ? -1.F : 1.F;
-					v.tangent = glm::vec4(t, h);
+						Math::normalize(Vec3(mesh->mBitangents[j].x, mesh->mBitangents[j].y, mesh->mBitangents[j].z));
+					Vec3 n = Math::normalize(Vec3(mesh->mNormals[j].x, mesh->mNormals[j].y, mesh->mNormals[j].z));
+					F32 h = (Math::dot(Math::cross(n, t), b) < 0.F) ? -1.F : 1.F;
+					v.tangent = Vec4(t, h);
 				} else {
-					v.tangent = glm::vec4(1, 0, 0, 1);
+					v.tangent = Vec4(1, 0, 0, 1);
 				}
 				m_vertices.push_back(v);
 			}
@@ -151,8 +152,8 @@ void Mesh::center_mesh_at_origin() {
 	Vec3 max_b = Vec3(m_vertices[0].pos);
 	for (const auto &v : m_vertices) {
 		Vec3 p = Vec3(v.pos);
-		min_b = glm::min(min_b, p);
-		max_b = glm::max(max_b, p);
+		min_b = Math::min(min_b, p);
+		max_b = Math::max(max_b, p);
 	}
 	Vec3 center = (min_b + max_b) * 0.5F;
 	for (auto &v : m_vertices) {
@@ -209,13 +210,13 @@ MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 	for (Uint32 stack = 1; stack < rings; ++stack) {
 		F32 phi = Math::PI * F32(stack) / F32(rings);
 		for (Uint32 slice = 0; slice < segments; ++slice) {
-			F32 theta = 2.F * Math::PI * F32(slice) / F32(segments);
-			Vec3 pos = { radius * sin(phi) * cos(theta), radius * cos(phi), radius * sin(phi) * sin(theta) };
+			F32 theta = Math::TAU * F32(slice) / F32(segments);
+			Vec3 pos = { radius * Math::sin(phi) * Math::cos(theta), radius * Math::cos(phi), radius * Math::sin(phi) * Math::sin(theta) };
 			data.vertices.push_back({ pos,
 									  white,
-									  glm::normalize(pos),
+									  Math::normalize(pos),
 									  { F32(slice) / F32(segments), 1.F - F32(stack) / F32(rings) },
-									  glm::normalize(Vec4(-sin(theta), 0, cos(theta), 1)) });
+									  Math::normalize(Vec4(-Math::sin(theta), 0, Math::cos(theta), 1)) });
 		}
 	}
 	data.vertices.push_back({ { 0, -radius, 0 }, white, { 0, -1, 0 }, { 0.5F, 0.F }, { 1, 0, 0, 1 } });
@@ -257,10 +258,10 @@ MeshData Mesh::generate_cylinder(F32 radius, F32 height, Uint32 segments) {
 
 	constexpr Uint32 side_start = 2;
 	for (Uint32 i = 0; i <= segments; i++) {
-		F32 angle = 2.F * Math::PI * i / segments;
-		F32 x = radius * cos(angle), z = radius * sin(angle);
-		Vec3 n = glm::normalize(Vec3(x, 0, z));
-		Vec4 t = glm::normalize(Vec4(-sin(angle), 0, cos(angle), 1));
+		F32 angle = Math::TAU * i / segments;
+		F32 x = radius * Math::cos(angle), z = radius * Math::sin(angle);
+		Vec3 n = Math::normalize(Vec3(x, 0, z));
+		Vec4 t = Math::normalize(Vec4(-Math::sin(angle), 0, Math::cos(angle), 1));
 		F32 u = F32(i) / segments;
 		data.vertices.push_back({ { x, half, z }, white, n, { u, 0 }, t });
 		data.vertices.push_back({ { x, -half, z }, white, n, { u, 1 }, t });

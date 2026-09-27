@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/PrimitiveTypes.h"
 #include "Aquila/Foundation/Macros.h"
 
@@ -24,19 +25,19 @@ struct Rect {
 	}
 
 	[[nodiscard]] AQUILA_FORCE_INLINE Rect Union(const Rect &other) const {
-		const float x = std::min(left(), other.left());
-		const float y = std::min(top(), other.top());
-		const float r = std::max(right(), other.right());
-		const float b = std::max(bottom(), other.bottom());
+		const float x = Aquila::Math::min(left(), other.left());
+		const float y = Aquila::Math::min(top(), other.top());
+		const float r = Aquila::Math::max(right(), other.right());
+		const float b = Aquila::Math::max(bottom(), other.bottom());
 		return { .position = { x, y }, .size = { r - x, b - y } };
 	}
 
 	[[nodiscard]] AQUILA_FORCE_INLINE Rect intersect(const Rect &other) const {
-		float l = std::max(left(), other.left());
-		float t = std::max(top(), other.top());
-		float r = std::min(right(), other.right());
-		float b = std::min(bottom(), other.bottom());
-		return { .position = { l, t }, .size = { std::max(0.F, r - l), std::max(0.F, b - t) } };
+		float l = Aquila::Math::max(left(), other.left());
+		float t = Aquila::Math::max(top(), other.top());
+		float r = Aquila::Math::min(right(), other.right());
+		float b = Aquila::Math::min(bottom(), other.bottom());
+		return { .position = { l, t }, .size = { Aquila::Math::max(0.F, r - l), Aquila::Math::max(0.F, b - t) } };
 	}
 
 	static AQUILA_FORCE_INLINE Rect from_min_max(Vec2 min, Vec2 max) { return { .position = min, .size = max - min }; }
