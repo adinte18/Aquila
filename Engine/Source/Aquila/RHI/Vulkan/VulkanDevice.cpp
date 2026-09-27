@@ -1022,6 +1022,7 @@ void VulkanDevice::create_logical_device() {
 	VkPhysicalDeviceFeatures device_features{};
 	device_features.samplerAnisotropy = VK_TRUE;
 	device_features.wideLines = VK_TRUE;
+	device_features.largePoints = VK_TRUE;
 	device_features.fillModeNonSolid = VK_TRUE;
 	device_features.independentBlend = VK_TRUE;
 	device_features.sampleRateShading = VK_TRUE;

@@ -12,8 +12,11 @@ using namespace Aquila::Graphics;
 static constexpr const char *K_FLAT_SHADER = AQUILA_SHADERS_DIR "2D/Flat2D.slang";
 static constexpr const char *K_TEXTURE_SHADER = AQUILA_SHADERS_DIR "2D/Sprite2D.slang";
 static constexpr const char *K_GUI_SHADER = AQUILA_SHADERS_DIR "2D/GUI2D.slang";
+static constexpr const char *K_POINT_SHADER = AQUILA_SHADERS_DIR "2D/Point2D.slang";
 static constexpr const char *K_TEXT_SHADER = AQUILA_SHADERS_DIR "2D/Text2D.slang";
 static constexpr const char *K_SHADOW_SHADER = AQUILA_SHADERS_DIR "2D/Shadow2D.slang";
+
+static constexpr Uint32 K_MAX_PRIMITIVE_VERTICES = SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
 
 static constexpr Vec2 K_QUAD_UVS[4] = { { 0, 0 }, { 1, 0 }, { 1, 1 }, { 0, 1 } };
 static constexpr Vec4 K_LOCAL_CORNERS[4] = {
@@ -27,7 +30,7 @@ static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *sh
 											const std::vector<GFX::GfxDescriptorSetLayout *> &set_layouts,
 											Uint32 push_constant_size, RHI::TextureFormat color_format,
 											RHI::SampleCount sample_count, RHI::TextureFormat depth_format,
-											RHI::VertexBindingDesc vertex_layout) {
+											RHI::VertexBindingDesc vertex_layout, RHI::PrimitiveTopology topology) {
 	std::vector<RHI::VulkanCompiledStage> stages;
 	std::string err;
 	if (!RHI::VulkanShaderCompiler::compile_file(shader_path, stages, err)) {
@@ -55,13 +58,13 @@ static Ref<GFX::GfxPipeline> build_pipeline(GFX::GfxContext &ctx, const char *sh
 	desc.set_layouts = temp;
 	desc.color_formats = { color_format };
 	desc.depth_format = depth_format;
-	desc.topology = RHI::PrimitiveTopology::TriangleList;
+	desc.topology = topology;
 	desc.raster.cull_mode = RHI::CullMode::None;
 	desc.raster.front_face = RHI::FrontFace::Clockwise;
 	desc.depth_stencil.depth_test = false;
 	desc.depth_stencil.depth_write = false;
-	desc.blend_attachments = { { true } };
-	desc.push_constants = { { RHI::ShaderStageFlags::Vertex, 0, push_constant_size } };
+	desc.blend_attachments = { { .enable = true } };
+	desc.push_constants = { { .stages = RHI::ShaderStageFlags::Vertex, .offset = 0, .size = push_constant_size } };
 	desc.sample_count = sample_count;
 	desc.custom_vertex_layout = std::move(vertex_layout);
 
@@ -81,6 +84,17 @@ static RHI::VertexBindingDesc quad_vertex_layout() {
 			{ 6, 0, RHI::TextureFormat::RGBA32F, offsetof(QuadVertex, border_color) },
 			{ 7, 0, RHI::TextureFormat::R32UI, offsetof(QuadVertex, glyph_id) },
 			{ 8, 0, RHI::TextureFormat::R32F, offsetof(QuadVertex, border_style) },
+		},
+	};
+}
+
+static RHI::VertexBindingDesc vertex_layout() {
+	return RHI::VertexBindingDesc{
+		.stride = sizeof(Vertex),
+		.attributes = {
+			{ 0, 0, RHI::TextureFormat::RG32F, offsetof(Vertex, position) },
+			{ 1, 0, RHI::TextureFormat::RGBA32F, offsetof(Vertex, color) },
+			{ 2, 0, RHI::TextureFormat::R32F, offsetof(Vertex, size) },
 		},
 	};
 }
@@ -117,6 +131,7 @@ static std::vector<Uint32> generate_quad_indices(Uint32 max_quads) {
 Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_ctx(ctx) {
 	const Uint64 quad_vb_size = sizeof(QuadVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
 	const Uint64 text_vb_size = sizeof(TextVertex) * SharedConstants::MAX_QUADS * SharedConstants::VERTS_PER_QUAD;
+	const Uint64 primitive_vb_size = sizeof(Vertex) * K_MAX_PRIMITIVE_VERTICES;
 
 	for (Uint32 i = 0; i < K_RING_SIZE; ++i) {
 		m_vertex_buffers[i] = ctx.create_buffer({
@@ -131,7 +146,14 @@ Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_ctx(ctx) {
 			.domain = RHI::MemoryDomain::CpuToGpu,
 			.debug_name = "Renderer2D_TextVB",
 		});
+		m_primitive_vertex_buffers[i] = ctx.create_buffer({
+			.size = primitive_vb_size,
+			.usage = RHI::BufferUsage::VertexBuffer,
+			.domain = RHI::MemoryDomain::CpuToGpu,
+			.debug_name = "Renderer2D_PrimitiveVB",
+		});
 		m_mapped_quad_bases[i] = static_cast<QuadVertex *>(m_vertex_buffers[i]->map());
+		m_mapped_primitive_bases[i] = static_cast<Vertex *>(m_primitive_vertex_buffers[i]->map());
 		m_mapped_text_bases[i] = static_cast<TextVertex *>(m_text_vertex_buffers[i]->map());
 	}
 
@@ -173,6 +195,7 @@ Renderer2D::Renderer2D(GFX::GfxContext &ctx) : m_ctx(ctx) {
 	for (auto fmt : { RHI::TextureFormat::BGRA8, RHI::TextureFormat::RGBA16F }) {
 		get_or_create_flat_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
 		get_or_create_gui_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
+		get_or_create_point_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
 		get_or_create_texture_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
 		get_or_create_text_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
 		get_or_create_shadow_pipeline(fmt, RHI::SampleCount::X1, RHI::TextureFormat::None);
@@ -221,6 +244,11 @@ void Renderer2D::register_shader_hot_reload() {
 		m_shadow_pipelines.clear();
 		m_last_bound_pipeline = nullptr;
 	}));
+	m_watch_ids.push_back(hot_reload->register_reloadable(K_POINT_SHADER, [this]() {
+		m_ctx.wait_idle();
+		m_point_pipelines.clear();
+		m_last_bound_pipeline = nullptr;
+	}));
 }
 
 void Renderer2D::begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format, RHI::SampleCount sample_count,
@@ -237,11 +265,14 @@ void Renderer2D::begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format
 	m_current_slot = fi;
 	m_active_vertex_buffer = m_vertex_buffers[fi].get();
 	m_active_text_vertex_buffer = m_text_vertex_buffers[fi].get();
+	m_active_primitive_vertex_buffer = m_primitive_vertex_buffers[fi].get();
 	m_quad_write_ptr = m_mapped_quad_bases[fi];
 	m_text_write_ptr = m_mapped_text_bases[fi];
+	m_vertex_write_ptr = m_mapped_primitive_bases[fi];
 
 	m_vertex_offset = 0;
 	m_text_vertex_offset = 0;
+	m_primitive_vertex_offset = 0;
 	m_last_bound_pipeline = nullptr;
 	m_last_bound_desc_set0 = nullptr;
 	m_last_bound_vertex_buffer = nullptr;
@@ -273,8 +304,17 @@ void Renderer2D::execute_replay(GFX::GfxCommandList &cmd) {
 		return;
 	}
 
-	GFX::GfxBuffer *replay_quad_vb = m_vertex_buffers[m_last_dirty_slot].get();
-	GFX::GfxBuffer *replay_text_vb = m_text_vertex_buffers[m_last_dirty_slot].get();
+	auto replay_buffer = [this](VertexStream stream) -> GFX::GfxBuffer * {
+		switch (stream) {
+		case VertexStream::Text:
+			return m_text_vertex_buffers[m_last_dirty_slot].get();
+		case VertexStream::Primitive:
+			return m_primitive_vertex_buffers[m_last_dirty_slot].get();
+		case VertexStream::Quad:
+			break;
+		}
+		return m_vertex_buffers[m_last_dirty_slot].get();
+	};
 
 	cmd.bind_index_buffer(*m_index_buffer);
 
@@ -295,7 +335,7 @@ void Renderer2D::execute_replay(GFX::GfxCommandList &cmd) {
 			cmd.push_constants(pc, RHI::ShaderStageFlags::Vertex);
 		}
 
-		GFX::GfxBuffer *vb = entry.is_text_buffer ? replay_text_vb : replay_quad_vb;
+		GFX::GfxBuffer *vb = replay_buffer(entry.stream);
 		if (vb != last_vb) {
 			cmd.bind_vertex_buffer(*vb, 0, 0);
 			last_vb = vb;
@@ -306,13 +346,18 @@ void Renderer2D::execute_replay(GFX::GfxCommandList &cmd) {
 			last_desc_set = entry.desc_set;
 		}
 
-		cmd.draw_indexed(entry.index_count, 1, 0, entry.vertex_offset);
+		if (entry.indexed) {
+			cmd.draw_indexed(entry.count, 1, 0, entry.vertex_offset);
+		} else {
+			cmd.draw(entry.count, 1, static_cast<Uint32>(entry.vertex_offset), 0);
+		}
 	}
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_pipeline(PipelineCache &cache, const char *shader_path,
-													GFX::GfxDescriptorSetLayout *set_layout,
-													RHI::VertexBindingDesc (*vertex_layout)(), const PipelineKey &key) {
+													  GFX::GfxDescriptorSetLayout *set_layout,
+													  RHI::VertexBindingDesc (*vertex_layout)(),
+													  RHI::PrimitiveTopology topology, const PipelineKey &key) {
 	auto it = cache.find(key);
 	if (it != cache.end()) {
 		return *it->second;
@@ -322,38 +367,44 @@ GFX::GfxPipeline &Renderer2D::get_or_create_pipeline(PipelineCache &cache, const
 		set_layouts.push_back(set_layout);
 	}
 	cache[key] = build_pipeline(m_ctx, shader_path, set_layouts, sizeof(QuadPushConstants), key.color_format,
-								key.sample_count, key.depth_format, vertex_layout());
+								key.sample_count, key.depth_format, vertex_layout(), topology);
 	return *cache[key];
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_flat_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 														   RHI::TextureFormat depth_format) {
-	return get_or_create_pipeline(m_flat_pipelines, K_FLAT_SHADER, nullptr, quad_vertex_layout,
-								  { format, samples, depth_format });
+	return get_or_create_pipeline(m_flat_pipelines, K_FLAT_SHADER, nullptr, quad_vertex_layout, RHI::PrimitiveTopology::TriangleList,
+								  { .color_format = format, .sample_count = samples, .depth_format = depth_format });
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_texture_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 															  RHI::TextureFormat depth_format) {
-	return get_or_create_pipeline(m_texture_pipelines, K_TEXTURE_SHADER, m_texture_layout.get(), quad_vertex_layout,
-								  { format, samples, depth_format });
+	return get_or_create_pipeline(m_texture_pipelines, K_TEXTURE_SHADER, m_texture_layout.get(), quad_vertex_layout, RHI::PrimitiveTopology::TriangleList,
+								  { .color_format = format, .sample_count = samples, .depth_format = depth_format });
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_gui_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 														  RHI::TextureFormat depth_format) {
-	return get_or_create_pipeline(m_gui_pipelines, K_GUI_SHADER, nullptr, quad_vertex_layout,
-								  { format, samples, depth_format });
+	return get_or_create_pipeline(m_gui_pipelines, K_GUI_SHADER, nullptr, quad_vertex_layout, RHI::PrimitiveTopology::TriangleList,
+								  { .color_format = format, .sample_count = samples, .depth_format = depth_format });
+}
+
+GFX::GfxPipeline &Renderer2D::get_or_create_point_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
+															RHI::TextureFormat depth_format) {
+	return get_or_create_pipeline(m_point_pipelines, K_POINT_SHADER, nullptr, vertex_layout,
+								  RHI::PrimitiveTopology::PointList, { .color_format = format, .sample_count = samples, .depth_format = depth_format });
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_text_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 														   RHI::TextureFormat depth_format) {
-	return get_or_create_pipeline(m_text_pipelines, K_TEXT_SHADER, m_text_data_layout.get(), text_vertex_layout,
-								  { format, samples, depth_format });
+	return get_or_create_pipeline(m_text_pipelines, K_TEXT_SHADER, m_text_data_layout.get(), text_vertex_layout, RHI::PrimitiveTopology::TriangleList,
+								  { .color_format = format, .sample_count = samples, .depth_format = depth_format });
 }
 
 GFX::GfxPipeline &Renderer2D::get_or_create_shadow_pipeline(RHI::TextureFormat format, RHI::SampleCount samples,
 															 RHI::TextureFormat depth_format) {
-	return get_or_create_pipeline(m_shadow_pipelines, K_SHADOW_SHADER, nullptr, quad_vertex_layout,
-								  { format, samples, depth_format });
+	return get_or_create_pipeline(m_shadow_pipelines, K_SHADOW_SHADER, nullptr, quad_vertex_layout, RHI::PrimitiveTopology::TriangleList,
+								  { .color_format = format, .sample_count = samples, .depth_format = depth_format });
 }
 
 void Renderer2D::draw_shadow(const ShadowSpec &spec) {
@@ -487,7 +538,7 @@ void Renderer2D::draw_sprite(const SpriteSpec &spec) {
 	if (spec.texture != nullptr && !spec.texture->is_ready()) {
 		return;
 	}
-	if (m_batch_texture != spec.texture) {
+	if (m_batch_texture != spec.texture || m_batch_type == BatchType::Point) {
 		flush();
 		start_batch();
 		m_batch_texture = spec.texture;
@@ -530,6 +581,22 @@ void Renderer2D::draw_sprite(const SpriteSpec &spec) {
 
 	++m_quad_count;
 	++m_stats.quad_count;
+}
+
+void Renderer2D::draw_point(const PointSpec &spec) {
+	if (m_primitive_vertex_offset + m_primitive_batch_count >= K_MAX_PRIMITIVE_VERTICES) {
+		return;
+	}
+	if (m_batch_type != BatchType::Point) {
+		flush();
+		start_batch();
+		m_batch_type = BatchType::Point;
+	}
+
+	*m_vertex_write_ptr++ = { .position = spec.position, .color = spec.color, .size = spec.size };
+
+	++m_primitive_batch_count;
+	++m_stats.primitive_count;
 }
 
 void Renderer2D::draw_glyph(const GlyphSpec &spec) {
@@ -595,7 +662,7 @@ void Renderer2D::draw_glyph(const GlyphSpec &spec) {
 }
 
 void Renderer2D::flush() {
-	if (m_quad_count == 0) {
+	if (m_quad_count == 0 && m_primitive_batch_count == 0) {
 		return;
 	}
 
@@ -622,7 +689,34 @@ void Renderer2D::flush() {
 		}
 	};
 
-	if (m_batch_type == BatchType::Text) {
+	if (m_batch_type == BatchType::Point) {
+		bind_pipeline_if_changed(
+			get_or_create_point_pipeline(m_active_color_format, m_active_sample_count, m_active_depth_format));
+
+		if (m_push_constants_dirty) {
+			QuadPushConstants pc{ .view_projection = m_view_projection };
+			m_active_cmd->push_constants(pc, RHI::ShaderStageFlags::Vertex);
+			m_push_constants_dirty = false;
+		}
+
+		bind_vertex_buffer_if_changed(*m_active_primitive_vertex_buffer);
+
+		const Uint32 vertex_count = m_primitive_batch_count;
+		const Uint32 first_vertex = m_primitive_vertex_offset;
+		m_active_cmd->draw(vertex_count, 1, first_vertex, 0);
+		++m_stats.draw_calls;
+
+		if (m_capturing) {
+			m_replay_list.push_back({ .pipeline = m_last_bound_pipeline,
+									  .desc_set = nullptr,
+									  .stream = VertexStream::Primitive,
+									  .indexed = false,
+									  .count = vertex_count,
+									  .vertex_offset = static_cast<Int32>(first_vertex) });
+		}
+
+		m_primitive_vertex_offset += vertex_count;
+	} else if (m_batch_type == BatchType::Text) {
 		bind_pipeline_if_changed(
 			get_or_create_text_pipeline(m_active_color_format, m_active_sample_count, m_active_depth_format));
 
@@ -641,7 +735,12 @@ void Renderer2D::flush() {
 		++m_stats.draw_calls;
 
 		if (m_capturing) {
-			m_replay_list.push_back({ m_last_bound_pipeline, m_cached_text_data_set, true, index_count, vertex_off });
+			m_replay_list.push_back({ .pipeline = m_last_bound_pipeline,
+									  .desc_set = m_cached_text_data_set,
+									  .stream = VertexStream::Text,
+									  .indexed = true,
+									  .count = index_count,
+									  .vertex_offset = vertex_off });
 		}
 
 		m_text_vertex_offset += m_quad_count * SharedConstants::VERTS_PER_QUAD;
@@ -683,7 +782,12 @@ void Renderer2D::flush() {
 		++m_stats.draw_calls;
 
 		if (m_capturing) {
-			m_replay_list.push_back({ m_last_bound_pipeline, bound_set, false, index_count, vertex_off });
+			m_replay_list.push_back({ .pipeline = m_last_bound_pipeline,
+									  .desc_set = bound_set,
+									  .stream = VertexStream::Quad,
+									  .indexed = true,
+									  .count = index_count,
+									  .vertex_offset = vertex_off });
 		}
 
 		m_vertex_offset += m_quad_count * SharedConstants::VERTS_PER_QUAD;
@@ -719,6 +823,7 @@ GFX::GfxDescriptorSet &Renderer2D::get_or_create_text_data_set(GFX::GfxTexture &
 
 void Renderer2D::start_batch() {
 	m_quad_count = 0;
+	m_primitive_batch_count = 0;
 	m_batch_type = BatchType::Flat;
 	m_batch_texture = nullptr;
 	m_batch_curve_texture = nullptr;
@@ -731,8 +836,9 @@ void Renderer2D::set_scissor(GFX::GfxCommandList &cmd, Int32 x, Int32 y, Uint32 
 		m_replay_list.push_back({
 			.pipeline = nullptr,
 			.desc_set = nullptr,
-			.is_text_buffer = false,
-			.index_count = 0,
+			.stream = VertexStream::Quad,
+			.indexed = false,
+			.count = 0,
 			.vertex_offset = 0,
 			.is_scissor = true,
 			.scissor_x = x,

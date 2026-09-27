@@ -56,6 +56,13 @@ struct TextCmd {
 	Int32 z_order = 0;
 };
 
+struct PointCmd {
+	Vec2 position = DEFAULT_VALUE;
+	Vec4 color = DEFAULT_VALUE;
+	F32 size = 1.F;
+	Int32 z_order = 0;
+};
+
 struct ClipPushCmd {
 	Rect rect;
 	Int32 z_order = 0;
@@ -66,7 +73,7 @@ struct ClipPopCmd {
 	Int32 z_order = 0;
 };
 
-using DrawCmd = std::variant<RectCmd, ShadowCmd, ImageCmd, TextCmd, ClipPushCmd, ClipPopCmd>;
+using DrawCmd = std::variant<RectCmd, ShadowCmd, ImageCmd, TextCmd, PointCmd, ClipPushCmd, ClipPopCmd>;
 
 [[nodiscard]] inline Int32 draw_cmd_z_order(const DrawCmd &cmd) {
 	return std::visit([](const auto &c) { return c.z_order; }, cmd);

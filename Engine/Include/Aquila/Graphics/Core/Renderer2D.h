@@ -25,6 +25,12 @@ struct QuadVertex {
 	Vec4 border_color = DEFAULT_VALUE;
 };
 
+struct Vertex {
+	Vec2 position = DEFAULT_VALUE;
+	Vec4 color = DEFAULT_VALUE;
+	F32 size = DEFAULT_VALUE;
+};
+
 struct QuadPushConstants {
 	Mat4 view_projection;
 };
@@ -39,6 +45,12 @@ struct RectSpec {
 	float border_width = 0.F;
 	Vec4 border_color = { 0.F, 0.F, 0.F, 0.F };
 	float border_style = 0.F;
+};
+
+struct PointSpec {
+	Vec2 position = { 0.F, 0.F };
+	Vec4 color = { 1.F, 1.F, 1.F, 1.F };
+	F32 size = 1.F;
 };
 
 struct SpriteSpec {
@@ -116,10 +128,12 @@ class Renderer2D {
 	void draw_shadow(const ShadowSpec &spec);
 	void draw_sprite(const SpriteSpec &spec);
 	void draw_glyph(const GlyphSpec &spec);
+	void draw_point(const PointSpec &spec);
 
 	void reset_stats() { m_stats = {}; }
 	[[nodiscard]] Uint32 get_draw_call_count() const { return m_stats.draw_calls; }
 	[[nodiscard]] Uint32 get_quad_count() const { return m_stats.quad_count; }
+	[[nodiscard]] Uint32 get_primitive_count() const { return m_stats.primitive_count; }
 
 	GFX::GfxPipeline &get_or_create_flat_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
 												  RHI::TextureFormat depth_format);
@@ -131,11 +145,14 @@ class Renderer2D {
 												  RHI::TextureFormat depth_format);
 	GFX::GfxPipeline &get_or_create_shadow_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
 													RHI::TextureFormat depth_format);
+	GFX::GfxPipeline &get_or_create_point_pipeline(RHI::TextureFormat color_format, RHI::SampleCount samples,
+												   RHI::TextureFormat depth_format);
 
   private:
 	struct Stats {
 		Uint32 draw_calls = 0;
 		Uint32 quad_count = 0;
+		Uint32 primitive_count = 0;
 	};
 
 	struct PipelineKey {
@@ -157,13 +174,16 @@ class Renderer2D {
 
 	using PipelineCache = std::unordered_map<PipelineKey, Ref<GFX::GfxPipeline>, PipelineKeyHash>;
 
-	enum class BatchType : Uint8 { Flat, GUI, Texture, Text, Shadow };
+	enum class BatchType : Uint8 { Flat, Point, GUI, Texture, Text, Shadow };
+
+	enum class VertexStream : Uint8 { Quad, Text, Primitive };
 
 	struct ReplayEntry {
 		GFX::GfxPipeline *pipeline{};
 		GFX::GfxDescriptorSet *desc_set{}; // null for pipelines with no descriptor set
-		bool is_text_buffer{}; // selects text VB vs quad VB
-		Uint32 index_count{};
+		VertexStream stream = VertexStream::Quad;
+		bool indexed = true;
+		Uint32 count{};
 		Int32 vertex_offset{};
 		bool is_scissor = false;
 		Int32 scissor_x = 0;
@@ -176,8 +196,9 @@ class Renderer2D {
 	void register_shader_hot_reload();
 	[[nodiscard]] Mat4 build_quad_transform(Vec2 position, Vec2 size, float rotation, float depth) const;
 	GFX::GfxPipeline &get_or_create_pipeline(PipelineCache &cache, const char *shader_path,
-										   GFX::GfxDescriptorSetLayout *set_layout,
-										   RHI::VertexBindingDesc (*vertex_layout)(), const PipelineKey &key);
+											 GFX::GfxDescriptorSetLayout *set_layout,
+											 RHI::VertexBindingDesc (*vertex_layout)(), RHI::PrimitiveTopology topology,
+											 const PipelineKey &key);
 	GFX::GfxDescriptorSet &get_or_create_texture_set(GFX::GfxTexture &texture);
 	GFX::GfxDescriptorSet &get_or_create_text_data_set(GFX::GfxTexture &curve_texture, GFX::GfxTexture &band_texture);
 
@@ -187,13 +208,17 @@ class Renderer2D {
 	static constexpr Uint32 K_RING_SIZE = SharedConstants::MAX_FRAMES_IN_FLIGHT;
 	std::array<Ref<GFX::GfxBuffer>, K_RING_SIZE> m_vertex_buffers;
 	std::array<Ref<GFX::GfxBuffer>, K_RING_SIZE> m_text_vertex_buffers;
+	std::array<Ref<GFX::GfxBuffer>, K_RING_SIZE> m_primitive_vertex_buffers;
 	QuadVertex *m_mapped_quad_bases[K_RING_SIZE] = {};
 	TextVertex *m_mapped_text_bases[K_RING_SIZE] = {};
+	Vertex *m_mapped_primitive_bases[K_RING_SIZE] = {};
 	GFX::GfxBuffer *m_active_vertex_buffer = nullptr;
 	GFX::GfxBuffer *m_active_text_vertex_buffer = nullptr;
+	GFX::GfxBuffer *m_active_primitive_vertex_buffer = nullptr;
 	// Direct write pointers into the currently active mapped buffer — no intermediate vector.
 	QuadVertex *m_quad_write_ptr = nullptr;
 	TextVertex *m_text_write_ptr = nullptr;
+	Vertex *m_vertex_write_ptr = nullptr;
 	Uint32 m_frame_counter = 0;
 
 	Ref<GFX::GfxBuffer> m_index_buffer;
@@ -205,6 +230,7 @@ class Renderer2D {
 	PipelineCache m_flat_pipelines;
 	PipelineCache m_texture_pipelines;
 	PipelineCache m_gui_pipelines;
+	PipelineCache m_point_pipelines;
 	PipelineCache m_text_pipelines;
 	PipelineCache m_shadow_pipelines;
 
@@ -227,6 +253,8 @@ class Renderer2D {
 	Uint32 m_quad_count = 0;
 	Uint32 m_vertex_offset = 0;
 	Uint32 m_text_vertex_offset = 0;
+	Uint32 m_primitive_vertex_offset = 0;
+	Uint32 m_primitive_batch_count = 0;
 	BatchType m_batch_type = BatchType::Flat;
 	GFX::GfxTexture *m_batch_texture = nullptr;
 	GFX::GfxTexture *m_batch_curve_texture = nullptr;

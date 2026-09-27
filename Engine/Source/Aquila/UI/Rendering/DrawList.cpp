@@ -50,6 +50,16 @@ void DrawList::draw_line(Vec2 from, Vec2 to, float width, Vec4 color, Int32 z) {
 	m_commands.emplace_back(command);
 }
 
+void DrawList::draw_point(Vec2 position, float width, Vec4 color, Int32 z) {
+	PointCmd command{};
+	command.position = position;
+	command.color = color;
+	command.size = width;
+	command.z_order = z;
+
+	m_commands.emplace_back(command);
+}
+
 void DrawList::draw_shadow(Rect widget_rect, Vec2 offset, float blur, float spread, Vec4 color, Vec4 radius, Int32 z) {
 	ShadowCmd command;
 	command.rect = widget_rect;
@@ -134,6 +144,12 @@ void DrawList::submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 					spec.border_style = static_cast<float>(static_cast<Uint8>(c.border_style));
 					spec.rotation = c.rotation;
 					r2d.draw_rect(spec);
+				} else if constexpr (std::is_same_v<T, PointCmd>) {
+					Graphics::PointSpec spec;
+					spec.position = c.position;
+					spec.color = c.color;
+					spec.size = c.size;
+					r2d.draw_point(spec);
 				} else if constexpr (std::is_same_v<T, ShadowCmd>) {
 					Graphics::ShadowSpec spec{};
 					const Vec2 offset = c.offset;
