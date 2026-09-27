@@ -22,7 +22,7 @@ void register_builtin_components(ComponentRegistry &registry) {
 		.property("Position", &TransformComponent::get_local_position, &TransformComponent::set_local_position,
 				  PropertyHints{ .speed = 0.05F, .precision = 3, .unit = "m" })
 		.property("Scale", &TransformComponent::get_local_scale, &TransformComponent::set_local_scale,
-				  PropertyHints{ .speed = 0.01F, .precision = 3, .unit = "m" })
+				  PropertyHints{ .speed = 0.01F, .precision = 3 })
 		.property("Rotation", &TransformComponent::get_local_rotation_euler,
 				  &TransformComponent::set_local_rotation_euler,
 				  PropertyHints{ .speed = 0.5F, .precision = 1, .unit = "°" });
