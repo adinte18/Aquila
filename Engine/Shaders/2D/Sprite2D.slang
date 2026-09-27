@@ -23,7 +23,8 @@ PushConstants pc;
 [[vk::binding(0, 0)]]
 Sampler2D tex;
 
-[shader("vertex")] VSOutput main(VSInput input) {
+[shader("vertex")]
+VSOutput main(VSInput input) {
 	VSOutput output;
 	output.position = mul(pc.viewProjection, float4(input.position, 1.0));
 	output.position.y = -output.position.y; // Vulkan y-flip
@@ -32,8 +33,8 @@ Sampler2D tex;
 	return output;
 }
 
-	[shader("fragment")] float4 main(VSOutput input)
-	: SV_Target {
+[shader("fragment")]
+float4 main(VSOutput input) : SV_Target {
 	float4 texColor = tex.Sample(input.uv);
 	return texColor * input.color;
 }

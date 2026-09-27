@@ -8,12 +8,18 @@
 #define kLogBandTextureWidth 12
 
 struct VSInput {
-	[[vk::location(0)]] float3 position : POSITION;
-	[[vk::location(1)]] float4 color : COLOR;
-	[[vk::location(2)]] float2 texcoord : TEXCOORD0; // em-space (interpolated)
-	[[vk::location(3)]] float texLoc : TEXCOORD1;	 // packed glyphLoc  (asuint)
-	[[vk::location(4)]] float bandMax : TEXCOORD2;	 // packed bandMax   (asuint)
-	[[vk::location(5)]] float4 banding : TEXCOORD3;	 // band transform
+	[[vk::location(0)]]
+	float3 position : POSITION;
+	[[vk::location(1)]]
+	float4 color : COLOR;
+	[[vk::location(2)]]
+	float2 texcoord : TEXCOORD0; // em-space (interpolated)
+	[[vk::location(3)]]
+	float texLoc : TEXCOORD1; // packed glyphLoc  (asuint)
+	[[vk::location(4)]]
+	float bandMax : TEXCOORD2; // packed bandMax   (asuint)
+	[[vk::location(5)]]
+	float4 banding : TEXCOORD3; // band transform
 };
 
 struct VSOutput {
@@ -31,11 +37,14 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants pc;
 
-[[vk::binding(0, 0)]] Texture2D curveTexture;		// RGBA32F: 2 texels per curve
-[[vk::binding(1, 0)]] Texture2D<uint4> bandTexture; // RGBA32U: band headers + index lists
+[[vk::binding(0, 0)]]
+Texture2D curveTexture; // RGBA32F: 2 texels per curve
+[[vk::binding(1, 0)]]
+Texture2D<uint4> bandTexture; // RGBA32U: band headers + index lists
 
 // Unpack glyph location from the two reinterpreted floats.
-[shader("vertex")] VSOutput main(VSInput input) {
+[shader("vertex")]
+VSOutput main(VSInput input) {
 	VSOutput output;
 	output.position = mul(pc.viewProjection, float4(input.position, 1.0));
 	output.position.y = -output.position.y; // Vulkan Y-flip
@@ -111,7 +120,8 @@ float CalcCoverage(float xcov, float ycov, float xwgt, float ywgt) {
 }
 
 //  Slug band-accelerated coverage.
-[shader("fragment")] float4 main(VSOutput input) : SV_Target {
+[shader("fragment")]
+float4 main(VSOutput input) : SV_Target {
 	float2 renderCoord = input.texcoord;
 	float4 bandTransform = input.banding;
 	int4 glyphData = input.glyphData;

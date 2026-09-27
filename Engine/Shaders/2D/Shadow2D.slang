@@ -32,7 +32,8 @@ struct PushConstants {
 [[vk::push_constant]]
 PushConstants pc;
 
-[shader("vertex")] VSOutput main(VSInput input) {
+[shader("vertex")]
+VSOutput main(VSInput input) {
 	VSOutput output;
 	output.position = mul(pc.viewProjection, float4(input.position, 1.0));
 	output.position.y = -output.position.y;
@@ -52,7 +53,8 @@ float sdRoundBox(float2 p, float2 halfSize, float4 r) {
 	return min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - corner;
 }
 
-[shader("fragment")] float4 main(VSOutput input) : SV_Target {
+[shader("fragment")]
+float4 main(VSOutput input) : SV_Target {
 	float2 localPos = (input.uv - 0.5) * input.size;
 	float2 boxHalfSize = input.shadowParams.zw;
 	float blur = max(input.blur, 1.0);

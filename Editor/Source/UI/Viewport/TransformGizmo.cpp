@@ -571,7 +571,7 @@ void TransformGizmo::publish_change() {
 
 Vec4 TransformGizmo::color_for(Handle handle, Vec4 base) const {
 	if (handle == m_hovered) {
-		return Vec4((Vec3(base) * 0.45F) + Vec3(0.55F), base.a);
+		return { (Vec3(base) * 0.45F) + Vec3(0.55F), base.a };
 	}
 	return base;
 }
