@@ -34,9 +34,17 @@ class SelectableTextView : public View {
 	void on_draw_self(Rendering::DrawList &draw_list) override;
 
   private:
+	struct Row {
+		Int32 line = 0;
+		Int32 begin = 0;
+		Int32 end = 0;
+	};
+
 	[[nodiscard]] F32 line_height() const;
+	[[nodiscard]] const std::vector<Row> &rows() const;
+	void wrap_line(Usize index, F32 width, Text::FontAtlas *font, F32 size) const;
 	[[nodiscard]] Text::TextPosition position_at(Vec2 canvas_pos) const;
-	[[nodiscard]] F32 width_of(const std::string &line, Int32 columns) const;
+	[[nodiscard]] F32 width_of(std::string_view text) const;
 	[[nodiscard]] Rect visible_rect() const;
 
 	std::vector<std::string> m_lines;
@@ -49,6 +57,12 @@ class SelectableTextView : public View {
 	std::vector<Tag> m_tags;
 	Text::TextSelection m_selection;
 	bool m_selecting = false;
+
+	mutable std::vector<Row> m_rows;
+	mutable Usize m_wrapped_lines = 0;
+	mutable F32 m_rows_width = -1.F;
+	mutable F32 m_rows_size = -1.F;
+	mutable Text::FontAtlas *m_rows_font = nullptr;
 };
 
 } // namespace Aquila::UI::Core

@@ -250,11 +250,12 @@ void LayoutEngine::run_layout(View *root, Vec2 mouse_pos, bool mouse_down, Vec2 
 	constexpr int k_max_wrap_passes = 3;
 	for (int pass = 0; pass < k_max_wrap_passes; ++pass) {
 		m_wrap_lines.clear();
+		m_intrinsic_sizes.clear();
 		Clay_BeginLayout();
 		layout_pass(root);
 		Clay_EndLayout(pass == 0 ? delta_time : 0.F);
 		update_rects(root);
-		if (!wrap_lines_changed()) {
+		if (!wrap_lines_changed() && !intrinsic_sizes_changed()) {
 			break;
 		}
 	}
@@ -324,6 +325,16 @@ std::vector<Uint32> LayoutEngine::compute_wrap_lines(View *node) const {
 	}
 	lines.push_back(count);
 	return lines;
+}
+
+bool LayoutEngine::intrinsic_sizes_changed() const {
+	for (const View *node : m_resized_nodes) {
+		const auto it = m_intrinsic_sizes.find(node);
+		if (it != m_intrinsic_sizes.end() && node->get_intrinsic_size() != it->second) {
+			return true;
+		}
+	}
+	return false;
 }
 
 bool LayoutEngine::wrap_lines_changed() const {
@@ -478,6 +489,7 @@ void LayoutEngine::layout_pass(View *node) {
 	Clay_LayoutConfig layout = to_clay_layout(cs, vw_px, vh_px);
 	if (!is_text) {
 		const Vec2 intrinsic = node->get_intrinsic_size();
+		m_intrinsic_sizes[node] = intrinsic;
 		if (intrinsic.x >= 0.F && cs.width.unit == LengthUnit::Auto) {
 			layout.sizing.width = CLAY_SIZING_FIXED(intrinsic.x);
 		}
