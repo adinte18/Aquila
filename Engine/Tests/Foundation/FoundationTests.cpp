@@ -16,6 +16,21 @@ static void run_frame(const std::string &section = "Work",
 	Profiler::get()->end_frame();
 }
 
+struct LogCapture {
+	std::ostringstream stream;
+	LogLevel previous_level = Logger::get_log_level();
+
+	explicit LogCapture(LogLevel level) {
+		Logger::set_sink(&stream);
+		Logger::set_log_level(level);
+	}
+
+	~LogCapture() {
+		Logger::set_sink(nullptr);
+		Logger::set_log_level(previous_level);
+	}
+};
+
 #define RESET() Profiler::get()->reset()
 #define PROFILE_INIT() Profiler::init();
 #define PROFILE_SHUTDOWN() Profiler::shutdown();
@@ -143,24 +158,15 @@ TEST_SUITE("Timer tests") {
 
 TEST_SUITE("Logger tests") {
 	TEST_CASE("Log debug writes message") {
-		std::ostringstream capture;
-		Logger::set_sink(&capture);
-
+		LogCapture capture(LogLevel::Debug);
 		Logger::log_debug("Test message");
-
-		Logger::set_sink(nullptr);
-		CHECK(capture.str().find("Test message") != std::string::npos);
+		CHECK(capture.stream.str().find("Test message") != std::string::npos);
 	}
 
 	TEST_CASE("Log level filters lower levels") {
-		std::ostringstream capture;
-		Logger::set_sink(&capture);
-		Logger::set_log_level(LogLevel::Warning);
-
+		LogCapture capture(LogLevel::Warning);
 		Logger::log_debug("Should not appear");
-
-		Logger::set_sink(nullptr);
-		CHECK(capture.str().empty());
+		CHECK(capture.stream.str().empty());
 	}
 
 	TEST_CASE("Profiler is enabled by default") {
