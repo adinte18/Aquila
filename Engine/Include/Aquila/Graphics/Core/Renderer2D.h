@@ -96,12 +96,12 @@ struct GlyphSpec {
 	bool flip_y = false;
 };
 
-class QuadBatcher {
+class Renderer2D {
   public:
-	explicit QuadBatcher(GFX::GfxContext &ctx);
-	~QuadBatcher();
-	AQUILA_NONCOPYABLE(QuadBatcher);
-	AQUILA_NONMOVEABLE(QuadBatcher);
+	explicit Renderer2D(GFX::GfxContext &ctx);
+	~Renderer2D();
+	AQUILA_NONCOPYABLE(Renderer2D);
+	AQUILA_NONMOVEABLE(Renderer2D);
 
 	void begin(GFX::GfxCommandList &cmd, RHI::TextureFormat color_format, RHI::SampleCount sample_count,
 			   const Mat4 &view_projection, RHI::TextureFormat depth_format = RHI::TextureFormat::None);

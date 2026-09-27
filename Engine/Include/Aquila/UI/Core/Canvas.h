@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/UI/Core/DrawCompositor.h"
 #include "Aquila/UI/Core/InputRouter.h"
 #include "Aquila/UI/Core/LayoutEngine.h"
@@ -28,7 +28,7 @@ class Canvas {
 	void on_event(Platform::Events::Event &event);
 	void update(F32 delta_time);
 	void compute();
-	void submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void submit_to_quad_batcher(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd);
 	void resize(Uint32 width, Uint32 height);
 
 	StyleSheet &get_style_sheet();

@@ -1,6 +1,6 @@
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
 #include "Aquila/UI/Core/CanvasManager.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Graphics/RenderGraph/RGPassBuilder.h"
 #include "Aquila/Graphics/RenderGraph/RGTypes.h"
@@ -13,8 +13,8 @@ namespace Aquila::UI::Rendering {
 
 void ViewRenderingSystem::on_init(GFX::GfxContext &ctx) {
 	m_ctx = &ctx;
-	m_r2_d = std::make_unique<Graphics::QuadBatcher>(ctx);
-	m_overlay_r2d = std::make_unique<Graphics::QuadBatcher>(ctx);
+	m_r2_d = std::make_unique<Graphics::Renderer2D>(ctx);
+	m_overlay_r2d = std::make_unique<Graphics::Renderer2D>(ctx);
 }
 
 void ViewRenderingSystem::rebuild_overlay_resources(Uint32 w, Uint32 h) {

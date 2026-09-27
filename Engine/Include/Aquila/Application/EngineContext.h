@@ -17,7 +17,7 @@ class IRenderWindowHost;
 class ObjectPickingSystem;
 class RenderPipeline;
 class Renderer;
-class Renderer2D;
+class OverlayRenderer;
 }
 
 namespace Aquila::Application {
@@ -34,7 +34,7 @@ class EngineContext {
 	[[nodiscard]] SceneManagement::Scene &get_scene() const;
 	[[nodiscard]] Rendering::RenderPipeline &get_render_pipeline() const;
 	[[nodiscard]] Rendering::Renderer &get_renderer() const;
-	[[nodiscard]] Rendering::Renderer2D &get_renderer_2d() const;
+	[[nodiscard]] Rendering::OverlayRenderer &get_overlay_renderer() const;
 	[[nodiscard]] Rendering::ObjectPickingSystem &get_object_picking() const;
 	[[nodiscard]] GFX::GfxTexture &get_render_output() const;
 	[[nodiscard]] Rendering::IRenderWindowHost &get_window_host() const;

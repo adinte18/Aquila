@@ -2,7 +2,7 @@
 #include "Aquila/Foundation/Math/Math.h"
 #include "Aquila/Foundation/SharedConstants.h"
 #include "Aquila/Foundation/Text/Utf8.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/UI/Core/TextureCache.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
@@ -117,7 +117,7 @@ void DrawList::sort() {
 	std::ranges::stable_sort(m_commands, {}, [](const DrawCmd &c) { return draw_cmd_z_order(c); });
 }
 
-void DrawList::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
+void DrawList::submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 	for (auto &command : m_commands) {
 		std::visit(
 			[&](auto &c) {

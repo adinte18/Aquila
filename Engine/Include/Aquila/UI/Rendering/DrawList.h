@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/UI/Rendering/DrawCmd.h"
 #include "Aquila/UI/Text/FontAtlas.h"
 #include "Aquila/UI/Style/StyleTypes.h"
@@ -22,7 +22,7 @@ class DrawList {
 
 	void sort();
 
-	void submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd);
 
 	void append_cmd(const DrawCmd &cmd);
 

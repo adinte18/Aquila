@@ -254,7 +254,7 @@ void Canvas::mark_node_draw_dirty(View *node) {
 	mark_dirty();
 }
 
-void Canvas::submit_to_quad_batcher(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
+void Canvas::submit_to_quad_batcher(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 	if (!m_root) {
 		return;
 	}

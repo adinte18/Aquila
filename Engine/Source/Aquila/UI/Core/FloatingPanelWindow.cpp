@@ -39,7 +39,7 @@ void FloatingPanelWindow::update(F32 delta_time) {
 	m_canvas->compute();
 }
 
-void FloatingPanelWindow::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+void FloatingPanelWindow::render(Graphics::Renderer2D &batcher, GFX::GfxCommandList &cmd) {
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 

@@ -7,7 +7,7 @@
 #include <string>
 
 namespace Aquila::Graphics {
-class QuadBatcher;
+class Renderer2D;
 }
 
 namespace Aquila::GFX {
@@ -24,7 +24,7 @@ using RenderWindowId = const void *;
 
 struct RenderWindowCallbacks {
 	Delegate<void(F32)> on_update;
-	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> on_render;
+	Delegate<void(Graphics::Renderer2D &, GFX::GfxCommandList &)> on_render;
 	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
 };
@@ -48,7 +48,7 @@ RenderWindowId open_content_window(IRenderWindowHost &host, Content &content, Ui
 								   const std::string &title, Delegate<void()> on_close) {
 	RenderWindowCallbacks callbacks;
 	callbacks.on_update = [&content](F32 dt) { content.update(dt); };
-	callbacks.on_render = [&content](Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+	callbacks.on_render = [&content](Graphics::Renderer2D &batcher, GFX::GfxCommandList &cmd) {
 		content.render(batcher, cmd);
 	};
 	callbacks.on_event = [&content](Platform::Events::Event &event) { content.on_event(event); };

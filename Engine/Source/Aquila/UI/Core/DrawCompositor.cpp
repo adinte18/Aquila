@@ -321,7 +321,7 @@ void DrawCompositor::forget_view(View *view) {
 	m_per_node_cmds.erase(view);
 }
 
-void DrawCompositor::submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd) {
+void DrawCompositor::submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd) {
 	if (m_draw_list.is_empty()) {
 		return;
 	}

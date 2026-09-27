@@ -33,7 +33,7 @@ void CanvasManager::compute() {
 	}
 }
 
-void CanvasManager::render_layers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to) {
+void CanvasManager::render_layers(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to) {
 	const int first = static_cast<int>(from);
 	const int last = static_cast<int>(to);
 	for (int i = first; i <= last; i++) {

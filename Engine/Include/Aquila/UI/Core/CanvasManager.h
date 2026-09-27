@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/GFX/GfxCommandList.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/Foundation/Singleton.h"
@@ -23,7 +23,7 @@ class CanvasManager : public Foundation::Singleton<CanvasManager> {
 	void update(float delta_time);
 	void compute();
 
-	void render_layers(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
+	void render_layers(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd, UILayer from, UILayer to);
 	void resize_layers(UILayer from, UILayer to, Uint32 width, Uint32 height);
 
 	bool is_any_layer_dirty(UILayer from, UILayer to) const;

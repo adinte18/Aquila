@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aquila/Foundation/SharedConstants.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/UI/Core/View.h"
 #include "Aquila/UI/Rendering/DrawList.h"
 
@@ -25,7 +25,7 @@ class DrawCompositor {
 
 	void forget_view(View *view);
 
-	void submit(Graphics::QuadBatcher &r2d, GFX::GfxCommandList &cmd);
+	void submit(Graphics::Renderer2D &r2d, GFX::GfxCommandList &cmd);
 
   private:
 	void rebuild_lists(View *root);

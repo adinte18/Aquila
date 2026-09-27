@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace Aquila::Graphics {
-class QuadBatcher;
+class Renderer2D;
 }
 namespace Aquila::GFX {
 class GfxCommandList;
@@ -35,7 +35,7 @@ class UIDebugWindow {
 	void build(Aquila::UI::Core::Canvas *target, Uint32 width, Uint32 height, const std::vector<std::string> &style_paths);
 
 	void update(F32 delta_time);
-	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
+	void render(Aquila::Graphics::Renderer2D &batcher, Aquila::GFX::GfxCommandList &cmd);
 	void on_event(Aquila::Platform::Events::Event &event);
 
 	void refresh();

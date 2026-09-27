@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Aquila/Rendering/Systems/Base/IRenderingSystem.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/GFX/GfxRenderpass.h"
 #include "Aquila/GFX/GfxTexture.h"
 
@@ -21,8 +21,8 @@ class ViewRenderingSystem final : public Aquila::Rendering::IRenderingSystem {
 	void rebuild_overlay_resources(Uint32 w, Uint32 h);
 
 	GFX::GfxContext *m_ctx = nullptr;
-	Unique<Graphics::QuadBatcher> m_r2_d;
-	Unique<Graphics::QuadBatcher> m_overlay_r2d;
+	Unique<Graphics::Renderer2D> m_r2_d;
+	Unique<Graphics::Renderer2D> m_overlay_r2d;
 	Ref<GFX::GfxTexture> m_msaa_color;
 	Ref<GFX::GfxRenderPass> m_overlay_pass;
 	Uint32 m_width = 0;

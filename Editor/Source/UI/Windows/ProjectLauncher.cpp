@@ -478,7 +478,7 @@ void ProjectLauncher::update(F32 delta_time) {
 	m_canvas->compute();
 }
 
-void ProjectLauncher::render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+void ProjectLauncher::render(Graphics::Renderer2D &batcher, GFX::GfxCommandList &cmd) {
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 

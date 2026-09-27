@@ -1,7 +1,7 @@
 #include "Aquila/UI/Core/UIHost.h"
 
 #include "Aquila/Platform/Events/Event.h"
-#include "Aquila/Rendering/Renderers/Renderer2D.h"
+#include "Aquila/Rendering/Renderers/OverlayRenderer.h"
 #include "Aquila/UI/Core/Clipboard.h"
 #include "Aquila/UI/Rendering/ViewRenderingSystem.h"
 
@@ -9,7 +9,7 @@ namespace Aquila::UI::Core {
 
 UIHost::UIHost(const UIHostDesc &desc) {
 	CanvasManager::init(desc.width, desc.height);
-	desc.renderer_2d.add_system<Rendering::ViewRenderingSystem>();
+	desc.overlay_renderer.add_system<Rendering::ViewRenderingSystem>();
 	Clipboard::init(desc.clipboard_get, desc.clipboard_set);
 }
 

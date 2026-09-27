@@ -58,7 +58,7 @@ void EditorModule::on_attach(EngineContext &engine) {
 
 	Window &main_window = m_engine->get_window();
 	m_ui_host = std::make_unique<Aquila::UI::Core::UIHost>(Aquila::UI::Core::UIHostDesc{
-		.renderer_2d = m_engine->get_renderer_2d(),
+		.overlay_renderer = m_engine->get_overlay_renderer(),
 		.width = main_window.get_width(),
 		.height = main_window.get_height(),
 		.clipboard_get = [&main_window] { return main_window.get_clipboard_text(); },

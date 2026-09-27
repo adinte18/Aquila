@@ -15,13 +15,13 @@ class Event;
 }
 
 namespace Aquila::Rendering {
-class Renderer2D;
+class OverlayRenderer;
 }
 
 namespace Aquila::UI::Core {
 
 struct UIHostDesc {
-	Aquila::Rendering::Renderer2D &renderer_2d;
+	Aquila::Rendering::OverlayRenderer &overlay_renderer;
 	Uint32 width = 0;
 	Uint32 height = 0;
 	std::function<std::string()> clipboard_get{};

@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace Aquila::Graphics {
-class QuadBatcher;
+class Renderer2D;
 }
 namespace Aquila::GFX {
 class GfxCommandList;
@@ -37,7 +37,7 @@ class ProjectLauncher {
 			   Uint32 height, const std::vector<std::string> &style_paths);
 
 	void update(F32 delta_time);
-	void render(Aquila::Graphics::QuadBatcher &batcher, Aquila::GFX::GfxCommandList &cmd);
+	void render(Aquila::Graphics::Renderer2D &batcher, Aquila::GFX::GfxCommandList &cmd);
 	void on_event(Aquila::Platform::Events::Event &event);
 
 	Delegate<void(const ProjectInfo &)> on_project_ready;

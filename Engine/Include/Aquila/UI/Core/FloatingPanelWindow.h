@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace Aquila::Graphics {
-class QuadBatcher;
+class Renderer2D;
 }
 namespace Aquila::GFX {
 class GfxCommandList;
@@ -29,7 +29,7 @@ class FloatingPanelWindow {
 			   const std::vector<std::string> &style_paths);
 
 	void update(F32 delta_time);
-	void render(Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd);
+	void render(Graphics::Renderer2D &batcher, GFX::GfxCommandList &cmd);
 	void on_event(Platform::Events::Event &event);
 
 	[[nodiscard]] bool has_content() const;

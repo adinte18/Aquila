@@ -8,13 +8,13 @@ class GfxSwapchain;
 
 namespace Aquila::Rendering {
 
-class Renderer2D : public IRenderer {
+class OverlayRenderer : public IRenderer {
   public:
-	Renderer2D() = default;
-	~Renderer2D() override = default;
+	OverlayRenderer() = default;
+	~OverlayRenderer() override = default;
 
-	AQUILA_NONCOPYABLE(Renderer2D);
-	AQUILA_NONMOVEABLE(Renderer2D);
+	AQUILA_NONCOPYABLE(OverlayRenderer);
+	AQUILA_NONMOVEABLE(OverlayRenderer);
 
 	void on_init(GFX::GfxContext &ctx) override;
 	void on_shutdown() override;

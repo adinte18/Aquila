@@ -4,7 +4,7 @@
 #include "Aquila/Platform/Input.h"
 
 #include "Aquila/GFX/GfxCommandList.h"
-#include "Aquila/Graphics/Core/QuadBatcher.h"
+#include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 
 #include <glm/gtc/matrix_transform.hpp>
@@ -209,7 +209,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_render_width = width;
 	m_render_height = height;
 	m_renderer = &m_render_pipeline->add<Rendering::Renderer>();
-	m_renderer2_d = &m_render_pipeline->add<Rendering::Renderer2D>();
+	m_overlay_renderer = &m_render_pipeline->add<Rendering::OverlayRenderer>();
 
 	m_renderer->add_system<Rendering::DepthPrepassSystem>();
 	m_renderer->add_system<Rendering::ClusterComputeSystem>();
@@ -222,7 +222,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	m_renderer->add_system<Rendering::GridSystem>();
 	m_renderer->add_system<Rendering::OutlineSystem>();
 
-	m_secondary_batcher = std::make_unique<Graphics::QuadBatcher>(*m_ctx);
+	m_secondary_batcher = std::make_unique<Graphics::Renderer2D>(*m_ctx);
 }
 
 RenderWindow &Application::create_secondary_window(Uint32 width, Uint32 height, const std::string &title) {
@@ -405,7 +405,7 @@ void Application::internal_update(F32 delta_time) {
 		}
 
 		m_renderer->set_swapchain_target(*m_swapchain, image_index);
-		m_renderer2_d->set_swapchain_target(*m_swapchain, image_index);
+		m_overlay_renderer->set_swapchain_target(*m_swapchain, image_index);
 
 		Uint32 frame_slot = m_swapchain->get_current_frame_slot();
 		auto &cmd = m_ctx->acquire_frame_command_list(frame_slot);

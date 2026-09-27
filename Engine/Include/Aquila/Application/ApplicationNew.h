@@ -14,7 +14,7 @@
 #include "Aquila/Rendering/IRenderWindowHost.h"
 #include "Aquila/Rendering/RenderPipeline.h"
 #include "Aquila/Rendering/Renderers/Renderer.h"
-#include "Aquila/Rendering/Renderers/Renderer2D.h"
+#include "Aquila/Rendering/Renderers/OverlayRenderer.h"
 
 #include <array>
 #include <vector>
@@ -27,7 +27,7 @@ struct ApplicationSpec {
 };
 
 namespace Aquila::Graphics {
-class QuadBatcher;
+class Renderer2D;
 }
 
 namespace Aquila::Rendering {
@@ -45,7 +45,7 @@ struct RenderWindow {
 	bool needs_resize = false;
 
 	Delegate<void(F32)> on_update;
-	Delegate<void(Graphics::QuadBatcher &, GFX::GfxCommandList &)> on_render;
+	Delegate<void(Graphics::Renderer2D &, GFX::GfxCommandList &)> on_render;
 	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
 };
@@ -99,7 +99,7 @@ class Application : public Rendering::IRenderWindowHost {
 	SceneManagement::Scene &get_scene() { return *m_scene; }
 	Rendering::RenderPipeline &get_render_pipeline() { return *m_render_pipeline; }
 	Rendering::Renderer &get_renderer() { return *m_renderer; }
-	Rendering::Renderer2D &get_renderer2_d() { return *m_renderer2_d; }
+	Rendering::OverlayRenderer &get_overlay_renderer() { return *m_overlay_renderer; }
 	Rendering::ObjectPickingSystem &get_object_picking() { return *m_object_picking; }
 
 	RenderWindow &create_secondary_window(Uint32 width, Uint32 height, const std::string &title);
@@ -142,10 +142,10 @@ class Application : public Rendering::IRenderWindowHost {
 	Unique<SceneManagement::Scene> m_scene;
 	Unique<Rendering::RenderPipeline> m_render_pipeline;
 	Rendering::Renderer *m_renderer = nullptr;
-	Rendering::Renderer2D *m_renderer2_d = nullptr;
+	Rendering::OverlayRenderer *m_overlay_renderer = nullptr;
 	Rendering::ObjectPickingSystem *m_object_picking = nullptr;
 
-	Unique<Graphics::QuadBatcher> m_secondary_batcher;
+	Unique<Graphics::Renderer2D> m_secondary_batcher;
 	std::vector<Unique<RenderWindow>> m_secondary_windows;
 };
 

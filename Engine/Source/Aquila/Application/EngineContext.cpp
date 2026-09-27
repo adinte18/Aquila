@@ -25,8 +25,8 @@ Rendering::Renderer &EngineContext::get_renderer() const {
 	return m_application.get_renderer();
 }
 
-Rendering::Renderer2D &EngineContext::get_renderer_2d() const {
-	return m_application.get_renderer2_d();
+Rendering::OverlayRenderer &EngineContext::get_overlay_renderer() const {
+	return m_application.get_overlay_renderer();
 }
 
 Rendering::ObjectPickingSystem &EngineContext::get_object_picking() const {

@@ -125,7 +125,7 @@ void DockWindowManager::spawn_floating_panel(Unique<View> panel_subtree, std::st
 
 	Aquila::Rendering::RenderWindowCallbacks callbacks;
 	callbacks.on_update = [panel](F32 dt) { panel->update(dt); };
-	callbacks.on_render = [panel](Graphics::QuadBatcher &batcher, GFX::GfxCommandList &cmd) {
+	callbacks.on_render = [panel](Graphics::Renderer2D &batcher, GFX::GfxCommandList &cmd) {
 		panel->render(batcher, cmd);
 	};
 	callbacks.on_event = [panel](Platform::Events::Event &event) { panel->on_event(event); };
