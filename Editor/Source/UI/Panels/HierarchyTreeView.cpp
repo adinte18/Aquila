@@ -2,6 +2,7 @@
 
 #include "UI/Panels/HierarchyTreeNode.h"
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Text/StringUtils.h"
 #include "Aquila/Scene/Components/CameraComponent.h"
 #include "Aquila/Scene/Components/LightComponent.h"
 #include "Aquila/Scene/Components/MeshComponent.h"
@@ -24,11 +25,6 @@ namespace {
 constexpr std::array<const char *, static_cast<Usize>(EntityGroup::Count)> k_group_labels = {
 	"ENVIRONMENT", "LIGHTS", "GEOMETRY", "CAMERAS", "EMPTY",
 };
-
-std::string to_lower(std::string text) {
-	std::ranges::transform(text, text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-	return text;
-}
 
 }
 
@@ -250,14 +246,14 @@ bool HierarchyTreeView::filter_node(TreeNode *node, const std::string &query) {
 			any_child = filter_node(child_node, query) || any_child;
 		}
 	}
-	const bool self = query.empty() || to_lower(node->get_label()).find(query) != std::string::npos;
+	const bool self = query.empty() || Aquila::Foundation::to_lower(node->get_label()).find(query) != std::string::npos;
 	const bool shown = self || any_child;
 	node->set_hidden(!shown);
 	return shown;
 }
 
 void HierarchyTreeView::apply_filter(const std::string &query) {
-	m_filter = to_lower(query);
+	m_filter = Aquila::Foundation::to_lower(query);
 	for (Group &group : m_groups) {
 		if (group.node == nullptr) {
 			continue;

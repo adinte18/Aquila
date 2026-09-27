@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Text/StringUtils.h"
 #include "Aquila/UI/Style/StyleLength.h"
 #include "Aquila/UI/Style/StyleProperties.h"
 #include "Aquila/UI/Style/StyleSheet.h"
@@ -13,7 +14,7 @@ namespace Aquila::UI::ParserHelper {
 
 std::string_view trim_sv(std::string_view s);
 std::string trim(std::string_view s);
-std::string to_lower(std::string_view s);
+using Foundation::to_lower;
 
 std::vector<std::string> split(std::string_view s, char delim);
 

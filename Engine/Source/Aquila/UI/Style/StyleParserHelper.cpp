@@ -18,14 +18,6 @@ std::string trim(std::string_view s) {
 	return std::string(trim_sv(s));
 }
 
-std::string to_lower(std::string_view s) {
-	std::string out(s);
-	for (char &c : out) {
-		c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
-	}
-	return out;
-}
-
 std::vector<std::string> split(std::string_view s, char delim) {
 	std::vector<std::string> result;
 	while (!s.empty()) {

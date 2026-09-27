@@ -1,6 +1,7 @@
 #include "Aquila/UI/DevTools/UIDebugWindow.h"
 
 #include "Aquila/Foundation/Math/Math.h"
+#include "Aquila/Foundation/Text/StringUtils.h"
 #include "Aquila/Platform/Events/Event.h"
 #include "Aquila/Platform/Events/WindowEvent.h"
 #include "Aquila/UI/Core/Canvas.h"
@@ -25,11 +26,6 @@ using namespace Aquila::UI::Core;
 namespace {
 
 using namespace Aquila::UI;
-
-std::string to_lower(std::string value) {
-	std::ranges::transform(value, value.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
-	return value;
-}
 
 std::string join_classes(View *view) {
 	std::string out;
@@ -230,7 +226,7 @@ void UIDebugWindow::build_toolbar(View *parent) {
 	m_search = bar->add_child<TextInput>(std::string("Filter styles"));
 	m_search->add_class("inspector-search");
 	m_search->on_changed.connect([this](const std::string &text) {
-		m_filter = to_lower(text);
+		m_filter = Foundation::to_lower(text);
 		apply_filter();
 	});
 }
@@ -326,7 +322,7 @@ Label *UIDebugWindow::add_row(View *section, const std::string &key) {
 	auto *row = make_view(section, "inspector-row");
 	make_label(row, key, "inspector-key");
 	auto *value = make_label(row, "", "inspector-val");
-	m_rows.push_back({ row, value, section, to_lower(key) });
+	m_rows.push_back({ row, value, section, Foundation::to_lower(key) });
 	return value;
 }
 
@@ -335,7 +331,7 @@ Label *UIDebugWindow::add_color_row(View *section, const std::string &key, View 
 	make_label(row, key, "inspector-key");
 	*out_swatch = make_view(row, "inspector-swatch");
 	auto *value = make_label(row, "", "inspector-val");
-	m_rows.push_back({ row, value, section, to_lower(key) });
+	m_rows.push_back({ row, value, section, Foundation::to_lower(key) });
 	return value;
 }
 
@@ -524,7 +520,7 @@ void UIDebugWindow::apply_filter() {
 
 	for (const PropRow &prop : m_rows) {
 		const bool match = m_filter.empty() || prop.key.find(m_filter) != std::string::npos ||
-						   to_lower(prop.value->get_text()).find(m_filter) != std::string::npos;
+						   Foundation::to_lower(prop.value->get_text()).find(m_filter) != std::string::npos;
 		prop.row->set_hidden(!match);
 		if (match) {
 			visible[prop.section]++;

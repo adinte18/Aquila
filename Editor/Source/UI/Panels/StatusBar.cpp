@@ -1,6 +1,7 @@
 #include "UI/Panels/StatusBar.h"
 
 #include "Aquila/Foundation/Macros.h"
+#include "Aquila/Foundation/Text/StringUtils.h"
 #include "Aquila/UI/Widgets/Label.h"
 
 namespace Editor {
@@ -10,24 +11,11 @@ using Aquila::SceneManagement::SceneStatistics;
 
 namespace {
 
-std::string with_separators(Uint64 value) {
-	std::string digits = std::to_string(value);
-	std::string result;
-	result.reserve(digits.size() + (digits.size() / 3));
-	for (Usize i = 0; i < digits.size(); ++i) {
-		if (i > 0 && (digits.size() - i) % 3 == 0) {
-			result.push_back(',');
-		}
-		result.push_back(digits[i]);
-	}
-	return result;
-}
-
 std::string selected_of_total(Uint64 selected, Uint64 total, bool has_selection) {
 	if (!has_selection) {
-		return with_separators(total);
+		return Foundation::with_separators(total);
 	}
-	return with_separators(selected) + " / " + with_separators(total);
+	return Foundation::with_separators(selected) + " / " + Foundation::with_separators(total);
 }
 
 } // namespace
@@ -51,7 +39,7 @@ void StatusBar::update(const SceneStatistics &statistics, const std::string &sel
 	const bool has_selection = statistics.selected_objects > 0;
 	show(m_selection, has_selection ? selected_name : std::string("No selection"));
 	show(m_objects, selected_of_total(statistics.selected_objects, statistics.objects, has_selection));
-	show(m_lights, with_separators(statistics.lights));
+	show(m_lights, Foundation::with_separators(statistics.lights));
 	show(m_vertices, selected_of_total(statistics.selected.vertices, statistics.total.vertices, has_selection));
 	show(m_triangles, selected_of_total(statistics.selected.triangles, statistics.total.triangles, has_selection));
 }

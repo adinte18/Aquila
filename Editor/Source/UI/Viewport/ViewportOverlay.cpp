@@ -1,6 +1,7 @@
 #include "UI/Viewport/ViewportOverlay.h"
 
 #include "Aquila/Foundation/Math/Math.h"
+#include "Aquila/Foundation/Text/StringUtils.h"
 #include "Aquila/Rendering/ViewMath.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/UI/Text/FontAtlas.h"
@@ -31,14 +32,6 @@ constexpr std::array<Vec4, 3> K_AXIS_COLORS = {
 };
 constexpr std::array<const char *, 3> K_AXIS_NAMES = { "X", "Y", "Z" };
 constexpr Usize K_MAX_LISTED_PASSES = 10;
-
-std::string with_separators(Uint64 value) {
-	std::string digits = std::to_string(value);
-	for (int i = static_cast<int>(digits.size()) - 3; i > 0; i -= 3) {
-		digits.insert(static_cast<Usize>(i), ",");
-	}
-	return digits;
-}
 
 std::string milliseconds(F32 value) {
 	std::array<char, 32> buffer{};
@@ -205,11 +198,11 @@ void ViewportOverlay::draw_debug_panel(UI::Rendering::DrawList &draw_list) const
 	if (m_options.statistics) {
 		const auto &stats = m_debug.statistics;
 		rows.push_back({ .left = "Scene", .header = true });
-		rows.push_back({ .left = "Objects", .right = with_separators(stats.objects) });
-		rows.push_back({ .left = "Meshes", .right = with_separators(stats.meshes) });
-		rows.push_back({ .left = "Lights", .right = with_separators(stats.lights) });
-		rows.push_back({ .left = "Vertices", .right = with_separators(stats.total.vertices) });
-		rows.push_back({ .left = "Triangles", .right = with_separators(stats.total.triangles) });
+		rows.push_back({ .left = "Objects", .right = Foundation::with_separators(stats.objects) });
+		rows.push_back({ .left = "Meshes", .right = Foundation::with_separators(stats.meshes) });
+		rows.push_back({ .left = "Lights", .right = Foundation::with_separators(stats.lights) });
+		rows.push_back({ .left = "Vertices", .right = Foundation::with_separators(stats.total.vertices) });
+		rows.push_back({ .left = "Triangles", .right = Foundation::with_separators(stats.total.triangles) });
 	}
 
 	if (m_options.gpu_timings) {
