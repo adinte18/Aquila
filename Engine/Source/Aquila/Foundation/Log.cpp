@@ -12,6 +12,79 @@ bool Logger::s_showLocation = false;
 bool Logger::s_useColors = true;
 std::ostream *Logger::s_sink = nullptr;
 
+void Logger::set_log_level(LogLevel level) {
+	s_currentLevel = level;
+}
+
+LogLevel Logger::get_log_level() {
+	return s_currentLevel;
+}
+
+void Logger::set_sink(std::ostream *buf) {
+	s_sink = buf;
+}
+
+void Logger::enable_timestamp(bool enable) {
+	s_showTimestamp = enable;
+}
+
+void Logger::enable_location(bool enable) {
+	s_showLocation = enable;
+}
+
+void Logger::enable_colors(bool enable) {
+	s_useColors = enable;
+}
+
+bool Logger::is_enabled(LogLevel level) {
+	return level >= s_currentLevel;
+}
+
+const char *Logger::get_level_color(LogLevel level) {
+	if (!s_useColors) {
+		return "";
+	}
+
+	switch (level) {
+	case LogLevel::Trace:
+		return Color::BRIGHT_BLACK;
+	case LogLevel::Debug:
+		return Color::CYAN;
+	case LogLevel::Info:
+		return Color::BRIGHT_GREEN;
+	case LogLevel::Warning:
+		return Color::BRIGHT_YELLOW;
+	case LogLevel::Error:
+		return Color::BRIGHT_RED;
+	case LogLevel::Critical: {
+		static const std::string critical_color = std::format("{}{}", Color::BOLD, Color::BRIGHT_RED);
+		return critical_color.c_str();
+	}
+	default:
+		return Color::RESET;
+	}
+}
+
+void Logger::write(LogLevel level, std::string_view message, const std::source_location &location) {
+	const char *color = get_level_color(level);
+	const char *reset = s_useColors ? Color::RESET : "";
+	const char *dim_color = s_useColors ? Color::DIM : "";
+
+	std::string prefix = std::format("{}[AQUILA {}]{}", color, get_level_string(level), reset);
+
+	if (s_showTimestamp) {
+		prefix = std::format("{}{}{} {}", dim_color, get_timestamp(), reset, prefix);
+	}
+
+	if (s_showLocation && level >= LogLevel::Warning) {
+		prefix = std::format("{} {}{}{}", prefix, dim_color, format_location(location), reset);
+	}
+
+	auto &stream = s_sink ? *s_sink : (level >= LogLevel::Error) ? std::cerr : std::cout;
+	stream << std::format("{} {}\n", prefix, message);
+	stream.flush();
+}
+
 std::string Logger::get_timestamp() {
 	auto now = std::chrono::system_clock::now();
 	auto time_t = std::chrono::system_clock::to_time_t(now);
