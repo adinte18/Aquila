@@ -30,76 +30,37 @@ class Logger {
 	static bool s_useColors;
 
   public:
-	static void set_log_level(LogLevel level) { s_currentLevel = level; }
-	static LogLevel get_log_level() { return s_currentLevel; }
+	static void set_log_level(LogLevel level);
+	static LogLevel get_log_level();
 
-	static void set_sink(std::ostream *buf) { s_sink = buf; }
+	static void set_sink(std::ostream *buf);
 
-	static void enable_timestamp(bool enable = true) { s_showTimestamp = enable; }
-	static void enable_location(bool enable = true) { s_showLocation = enable; }
-	static void enable_colors(bool enable = true) { s_useColors = enable; }
+	static void enable_timestamp(bool enable = true);
+	static void enable_location(bool enable = true);
+	static void enable_colors(bool enable = true);
 
   private:
 	static std::ostream *s_sink;
 	static std::string get_timestamp();
 	static std::string get_level_string(LogLevel level);
 	static std::string format_location(const std::source_location &location);
+	static const char *get_level_color(LogLevel level);
 
-	static const char *get_level_color(LogLevel level) {
-		if (!s_useColors) {
-			return "";
-		}
-
-		switch (level) {
-		case LogLevel::Trace:
-			return Color::BRIGHT_BLACK;
-		case LogLevel::Debug:
-			return Color::CYAN;
-		case LogLevel::Info:
-			return Color::BRIGHT_GREEN;
-		case LogLevel::Warning:
-			return Color::BRIGHT_YELLOW;
-		case LogLevel::Error:
-			return Color::BRIGHT_RED;
-		case LogLevel::Critical:
-			static const std::string critical_color = std::format("{}{}", Color::BOLD, Color::BRIGHT_RED);
-			return critical_color.c_str();
-		default:
-			return Color::RESET;
-		}
-	}
+	static bool is_enabled(LogLevel level);
+	static void write(LogLevel level, std::string_view message, const std::source_location &location);
 
 	template <typename... Args>
 	static void log_impl_internal(LogLevel level, std::string_view format_str, const std::source_location &location,
 								  Args &&...args) {
-		if (level < s_currentLevel) {
+		if (!is_enabled(level)) {
 			return;
 		}
 
-		std::string message;
 		if constexpr (sizeof...(args) > 0) {
-			message = std::vformat(format_str, std::make_format_args(args...));
+			write(level, std::vformat(format_str, std::make_format_args(args...)), location);
 		} else {
-			message = std::string{ format_str };
+			write(level, format_str, location);
 		}
-
-		const char *color = get_level_color(level);
-		const char *reset = s_useColors ? Color::RESET : "";
-		const char *dim_color = s_useColors ? Color::DIM : "";
-
-		std::string prefix = std::format("{}[AQUILA {}]{}", color, get_level_string(level), reset);
-
-		if (s_showTimestamp) {
-			prefix = std::format("{}{}{} {}", dim_color, get_timestamp(), reset, prefix);
-		}
-
-		if (s_showLocation && level >= LogLevel::Warning) {
-			prefix = std::format("{} {}{}{}", prefix, dim_color, format_location(location), reset);
-		}
-
-		auto &stream = s_sink ? *s_sink : (level >= LogLevel::Error) ? std::cerr : std::cout;
-		stream << std::format("{} {}\n", prefix, message);
-		stream.flush();
 	}
 
   public:
