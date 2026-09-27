@@ -5,8 +5,6 @@ set(EDITOR_SOURCE_DIR  ${EDITOR_ROOT_DIR}/Source)
 file(GLOB_RECURSE EDITOR_SOURCES
     ${EDITOR_SOURCE_DIR}/*.cpp
 )
-# These files reference removed dependencies (imgui, Layer.h) and are not part of the active build.
-list(FILTER EDITOR_SOURCES EXCLUDE REGEX ".*(ThemeManager|AboutWindow|PreferencesWindow)\\.cpp$")
 
 if (WIN32)
     list(APPEND EDITOR_SOURCES ${CMAKE_SOURCE_DIR}/app.rc)

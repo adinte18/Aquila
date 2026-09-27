@@ -5,8 +5,6 @@ set(MODULE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 file(GLOB_RECURSE MODULE_SOURCES CONFIGURE_DEPENDS
     ${MODULE_SOURCE_DIR}/*.cpp
 )
-# Legacy system built against the old renderer architecture; not part of the current build.
-list(FILTER MODULE_SOURCES EXCLUDE REGEX ".*SkyboxRenderingSystem\\.cpp$")
 
 file(GLOB_RECURSE MODULE_HEADERS CONFIGURE_DEPENDS
     ${MODULE_INCLUDE_DIR}/Aquila/Rendering/*.h
