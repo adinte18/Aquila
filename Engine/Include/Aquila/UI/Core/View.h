@@ -166,6 +166,7 @@ class View {
 	virtual void on_key_press(Platform::KeyCode key, int mods = 0) {}
 	virtual void on_key_release(Platform::KeyCode key) {}
 	virtual void on_mouse_move(Vec2 pos) {}
+	virtual void on_mouse_hover(Vec2 pos) {}
 	virtual bool on_scroll(Vec2 delta) { return false; }
 	virtual void on_char_input(Uint32 codepoint) {}
 	virtual void on_focus_gained();

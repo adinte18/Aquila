@@ -82,6 +82,9 @@ void InputRouter::on_event(Platform::Events::Event &e) {
 
 			m_canvas.mark_dirty();
 		}
+		if (m_hovered_view) {
+			m_hovered_view->on_mouse_hover(m_mouse_pos);
+		}
 		if (m_focused_view && m_focused_view->is_pressed()) {
 			m_focused_view->on_mouse_move(m_mouse_pos);
 		}
