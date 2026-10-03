@@ -6,8 +6,11 @@
 #include "Aquila/Platform/Events/InputEvent.h"
 #include "Aquila/Platform/Input.h"
 #include "Aquila/Rendering/CameraController.h"
+#include "Aquila/UI/Core/Canvas.h"
+#include "Aquila/UI/Core/View.h"
 
 using namespace Aquila;
+using namespace Aquila::UI::Core;
 using Aquila::Foundation::FrameScheduler;
 using Aquila::Platform::Input;
 namespace Events = Aquila::Platform::Events;
@@ -33,6 +36,23 @@ bool consume() {
 }
 
 TEST_SUITE("On-demand frames") {
+	TEST_CASE("changes made while the canvas computes do not ask for another frame") {
+		CanvasSingletonsScope singletons;
+		Canvas canvas(200, 200);
+		View *parent = canvas.get_root()->add_child<View>();
+		parent->add_child<View>();
+		canvas.update(0.016F);
+		canvas.compute();
+		consume();
+
+		parent->add_child<View>();
+		CHECK(consume());
+
+		canvas.update(0.016F);
+		canvas.compute();
+		CHECK_FALSE(consume());
+	}
+
 	TEST_CASE("the camera only asks for frames while it is actually navigating") {
 		CanvasSingletonsScope singletons;
 		Rendering::CameraController controller;

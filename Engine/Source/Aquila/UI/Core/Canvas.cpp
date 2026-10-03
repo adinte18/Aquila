@@ -48,7 +48,9 @@ void Canvas::register_internal_observers() {
 
 void Canvas::mark_dirty() {
 	m_dirty = true;
-	Aquila::Foundation::FrameScheduler::get()->request_frame();
+	if (!m_in_frame_pass) {
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
+	}
 }
 
 void Canvas::request_layout() {
@@ -198,6 +200,7 @@ void Canvas::compute() {
 	if (!m_root || !m_dirty) {
 		return;
 	}
+	const bool outer_pass = std::exchange(m_in_frame_pass, true);
 
 	if (m_layout_dirty) {
 		constexpr int K_MAX_CONTAINER_RESOLVE_PASSES = 3;
@@ -247,6 +250,10 @@ void Canvas::compute() {
 		m_draw_list_dirty = true;
 	}
 	m_dirty = false;
+	m_in_frame_pass = outer_pass;
+	if (m_style_engine.has_pending()) {
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
+	}
 }
 
 void Canvas::mark_node_draw_dirty(View *node) {
@@ -287,6 +294,7 @@ void Canvas::scroll_into_view(View *target) {
 }
 
 void Canvas::update(F32 delta_time) {
+	const bool outer_pass = std::exchange(m_in_frame_pass, true);
 	m_delta_time = delta_time;
 	update_tooltip(delta_time);
 	bool needs_frame = false;
@@ -300,6 +308,7 @@ void Canvas::update(F32 delta_time) {
 	}
 	style_pass();
 	animation_pass(delta_time);
+	m_in_frame_pass = outer_pass;
 	if (needs_frame || !m_active_anims.empty()) {
 		Aquila::Foundation::FrameScheduler::get()->request_frame();
 	}

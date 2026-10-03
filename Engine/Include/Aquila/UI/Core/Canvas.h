@@ -93,6 +93,7 @@ class Canvas {
 
 	bool m_layout_dirty = true;
 	bool m_dirty = true;
+	bool m_in_frame_pass = false;
 	bool m_draw_list_dirty = true; // true when draw list was rebuilt this frame
 
 	void mark_dirty();
