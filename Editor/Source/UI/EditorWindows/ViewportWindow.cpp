@@ -52,11 +52,12 @@ struct ShowToggle {
 	bool Rendering::RenderSettings::*flag;
 };
 
-constexpr std::array<ShowToggle, 4> k_show_toggles = { {
+constexpr std::array<ShowToggle, 5> k_show_toggles = { {
 	{ .label = "Grid", .flag = &Rendering::RenderSettings::show_grid },
 	{ .label = "Sky", .flag = &Rendering::RenderSettings::show_sky },
 	{ .label = "Shadows", .flag = &Rendering::RenderSettings::show_shadows },
 	{ .label = "Selection Outline", .flag = &Rendering::RenderSettings::show_outline },
+	{ .label = "Realtime", .flag = &Rendering::RenderSettings::realtime },
 } };
 
 } // namespace

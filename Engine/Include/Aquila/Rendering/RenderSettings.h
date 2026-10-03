@@ -13,6 +13,7 @@ struct RenderSettings {
 	bool show_sky = true;
 	bool show_shadows = true;
 	bool show_outline = true;
+	bool realtime = false;
 };
 
 } // namespace Aquila::Rendering

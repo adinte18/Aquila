@@ -2,6 +2,7 @@
 #include "Aquila/RHI/Backend/RHITypes.h"
 #include "Aquila/Rendering/SceneFrameData.h"
 #include "Aquila/Graphics/Material/MaterialFactory.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/Foundation/Profiler.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/GFX/GfxCommandList.h"
@@ -40,6 +41,10 @@ RenderPipeline::~RenderPipeline() {
 }
 
 void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &scene, F32 delta_time) {
+	if (m_settings.realtime) {
+		Foundation::FrameScheduler::get()->request_frame();
+	}
+
 	{
 		PROFILE_SCOPE("RenderPipeline::UpdateTransforms");
 		scene.update_transform_hierarchy();
