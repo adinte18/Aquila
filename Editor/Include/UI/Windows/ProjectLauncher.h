@@ -12,7 +12,7 @@ class Renderer2D;
 namespace Aquila::GFX {
 class GfxCommandList;
 class GfxTexture;
-}
+} // namespace Aquila::GFX
 namespace Aquila::Platform::Events {
 class Event;
 }

@@ -21,8 +21,8 @@ Uint32 RGCompiler::slot_of(Uint32 id) {
 // shock, the function does exactly what the name says
 // verifies if two texture descriptors are compatible, i.e same shape, format, etc.
 bool RGCompiler::tex_desc_compatible(const RGTextureDesc &a, const RGTextureDesc &b) {
-	return a.width == b.width && a.height == b.height && a.mip_levels == b.mip_levels && a.array_layers == b.array_layers &&
-		a.format == b.format && a.usage == b.usage && a.samples == b.samples;
+	return a.width == b.width && a.height == b.height && a.mip_levels == b.mip_levels &&
+		a.array_layers == b.array_layers && a.format == b.format && a.usage == b.usage && a.samples == b.samples;
 }
 
 bool RGCompiler::buf_desc_compatible(const RGBufferDesc &a, const RGBufferDesc &b) {
@@ -41,7 +41,7 @@ bool RGCompiler::buf_desc_compatible(const RGBufferDesc &a, const RGBufferDesc &
 //     - Find the pass Y that wrote (slot, ver)         -> edge Y to X (RAW)
 
 RGCompiler::AdjList RGCompiler::build_dependency_graph(const std::vector<RGPassData> &passes, Uint32 tex_count,
-													 Uint32 buf_count) {
+													   Uint32 buf_count) {
 	const auto nb_passes = static_cast<Uint32>(passes.size());
 	AdjList adj(nb_passes);
 
@@ -166,7 +166,7 @@ RGCompiler::AdjList RGCompiler::build_dependency_graph(const std::vector<RGPassD
 // Returns false if a cycle is found.  outCyclePath contains the cycle nodes.
 // https://www.geeksforgeeks.org/dsa/topological-sorting-indegree-based-solution/
 bool RGCompiler::topological_sort(const AdjList &adj, Uint32 pass_count, std::vector<Uint32> &out_order,
-								 std::vector<Uint32> &out_cycle_path) {
+								  std::vector<Uint32> &out_cycle_path) {
 	out_order.clear();
 	out_order.reserve(pass_count);
 
@@ -224,7 +224,7 @@ bool RGCompiler::topological_sort(const AdjList &adj, Uint32 pass_count, std::ve
 // Passes that only produce transient resources consumed by dead passes are removed.
 
 std::vector<bool> RGCompiler::cull_passes(const std::vector<RGPassData> &passes, const AdjList &adj,
-										 const std::vector<Uint32> &sorted_order, const RGRegistry &registry) {
+										  const std::vector<Uint32> &sorted_order, const RGRegistry &registry) {
 	const Uint32 n = static_cast<Uint32>(passes.size());
 	std::vector<bool> alive(n, false);
 
@@ -289,10 +289,9 @@ std::vector<bool> RGCompiler::cull_passes(const std::vector<RGPassData> &passes,
 }
 
 //  Lifetime analysis
-std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_tex_lifetimes(const std::vector<RGPassData> &passes,
-																		  const std::vector<Uint32> &sorted_order,
-																		  const std::vector<bool> &alive,
-																		  Uint32 tex_count, const RGRegistry &registry) {
+std::vector<RGCompiler::LifetimeInterval>
+RGCompiler::compute_tex_lifetimes(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
+								  const std::vector<bool> &alive, Uint32 tex_count, const RGRegistry &registry) {
 	std::vector<LifetimeInterval> lifetimes(tex_count);
 	// Use GetTextureVersion to build a current handle for validation-safe lookups
 	for (Uint32 slot = 0; slot < tex_count; ++slot) {
@@ -344,10 +343,9 @@ std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_tex_lifetimes(cons
 	return lifetimes;
 }
 
-std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_buf_lifetimes(const std::vector<RGPassData> &passes,
-																		  const std::vector<Uint32> &sorted_order,
-																		  const std::vector<bool> &alive,
-																		  Uint32 buf_count, const RGRegistry &registry) {
+std::vector<RGCompiler::LifetimeInterval>
+RGCompiler::compute_buf_lifetimes(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
+								  const std::vector<bool> &alive, Uint32 buf_count, const RGRegistry &registry) {
 	// ! The usage is the same as for the textures so if you are lost, read the comments on the function above
 
 	std::vector<LifetimeInterval> lifetimes(buf_count);
@@ -389,9 +387,9 @@ std::vector<RGCompiler::LifetimeInterval> RGCompiler::compute_buf_lifetimes(cons
 // is compatible.  This achieves optimal aliasing for intervals sorted by start.
 
 void RGCompiler::allocate_transients(const std::vector<RGPassData> &passes, RGRegistry &registry,
-									const std::vector<LifetimeInterval> &tex_lifetimes,
-									const std::vector<LifetimeInterval> &buf_lifetimes, GFX::GfxContext &ctx,
-									RGCompiledGraph &out) {
+									 const std::vector<LifetimeInterval> &tex_lifetimes,
+									 const std::vector<LifetimeInterval> &buf_lifetimes, GFX::GfxContext &ctx,
+									 RGCompiledGraph &out) {
 	const Uint32 tex_count = registry.texture_count();
 
 	// build a sorted list of what needs allocating
@@ -526,8 +524,8 @@ void RGCompiler::allocate_transients(const std::vector<RGPassData> &passes, RGRe
 // barrier record into the flat table and update current state.
 
 void RGCompiler::infer_barriers(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
-							   const std::vector<bool> &alive, Uint32 tex_count, Uint32 buf_count,
-							   const RGRegistry &registry, RGCompiledGraph &out) {
+								const std::vector<bool> &alive, Uint32 tex_count, Uint32 buf_count,
+								const RGRegistry &registry, RGCompiledGraph &out) {
 	// Imported resources start from their declared initial state, not Undefined,
 	// so persistent textures don't get their contents discarded on first use.
 	std::vector<RHI::ResourceState> cur_tex_state(tex_count, RHI::ResourceState::Undefined);
@@ -619,8 +617,8 @@ void RGCompiler::infer_barriers(const std::vector<RGPassData> &passes, const std
 }
 
 void RGCompiler::create_render_passes(const std::vector<RGPassData> &passes, const std::vector<Uint32> &sorted_order,
-									const std::vector<bool> &alive, const RGRegistry &registry, GFX::GfxContext &ctx,
-									RGCompiledGraph &out) {
+									  const std::vector<bool> &alive, const RGRegistry &registry, GFX::GfxContext &ctx,
+									  RGCompiledGraph &out) {
 	// passRenderPasses is indexed by position in passOrder (alive passes only)
 	out.pass_render_passes.resize(out.pass_order.size());
 
@@ -654,7 +652,8 @@ void RGCompiler::create_render_passes(const std::vector<RGPassData> &passes, con
 
 			RHI::RenderPassColorAttachmentDesc color_attachment{};
 			color_attachment.texture = &tex.get_rhi();
-			color_attachment.clear_color = { rga.clear.color.r, rga.clear.color.g, rga.clear.color.b, rga.clear.color.a };
+			color_attachment.clear_color = { rga.clear.color.r, rga.clear.color.g, rga.clear.color.b,
+											 rga.clear.color.a };
 			color_attachment.load_op = static_cast<RHI::AttachmentLoadOp>(rga.load_op);
 			color_attachment.store_op = static_cast<RHI::AttachmentStoreOp>(rga.store_op);
 
@@ -730,8 +729,10 @@ RGCompiledGraph RGCompiler::compile(const std::vector<RGPassData> &passes, RGReg
 		}
 	}
 
-	std::vector<LifetimeInterval> tex_lifetimes = compute_tex_lifetimes(passes, sorted_order, alive, tex_count, registry);
-	std::vector<LifetimeInterval> buf_lifetimes = compute_buf_lifetimes(passes, sorted_order, alive, buf_count, registry);
+	std::vector<LifetimeInterval> tex_lifetimes =
+		compute_tex_lifetimes(passes, sorted_order, alive, tex_count, registry);
+	std::vector<LifetimeInterval> buf_lifetimes =
+		compute_buf_lifetimes(passes, sorted_order, alive, buf_count, registry);
 
 	allocate_transients(passes, registry, tex_lifetimes, buf_lifetimes, ctx, out);
 

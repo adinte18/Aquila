@@ -59,7 +59,7 @@ constexpr std::array<ShowToggle, 4> k_show_toggles = { {
 	{ "Selection Outline", &Rendering::RenderSettings::show_outline },
 } };
 
-}
+} // namespace
 
 ViewportWindow::ViewportWindow(EditorContext &context) : EditorWindow(context) {}
 
@@ -400,8 +400,7 @@ void ViewportWindow::refresh_camera_menu() {
 void ViewportWindow::refresh_tools() {
 	for (Usize i = 0; i < m_tool_buttons.size(); ++i) {
 		if (m_tool_buttons[i] != nullptr) {
-			m_tool_buttons[i]->set_class("overlay-tool-active",
-										 static_cast<Usize>(context().tools.get_tool()) == i);
+			m_tool_buttons[i]->set_class("overlay-tool-active", static_cast<Usize>(context().tools.get_tool()) == i);
 		}
 	}
 	if (m_space_button != nullptr) {

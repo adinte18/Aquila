@@ -15,6 +15,6 @@ struct RenderSettings {
 	bool show_outline = true;
 };
 
-}
+} // namespace Aquila::Rendering
 
 #endif
