@@ -129,38 +129,54 @@ void CameraController::update(F32 delta_time) {
 		m_camera.speed_up();
 	}
 
+	bool moving = false;
 	if (Input::is_key_pressed(Events::KeyCode::W)) {
 		m_camera.move_forward(delta_time);
+		moving = true;
 	}
 	if (Input::is_key_pressed(Events::KeyCode::S)) {
 		m_camera.move_backward(delta_time);
+		moving = true;
 	}
 	if (Input::is_key_pressed(Events::KeyCode::D)) {
 		m_camera.move_right(delta_time);
+		moving = true;
 	}
 	if (Input::is_key_pressed(Events::KeyCode::A)) {
 		m_camera.move_left(delta_time);
+		moving = true;
 	}
 	if (Input::is_key_pressed(Events::KeyCode::E)) {
 		m_camera.get_position().y += m_camera.get_movement_speed() * delta_time;
+		moving = true;
 	}
 	if (Input::is_key_pressed(Events::KeyCode::Q)) {
 		m_camera.get_position().y -= m_camera.get_movement_speed() * delta_time;
+		moving = true;
 	}
 
 	m_camera.set_view_yxz(m_camera.get_position(), m_camera.get_rotation());
 
-	Foundation::FrameScheduler::get()->request_frame();
+	if (moving) {
+		Foundation::FrameScheduler::get()->request_frame();
+	}
 }
 
 void CameraController::on_event(Events::Event &event) {
 	Events::EventDispatcher dispatcher(event);
+	dispatcher.dispatch<Events::MouseMovedEvent>([this](Events::MouseMovedEvent &) {
+		if (m_nav_mode != NavMode::None) {
+			Foundation::FrameScheduler::get()->request_frame();
+		}
+		return false;
+	});
 	dispatcher.dispatch<Events::MouseScrolledEvent>([this](Events::MouseScrolledEvent &scroll) {
 		if (m_navigation_blocked || !point_in_rect(Input::get_mouse_position(), m_viewport_pos, m_viewport_size)) {
 			return false;
 		}
 		m_camera.move_forward(scroll.get_y_offset() * kDollyStep);
 		m_camera.set_view_yxz(m_camera.get_position(), m_camera.get_rotation());
+		Foundation::FrameScheduler::get()->request_frame();
 		return true;
 	});
 }
