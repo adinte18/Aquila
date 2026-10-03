@@ -263,8 +263,8 @@ bool Scene::serialize(const std::string &filepath) {
 		// Serialize MeshComponent
 		if (entity.has_component<Components::MeshComponent>()) {
 			auto &mesh = entity.get_component<Components::MeshComponent>();
-			entity_json["MeshComponent"] = { { "Path", mesh.data->get_path() },
-											 { "DebugName", mesh.data->get_debug_name() },
+			entity_json["MeshComponent"] = { { "Path", mesh.data ? mesh.data->get_path() : std::string() },
+											 { "DebugName", mesh.data ? mesh.data->get_debug_name() : std::string() },
 											 { "CastShadows", mesh.cast_shadows } };
 		}
 
