@@ -1,5 +1,7 @@
 #include "Aquila/UI/Core/DockWindowManager.h"
 
+#include "Aquila/UI/Core/Canvas.h"
+#include "Aquila/UI/Style/StyleParser.h"
 #include "Aquila/UI/Widgets/DockNode.h"
 #include "Aquila/UI/Widgets/DockSpace.h"
 #include "Aquila/UI/Widgets/DockTypes.h"
@@ -35,6 +37,14 @@ Canvas *DockWindowManager::find_canvas(Aquila::Rendering::RenderWindowId window)
 		}
 	}
 	return nullptr;
+}
+
+void DockWindowManager::reload_styles() {
+	for (const auto &entry : m_floating_panels) {
+		Canvas *canvas = entry.panel->get_canvas();
+		StyleParser::load_files(m_style_paths, canvas->get_style_sheet());
+		canvas->reload_styles();
+	}
 }
 
 void DockWindowManager::wire_dock_space(DockSpace *dock_space, Aquila::Rendering::RenderWindowId source) {

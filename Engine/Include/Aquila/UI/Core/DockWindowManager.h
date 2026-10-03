@@ -26,6 +26,7 @@ class DockWindowManager {
 	void set_main_dock_space(DockSpace *dock_space);
 
 	[[nodiscard]] Canvas *find_canvas(Aquila::Rendering::RenderWindowId window) const;
+	void reload_styles();
 
   private:
 	struct FloatingEntry {

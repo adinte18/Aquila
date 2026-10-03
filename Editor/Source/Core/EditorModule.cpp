@@ -478,6 +478,9 @@ void EditorModule::reload_styles() {
 	for (Uint8 layer = 0; layer < static_cast<Uint8>(Aquila::UI::Core::UILayer::Count); ++layer) {
 		m_ui_host->get_canvas(static_cast<Aquila::UI::Core::UILayer>(layer)).reload_styles();
 	}
+	if (m_dock_manager) {
+		m_dock_manager->reload_styles();
+	}
 }
 
 void EditorModule::open_settings_window() {
