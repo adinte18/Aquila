@@ -33,6 +33,8 @@ namespace Aquila::Application {
 using namespace SceneManagement;
 
 namespace {
+constexpr F32 k_resume_delta = 1.F / 60.F;
+
 bool is_cursor_event(const Platform::Events::Event &event) {
 	return (event.get_category() & Platform::Events::EventCategory::Mouse) &&
 		!(event.get_category() & Platform::Events::EventCategory::MouseButton);
@@ -55,10 +57,7 @@ Application::Application(const ApplicationSpec &spec) : m_spec(spec) {
 
 	m_window->set_event_callback([this](Platform::Events::Event &event) { route_window_event(event); });
 
-	m_window->set_refresh_callback([this]() {
-		m_timer->tick();
-		internal_update(m_timer->get_delta_time());
-	});
+	m_window->set_refresh_callback([this]() { internal_update(next_frame_delta()); });
 
 	m_timer->start();
 }
@@ -117,6 +116,7 @@ void Application::run() {
 	Foundation::FrameScheduler *scheduler = Foundation::FrameScheduler::get();
 	while (m_running) {
 		if (!scheduler->is_pending()) {
+			m_resumed_from_idle = true;
 			m_window->wait_events(idle_timeout());
 		} else if (const F64 until_slot = seconds_until_frame_slot(); until_slot > 0.0) {
 			m_window->wait_events(until_slot);
@@ -160,11 +160,11 @@ void Application::run() {
 		if (seconds_until_frame_slot() <= 0.0 && scheduler->is_pending()) {
 			m_last_frame_start = Foundation::now();
 			const bool full_frame = scheduler->consume();
-			m_timer->tick();
+			const F32 delta_time = next_frame_delta();
 
 			PROFILE_FRAME_BEGIN();
 			if (full_frame) {
-				internal_update(m_timer->get_delta_time());
+				internal_update(delta_time);
 			} else {
 				render_secondary_windows(false);
 			}
@@ -175,6 +175,16 @@ void Application::run() {
 	m_ctx->wait_idle();
 	detach_modules();
 	on_shutdown();
+}
+
+F32 Application::next_frame_delta() {
+	m_timer->tick();
+	m_frame_delta = m_timer->get_delta_time();
+	if (m_resumed_from_idle) {
+		m_frame_delta = std::min(m_frame_delta, k_resume_delta);
+		m_resumed_from_idle = false;
+	}
+	return m_frame_delta;
 }
 
 F64 Application::seconds_until_frame_slot() const {
@@ -354,7 +364,7 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	const Uint32 target_height = rw.swapchain->get_height();
 
 	if (rw.on_update) {
-		rw.on_update(m_timer->get_delta_time());
+		rw.on_update(m_frame_delta);
 	}
 
 	if (!rw.on_render) {
