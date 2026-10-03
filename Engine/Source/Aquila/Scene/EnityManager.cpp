@@ -23,18 +23,13 @@ void EntityManager::queue_for_kill(Entity entity) {
 }
 
 void EntityManager::flush_deletion_queue() {
-	for (auto &entity_handle : m_deletion_queue) {
-		Entity entity{ entity_handle, m_scene };
-		if (!entity.is_valid()) {
-			continue;
+	while (!m_deletion_queue.empty()) {
+		std::vector<entt::entity> pending;
+		pending.swap(m_deletion_queue);
+		for (const entt::entity handle : pending) {
+			destroy_entity(Entity{ handle, m_scene });
 		}
-
-		remove_all_children(entity);
-
-		entity.kill();
 	}
-
-	m_deletion_queue.clear();
 }
 
 bool EntityManager::is_registry_empty() {
@@ -402,17 +397,14 @@ void EntityManager::remove_all_children(Entity parent) {
 		return;
 	}
 
-	auto children_copy = parent_node->children;
-
-	for (auto &child : children_copy) {
-		remove_all_children(child);
-
-		if (child.is_valid()) {
-			queue_for_kill(child);
-		}
+	const auto children_copy = parent_node->children;
+	for (const Entity &child : children_copy) {
+		destroy_entity(child);
 	}
 
-	parent_node->children.clear();
+	if (auto *node = parent.try_get_component<Components::SceneNodeComponent>()) {
+		node->children.clear();
+	}
 }
 
 } // namespace Aquila::SceneManagement
