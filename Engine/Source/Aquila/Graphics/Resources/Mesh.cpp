@@ -5,9 +5,57 @@
 #include "assimp/postprocess.h"
 #include "assimp/scene.h"
 
+#include <charconv>
+#include <format>
+
 namespace Aquila::Graphics::Resources {
 
 Mesh::Mesh(const std::string &debug_name) : m_debug_name(debug_name) {}
+
+Option<MeshData> Mesh::generate_from_path(std::string_view path) {
+	constexpr std::string_view k_scheme = "procedural://";
+	if (!path.starts_with(k_scheme)) {
+		return std::nullopt;
+	}
+	path.remove_prefix(k_scheme.size());
+
+	std::vector<std::string_view> parts;
+	for (Usize start = 0; start <= path.size();) {
+		const Usize end = Math::min(path.find('/', start), path.size());
+		parts.push_back(path.substr(start, end - start));
+		start = end + 1;
+	}
+
+	std::vector<F32> numbers;
+	for (Usize i = 1; i < parts.size(); ++i) {
+		F32 value = 0.F;
+		const auto [ptr, error] = std::from_chars(parts[i].data(), parts[i].data() + parts[i].size(), value);
+		if (error != std::errc{}) {
+			return std::nullopt;
+		}
+		numbers.push_back(value);
+	}
+
+	auto number = [&numbers](Usize index, F32 fallback) { return index < numbers.size() ? numbers[index] : fallback; };
+	auto count = [&](Usize index, Uint32 fallback) {
+		return static_cast<Uint32>(Math::max(number(index, static_cast<F32>(fallback)), 1.F));
+	};
+
+	const std::string_view kind = parts.front();
+	if (kind == "cube") {
+		return generate_cube(number(0, 1.F));
+	}
+	if (kind == "sphere") {
+		return generate_sphere(number(0, 0.5F), count(1, 32), count(2, 16));
+	}
+	if (kind == "cylinder") {
+		return generate_cylinder(number(0, 0.5F), number(1, 1.F), count(2, 32));
+	}
+	if (kind == "plane") {
+		return generate_plane(number(0, 1.F), number(1, 1.F), count(2, 1), count(3, 1));
+	}
+	return std::nullopt;
+}
 
 void Mesh::load(const std::string &filepath) {
 	Assimp::Importer importer;
@@ -165,7 +213,7 @@ void Mesh::center_mesh_at_origin() {
 
 MeshData Mesh::generate_cube(F32 size) {
 	MeshData data;
-	data.path = "procedural://cube";
+	data.path = std::format("procedural://cube/{}", size);
 	constexpr Vec3 white = { 1, 1, 1 };
 
 	data.vertices = {
@@ -203,7 +251,7 @@ MeshData Mesh::generate_cube(F32 size) {
 
 MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 	MeshData data;
-	data.path = "procedural://sphere";
+	data.path = std::format("procedural://sphere/{}/{}/{}", radius, segments, rings);
 	constexpr Vec3 white = { 1, 1, 1 };
 
 	data.vertices.push_back({ { 0, radius, 0 }, white, { 0, 1, 0 }, { 0.5F, 1.F }, { 1, 0, 0, 1 } });
@@ -249,7 +297,7 @@ MeshData Mesh::generate_sphere(F32 radius, Uint32 segments, Uint32 rings) {
 
 MeshData Mesh::generate_cylinder(F32 radius, F32 height, Uint32 segments) {
 	MeshData data;
-	data.path = "procedural://cylinder";
+	data.path = std::format("procedural://cylinder/{}/{}/{}", radius, height, segments);
 	constexpr Vec3 white = { 1, 1, 1 };
 	F32 half = height * 0.5F;
 
@@ -283,7 +331,7 @@ MeshData Mesh::generate_cylinder(F32 radius, F32 height, Uint32 segments) {
 
 MeshData Mesh::generate_plane(F32 width, F32 height, Uint32 w_segs, Uint32 h_segs) {
 	MeshData data;
-	data.path = "procedural://plane";
+	data.path = std::format("procedural://plane/{}/{}/{}/{}", width, height, w_segs, h_segs);
 	constexpr Vec3 white = { 1, 1, 1 };
 
 	for (Uint32 y = 0; y <= h_segs; y++) {

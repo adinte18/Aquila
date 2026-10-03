@@ -1,5 +1,6 @@
 #include <doctest.h>
 
+#include "Aquila/Graphics/Resources/Mesh.h"
 #include "Aquila/Scene/EntityManager.h"
 #include "Aquila/Scene/Scene.h"
 
@@ -83,5 +84,24 @@ TEST_SUITE("Hierarchy") {
 		CHECK_FALSE(entities.get_parent(parent).has_value());
 		REQUIRE(entities.get_parent(child).has_value());
 		CHECK(*entities.get_parent(child) == parent);
+	}
+}
+
+TEST_SUITE("Procedural meshes") {
+	using Graphics::Resources::Mesh;
+
+	TEST_CASE("generated meshes can be rebuilt from their path") {
+		const Graphics::Resources::MeshData original = Mesh::generate_sphere(0.25F, 12, 6);
+		const Option<Graphics::Resources::MeshData> rebuilt = Mesh::generate_from_path(original.path);
+		REQUIRE(rebuilt.has_value());
+		CHECK(rebuilt->path == original.path);
+		CHECK(rebuilt->vertices.size() == original.vertices.size());
+		CHECK(rebuilt->indices.size() == original.indices.size());
+	}
+
+	TEST_CASE("old paths without parameters fall back to defaults") {
+		CHECK(Mesh::generate_from_path("procedural://cube").has_value());
+		CHECK_FALSE(Mesh::generate_from_path("procedural://teapot").has_value());
+		CHECK_FALSE(Mesh::generate_from_path("/app/models/statue.glb").has_value());
 	}
 }

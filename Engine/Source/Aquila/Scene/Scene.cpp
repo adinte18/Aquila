@@ -431,8 +431,18 @@ bool Scene::deserialize(const std::string &filepath) {
 			auto &mesh_comp = entity.get_or_emplace<Components::MeshComponent>();
 
 			if (std::string mesh_path = mesh_json.value("Path", ""); !mesh_path.empty()) {
-				if (mesh_path.starts_with("procedural://")) {
-					std::string type = mesh_path.substr(13);
+				auto mesh = std::make_shared<Graphics::Resources::Mesh>(mesh_json.value("DebugName", mesh_path));
+				if (Option<Graphics::Resources::MeshData> generated =
+						Graphics::Resources::Mesh::generate_from_path(mesh_path)) {
+					mesh->load_from_data(*generated);
+					mesh_comp.set_mesh(mesh);
+				} else {
+					try {
+						mesh->load(mesh_path);
+						mesh_comp.set_mesh(mesh);
+					} catch (const std::exception &error) {
+						AQUILA_LOG_ERROR("Scene: failed to load mesh '{}': {}", mesh_path, error.what());
+					}
 				}
 			}
 

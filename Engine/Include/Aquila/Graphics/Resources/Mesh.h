@@ -34,6 +34,7 @@ class Mesh {
 	static MeshData generate_sphere(F32 radius, Uint32 segments, Uint32 rings);
 	static MeshData generate_cylinder(F32 radius, F32 height, Uint32 segments);
 	static MeshData generate_plane(F32 width, F32 height, Uint32 width_segments, Uint32 height_segments);
+	[[nodiscard]] static Option<MeshData> generate_from_path(std::string_view path);
 
 	[[nodiscard]] RHI::GPUMeshDesc to_gpu_desc() const {
 		RHI::GPUMeshDesc desc;
