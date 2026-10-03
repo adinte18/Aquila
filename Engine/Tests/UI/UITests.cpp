@@ -5,6 +5,7 @@
 #include "Aquila/UI/Widgets/DockNode.h"
 #include "Aquila/UI/Widgets/DockPanel.h"
 #include "Aquila/UI/Widgets/DockSpace.h"
+#include "Aquila/UI/Widgets/DockSplitter.h"
 
 using namespace Aquila::UI::Core;
 
@@ -195,5 +196,98 @@ TEST_SUITE("DockLayoutSerializer") {
 		REQUIRE(after.root.panel_ids.size() == 2);
 		CHECK(after.root.panel_ids[0] == "keep");
 		CHECK(after.root.panel_ids[1] == "orphan");
+	}
+}
+
+namespace {
+
+int count_splitters(const View *node) {
+	int count = 0;
+	for (const auto &child : node->get_children()) {
+		if (view_is<DockSplitter>(child.get())) {
+			++count;
+		}
+	}
+	return count;
+}
+
+DockLayoutDesc make_scene_layout() {
+	DockNodeDesc left;
+	left.is_leaf = true;
+	left.fraction = 0.2F;
+	left.panel_ids = { "left" };
+
+	DockNodeDesc top;
+	top.is_leaf = true;
+	top.fraction = 0.7F;
+	top.panel_ids = { "top" };
+
+	DockNodeDesc bottom;
+	bottom.is_leaf = true;
+	bottom.fraction = 0.3F;
+	bottom.panel_ids = { "bottom" };
+
+	DockNodeDesc middle;
+	middle.is_leaf = false;
+	middle.direction = 1;
+	middle.fraction = 0.6F;
+	middle.children = { top, bottom };
+
+	DockNodeDesc right;
+	right.is_leaf = true;
+	right.fraction = 0.2F;
+	right.panel_ids = { "right" };
+
+	DockLayoutDesc desc;
+	desc.root.is_leaf = false;
+	desc.root.direction = 0;
+	desc.root.children = { left, middle, right };
+	return desc;
+}
+
+}
+
+TEST_SUITE("DockSpace collapse") {
+	TEST_CASE("closing the last panel of a nested split keeps the outer splitter") {
+		DockSpace space;
+		for (const char *id : { "left", "top", "bottom", "right" }) {
+			space.get_root_node()->add_panel(id)->set_id(id);
+		}
+		REQUIRE(space.apply_layout(make_scene_layout()));
+
+		auto *bottom = space.find_by_id<DockPanel>("bottom");
+		auto *top = space.find_by_id<DockPanel>("top");
+		REQUIRE(bottom != nullptr);
+		REQUIRE(top != nullptr);
+
+		DockNode *column = view_cast<DockNode>(space.find_node_of(top)->get_parent());
+		REQUIRE(column != nullptr);
+		REQUIRE(count_splitters(column) == 1);
+
+		space.close_panel(bottom);
+
+		DockNode *hoisted = space.find_node_of(top);
+		REQUIRE(hoisted != nullptr);
+		CHECK(hoisted->get_parent() == space.get_root_node());
+		CHECK(count_splitters(hoisted) == 1);
+
+		auto *right = space.find_by_id<DockPanel>("right");
+		REQUIRE(right != nullptr);
+		CHECK(count_splitters(space.find_node_of(right)) == 1);
+	}
+
+	TEST_CASE("closing the first panel of a nested split keeps the outer splitter") {
+		DockSpace space;
+		for (const char *id : { "left", "top", "bottom", "right" }) {
+			space.get_root_node()->add_panel(id)->set_id(id);
+		}
+		REQUIRE(space.apply_layout(make_scene_layout()));
+
+		space.close_panel(space.find_by_id<DockPanel>("top"));
+
+		DockNode *hoisted = space.find_node_of(space.find_by_id<DockPanel>("bottom"));
+		REQUIRE(hoisted != nullptr);
+		CHECK(hoisted->get_parent() == space.get_root_node());
+		CHECK(count_splitters(hoisted) == 1);
 	}
 }

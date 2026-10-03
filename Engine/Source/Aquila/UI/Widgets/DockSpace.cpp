@@ -464,11 +464,25 @@ void DockSpace::hoist_single_child(DockNode *container, DockNode *only) {
 		return;
 	}
 
+	const StyleProperties &slot = container->get_style();
 	StyleProperties sp;
-	sp.width = StyleLength::grow();
-	sp.height = StyleLength::grow();
-	sp.flex_grow = 1.F;
+	sp.width = slot.width.value_or(StyleLength::grow());
+	sp.height = slot.height.value_or(StyleLength::grow());
+	sp.flex_grow = slot.flex_grow.value_or(1.F);
 	only->merge_style(sp);
+
+	for (const auto &child : only->get_children()) {
+		if (auto *stale = view_cast<DockSplitter>(child.get())) {
+			only->remove_child(stale);
+			break;
+		}
+	}
+	for (const auto &child : container->get_children()) {
+		if (auto *splitter = view_cast<DockSplitter>(child.get())) {
+			only->add_child(container->detach_child(splitter));
+			break;
+		}
+	}
 
 	if (container == m_root) {
 		replace_child(container, std::move(owned));
