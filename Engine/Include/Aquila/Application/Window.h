@@ -30,13 +30,14 @@ class Window {
 	static void wake();
 	[[nodiscard]] static F64 highest_refresh_rate();
 	bool should_close() const;
+	[[nodiscard]] bool is_visible() const;
 	void flush_pending_events();
 
 	Uint32 get_width() const { return m_data.width; }
 	Uint32 get_height() const { return m_data.height; }
 	void set_title(const std::string &text) const;
 	void set_cursor(Platform::CursorType type);
-	void show() const;
+	void show();
 	void request_close() const;
 	[[nodiscard]] Vec2 get_position() const;
 	void set_position(Vec2 position) const;
@@ -69,6 +70,7 @@ class Window {
 		std::string title;
 		Uint32 width, height;
 		bool resized = false;
+		bool iconified = false;
 		EventCallbackFn event_callback;
 		std::function<void()> refresh_callback;
 		F64 last_mouse_x = 0.F, last_mouse_y = 0.F;
@@ -78,6 +80,7 @@ class Window {
 	WindowData m_data;
 	bool m_start_maximized = true;
 	bool m_start_hidden = false;
+	bool m_shown = false;
 };
 
 } // namespace Aquila::Application

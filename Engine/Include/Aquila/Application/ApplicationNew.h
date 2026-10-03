@@ -111,6 +111,7 @@ class Application : public Rendering::IRenderWindowHost {
 	void detach_modules();
 	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
+	void run_pre_render(F32 delta_time);
 	F32 next_frame_delta();
 	[[nodiscard]] F64 seconds_until_frame_slot() const;
 	[[nodiscard]] Option<F64> idle_timeout() const;

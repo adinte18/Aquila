@@ -422,10 +422,27 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	}
 }
 
+void Application::run_pre_render(F32 delta_time) {
+	on_pre_render(delta_time);
+	for (auto &module : m_modules) {
+		module->on_pre_render(delta_time);
+	}
+	m_scene->get_entity_manager()->flush_deletion_queue();
+}
+
 void Application::internal_update(F32 delta_time) {
 	PROFILE_SCOPE("OnUpdate");
 
 	if (m_frame_in_progress) {
+		return;
+	}
+
+	if (!m_window->is_visible()) {
+		{
+			FrameGuard guard(m_frame_in_progress);
+			run_pre_render(delta_time);
+		}
+		render_secondary_windows(true);
 		return;
 	}
 
@@ -471,11 +488,7 @@ void Application::internal_update(F32 delta_time) {
 		auto &cmd = m_ctx->acquire_frame_command_list(frame_slot);
 		cmd.begin();
 
-		on_pre_render(delta_time);
-		for (auto &module : m_modules) {
-			module->on_pre_render(delta_time);
-		}
-		m_scene->get_entity_manager()->flush_deletion_queue();
+		run_pre_render(delta_time);
 
 		{
 			PROFILE_SCOPE("RenderPipeline::Render");

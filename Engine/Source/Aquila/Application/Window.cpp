@@ -43,6 +43,7 @@ void Window::initialize() {
 	glfwWindowHint(GLFW_VISIBLE, m_start_hidden ? GLFW_FALSE : GLFW_TRUE);
 
 	m_window = glfwCreateWindow(m_data.width, m_data.height, m_data.title.c_str(), nullptr, nullptr);
+	m_shown = !m_start_hidden;
 
 	glfwSetWindowUserPointer(m_window, &m_data);
 	if (m_start_maximized) {
@@ -158,6 +159,14 @@ void Window::setup_callbacks() {
 		data.has_pending_mouse_move = true;
 	});
 
+	glfwSetWindowIconifyCallback(m_window, [](GLFWwindow *window, const int iconified) {
+		WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
+		data.iconified = iconified == GLFW_TRUE;
+		if (!data.iconified && data.refresh_callback) {
+			data.refresh_callback();
+		}
+	});
+
 	glfwSetWindowFocusCallback(m_window, [](GLFWwindow *window, const int focused) {
 		const WindowData &data = *static_cast<WindowData *>(glfwGetWindowUserPointer(window));
 		Platform::Events::WindowFocusEvent event(focused == GLFW_TRUE);
@@ -218,6 +227,10 @@ F64 Window::highest_refresh_rate() {
 	return highest > 0 ? static_cast<F64>(highest) : 60.0;
 }
 
+bool Window::is_visible() const {
+	return m_shown && !m_data.iconified;
+}
+
 bool Window::should_close() const {
 	return glfwWindowShouldClose(m_window) != 0;
 }
@@ -256,8 +269,9 @@ void Window::set_clipboard_text(const std::string &text) const {
 	glfwSetClipboardString(m_window, text.c_str());
 }
 
-void Window::show() const {
+void Window::show() {
 	glfwShowWindow(m_window);
+	m_shown = true;
 }
 
 void Window::request_close() const {
