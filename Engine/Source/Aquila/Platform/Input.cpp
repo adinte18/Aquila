@@ -18,61 +18,76 @@ struct InputState {
 std::unordered_map<EventSource, InputState> s_states;
 EventSource s_active_window = nullptr;
 
+Usize key_index(KeyCode key) {
+	return static_cast<Usize>(static_cast<Uint16>(key));
+}
+
+Usize button_index(MouseButton button) {
+	return static_cast<Usize>(static_cast<Uint8>(button));
+}
+
+InputState *active_state() {
+	if (s_active_window == nullptr) {
+		return nullptr;
+	}
+	return &s_states[s_active_window];
+}
+
 }
 
 bool Input::is_key_pressed(KeyCode key) {
-	if (s_active_window == nullptr) {
-		return false;
-	}
-	return s_states[s_active_window].key_states.at((Uint8)key);
+	const InputState *state = active_state();
+	const Usize index = key_index(key);
+	return state != nullptr && index < state->key_states.size() && state->key_states[index];
 }
 
 bool Input::is_mouse_button_pressed(MouseButton button) {
-	if (s_active_window == nullptr) {
-		return false;
-	}
-	return s_states[s_active_window].mouse_button_states.at((Uint8)button);
+	const InputState *state = active_state();
+	const Usize index = button_index(button);
+	return state != nullptr && index < state->mouse_button_states.size() && state->mouse_button_states[index];
 }
 
 Vec2 Input::get_mouse_position() {
-	if (s_active_window == nullptr) {
-		return {};
-	}
-	auto &state = s_states[s_active_window];
-	return { state.mouse_x, state.mouse_y };
+	const InputState *state = active_state();
+	return state != nullptr ? Vec2(state->mouse_x, state->mouse_y) : Vec2(0.F);
 }
 
 void Input::on_event(Event &event) {
-	auto *window = event.get_source();
+	EventSource window = event.get_source();
 	if (window == nullptr) {
 		return;
 	}
-
-	auto &state = s_states[window];
+	InputState &state = s_states[window];
 	s_active_window = window;
 
+	auto set_key = [&state](KeyCode key, bool pressed) {
+		if (const Usize index = key_index(key); index < state.key_states.size()) {
+			state.key_states[index] = pressed;
+		}
+	};
+	auto set_button = [&state](MouseButton button, bool pressed) {
+		if (const Usize index = button_index(button); index < state.mouse_button_states.size()) {
+			state.mouse_button_states[index] = pressed;
+		}
+	};
+
 	EventDispatcher dispatcher(event);
-
 	dispatcher.dispatch<KeyPressedEvent>([&](KeyPressedEvent &e) {
-		state.key_states.at((Uint8)e.get_key_code()) = true;
+		set_key(e.get_key_code(), true);
 		return false;
 	});
-
 	dispatcher.dispatch<KeyReleasedEvent>([&](KeyReleasedEvent &e) {
-		state.key_states.at((Uint8)e.get_key_code()) = false;
+		set_key(e.get_key_code(), false);
 		return false;
 	});
-
 	dispatcher.dispatch<MouseButtonPressedEvent>([&](MouseButtonPressedEvent &e) {
-		state.mouse_button_states.at((Uint8)e.get_mouse_button()) = true;
+		set_button(e.get_mouse_button(), true);
 		return false;
 	});
-
 	dispatcher.dispatch<MouseButtonReleasedEvent>([&](MouseButtonReleasedEvent &e) {
-		state.mouse_button_states.at((Uint8)e.get_mouse_button()) = false;
+		set_button(e.get_mouse_button(), false);
 		return false;
 	});
-
 	dispatcher.dispatch<MouseMovedEvent>([&](MouseMovedEvent &e) {
 		state.mouse_x = e.get_x();
 		state.mouse_y = e.get_y();
