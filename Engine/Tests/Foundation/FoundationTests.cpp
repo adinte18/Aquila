@@ -183,6 +183,18 @@ TEST_SUITE("Logger tests") {
 		CHECK(Profiler::get()->is_enabled());
 	}
 
+	TEST_CASE("Two profile scopes fit in one block") {
+		RESET();
+		run_frame();
+		{
+			PROFILE_SCOPE("First");
+			PROFILE_SCOPE("Second");
+		}
+		ProfilerEntry entry;
+		CHECK(Profiler::get()->get_section_stats("First", entry));
+		CHECK(Profiler::get()->get_section_stats("Second", entry));
+	}
+
 	TEST_CASE("Frame counters start at zero after Reset") {
 		RESET();
 		CHECK(Profiler::get()->get_frame_count() == 0u);
