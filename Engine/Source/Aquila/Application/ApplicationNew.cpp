@@ -17,6 +17,7 @@
 #include "Aquila/Graphics/Material/MaterialFactory.h"
 #include "Aquila/Graphics/Shader/ShaderHotReload.h"
 #include "Aquila/Foundation/SharedConstants.h"
+#include "Aquila/Scene/EntityManager.h"
 
 #include "Aquila/Rendering/Systems/DepthPrepassSystem.h"
 #include "Aquila/Rendering/Systems/ShadowSystem.h"
@@ -415,6 +416,7 @@ void Application::internal_update(F32 delta_time) {
 		for (auto &module : m_modules) {
 			module->on_pre_render(delta_time);
 		}
+		m_scene->get_entity_manager()->flush_deletion_queue();
 
 		{
 			Graphics::Shader::ShaderHotReload::get()->tick();
