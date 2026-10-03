@@ -52,4 +52,36 @@ TEST_SUITE("Hierarchy") {
 		CHECK_FALSE(parent.exists());
 		CHECK_FALSE(child.exists());
 	}
+
+	TEST_CASE("reparenting removes the child from its old parent") {
+		Scene scene("Test");
+		EntityManager &entities = *scene.get_entity_manager();
+		Entity first = entities.create_entity("First");
+		Entity second = entities.create_entity("Second");
+		Entity child = entities.create_entity("Child");
+		entities.add_child(first, child);
+
+		entities.add_child(second, child);
+
+		CHECK(entities.get_children(first).empty());
+		REQUIRE(entities.get_children(second).size() == 1);
+		CHECK(entities.get_children(second).front() == child);
+		REQUIRE(entities.get_parent(child).has_value());
+		CHECK(*entities.get_parent(child) == second);
+	}
+
+	TEST_CASE("an entity can't be parented to itself or its descendant") {
+		Scene scene("Test");
+		EntityManager &entities = *scene.get_entity_manager();
+		Entity parent = entities.create_entity("Parent");
+		Entity child = entities.create_entity("Child");
+		entities.add_child(parent, child);
+
+		entities.add_child(parent, parent);
+		entities.add_child(child, parent);
+
+		CHECK_FALSE(entities.get_parent(parent).has_value());
+		REQUIRE(entities.get_parent(child).has_value());
+		CHECK(*entities.get_parent(child) == parent);
+	}
 }

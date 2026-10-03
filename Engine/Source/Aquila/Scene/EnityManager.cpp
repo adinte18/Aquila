@@ -247,6 +247,16 @@ void EntityManager::add_child(Entity parent, Entity child) {
 		return;
 	}
 
+	if (parent == child || is_descendant(child, parent)) {
+		return;
+	}
+
+	if (child_node->parent.is_valid() && child_node->parent != parent) {
+		if (auto *old_parent_node = child_node->parent.try_get_component<Components::SceneNodeComponent>()) {
+			std::erase(old_parent_node->children, child);
+		}
+	}
+
 	child_node->parent = parent_node->ent;
 
 	if (std::ranges::find(parent_node->children, child) == parent_node->children.end()) {
