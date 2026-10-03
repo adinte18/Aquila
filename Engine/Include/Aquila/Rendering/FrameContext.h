@@ -38,6 +38,7 @@ struct FrameContext {
 
 	GFX::GfxSwapchain *swapchain = nullptr;
 	Uint32 swapchain_image_index = 0;
+	bool swapchain_replaced = false;
 
 	Uint32 width = 0;
 	Uint32 height = 0;

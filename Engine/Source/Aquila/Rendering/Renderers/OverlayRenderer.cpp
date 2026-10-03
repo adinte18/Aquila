@@ -2,6 +2,7 @@
 #include "Aquila/Graphics/RenderGraph/RGGraph.h"
 #include "Aquila/Rendering/FrameContext.h"
 #include "Aquila/GFX/GfxSwapchain.h"
+#include <algorithm>
 
 namespace Aquila::Rendering {
 
@@ -26,6 +27,10 @@ void OverlayRenderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameC
 	for (auto &sys : m_systems) {
 		sys->blit_to_swapchain(graph, ctx);
 	}
+}
+
+bool OverlayRenderer::replaces_swapchain() const {
+	return std::ranges::any_of(m_systems, [](const Unique<IRenderingSystem> &sys) { return sys->replaces_swapchain(); });
 }
 
 void OverlayRenderer::on_resize(Uint32 width, Uint32 height) {

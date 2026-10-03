@@ -20,6 +20,7 @@ class OverlayRenderer : public IRenderer {
 	void on_shutdown() override;
 	void add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
 	void blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) override;
+	[[nodiscard]] bool replaces_swapchain() const override;
 	void on_resize(Uint32 width, Uint32 height) override;
 
 	void set_swapchain_target(GFX::GfxSwapchain &swapchain, Uint32 image_index);

@@ -91,7 +91,7 @@ void Renderer::add_passes(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
 }
 
 void Renderer::blit_to_swapchain(Graphics::RG::RenderGraph &graph, FrameContext &ctx) {
-	if (!m_blit_pipeline || !m_blit_pipeline->is_valid() || (m_swapchain == nullptr)) {
+	if (ctx.swapchain_replaced || !m_blit_pipeline || !m_blit_pipeline->is_valid() || (m_swapchain == nullptr)) {
 		return;
 	}
 

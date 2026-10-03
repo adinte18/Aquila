@@ -14,6 +14,7 @@ class ViewRenderingSystem final : public Aquila::Rendering::IRenderingSystem {
 	void on_init(GFX::GfxContext &ctx) override;
 	void add_passes(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
 	void blit_to_swapchain(Graphics::RG::RenderGraph &graph, Aquila::Rendering::FrameContext &ctx) override;
+	[[nodiscard]] bool replaces_swapchain() const override { return true; }
 	void on_resize(Uint32 width, Uint32 height) override;
 	void on_shutdown() override {}
 

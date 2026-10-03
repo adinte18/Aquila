@@ -10,6 +10,8 @@
 #include "Aquila/Scene/Components/CameraComponent.h"
 #include "Aquila/Scene/Components/TransformComponent.h"
 
+#include <algorithm>
+
 namespace Aquila::Rendering {
 
 using namespace SceneManagement::Components;
@@ -64,6 +66,8 @@ void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 
 	{
 		PROFILE_SCOPE("RenderPipeline::AddFinalPasses");
+		ctx.swapchain_replaced = std::ranges::any_of(
+			m_renderers, [](const Unique<IRenderer> &renderer) { return renderer->replaces_swapchain(); });
 		for (auto &renderer : m_renderers) {
 			renderer->blit_to_swapchain(m_graph, ctx);
 		}
