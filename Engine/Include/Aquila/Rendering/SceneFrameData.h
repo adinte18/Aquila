@@ -30,7 +30,8 @@ class SceneFrameData : public Foundation::Singleton<SceneFrameData> {
   public:
 	SceneFrameData(GFX::GfxContext &ctx, Uint32 width, Uint32 height);
 
-	void update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot, const RenderView &primary_view);
+	void update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot, const RenderView &primary_view,
+				bool shadows_allowed = true);
 
 	void on_resize(Uint32 width, Uint32 height);
 

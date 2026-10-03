@@ -49,7 +49,7 @@ void RenderPipeline::render(GFX::GfxCommandList &cmd, SceneManagement::Scene &sc
 	const RenderView primary = resolve_primary_view(scene);
 	{
 		PROFILE_SCOPE("RenderPipeline::FrameDataUpdate");
-		SceneFrameData::get()->update(scene, delta_time, m_frame_slot, primary);
+		SceneFrameData::get()->update(scene, delta_time, m_frame_slot, primary, m_settings.show_shadows);
 	}
 
 	FrameContext ctx;

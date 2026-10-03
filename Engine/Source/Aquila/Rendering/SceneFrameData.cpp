@@ -327,7 +327,7 @@ static GpuShadowData compute_shadow_data(const RenderView &camera, const Vec3 &l
 }
 
 void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uint32 frame_slot,
-							const RenderView &primary_view) {
+							const RenderView &primary_view, bool shadows_allowed) {
 	m_time += delta_time;
 
 	GpuFrameData gpu_frame{};
@@ -384,7 +384,7 @@ void SceneFrameData::update(SceneManagement::Scene &scene, float delta_time, Uin
 
 	GpuShadowData shadow_data{};
 	m_shadows_enabled = false;
-	if (primary_view.valid && caster_index >= 0) {
+	if (shadows_allowed && primary_view.valid && caster_index >= 0) {
 		shadow_data = compute_shadow_data(primary_view, caster_dir, kShadowMapSize, m_cascade_view_proj);
 		shadow_data.m_enabled = 1;
 		lights[caster_index].m_shadow_index = 0;

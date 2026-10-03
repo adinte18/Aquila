@@ -64,11 +64,23 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		Mat4 model;
 	};
 
-	std::vector<DrawCall> draw_calls;
+	auto *frame_data = ctx.frame_data;
+	const Uint32 frame_slot = ctx.frame_slot;
+	const bool visible_mode = ctx.settings == nullptr || ctx.settings->debug_view == DebugView::Lit ||
+		ctx.settings->debug_view == DebugView::ShadowCascades;
+	if (!frame_data->shadows_enabled() || !visible_mode) {
+		for (Uint32 cascade = 0; cascade < SHADOW_CASCADE_COUNT; ++cascade) {
+			ctx.h_shadow_maps[cascade] =
+				graph.import_texture(&frame_data->get_shadow_map(frame_slot, cascade), "ShadowMap");
+		}
+		return;
+	}
+
+	auto draw_calls = std::make_shared<std::vector<DrawCall>>();
 	{
 		auto &registry = ctx.scene->get_registry();
 		auto view = registry.view<TransformComponent, MeshComponent>();
-		draw_calls.reserve(view.size_hint());
+		draw_calls->reserve(view.size_hint());
 		for (auto entity : view) {
 			if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
 				continue;
@@ -78,16 +90,13 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			if (!mesh.is_valid() || !mesh.cast_shadows) {
 				continue;
 			}
-			draw_calls.push_back({
+			draw_calls->push_back({
 				.gpu_mesh = get_or_upload_mesh(mesh.data),
 				.model = transform.get_world_matrix(),
 			});
 		}
 	}
 
-	auto *frame_data = ctx.frame_data;
-	const Uint32 frame_slot = ctx.frame_slot;
-	const bool enabled = frame_data->shadows_enabled() && (ctx.settings == nullptr || ctx.settings->show_shadows);
 	const F32 size = static_cast<F32>(SceneFrameData::kShadowMapSize);
 	const auto &cascade_vp = frame_data->get_cascade_view_proj();
 
@@ -103,14 +112,14 @@ void ShadowSystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 					handle, RG::AttachmentLoadOp::Clear, RG::AttachmentStoreOp::Store, RG::AttachmentLoadOp::DontCare,
 					RG::AttachmentStoreOp::DontCare, /*readOnly=*/false, RG::ClearDepth{ .depth = 1.F });
 			},
-			[this, draw_calls, view_proj, enabled, size](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
+			[this, draw_calls, view_proj, size](GFX::GfxCommandList &cmd, RG::RGRegistry &) {
 				cmd.set_viewport(0.F, 0.F, size, size);
 				cmd.set_scissor(0, 0, static_cast<Uint32>(size), static_cast<Uint32>(size));
-				if (!enabled || !m_pipeline || !m_pipeline->is_valid() || draw_calls.empty()) {
+				if (!m_pipeline || !m_pipeline->is_valid() || draw_calls->empty()) {
 					return;
 				}
 				cmd.bind_pipeline(m_pipeline->get());
-				for (const auto &draw_call : draw_calls) {
+				for (const auto &draw_call : *draw_calls) {
 					ShadowPushConstants push_constants{ .model = draw_call.model, .cascade_view_proj = view_proj };
 					cmd.push_constants(push_constants, RHI::ShaderStageFlags::Vertex);
 					cmd.bind_vertex_buffer(draw_call.gpu_mesh->get_vertex_buffer());
