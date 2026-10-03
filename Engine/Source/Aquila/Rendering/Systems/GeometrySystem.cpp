@@ -55,7 +55,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 		}
 
 		auto *mat = registry.try_get<MaterialComponent>(entity);
-		if ((mat == nullptr) || mat->type != MaterialType::Lit || !mat->material) {
+		if ((mat == nullptr) || mat->type == MaterialType::Custom || !mat->material) {
 			continue;
 		}
 
