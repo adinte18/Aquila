@@ -30,6 +30,7 @@ class TransformGizmo final : public ViewportCanvas {
 
 	void on_mouse_press(Aquila::Platform::MouseButton btn, Vec2 pos) override;
 	void on_mouse_move(Vec2 pos) override;
+	void on_mouse_hover(Vec2 pos) override;
 	void on_mouse_release(Aquila::Platform::MouseButton btn, Vec2 pos) override;
 	void draw(Aquila::UI::Rendering::DrawList &draw_list) const override;
 
@@ -53,6 +54,8 @@ class TransformGizmo final : public ViewportCanvas {
 		std::array<bool, 3> plane_visible{};
 		std::array<std::vector<Vec2>, 3> rings;
 		std::array<std::vector<bool>, 3> ring_front;
+
+		bool operator==(const Frame &) const = default;
 	};
 
 	struct Drag {
@@ -90,6 +93,7 @@ class TransformGizmo final : public ViewportCanvas {
 									  bool local_axes) const;
 	[[nodiscard]] bool wants_local_axes(TransformTool tool) const;
 	[[nodiscard]] Handle pick(Vec2 point) const;
+	[[nodiscard]] Handle hovered_at(Vec2 point) const;
 	[[nodiscard]] bool snapping() const;
 	[[nodiscard]] Vec4 color_for(Handle handle, Vec4 base) const;
 	[[nodiscard]] std::string readout() const;
@@ -115,6 +119,7 @@ class TransformGizmo final : public ViewportCanvas {
 	bool m_active = false;
 	bool m_left_was_down = false;
 	bool m_right_was_down = false;
+	bool m_drawn_snapping = false;
 	Drag m_drag;
 };
 

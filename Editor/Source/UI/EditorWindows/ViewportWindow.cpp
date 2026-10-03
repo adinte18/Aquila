@@ -268,7 +268,7 @@ void ViewportWindow::wire_show_menu(UI::Core::View &content) {
 			check->add_class("overlay-check");
 			row->add_child<UI::Core::Label>(std::string(label))->add_class("overlay-check-text");
 			check->on_changed.connect([this, flag](const bool &enabled) {
-				m_overlay->options().*flag = enabled;
+				m_overlay->set_option(flag, enabled);
 				m_debug_refresh_timer = 0.F;
 				Foundation::FrameScheduler::get()->request_frame();
 			});

@@ -17,6 +17,8 @@ struct RenderView {
 	F32 aspect = 1.F;
 	bool is_orthographic = false;
 	bool valid = false;
+
+	bool operator==(const RenderView &) const = default;
 };
 
 } // namespace Aquila::Rendering

@@ -39,7 +39,8 @@ class ViewportOverlay final : public ViewportCanvas {
 	[[nodiscard]] std::string_view get_type_name() const override { return "ViewportOverlay"; }
 
 	void sync(const Rect &viewport, const Aquila::Rendering::RenderView &view);
-	[[nodiscard]] Options &options() { return m_options; }
+	[[nodiscard]] const Options &options() const { return m_options; }
+	void set_option(bool Options::*flag, bool enabled);
 	[[nodiscard]] bool wants_debug_info() const {
 		return m_options.render_status || m_options.statistics || m_options.gpu_timings;
 	}

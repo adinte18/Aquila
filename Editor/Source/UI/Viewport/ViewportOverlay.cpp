@@ -48,17 +48,31 @@ ViewportOverlay::ViewportOverlay(EditorContext &context) : ViewportCanvas(9), m_
 
 void ViewportOverlay::sync(const Rect &viewport, const Rendering::RenderView &view) {
 	fit(viewport);
-	m_viewport = viewport;
-	m_view = view;
 
-	m_label.clear();
-	m_label_anchor.reset();
+	std::string label;
+	Option<Vec2> label_anchor;
 	Entity selected = m_context.selection.get();
 	if (m_context.selection.has() && selected.has_component<TransformComponent>()) {
 		const Vec3 origin = Vec3(selected.get_component<TransformComponent>().get_world_matrix_lazy()[3]);
-		m_label_anchor = Rendering::project_to_screen(view, viewport, origin);
-		m_label = selected.get_name();
+		label_anchor = Rendering::project_to_screen(view, viewport, origin);
+		label = selected.get_name();
 	}
+
+	if (viewport == m_viewport && view == m_view && label == m_label && label_anchor == m_label_anchor) {
+		return;
+	}
+	m_viewport = viewport;
+	m_view = view;
+	m_label = std::move(label);
+	m_label_anchor = label_anchor;
+	redraw();
+}
+
+void ViewportOverlay::set_option(bool Options::*flag, bool enabled) {
+	if (m_options.*flag == enabled) {
+		return;
+	}
+	m_options.*flag = enabled;
 	redraw();
 }
 

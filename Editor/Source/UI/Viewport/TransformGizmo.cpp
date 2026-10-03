@@ -182,16 +182,31 @@ void TransformGizmo::sync(const Rect &viewport, const Rendering::RenderView &vie
 	}
 
 	const bool local_axes = m_active ? m_drag.local_axes : wants_local_axes(m_context.tools.get_tool());
-	m_frame = compute_frame(viewport, view, local_axes);
+	Frame frame = compute_frame(viewport, view, local_axes);
+	bool changed = frame != m_frame;
+	m_frame = std::move(frame);
 
-	Handle hovered = Handle::None;
-	if (m_active) {
-		hovered = m_drag.handle;
-	} else if (m_frame.valid && viewport.contains(mouse)) {
-		hovered = pick(mouse);
-	}
+	const Handle hovered = hovered_at(mouse);
+	changed = changed || hovered != m_hovered;
 	m_hovered = hovered;
-	redraw();
+
+	const bool snap = m_active && snapping();
+	changed = changed || snap != m_drawn_snapping;
+	m_drawn_snapping = snap;
+
+	if (changed) {
+		redraw();
+	}
+}
+
+TransformGizmo::Handle TransformGizmo::hovered_at(Vec2 point) const {
+	if (m_active) {
+		return m_drag.handle;
+	}
+	if (m_frame.valid && m_frame.viewport.contains(point)) {
+		return pick(point);
+	}
+	return Handle::None;
 }
 
 TransformGizmo::Handle TransformGizmo::pick(Vec2 point) const {
@@ -353,6 +368,8 @@ bool TransformGizmo::begin(Handle handle, Vec2 mouse, bool modal, bool local_axe
 	const Vec2 from_center = mouse - f.center;
 	m_drag.previous_angle = Math::atan2(from_center.y, from_center.x);
 	m_active = true;
+	m_hovered = handle;
+	redraw();
 	Foundation::FrameScheduler::get()->request_frame();
 	return true;
 }
@@ -373,6 +390,7 @@ void TransformGizmo::update_drag(Vec2 mouse) {
 		apply_scale(mouse);
 		break;
 	}
+	redraw();
 }
 
 void TransformGizmo::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
@@ -391,6 +409,18 @@ void TransformGizmo::on_mouse_press(Platform::MouseButton btn, Vec2 pos) {
 void TransformGizmo::on_mouse_move(Vec2 pos) {
 	if (m_active && !m_drag.modal && m_is_pressed) {
 		update_drag(pos);
+	}
+}
+
+void TransformGizmo::on_mouse_hover(Vec2 pos) {
+	if (m_active && m_drag.modal) {
+		update_drag(pos);
+		return;
+	}
+	const Handle hovered = hovered_at(pos);
+	if (hovered != m_hovered) {
+		m_hovered = hovered;
+		redraw();
 	}
 }
 
@@ -431,6 +461,7 @@ void TransformGizmo::finish() {
 	if (m_drag.entity.exists()) {
 		m_context.selection.on_entity_modified(m_drag.entity);
 	}
+	redraw();
 	Foundation::FrameScheduler::get()->request_frame();
 }
 
