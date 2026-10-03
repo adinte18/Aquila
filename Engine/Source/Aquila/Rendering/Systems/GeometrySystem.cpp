@@ -11,6 +11,7 @@
 #include "Aquila/Scene/Components/TransformComponent.h"
 #include "Aquila/Scene/Components/MaterialComponent.h"
 #include "Aquila/Foundation/Color.h"
+#include "Aquila/Foundation/FrameScheduler.h"
 
 namespace Aquila::Rendering {
 
@@ -43,6 +44,7 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 	};
 
 	std::unordered_map<Material *, std::vector<DrawCall>> batches;
+	bool animated = false;
 
 	for (auto entity : view) {
 		if (!SceneManagement::is_visible_in_hierarchy(registry, entity)) {
@@ -59,10 +61,15 @@ void GeometrySystem::add_passes(RG::RenderGraph &graph, FrameContext &ctx) {
 			continue;
 		}
 
+		animated = animated || mat->material->uses_time();
 		batches[mat->material.get()].push_back({ .gpu_mesh = get_or_upload_mesh(mesh.data),
 												 .model = transform.get_world_matrix(),
 												 .material_index = mat->material_index,
 												 .receives_shadows = static_cast<Uint32>(mesh.receive_shadows) });
+	}
+
+	if (animated) {
+		Foundation::FrameScheduler::get()->request_frame();
 	}
 
 	auto *frame_data = ctx.frame_data;

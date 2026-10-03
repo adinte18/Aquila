@@ -108,6 +108,7 @@ Ref<Material> MaterialFactory::create(GFX::GfxContext &ctx, const std::string &s
 	Ref<Material> mat = Material::create_from_shader(ctx, *entry.program, pipeline);
 	mat->set_type(info.type);
 	mat->m_shader_path = shader_path;
+	mat->m_uses_time = entry.program->reads_frame_time();
 
 	entry.instances.push_back(mat);
 	return mat;
@@ -132,10 +133,12 @@ void MaterialFactory::rebuild_entry(GFX::GfxContext &ctx, Entry &entry, const st
 
 	ctx.wait_idle();
 
+	const bool uses_time = entry.program->reads_frame_time();
 	auto it = entry.instances.begin();
 	while (it != entry.instances.end()) {
 		if (auto mat = it->lock()) {
 			mat->replace_pipeline(new_pipeline, new_layout);
+			mat->m_uses_time = uses_time;
 			++it;
 		} else {
 			it = entry.instances.erase(it);

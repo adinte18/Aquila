@@ -1,8 +1,11 @@
 #include "Aquila/Graphics/Shader/ShaderProgram.h"
+#include "Aquila/RHI/SpirvInspection.h"
 #include "Aquila/RHI/Vulkan/VulkanShaderCompiler.h"
 #include "Aquila/GFX/GfxContext.h"
 #include "Aquila/Foundation/Macros.h"
 #include <slang/slang.h>
+
+#include <algorithm>
 
 namespace Aquila::Graphics::Shader {
 
@@ -113,6 +116,11 @@ void ShaderProgram::cleanup() {
 	m_stages.clear();
 	m_reflected_bindings.clear();
 	m_descriptor_set_layout.reset();
+}
+
+bool ShaderProgram::reads_frame_time() const {
+	return std::ranges::any_of(
+		m_stages, [](const ShaderStage &stage) { return RHI::spirv_reads_member(stage.spirv, "FrameData", "time"); });
 }
 
 RHI::ShaderStageDesc ShaderProgram::get_stage_desc(RHI::ShaderStageFlags stage) const {

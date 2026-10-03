@@ -71,6 +71,7 @@ class ShaderProgram {
 
 	// Returns SPIRV stage desc for pipeline creation via GfxContext
 	[[nodiscard]] RHI::ShaderStageDesc get_stage_desc(RHI::ShaderStageFlags stage) const;
+	[[nodiscard]] bool reads_frame_time() const;
 
   private:
 	GFX::GfxContext &m_context;

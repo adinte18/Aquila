@@ -69,6 +69,7 @@ class Material {
 	[[nodiscard]] MaterialType get_type() const { return m_type; }
 	void set_type(MaterialType type) { m_type = type; }
 	[[nodiscard]] const std::string &get_shader_path() const { return m_shader_path; }
+	[[nodiscard]] bool uses_time() const { return m_uses_time; }
 
   private:
 	Material() = default;
@@ -81,6 +82,7 @@ class Material {
 	Ref<GFX::GfxPipeline> m_pipeline;
 	MaterialType m_type = MaterialType::PBR;
 	std::string m_shader_path;
+	bool m_uses_time = false;
 	Ref<GFX::GfxDescriptorSetLayout> m_layout;
 
 	std::array<Ref<GFX::GfxDescriptorSet>, SharedConstants::MAX_FRAMES_IN_FLIGHT> m_sets;
