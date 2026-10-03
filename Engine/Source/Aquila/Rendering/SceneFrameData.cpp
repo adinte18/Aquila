@@ -223,7 +223,7 @@ static GpuCameraData build_camera_data(const RenderView &view, Uint32 index, Uin
 static GpuLightData build_light_data(const LightComponent &light, const TransformComponent &transform) {
 	GpuLightData data{};
 
-	data.m_position_and_range = Vec4(Vec3(transform.get_local_position()), light.m_range);
+	data.m_position_and_range = Vec4(transform.get_world_position(), light.m_range);
 	data.m_color_and_intensity = Vec4(light.m_color, light.m_intensity);
 	data.m_direction_and_type = Vec4(light.m_direction, static_cast<float>(light.m_type));
 	data.m_shadow_index = -1;
@@ -236,7 +236,7 @@ static GpuLightData build_light_data(const LightComponent &light, const Transfor
 		break;
 	}
 	case LightComponent::Type::Area: {
-		const Mat3 rot = glm::mat3_cast(transform.get_local_rotation());
+		const Mat3 rot = glm::mat3_cast(transform.get_world_rotation());
 		const Vec3 right = rot[0];
 		const Vec3 up = rot[1];
 		data.m_right_and_width = Vec4(right, light.m_area_size.x);
