@@ -328,6 +328,25 @@ void EntityManager::attach_to(Entity parent, Entity node) {
  * @return true if entityToCheck is a descendant of potentialParent, false
  * otherwise.
  */
+std::vector<Entity> EntityManager::get_children(Entity parent) const {
+	if (!parent.is_valid()) {
+		return {};
+	}
+	const auto *node = parent.try_get_component<Components::SceneNodeComponent>();
+	return node != nullptr ? node->children : std::vector<Entity>{};
+}
+
+std::optional<Entity> EntityManager::get_parent(Entity child) const {
+	if (!child.is_valid()) {
+		return std::nullopt;
+	}
+	const auto *node = child.try_get_component<Components::SceneNodeComponent>();
+	if (node == nullptr || !node->parent.is_valid()) {
+		return std::nullopt;
+	}
+	return node->parent;
+}
+
 bool EntityManager::is_descendant(Entity potential_parent, Entity entity_to_check) {
 	auto *node = potential_parent.try_get_component<Components::SceneNodeComponent>();
 	if (node == nullptr) {
