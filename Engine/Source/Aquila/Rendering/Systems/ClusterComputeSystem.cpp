@@ -66,7 +66,7 @@ void ClusterComputeSystem::on_init(GFX::GfxContext &ctx) {
 	m_output_buffer = ctx.create_buffer({
 		.size = sizeof(GpuAABB) * K_ELEMENT_COUNT,
 		.usage = RHI::BufferUsage::StorageBuffer,
-		.domain = RHI::MemoryDomain::GpuToCpu,
+		.domain = RHI::MemoryDomain::GpuOnly,
 		.debug_name = "ClusterCompute_AABBOutput",
 	});
 
@@ -103,14 +103,6 @@ void ClusterComputeSystem::add_passes(Graphics::RG::RenderGraph &graph, FrameCon
 			cmd.bind_descriptor_set(1, *m_storage_set);
 			cmd.dispatch((m_grid_data.grid.x + 4 - 1) / 4, (m_grid_data.grid.y + 4 - 1) / 4,
 						 (m_grid_data.grid.z + 4 - 1) / 4);
-
-			if (!m_verified) {
-				auto *data = static_cast<Uint32 *>(m_output_buffer->map());
-				if (data) {
-					m_output_buffer->unmap();
-				}
-				m_verified = true;
-			}
 		});
 
 	ctx.h_cluster_aab_bs = h_aab_bs;

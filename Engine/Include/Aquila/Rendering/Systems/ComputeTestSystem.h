@@ -25,7 +25,6 @@ class ClusterComputeSystem : public RenderingSystemBase {
 	Ref<GFX::GfxBuffer> m_output_buffer;
 	Ref<GFX::GfxBuffer> m_grid_buffer;
 	Ref<GFX::GfxDescriptorSet> m_storage_set;
-	bool m_verified = false;
 	GridData m_grid_data{};
 };
 
