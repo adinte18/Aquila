@@ -50,7 +50,10 @@ std::streamsize LogCaptureBuf::xsputn(const char *s, std::streamsize n) {
 }
 
 ConsolePanel::ConsolePanel(UI::Core::TextureCache *texture_cache) : m_texture_cache(texture_cache) {
-	m_capture_buf.set_callback([this](std::string line) { m_pending.push_back(std::move(line)); });
+	m_capture_buf.set_callback([this](std::string line) {
+		const std::scoped_lock lock(m_pending_mutex);
+		m_pending.push_back(std::move(line));
+	});
 	Logger::enable_colors(false);
 	Logger::set_sink(&m_capture_stream);
 }
@@ -113,11 +116,19 @@ void ConsolePanel::build(UI::Core::View *panel, UI::Core::View * /*overlayRoot*/
 }
 
 void ConsolePanel::flush_pending() {
-	if (m_pending.empty() || (m_scroll_view == nullptr) || (m_view == nullptr)) {
+	if ((m_scroll_view == nullptr) || (m_view == nullptr)) {
+		return;
+	}
+	std::vector<std::string> lines;
+	{
+		const std::scoped_lock lock(m_pending_mutex);
+		lines.swap(m_pending);
+	}
+	if (lines.empty()) {
 		return;
 	}
 	const bool follow_output = m_scroll_view->is_at_bottom();
-	for (auto &line : m_pending) {
+	for (auto &line : lines) {
 		const LogLevel level = parse_level(line);
 		const std::string_view tag = level_tag(level);
 		const Usize tag_pos = tag.empty() ? std::string::npos : line.find(tag);
@@ -128,7 +139,6 @@ void ConsolePanel::flush_pending() {
 		}
 		append_entry(std::move(entry));
 	}
-	m_pending.clear();
 	update_filter_buttons();
 	if (follow_output) {
 		m_scroll_view->scroll_to_bottom();

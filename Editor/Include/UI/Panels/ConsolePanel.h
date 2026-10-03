@@ -12,6 +12,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <mutex>
 
 namespace Editor {
 
@@ -71,6 +72,7 @@ class ConsolePanel : public IEditorPanel {
 	LogCaptureBuf m_capture_buf;
 	std::ostream m_capture_stream{ &m_capture_buf };
 
+	std::mutex m_pending_mutex;
 	std::vector<std::string> m_pending;
 	std::vector<LogEntry> m_entries;
 

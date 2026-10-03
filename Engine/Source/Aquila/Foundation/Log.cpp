@@ -1,6 +1,17 @@
 #include "Aquila/Foundation/Log.h"
 
+#include <mutex>
+
 namespace Aquila::Foundation {
+
+namespace {
+
+std::mutex &write_mutex() {
+	static std::mutex mutex;
+	return mutex;
+}
+
+}
 
 #ifdef AQUILA_DEBUG
 LogLevel Logger::s_currentLevel = LogLevel::Debug;
@@ -21,6 +32,7 @@ LogLevel Logger::get_log_level() {
 }
 
 void Logger::set_sink(std::ostream *buf) {
+	const std::scoped_lock lock(write_mutex());
 	s_sink = buf;
 }
 
@@ -80,8 +92,10 @@ void Logger::write(LogLevel level, std::string_view message, const std::source_l
 		prefix = std::format("{} {}{}{}", prefix, dim_color, format_location(location), reset);
 	}
 
+	const std::string line = std::format("{} {}\n", prefix, message);
+	const std::scoped_lock lock(write_mutex());
 	auto &stream = s_sink ? *s_sink : (level >= LogLevel::Error) ? std::cerr : std::cout;
-	stream << std::format("{} {}\n", prefix, message);
+	stream << line;
 	stream.flush();
 }
 
@@ -97,7 +111,9 @@ std::string Logger::get_timestamp() {
 	localtime_s(&buf, &time_t);
 	ss << std::put_time(&buf, "%H:%M:%S");
 #else
-	ss << std::put_time(std::localtime(&time_t), "%H:%M:%S");
+	tm buf{};
+	localtime_r(&time_t, &buf);
+	ss << std::put_time(&buf, "%H:%M:%S");
 #endif
 
 	ss << std::format(".{:03d}", ms.count());
