@@ -160,10 +160,14 @@ Unique<DockPanel> EditorWindows::create_panel(const std::string &panel_id) {
 	window->build(*panel);
 
 	if (overlay != nullptr) {
+		std::vector<View *> created;
 		for (const auto &child : overlay->get_children()) {
 			if (std::ranges::find(before, child.get()) == before.end()) {
-				window->m_overlays.emplace_back(child.get());
+				created.push_back(child.get());
 			}
+		}
+		for (View *view : created) {
+			window->m_overlays.emplace_back(panel->add_child(overlay->detach_child(view)));
 		}
 	}
 
