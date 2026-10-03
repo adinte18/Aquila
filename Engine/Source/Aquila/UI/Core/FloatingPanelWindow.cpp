@@ -55,6 +55,11 @@ void FloatingPanelWindow::on_event(Events::Event &event) {
 	m_canvas->on_event(event);
 }
 
+Platform::CursorType FloatingPanelWindow::get_cursor() const {
+	const View *hovered = m_canvas->get_hovered_view();
+	return hovered != nullptr ? hovered->get_cursor() : Platform::CursorType::Arrow;
+}
+
 bool FloatingPanelWindow::has_content() const {
 	return (m_dock_space != nullptr) && m_dock_space->has_any_panels();
 }

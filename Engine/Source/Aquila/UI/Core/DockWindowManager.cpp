@@ -139,6 +139,7 @@ void DockWindowManager::spawn_floating_panel(Unique<View> panel_subtree, std::st
 	};
 	callbacks.on_event = [panel](Platform::Events::Event &event) { panel->on_event(event); };
 	callbacks.on_close = [this, panel] { on_floating_closed(panel); };
+	callbacks.cursor = [panel] { return panel->get_cursor(); };
 	callbacks.forward_events = true;
 
 	const Aquila::Rendering::RenderWindowId window =

@@ -303,6 +303,7 @@ Rendering::RenderWindowId Application::create_window(Uint32 width, Uint32 height
 	rw.on_render = std::move(callbacks.on_render);
 	rw.on_event = std::move(callbacks.on_event);
 	rw.on_close = std::move(callbacks.on_close);
+	rw.cursor = std::move(callbacks.cursor);
 	rw.forward_events = callbacks.forward_events;
 	return rw.window.get();
 }
@@ -384,6 +385,9 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 
 	if (rw.on_update) {
 		rw.on_update(m_frame_delta);
+	}
+	if (rw.cursor) {
+		rw.window->set_cursor(rw.cursor());
 	}
 
 	if (!rw.on_render) {

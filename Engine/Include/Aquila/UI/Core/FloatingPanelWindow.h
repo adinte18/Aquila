@@ -2,6 +2,7 @@
 #define AQUILA_UI_CORE_FLOATING_PANEL_WINDOW_H
 
 #include "Aquila/Foundation/PrimitiveTypes.h"
+#include "Aquila/Platform/Cursor.h"
 
 #include <string>
 #include <vector>
@@ -37,6 +38,7 @@ class FloatingPanelWindow {
 	[[nodiscard]] const std::string &get_title() const { return m_title; }
 	[[nodiscard]] DockSpace *get_dock_space() const { return m_dock_space; }
 	[[nodiscard]] Canvas *get_canvas() const { return m_canvas.get(); }
+	[[nodiscard]] Platform::CursorType get_cursor() const;
 
   private:
 	Unique<Canvas> m_canvas;

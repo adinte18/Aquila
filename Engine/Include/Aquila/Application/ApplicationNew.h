@@ -48,6 +48,7 @@ struct RenderWindow {
 	Delegate<void(Graphics::Renderer2D &, GFX::GfxCommandList &)> on_render;
 	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
+	Delegate<Platform::CursorType()> cursor;
 	bool forward_events = false;
 };
 
