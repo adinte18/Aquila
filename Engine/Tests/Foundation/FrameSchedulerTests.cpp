@@ -2,6 +2,8 @@
 
 #include "Aquila/Foundation/FrameScheduler.h"
 
+#include <thread>
+
 using Aquila::Foundation::FrameScheduler;
 
 namespace {
@@ -35,6 +37,34 @@ TEST_SUITE("FrameScheduler") {
 		CHECK_FALSE(scheduler->consume());
 	}
 
+	TEST_CASE("a timed request only becomes pending once it is due") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		CHECK_FALSE(scheduler->seconds_until_deadline().has_value());
+
+		scheduler->request_frame_in(0.05);
+		CHECK_FALSE(scheduler->is_pending());
+		CHECK_FALSE(scheduler->consume());
+		REQUIRE(scheduler->seconds_until_deadline().has_value());
+		CHECK(*scheduler->seconds_until_deadline() <= 0.05);
+
+		std::this_thread::sleep_for(std::chrono::milliseconds(70));
+		CHECK(scheduler->is_pending());
+		CHECK(scheduler->consume());
+		CHECK_FALSE(scheduler->seconds_until_deadline().has_value());
+		CHECK_FALSE(scheduler->consume());
+	}
+
+	TEST_CASE("the earliest timed request wins") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		scheduler->request_frame_in(10.0);
+		scheduler->request_frame_in(0.5);
+		scheduler->request_frame_in(5.0);
+		REQUIRE(scheduler->seconds_until_deadline().has_value());
+		CHECK(*scheduler->seconds_until_deadline() <= 0.5);
+	}
+
 	TEST_CASE("a targeted request renders only its target") {
 		SchedulerScope scope;
 		FrameScheduler *scheduler = FrameScheduler::get();
@@ -54,5 +84,27 @@ TEST_SUITE("FrameScheduler") {
 		FrameScheduler *scheduler = FrameScheduler::get();
 		scheduler->request_frame(nullptr);
 		CHECK(scheduler->consume());
+	}
+
+	TEST_CASE("a targeted timer wakes only its target") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		int window = 0;
+		scheduler->request_frame_in(0.0, &window);
+		CHECK(scheduler->is_pending());
+		CHECK_FALSE(scheduler->consume());
+		CHECK(scheduler->consume(&window));
+		CHECK_FALSE(scheduler->is_pending());
+	}
+
+	TEST_CASE("forgetting a target drops its requests and timers") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		int window = 0;
+		scheduler->request_frame(&window);
+		scheduler->request_frame_in(10.0, &window);
+		scheduler->forget(&window);
+		CHECK_FALSE(scheduler->is_pending());
+		CHECK_FALSE(scheduler->seconds_until_deadline().has_value());
 	}
 }

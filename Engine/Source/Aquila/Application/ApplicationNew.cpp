@@ -116,7 +116,7 @@ void Application::run() {
 	Foundation::FrameScheduler *scheduler = Foundation::FrameScheduler::get();
 	while (m_running) {
 		if (!scheduler->is_pending()) {
-			m_window->wait_events();
+			m_window->wait_events(idle_timeout());
 		} else {
 			m_window->poll_events();
 		}
@@ -171,6 +171,10 @@ void Application::run() {
 	m_ctx->wait_idle();
 	detach_modules();
 	on_shutdown();
+}
+
+Option<F64> Application::idle_timeout() const {
+	return Foundation::FrameScheduler::get()->seconds_until_deadline();
 }
 
 void Application::attach_modules() {

@@ -192,8 +192,14 @@ void Window::poll_events() {
 	glfwPollEvents();
 }
 
-void Window::wait_events() {
-	glfwWaitEvents();
+void Window::wait_events(Option<F64> timeout_seconds) {
+	if (!timeout_seconds) {
+		glfwWaitEvents();
+	} else if (*timeout_seconds > 0.0) {
+		glfwWaitEventsTimeout(*timeout_seconds);
+	} else {
+		glfwPollEvents();
+	}
 }
 
 bool Window::should_close() const {

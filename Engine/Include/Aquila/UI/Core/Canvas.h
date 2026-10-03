@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Aquila/Foundation/Timer.h"
 #include "Aquila/Graphics/Core/Renderer2D.h"
 #include "Aquila/UI/Core/DrawCompositor.h"
 #include "Aquila/UI/Core/InputRouter.h"
@@ -65,6 +66,7 @@ class Canvas {
 
 	void set_frame_target(const void *target) { m_frame_target = target; }
 	[[nodiscard]] const void *get_frame_target() const { return m_frame_target; }
+	void request_frame_in(F64 seconds) const;
 
   private:
 	void mark_node_draw_dirty(View *node);
@@ -104,13 +106,13 @@ class Canvas {
 	void request_layout(); // mark layout dirty + request a frame (used by input/scroll)
 	void style_pass();
 	void animation_pass(F32 dt);
-	void update_tooltip(F32 dt);
+	void update_tooltip();
 
 	DragGhost *m_drag_ghost = nullptr;
 
 	Tooltip *m_tooltip = nullptr;
 	ViewRef m_tooltip_target;
-	F32 m_tooltip_timer = 0.F;
+	Foundation::TimePoint m_tooltip_hover_start;
 	bool m_tooltip_shown = false;
 };
 } // namespace Aquila::UI::Core

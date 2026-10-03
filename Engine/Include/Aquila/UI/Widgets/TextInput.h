@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Aquila/Foundation/Timer.h"
 #include "Aquila/UI/Widgets/Control.h"
 #include "Aquila/UI/Core/TextInputState.h"
 #include "Aquila/UI/Text/FontAtlas.h"
@@ -45,7 +46,7 @@ class TextInput : public Control {
 	std::string m_placeholder;
 	Text::FontAtlas *m_font = nullptr;
 	float m_scroll_offset_x = 0.F; // horizontal scroll offset in pixels
-	float m_blink_timer = 0.F;
+	Foundation::TimePoint m_blink_start = Foundation::now();
 	bool m_caret_visible = true;
 	bool m_ignore_next_char = false;
 };

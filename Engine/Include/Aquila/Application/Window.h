@@ -26,7 +26,7 @@ class Window {
 	~Window();
 
 	void poll_events();
-	void wait_events();
+	void wait_events(Option<F64> timeout_seconds = std::nullopt);
 	bool should_close() const;
 	void flush_pending_events();
 

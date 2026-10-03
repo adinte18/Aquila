@@ -8,6 +8,7 @@
 #include "Aquila/Rendering/CameraController.h"
 #include "Aquila/UI/Core/Canvas.h"
 #include "Aquila/UI/Core/View.h"
+#include "Aquila/UI/Widgets/TextInput.h"
 
 using namespace Aquila;
 using namespace Aquila::UI::Core;
@@ -66,6 +67,21 @@ TEST_SUITE("On-demand frames") {
 		canvas.get_root()->add_child<View>();
 		CHECK_FALSE(consume());
 		CHECK(FrameScheduler::get()->consume(&window));
+	}
+
+	TEST_CASE("a focused text input blinks on a timer instead of every frame") {
+		CanvasSingletonsScope singletons;
+		Canvas canvas(200, 200);
+		auto *input = canvas.get_root()->add_child<TextInput>();
+		input->request_focus();
+		REQUIRE(input->is_focused());
+		canvas.update(0.016F);
+		consume();
+
+		canvas.update(0.016F);
+		CHECK_FALSE(consume());
+		REQUIRE(FrameScheduler::get()->seconds_until_deadline().has_value());
+		CHECK(*FrameScheduler::get()->seconds_until_deadline() <= 0.53);
 	}
 
 	TEST_CASE("the camera only asks for frames while it is actually navigating") {

@@ -53,6 +53,10 @@ void Canvas::mark_dirty() {
 	}
 }
 
+void Canvas::request_frame_in(F64 seconds) const {
+	Aquila::Foundation::FrameScheduler::get()->request_frame_in(seconds, m_frame_target);
+}
+
 void Canvas::request_layout() {
 	m_layout_dirty = true;
 	mark_dirty();
@@ -296,7 +300,7 @@ void Canvas::scroll_into_view(View *target) {
 void Canvas::update(F32 delta_time) {
 	const bool outer_pass = std::exchange(m_in_frame_pass, true);
 	m_delta_time = delta_time;
-	update_tooltip(delta_time);
+	update_tooltip();
 	bool needs_frame = false;
 	if (!m_ticking.empty()) {
 		std::vector<View *> ticking_snapshot = m_ticking;
@@ -314,7 +318,7 @@ void Canvas::update(F32 delta_time) {
 	}
 }
 
-void Canvas::update_tooltip(F32 dt) {
+void Canvas::update_tooltip() {
 	if (m_tooltip == nullptr) {
 		return;
 	}
@@ -340,13 +344,12 @@ void Canvas::update_tooltip(F32 dt) {
 			mark_dirty();
 		}
 		m_tooltip_target = nullptr;
-		m_tooltip_timer = 0.F;
 		return;
 	}
 
 	if (owner != m_tooltip_target) {
 		m_tooltip_target = owner;
-		m_tooltip_timer = 0.F;
+		m_tooltip_hover_start = Foundation::now();
 		if (m_tooltip_shown) {
 			m_tooltip->hide();
 			m_tooltip_shown = false;
@@ -357,8 +360,8 @@ void Canvas::update_tooltip(F32 dt) {
 		return;
 	}
 
-	m_tooltip_timer += dt;
-	if (m_tooltip_timer >= K_TOOLTIP_DELAY) {
+	const F64 hovered_for = Foundation::elapsed_seconds(m_tooltip_hover_start, Foundation::now());
+	if (hovered_for >= K_TOOLTIP_DELAY) {
 		const Rect rect = owner->get_absolute_rect();
 		const Vec2 size = m_tooltip->measure(owner->get_tooltip());
 		const F32 canvas_w = static_cast<F32>(m_width);
@@ -385,7 +388,7 @@ void Canvas::update_tooltip(F32 dt) {
 		m_tooltip_shown = true;
 		mark_dirty();
 	} else {
-		Aquila::Foundation::FrameScheduler::get()->request_frame();
+		request_frame_in(K_TOOLTIP_DELAY - hovered_for);
 	}
 }
 

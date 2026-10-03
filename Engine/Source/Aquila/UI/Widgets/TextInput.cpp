@@ -161,19 +161,23 @@ void TextInput::on_focus_lost() {
 	queue_redraw();
 }
 
-bool TextInput::on_update(F32 delta_time) {
-	constexpr float k_blink_period = 0.53F;
-	m_blink_timer += delta_time;
-	if (m_blink_timer >= k_blink_period) {
-		m_blink_timer -= k_blink_period;
-		m_caret_visible = !m_caret_visible;
+bool TextInput::on_update(F32) {
+	constexpr F64 k_blink_period = 0.53;
+	const F64 elapsed = Foundation::elapsed_seconds(m_blink_start, Foundation::now());
+	const auto phase = static_cast<Int64>(elapsed / k_blink_period);
+	const bool visible = phase % 2 == 0;
+	if (visible != m_caret_visible) {
+		m_caret_visible = visible;
 		queue_redraw();
 	}
-	return is_focused();
+	if (Canvas *canvas = get_canvas(); canvas != nullptr && is_focused()) {
+		canvas->request_frame_in((static_cast<F64>(phase + 1) * k_blink_period) - elapsed);
+	}
+	return false;
 }
 
 void TextInput::reset_blink() {
-	m_blink_timer = 0.F;
+	m_blink_start = Foundation::now();
 	m_caret_visible = true;
 }
 

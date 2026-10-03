@@ -111,6 +111,7 @@ class Application : public Rendering::IRenderWindowHost {
 	void detach_modules();
 	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
+	[[nodiscard]] Option<F64> idle_timeout() const;
 	void internal_on_main_window_event(Platform::Events::Event &event);
 	void internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event);
 	void handle_resize();
