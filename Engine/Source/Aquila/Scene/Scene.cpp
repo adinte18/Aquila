@@ -311,6 +311,22 @@ bool Scene::serialize(const std::string &filepath) {
 											   { "OrthoBottom", cam.ortho_bottom } };
 		}
 
+		if (entity.has_component<Components::SkyLightComponent>()) {
+			const auto &sky = entity.get_component<Components::SkyLightComponent>();
+			const Vec3 tint = sky.get_tint();
+			const Vec3 ground = sky.get_ground_albedo();
+			entity_json["SkyLightComponent"] = { { "Active", sky.is_active() },
+												 { "Source", static_cast<int>(sky.get_source()) },
+												 { "SunElevation", sky.get_sun_elevation() },
+												 { "SunAzimuth", sky.get_sun_azimuth() },
+												 { "Turbidity", sky.get_turbidity() },
+												 { "GroundAlbedo", { ground.x, ground.y, ground.z } },
+												 { "Intensity", sky.get_intensity() },
+												 { "Tint", { tint.x, tint.y, tint.z } },
+												 { "RenderSkybox", sky.get_render_skybox() },
+												 { "SkyboxLod", sky.get_skybox_lod() } };
+		}
+
 		// Serialize MaterialComponent
 		if (entity.has_component<Components::MaterialComponent>()) {
 			auto &mat_comp = entity.get_component<Components::MaterialComponent>();
@@ -526,7 +542,17 @@ bool Scene::deserialize(const std::string &filepath) {
 			auto &sky_light = entity.get_or_emplace<Components::SkyLightComponent>();
 
 			sky_light.set_active(sky_light_json.value("Active", true));
+			sky_light.set_source(static_cast<Components::SkySource>(sky_light_json.value("Source", 0)));
+			sky_light.set_sun_elevation(sky_light_json.value("SunElevation", sky_light.get_sun_elevation()));
+			sky_light.set_sun_azimuth(sky_light_json.value("SunAzimuth", sky_light.get_sun_azimuth()));
+			sky_light.set_turbidity(sky_light_json.value("Turbidity", sky_light.get_turbidity()));
+			sky_light.set_skybox_lod(sky_light_json.value("SkyboxLod", sky_light.get_skybox_lod()));
 			sky_light.set_intensity(sky_light_json.value("Intensity", 1.0F));
+
+			if (sky_light_json.contains("GroundAlbedo")) {
+				const auto &ground = sky_light_json["GroundAlbedo"];
+				sky_light.set_ground_albedo(Vec3(ground[0].get<F32>(), ground[1].get<F32>(), ground[2].get<F32>()));
+			}
 
 			if (sky_light_json.contains("Tint")) {
 				Vec3 tint = Vec3(sky_light_json["Tint"][0].get<F32>(), sky_light_json["Tint"][1].get<F32>(),

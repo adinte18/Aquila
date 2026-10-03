@@ -53,6 +53,7 @@ struct SkyLightComponent {
 	[[nodiscard]] Vec3 get_tint() const noexcept { return m_tint; }
 	[[nodiscard]] bool is_dirty() const noexcept { return m_is_dirty; }
 	[[nodiscard]] bool should_render_skybox() const noexcept { return m_render_skybox && m_is_active; }
+	[[nodiscard]] bool get_render_skybox() const noexcept { return m_render_skybox; }
 
 	[[nodiscard]] Vec3 get_sun_direction() const noexcept {
 		const F32 elevation = Math::radians(m_sun_elevation);
