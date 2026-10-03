@@ -114,6 +114,7 @@ class Application : public Rendering::IRenderWindowHost {
 	F32 next_frame_delta();
 	[[nodiscard]] F64 seconds_until_frame_slot() const;
 	[[nodiscard]] Option<F64> idle_timeout() const;
+	void poll_shader_hot_reload();
 	void internal_on_main_window_event(Platform::Events::Event &event);
 	void internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event);
 	void handle_resize();
@@ -137,6 +138,7 @@ class Application : public Rendering::IRenderWindowHost {
 	F32 m_frame_delta = 0.F;
 	F64 m_frame_interval = 0.0;
 	Foundation::TimePoint m_last_frame_start{};
+	Foundation::TimePoint m_next_hot_reload_check{};
 
 	Uint32 m_render_width = 0;
 	Uint32 m_render_height = 0;

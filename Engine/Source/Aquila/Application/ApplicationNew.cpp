@@ -34,6 +34,7 @@ using namespace SceneManagement;
 
 namespace {
 constexpr F32 k_resume_delta = 1.F / 60.F;
+constexpr std::chrono::milliseconds k_hot_reload_interval{ 500 };
 
 bool is_cursor_event(const Platform::Events::Event &event) {
 	return (event.get_category() & Platform::Events::EventCategory::Mouse) &&
@@ -157,6 +158,8 @@ void Application::run() {
 			break;
 		}
 
+		poll_shader_hot_reload();
+
 		if (seconds_until_frame_slot() <= 0.0 && scheduler->is_pending()) {
 			m_last_frame_start = Foundation::now();
 			const bool full_frame = scheduler->consume();
@@ -192,7 +195,22 @@ F64 Application::seconds_until_frame_slot() const {
 }
 
 Option<F64> Application::idle_timeout() const {
-	return Foundation::FrameScheduler::get()->seconds_until_deadline();
+	Option<F64> timeout = Foundation::FrameScheduler::get()->seconds_until_deadline();
+	if (Graphics::Shader::ShaderHotReload::get()->is_enabled()) {
+		const F64 until_check =
+			std::max(Foundation::elapsed_seconds(Foundation::now(), m_next_hot_reload_check), 0.0);
+		timeout = timeout ? std::min(*timeout, until_check) : until_check;
+	}
+	return timeout;
+}
+
+void Application::poll_shader_hot_reload() {
+	const Foundation::TimePoint current = Foundation::now();
+	if (current < m_next_hot_reload_check) {
+		return;
+	}
+	m_next_hot_reload_check = current + k_hot_reload_interval;
+	Graphics::Shader::ShaderHotReload::get()->tick();
 }
 
 void Application::attach_modules() {
@@ -458,10 +476,6 @@ void Application::internal_update(F32 delta_time) {
 			module->on_pre_render(delta_time);
 		}
 		m_scene->get_entity_manager()->flush_deletion_queue();
-
-		{
-			Graphics::Shader::ShaderHotReload::get()->tick();
-		}
 
 		{
 			PROFILE_SCOPE("RenderPipeline::Render");
