@@ -4,6 +4,8 @@
 #include "Aquila/Foundation/Timer.h"
 
 #include <algorithm>
+#include <atomic>
+#include <thread>
 #include <vector>
 
 namespace Aquila::Foundation {
@@ -12,7 +14,14 @@ class FrameScheduler : public Singleton<FrameScheduler> {
   public:
 	using Target = const void *;
 
-	void request_frame() { m_dirty = true; }
+	void request_frame() {
+		if (m_dirty.load(std::memory_order_relaxed) || m_dirty.exchange(true)) {
+			return;
+		}
+		if (m_wake && std::this_thread::get_id() != m_owner) {
+			m_wake();
+		}
+	}
 
 	void request_frame(Target target) {
 		if (target == nullptr) {
@@ -37,7 +46,7 @@ class FrameScheduler : public Singleton<FrameScheduler> {
 	}
 
 	[[nodiscard]] bool is_pending() const {
-		if (m_dirty || !m_targets.empty()) {
+		if (m_dirty.load() || !m_targets.empty()) {
 			return true;
 		}
 		const TimePoint current = now();
@@ -54,11 +63,7 @@ class FrameScheduler : public Singleton<FrameScheduler> {
 
 	bool consume() {
 		promote_due_deadlines();
-		if (!m_dirty) {
-			return false;
-		}
-		m_dirty = false;
-		return true;
+		return m_dirty.exchange(false);
 	}
 
 	bool consume(Target target) {
@@ -78,6 +83,8 @@ class FrameScheduler : public Singleton<FrameScheduler> {
 		std::erase_if(m_deadlines, [target](const Deadline &deadline) { return deadline.target == target; });
 	}
 
+	void set_wake(Delegate<void()> wake) { m_wake = std::move(wake); }
+
   private:
 	friend class Singleton<FrameScheduler>;
 	FrameScheduler() = default;
@@ -94,7 +101,7 @@ class FrameScheduler : public Singleton<FrameScheduler> {
 				return false;
 			}
 			if (deadline.target == nullptr) {
-				m_dirty = true;
+				m_dirty.store(true);
 			} else if (std::ranges::find(m_targets, deadline.target) == m_targets.end()) {
 				m_targets.push_back(deadline.target);
 			}
@@ -102,9 +109,11 @@ class FrameScheduler : public Singleton<FrameScheduler> {
 		});
 	}
 
-	bool m_dirty = true; // always render the first frame
+	std::atomic<bool> m_dirty = true; // always render the first frame
 	std::vector<Target> m_targets;
 	std::vector<Deadline> m_deadlines;
+	Delegate<void()> m_wake;
+	std::thread::id m_owner = std::this_thread::get_id();
 };
 
 } // namespace Aquila::Foundation

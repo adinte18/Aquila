@@ -2,6 +2,7 @@
 
 #include "Aquila/Foundation/FrameScheduler.h"
 
+#include <atomic>
 #include <thread>
 
 using Aquila::Foundation::FrameScheduler;
@@ -106,5 +107,33 @@ TEST_SUITE("FrameScheduler") {
 		scheduler->forget(&window);
 		CHECK_FALSE(scheduler->is_pending());
 		CHECK_FALSE(scheduler->seconds_until_deadline().has_value());
+	}
+
+	TEST_CASE("requests on the owning thread never wake the loop") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		int wakes = 0;
+		scheduler->set_wake([&wakes] { ++wakes; });
+		scheduler->request_frame();
+		CHECK(wakes == 0);
+	}
+
+	TEST_CASE("requests from another thread wake the loop once per frame") {
+		SchedulerScope scope;
+		FrameScheduler *scheduler = FrameScheduler::get();
+		std::atomic<int> wakes = 0;
+		scheduler->set_wake([&wakes] { ++wakes; });
+
+		std::thread worker([scheduler] {
+			scheduler->request_frame();
+			scheduler->request_frame();
+		});
+		worker.join();
+		CHECK(wakes == 1);
+		CHECK(scheduler->consume());
+
+		std::thread second([scheduler] { scheduler->request_frame(); });
+		second.join();
+		CHECK(wakes == 2);
 	}
 }

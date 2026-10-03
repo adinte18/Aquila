@@ -202,6 +202,10 @@ void Window::wait_events(Option<F64> timeout_seconds) {
 	}
 }
 
+void Window::wake() {
+	glfwPostEmptyEvent();
+}
+
 bool Window::should_close() const {
 	return glfwWindowShouldClose(m_window) != 0;
 }

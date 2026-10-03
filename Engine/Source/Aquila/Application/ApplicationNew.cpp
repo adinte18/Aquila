@@ -203,6 +203,7 @@ void Application::init_rendering(Uint32 width, Uint32 height) {
 	Graphics::Shader::ShaderHotReload::init();
 	Graphics::Shader::ShaderHotReload::get()->enable(true);
 	Foundation::FrameScheduler::init();
+	Foundation::FrameScheduler::get()->set_wake([] { Window::wake(); });
 
 	using namespace Platform::Filesystem;
 	VirtualFileSystem::get()->mount("/resources", std::make_shared<NativeFileSystem>(SharedConstants::RESOURCES_DIR));

@@ -1,5 +1,6 @@
 #include "UI/Panels/ConsolePanel.h"
 
+#include "Aquila/Foundation/FrameScheduler.h"
 #include "Aquila/Foundation/Log.h"
 #include "Aquila/UI/Style/StyleProperties.h"
 #include "Aquila/GFX/GfxTexture.h"
@@ -51,8 +52,11 @@ std::streamsize LogCaptureBuf::xsputn(const char *s, std::streamsize n) {
 
 ConsolePanel::ConsolePanel(UI::Core::TextureCache *texture_cache) : m_texture_cache(texture_cache) {
 	m_capture_buf.set_callback([this](std::string line) {
-		const std::scoped_lock lock(m_pending_mutex);
-		m_pending.push_back(std::move(line));
+		{
+			const std::scoped_lock lock(m_pending_mutex);
+			m_pending.push_back(std::move(line));
+		}
+		FrameScheduler::get()->request_frame();
 	});
 	Logger::enable_colors(false);
 	Logger::set_sink(&m_capture_stream);
