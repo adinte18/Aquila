@@ -31,7 +31,7 @@ class CameraController {
 	[[nodiscard]] F32 get_move_speed() const { return m_move_speed; }
 
   private:
-	enum class NavMode { None, Fly, Orbit };
+	enum class NavMode : Uint8 { None, Fly, Orbit };
 
 	Camera m_camera;
 

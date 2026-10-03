@@ -43,8 +43,8 @@ class ProjectLauncher {
 	Delegate<void(const ProjectInfo &)> on_project_ready;
 
   private:
-	enum class Page { Recent, New, Learn };
-	enum class ActionMode { None, Rename, Delete };
+	enum class Page : Uint8 { Recent, New, Learn };
+	enum class ActionMode : Uint8 { None, Rename, Delete };
 
 	void build_header(Aquila::UI::Core::View *root);
 	void build_rail(Aquila::UI::Core::View *main);

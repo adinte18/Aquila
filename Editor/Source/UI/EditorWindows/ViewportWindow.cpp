@@ -38,13 +38,13 @@ struct ShadingMode {
 };
 
 constexpr std::array<ShadingMode, 7> k_shading_modes = { {
-	{ Rendering::DebugView::Lit, "Lit", "sun" },
-	{ Rendering::DebugView::Albedo, "Albedo", "palette" },
-	{ Rendering::DebugView::Normals, "Normals", "arrow-up-from-dot" },
-	{ Rendering::DebugView::Depth, "Depth", "blend" },
-	{ Rendering::DebugView::Wireframe, "Wireframe", "box" },
-	{ Rendering::DebugView::ShadowCascades, "Shadow Cascades", "layers-3" },
-	{ Rendering::DebugView::LightComplexity, "Light Complexity", "flame" },
+	{ .view = Rendering::DebugView::Lit, .label = "Lit", .icon = "sun" },
+	{ .view = Rendering::DebugView::Albedo, .label = "Albedo", .icon = "palette" },
+	{ .view = Rendering::DebugView::Normals, .label = "Normals", .icon = "arrow-up-from-dot" },
+	{ .view = Rendering::DebugView::Depth, .label = "Depth", .icon = "blend" },
+	{ .view = Rendering::DebugView::Wireframe, .label = "Wireframe", .icon = "box" },
+	{ .view = Rendering::DebugView::ShadowCascades, .label = "Shadow Cascades", .icon = "layers-3" },
+	{ .view = Rendering::DebugView::LightComplexity, .label = "Light Complexity", .icon = "flame" },
 } };
 
 struct ShowToggle {
@@ -53,10 +53,10 @@ struct ShowToggle {
 };
 
 constexpr std::array<ShowToggle, 4> k_show_toggles = { {
-	{ "Grid", &Rendering::RenderSettings::show_grid },
-	{ "Sky", &Rendering::RenderSettings::show_sky },
-	{ "Shadows", &Rendering::RenderSettings::show_shadows },
-	{ "Selection Outline", &Rendering::RenderSettings::show_outline },
+	{ .label = "Grid", .flag = &Rendering::RenderSettings::show_grid },
+	{ .label = "Sky", .flag = &Rendering::RenderSettings::show_sky },
+	{ .label = "Shadows", .flag = &Rendering::RenderSettings::show_shadows },
+	{ .label = "Selection Outline", .flag = &Rendering::RenderSettings::show_outline },
 } };
 
 } // namespace

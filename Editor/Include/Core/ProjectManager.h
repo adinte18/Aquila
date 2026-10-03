@@ -18,7 +18,7 @@ struct ProjectInfo {
 	[[nodiscard]] Uint64 last_activity() const { return last_opened != 0 ? last_opened : created; }
 };
 
-enum class ProjectTemplate { Empty, Sandbox };
+enum class ProjectTemplate : Uint8 { Empty, Sandbox };
 
 class ProjectManager {
   public:
