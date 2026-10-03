@@ -49,7 +49,7 @@ void Canvas::register_internal_observers() {
 void Canvas::mark_dirty() {
 	m_dirty = true;
 	if (!m_in_frame_pass) {
-		Aquila::Foundation::FrameScheduler::get()->request_frame();
+		Aquila::Foundation::FrameScheduler::get()->request_frame(m_frame_target);
 	}
 }
 
@@ -252,7 +252,7 @@ void Canvas::compute() {
 	m_dirty = false;
 	m_in_frame_pass = outer_pass;
 	if (m_style_engine.has_pending()) {
-		Aquila::Foundation::FrameScheduler::get()->request_frame();
+		Aquila::Foundation::FrameScheduler::get()->request_frame(m_frame_target);
 	}
 }
 
@@ -310,7 +310,7 @@ void Canvas::update(F32 delta_time) {
 	animation_pass(delta_time);
 	m_in_frame_pass = outer_pass;
 	if (needs_frame || !m_active_anims.empty()) {
-		Aquila::Foundation::FrameScheduler::get()->request_frame();
+		Aquila::Foundation::FrameScheduler::get()->request_frame(m_frame_target);
 	}
 }
 

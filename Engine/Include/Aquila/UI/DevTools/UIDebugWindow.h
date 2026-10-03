@@ -37,6 +37,7 @@ class UIDebugWindow {
 	void update(F32 delta_time);
 	void render(Aquila::Graphics::Renderer2D &batcher, Aquila::GFX::GfxCommandList &cmd);
 	void on_event(Aquila::Platform::Events::Event &event);
+	void set_frame_target(const void *target);
 
 	void refresh();
 	void select_view(Aquila::UI::Core::View *view);

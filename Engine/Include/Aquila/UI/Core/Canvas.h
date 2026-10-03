@@ -63,6 +63,9 @@ class Canvas {
 	bool is_draw_list_dirty() const { return m_draw_list_dirty; }
 	void clear_draw_list_dirty() { m_draw_list_dirty = false; }
 
+	void set_frame_target(const void *target) { m_frame_target = target; }
+	[[nodiscard]] const void *get_frame_target() const { return m_frame_target; }
+
   private:
 	void mark_node_draw_dirty(View *node);
 	void dismiss_popups_outside(View *hit);
@@ -94,6 +97,7 @@ class Canvas {
 	bool m_layout_dirty = true;
 	bool m_dirty = true;
 	bool m_in_frame_pass = false;
+	const void *m_frame_target = nullptr;
 	bool m_draw_list_dirty = true; // true when draw list was rebuilt this frame
 
 	void mark_dirty();

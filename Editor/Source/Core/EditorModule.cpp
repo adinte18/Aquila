@@ -81,7 +81,10 @@ void EditorModule::open_project_launcher() {
 	m_project_launcher = std::make_unique<ProjectLauncher>();
 	m_project_launcher->build(m_project_manager.get(), m_texture_cache.get(), 900, 600,
 							  Config::get_preferences().ui.style_paths);
-	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) { m_pending_project = project; };
+	m_project_launcher->on_project_ready = [this](const ProjectInfo &project) {
+		m_pending_project = project;
+		Aquila::Foundation::FrameScheduler::get()->request_frame();
+	};
 
 	m_launcher_window = Aquila::Rendering::open_content_window(m_engine->get_window_host(), *m_project_launcher, 900,
 															   600, "Aquila - Projects", [this] {

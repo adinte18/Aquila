@@ -116,7 +116,7 @@ class Application : public Rendering::IRenderWindowHost {
 	void handle_resize();
 	void init_rendering(Uint32 width, Uint32 height);
 
-	void render_secondary_windows();
+	void render_secondary_windows(bool all);
 	void render_one_secondary_window(RenderWindow &rw);
 	void ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 height);
 

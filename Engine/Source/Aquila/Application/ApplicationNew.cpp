@@ -33,6 +33,11 @@ namespace Aquila::Application {
 using namespace SceneManagement;
 
 namespace {
+bool is_cursor_event(const Platform::Events::Event &event) {
+	return (event.get_category() & Platform::Events::EventCategory::Mouse) &&
+		!(event.get_category() & Platform::Events::EventCategory::MouseButton);
+}
+
 struct FrameGuard {
 	AQUILA_NONCOPYABLE(FrameGuard);
 	AQUILA_NONMOVEABLE(FrameGuard);
@@ -108,13 +113,12 @@ void Application::run() {
 	on_init();
 	attach_modules();
 
+	Foundation::FrameScheduler *scheduler = Foundation::FrameScheduler::get();
 	while (m_running) {
-		const bool has_frames = Foundation::FrameScheduler::get()->consume();
-
-		if (has_frames) {
-			m_window->poll_events();
-		} else {
+		if (!scheduler->is_pending()) {
 			m_window->wait_events();
+		} else {
+			m_window->poll_events();
 		}
 
 		m_window->flush_pending_events();
@@ -132,7 +136,7 @@ void Application::run() {
 		}
 		if (any_closing) {
 			m_ctx->wait_idle();
-			std::erase_if(m_secondary_windows, [](const Unique<RenderWindow> &rw) {
+			std::erase_if(m_secondary_windows, [scheduler](const Unique<RenderWindow> &rw) {
 				if (!rw->window->should_close()) {
 					return false;
 				}
@@ -140,6 +144,7 @@ void Application::run() {
 					rw->on_close();
 				}
 				Platform::Input::on_window_destroyed(rw->window.get());
+				scheduler->forget(rw->window.get());
 				return true;
 			});
 		}
@@ -149,11 +154,16 @@ void Application::run() {
 			break;
 		}
 
-		if (has_frames) {
+		if (scheduler->is_pending()) {
+			const bool full_frame = scheduler->consume();
 			m_timer->tick();
 
 			PROFILE_FRAME_BEGIN();
-			internal_update(m_timer->get_delta_time());
+			if (full_frame) {
+				internal_update(m_timer->get_delta_time());
+			} else {
+				render_secondary_windows(false);
+			}
 			PROFILE_FRAME_END();
 		}
 	}
@@ -294,8 +304,16 @@ void Application::ensure_window_targets(RenderWindow &rw, Uint32 width, Uint32 h
 	}
 }
 
-void Application::render_secondary_windows() {
+void Application::render_secondary_windows(bool all) {
+	Foundation::FrameScheduler *scheduler = Foundation::FrameScheduler::get();
+	std::vector<RenderWindow *> due;
 	for (auto &rw : m_secondary_windows) {
+		if (scheduler->consume(rw->window.get()) || all) {
+			due.push_back(rw.get());
+		}
+	}
+	scheduler->clear_targets();
+	for (RenderWindow *rw : due) {
 		render_one_secondary_window(*rw);
 	}
 }
@@ -340,7 +358,7 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 	Uint32 image_index = 0;
 	if (!rw.swapchain->acquire_next_image(image_index, false)) {
 		AQUILA_LOG_DEBUG("Secondary swapchain out of date, scheduling another frame");
-		Foundation::FrameScheduler::get()->request_frame();
+		Foundation::FrameScheduler::get()->request_frame(rw.window.get());
 		return;
 	}
 
@@ -359,7 +377,7 @@ void Application::render_one_secondary_window(RenderWindow &rw) {
 
 	if (rw.swapchain->needs_resize()) {
 		AQUILA_LOG_DEBUG("Secondary swapchain needs a resize after presenting, scheduling another frame");
-		Foundation::FrameScheduler::get()->request_frame();
+		Foundation::FrameScheduler::get()->request_frame(rw.window.get());
 	}
 }
 
@@ -438,13 +456,11 @@ void Application::internal_update(F32 delta_time) {
 		}
 	}
 
-	render_secondary_windows();
+	render_secondary_windows(true);
 }
 
 void Application::internal_on_main_window_event(Platform::Events::Event &event) {
-	const bool is_cursor_event = (event.get_category() & Platform::Events::EventCategory::Mouse) &&
-		!(event.get_category() & Platform::Events::EventCategory::MouseButton);
-	if (!is_cursor_event) {
+	if (!is_cursor_event(event)) {
 		Foundation::FrameScheduler::get()->request_frame();
 	}
 
@@ -469,7 +485,9 @@ void Application::internal_on_main_window_event(Platform::Events::Event &event) 
 }
 
 void Application::internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event) {
-	Foundation::FrameScheduler::get()->request_frame();
+	if (!is_cursor_event(event)) {
+		Foundation::FrameScheduler::get()->request_frame(rw.window.get());
+	}
 
 	Platform::Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([&](auto &) {

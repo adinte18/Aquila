@@ -185,6 +185,10 @@ void SettingsWindow::render(Graphics::Renderer2D &batcher, GFX::GfxCommandList &
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
+void SettingsWindow::set_frame_target(const void *target) {
+	m_canvas->set_frame_target(target);
+}
+
 void SettingsWindow::on_event(Platform::Events::Event &event) {
 	Platform::Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &e) {

@@ -160,6 +160,10 @@ void WidgetGalleryWindow::render(Graphics::Renderer2D &batcher, GFX::GfxCommandL
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
+void WidgetGalleryWindow::set_frame_target(const void *target) {
+	m_canvas->set_frame_target(target);
+}
+
 void WidgetGalleryWindow::on_event(Platform::Events::Event &event) {
 	Platform::Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &e) {

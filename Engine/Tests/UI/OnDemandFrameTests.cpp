@@ -53,6 +53,21 @@ TEST_SUITE("On-demand frames") {
 		CHECK_FALSE(consume());
 	}
 
+	TEST_CASE("a canvas with a frame target only asks for its own window") {
+		CanvasSingletonsScope singletons;
+		Canvas canvas(200, 200);
+		int window = 0;
+		canvas.set_frame_target(&window);
+		canvas.update(0.016F);
+		canvas.compute();
+		consume();
+		FrameScheduler::get()->consume(&window);
+
+		canvas.get_root()->add_child<View>();
+		CHECK_FALSE(consume());
+		CHECK(FrameScheduler::get()->consume(&window));
+	}
+
 	TEST_CASE("the camera only asks for frames while it is actually navigating") {
 		CanvasSingletonsScope singletons;
 		Rendering::CameraController controller;

@@ -353,6 +353,10 @@ void UIDebugWindow::render(Graphics::Renderer2D &batcher, GFX::GfxCommandList &c
 	m_canvas->submit_to_quad_batcher(batcher, cmd);
 }
 
+void UIDebugWindow::set_frame_target(const void *target) {
+	m_canvas->set_frame_target(target);
+}
+
 void UIDebugWindow::on_event(Platform::Events::Event &event) {
 	Platform::Events::EventDispatcher dispatcher(event);
 	dispatcher.dispatch<Platform::Events::WindowResizeEvent>([this](Platform::Events::WindowResizeEvent &e) {
