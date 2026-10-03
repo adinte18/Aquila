@@ -330,8 +330,15 @@ bool Scene::serialize(const std::string &filepath) {
 		// Serialize MaterialComponent
 		if (entity.has_component<Components::MaterialComponent>()) {
 			auto &mat_comp = entity.get_component<Components::MaterialComponent>();
+			const auto &surface = mat_comp.surface_properties;
 			entity_json["MaterialComponent"] = {
 				{ "Type", static_cast<int>(mat_comp.type) },
+				{ "Albedo", { surface.albedo.x, surface.albedo.y, surface.albedo.z, surface.albedo.w } },
+				{ "Emissive", { surface.emissive.x, surface.emissive.y, surface.emissive.z, surface.emissive.w } },
+				{ "Metallic", surface.metallic },
+				{ "Roughness", surface.roughness },
+				{ "NormalStrength", surface.normal_strength },
+				{ "AoStrength", surface.ao_strength },
 			};
 		}
 
@@ -574,6 +581,20 @@ bool Scene::deserialize(const std::string &filepath) {
 			const auto &mat_json = entityData["MaterialComponent"];
 			auto &mat_comp = entity.get_or_emplace<Components::MaterialComponent>();
 			mat_comp.type = static_cast<Graphics::MaterialType>(mat_json.value("Type", 0));
+
+			auto &surface = mat_comp.surface_properties;
+			auto read_vec4 = [&mat_json](const char *key, Vec4 &out) {
+				if (mat_json.contains(key)) {
+					const auto &v = mat_json[key];
+					out = Vec4(v[0].get<F32>(), v[1].get<F32>(), v[2].get<F32>(), v[3].get<F32>());
+				}
+			};
+			read_vec4("Albedo", surface.albedo);
+			read_vec4("Emissive", surface.emissive);
+			surface.metallic = mat_json.value("Metallic", surface.metallic);
+			surface.roughness = mat_json.value("Roughness", surface.roughness);
+			surface.normal_strength = mat_json.value("NormalStrength", surface.normal_strength);
+			surface.ao_strength = mat_json.value("AoStrength", surface.ao_strength);
 		}
 	}
 
