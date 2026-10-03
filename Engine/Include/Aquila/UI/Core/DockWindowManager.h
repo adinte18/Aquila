@@ -11,6 +11,7 @@
 
 namespace Aquila::UI::Core {
 
+class Canvas;
 class DockSpace;
 class View;
 
@@ -23,6 +24,8 @@ class DockWindowManager {
 	AQUILA_NONMOVEABLE(DockWindowManager);
 
 	void set_main_dock_space(DockSpace *dock_space);
+
+	[[nodiscard]] Canvas *find_canvas(Aquila::Rendering::RenderWindowId window) const;
 
   private:
 	struct FloatingEntry {

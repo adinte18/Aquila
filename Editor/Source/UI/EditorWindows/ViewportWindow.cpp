@@ -146,9 +146,11 @@ void ViewportWindow::update(F32 delta_time) {
 
 	camera->set_viewport_rect(viewport.position, viewport.size);
 	camera->set_viewport_size(static_cast<Uint32>(viewport.size.x), static_cast<Uint32>(viewport.size.y));
-	const UI::Core::View *hovered = context().canvas().get_hovered_view();
-	const bool over_surface = hovered == m_panel->get_view() ||
-							  (m_gizmo != nullptr && hovered == m_gizmo && !m_gizmo->is_over_handle());
+	const UI::Core::View *surface = m_panel->get_view();
+	const UI::Core::Canvas *canvas = surface != nullptr ? surface->get_canvas() : nullptr;
+	const UI::Core::View *hovered = canvas != nullptr ? canvas->get_hovered_view() : nullptr;
+	const bool over_surface =
+		hovered == surface || (m_gizmo != nullptr && hovered == m_gizmo && !m_gizmo->is_over_handle());
 	camera->set_navigation_blocked(!over_surface || m_view_camera.is_valid());
 	camera->update(delta_time);
 	const Rendering::RenderView view = current_view();

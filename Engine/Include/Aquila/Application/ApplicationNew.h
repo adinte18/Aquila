@@ -48,6 +48,7 @@ struct RenderWindow {
 	Delegate<void(Graphics::Renderer2D &, GFX::GfxCommandList &)> on_render;
 	Delegate<void(Platform::Events::Event &)> on_event;
 	Delegate<void()> on_close;
+	bool forward_events = false;
 };
 
 class Application : public Rendering::IRenderWindowHost {

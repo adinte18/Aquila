@@ -157,14 +157,27 @@ void EditorModule::on_pre_render(F32 delta_time) {
 	m_engine->get_window().set_cursor(m_ui_host->get_active_cursor());
 }
 
+Aquila::UI::Core::Canvas *EditorModule::canvas_for(Events::EventSource source) const {
+	if (source == m_engine->get_window_host().get_main_window()) {
+		return &m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
+	}
+	return m_dock_manager ? m_dock_manager->find_canvas(source) : nullptr;
+}
+
 void EditorModule::on_event(Events::Event &event) {
+	Aquila::UI::Core::Canvas *source_canvas = canvas_for(event.get_source());
+	if (source_canvas == nullptr) {
+		return;
+	}
+	const bool from_main = event.get_source() == m_engine->get_window_host().get_main_window();
+
 	Events::EventDispatcher dispatcher(event);
 
 	if (m_editor_camera) {
 		m_editor_camera->on_event(event);
 	}
 
-	if (m_devtools && m_devtools->on_event(event)) {
+	if (from_main && m_devtools && m_devtools->on_event(event)) {
 		return;
 	}
 
@@ -183,7 +196,9 @@ void EditorModule::on_event(Events::Event &event) {
 		return false;
 	});
 
-	m_ui_host->on_event(event);
+	if (from_main) {
+		m_ui_host->on_event(event);
+	}
 
 	Events::EventDispatcher post(event);
 	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
@@ -207,13 +222,12 @@ void EditorModule::on_event(Events::Event &event) {
 			return false;
 		}
 	});
-	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
+	post.dispatch<Events::KeyPressedEvent>([this, source_canvas](Events::KeyPressedEvent &e) {
 		if (!m_context || e.get_mods() != 0 ||
 			Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right)) {
 			return false;
 		}
-		auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
+		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(source_canvas->get_focused_view())) {
 			return false;
 		}
 		switch (e.get_key_code()) {
@@ -241,12 +255,11 @@ void EditorModule::on_event(Events::Event &event) {
 			return false;
 		}
 	});
-	post.dispatch<Events::KeyPressedEvent>([this](Events::KeyPressedEvent &e) {
+	post.dispatch<Events::KeyPressedEvent>([this, source_canvas](Events::KeyPressedEvent &e) {
 		if (e.get_key_code() != Events::KeyCode::S || e.get_mods() != Events::MODIFIER_SHIFT) {
 			return false;
 		}
-		auto &canvas = m_ui_host->get_canvas(Aquila::UI::Core::UILayer::Editor);
-		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(canvas.get_focused_view())) {
+		if (Aquila::UI::Core::view_is<Aquila::UI::Core::TextInput>(source_canvas->get_focused_view())) {
 			return false;
 		}
 		if (Aquila::Platform::Input::is_mouse_button_pressed(Events::MouseButton::Right) ||

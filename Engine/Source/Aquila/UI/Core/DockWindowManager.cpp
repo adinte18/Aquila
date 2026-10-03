@@ -28,6 +28,15 @@ void DockWindowManager::set_main_dock_space(DockSpace *dock_space) {
 	wire_dock_space(dock_space, m_host.get_main_window());
 }
 
+Canvas *DockWindowManager::find_canvas(Aquila::Rendering::RenderWindowId window) const {
+	for (const auto &entry : m_floating_panels) {
+		if (entry.window == window) {
+			return entry.panel->get_canvas();
+		}
+	}
+	return nullptr;
+}
+
 void DockWindowManager::wire_dock_space(DockSpace *dock_space, Aquila::Rendering::RenderWindowId source) {
 	dock_space->set_tear_off_callback([this, source](Unique<View> sub, std::string title, Vec2 pos) {
 		handle_tear_off(source, std::move(sub), std::move(title), pos);
@@ -130,6 +139,7 @@ void DockWindowManager::spawn_floating_panel(Unique<View> panel_subtree, std::st
 	};
 	callbacks.on_event = [panel](Platform::Events::Event &event) { panel->on_event(event); };
 	callbacks.on_close = [this, panel] { on_floating_closed(panel); };
+	callbacks.forward_events = true;
 
 	const Aquila::Rendering::RenderWindowId window =
 		m_host.create_window(k_floating_width, k_floating_height, title, std::move(callbacks));

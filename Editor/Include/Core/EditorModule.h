@@ -16,6 +16,7 @@
 #include "Aquila/UI/Core/DockLayoutSerializer.h"
 
 namespace Aquila::UI::Core {
+class Canvas;
 class DockSpace;
 class DockWindowManager;
 class View;
@@ -54,6 +55,7 @@ class EditorModule final : public Aquila::Application::IModule {
 	void register_windows();
 	void register_workspaces();
 
+	[[nodiscard]] Aquila::UI::Core::Canvas *canvas_for(Aquila::Platform::Events::EventSource source) const;
 	F32 window_aspect();
 	void new_empty_scene();
 	void reset_to_demo_scene();

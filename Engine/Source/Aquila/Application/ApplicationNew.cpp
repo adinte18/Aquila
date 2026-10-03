@@ -303,6 +303,7 @@ Rendering::RenderWindowId Application::create_window(Uint32 width, Uint32 height
 	rw.on_render = std::move(callbacks.on_render);
 	rw.on_event = std::move(callbacks.on_event);
 	rw.on_close = std::move(callbacks.on_close);
+	rw.forward_events = callbacks.forward_events;
 	return rw.window.get();
 }
 
@@ -536,7 +537,11 @@ void Application::internal_on_main_window_event(Platform::Events::Event &event) 
 
 void Application::internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event) {
 	if (!is_cursor_event(event)) {
-		Foundation::FrameScheduler::get()->request_frame(rw.window.get());
+		if (rw.forward_events) {
+			Foundation::FrameScheduler::get()->request_frame();
+		} else {
+			Foundation::FrameScheduler::get()->request_frame(rw.window.get());
+		}
 	}
 
 	Platform::Events::EventDispatcher dispatcher(event);
@@ -547,6 +552,12 @@ void Application::internal_on_secondary_window_event(RenderWindow &rw, Platform:
 
 	if (rw.on_event) {
 		rw.on_event(event);
+	}
+
+	if (rw.forward_events) {
+		for (auto &module : m_modules) {
+			module->on_event(event);
+		}
 	}
 }
 

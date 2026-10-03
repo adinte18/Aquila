@@ -36,6 +36,7 @@ class FloatingPanelWindow {
 	Unique<View> detach_content();
 	[[nodiscard]] const std::string &get_title() const { return m_title; }
 	[[nodiscard]] DockSpace *get_dock_space() const { return m_dock_space; }
+	[[nodiscard]] Canvas *get_canvas() const { return m_canvas.get(); }
 
   private:
 	Unique<Canvas> m_canvas;
