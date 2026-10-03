@@ -104,4 +104,11 @@ TEST_SUITE("Procedural meshes") {
 		CHECK_FALSE(Mesh::generate_from_path("procedural://teapot").has_value());
 		CHECK_FALSE(Mesh::generate_from_path("/app/models/statue.glb").has_value());
 	}
+
+	TEST_CASE("changing a mesh bumps its revision") {
+		Mesh mesh("Test");
+		const Uint64 before = mesh.get_revision();
+		mesh.load_from_data(Mesh::generate_cube(1.F));
+		CHECK(mesh.get_revision() > before);
+	}
 }

@@ -163,6 +163,7 @@ void Mesh::load(const std::string &filepath) {
 	m_vertex_count = static_cast<Uint32>(m_vertices.size());
 	m_index_count = static_cast<Uint32>(m_indices.size());
 	m_has_index_buffer = m_index_count > 0;
+	++m_revision;
 
 	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_debug_name, m_vertex_count, m_index_count);
 }
@@ -187,6 +188,7 @@ void Mesh::load_from_data(const MeshData &mesh_data) {
 	prim.first_index = 0;
 	prim.index_count = m_index_count;
 	m_primitives = { prim };
+	++m_revision;
 
 	AQUILA_LOG_INFO("Loaded mesh '{}' - {} vertices, {} indices", m_debug_name, m_vertex_count, m_index_count);
 }
@@ -207,6 +209,7 @@ void Mesh::center_mesh_at_origin() {
 	for (auto &v : m_vertices) {
 		v.pos = Vec4(Vec3(v.pos) - center, 1.F);
 	}
+	++m_revision;
 
 	AQUILA_LOG_INFO("Centered mesh '{}' by ({}, {}, {})", m_debug_name, center.x, center.y, center.z);
 }

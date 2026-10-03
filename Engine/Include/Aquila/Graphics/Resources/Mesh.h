@@ -54,6 +54,7 @@ class Mesh {
 	[[nodiscard]] Uint32 get_vertex_count() const { return m_vertex_count; }
 	[[nodiscard]] Uint32 get_index_count() const { return m_index_count; }
 	[[nodiscard]] bool has_index_buffer() const { return m_has_index_buffer; }
+	[[nodiscard]] Uint64 get_revision() const { return m_revision; }
 
   private:
 	std::string m_debug_name;
@@ -66,6 +67,7 @@ class Mesh {
 	Uint32 m_vertex_count = 0;
 	Uint32 m_index_count = 0;
 	bool m_has_index_buffer = false;
+	Uint64 m_revision = 0;
 };
 
 } // namespace Aquila::Graphics::Resources
