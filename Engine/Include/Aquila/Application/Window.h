@@ -28,6 +28,7 @@ class Window {
 	void poll_events();
 	void wait_events(Option<F64> timeout_seconds = std::nullopt);
 	static void wake();
+	[[nodiscard]] static F64 highest_refresh_rate();
 	bool should_close() const;
 	void flush_pending_events();
 

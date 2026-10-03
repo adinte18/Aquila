@@ -206,6 +206,18 @@ void Window::wake() {
 	glfwPostEmptyEvent();
 }
 
+F64 Window::highest_refresh_rate() {
+	int count = 0;
+	GLFWmonitor **monitors = glfwGetMonitors(&count);
+	int highest = 0;
+	for (int i = 0; i < count; ++i) {
+		if (const GLFWvidmode *mode = glfwGetVideoMode(monitors[i])) {
+			highest = std::max(highest, mode->refreshRate);
+		}
+	}
+	return highest > 0 ? static_cast<F64>(highest) : 60.0;
+}
+
 bool Window::should_close() const {
 	return glfwWindowShouldClose(m_window) != 0;
 }

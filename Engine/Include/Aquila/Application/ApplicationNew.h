@@ -111,6 +111,7 @@ class Application : public Rendering::IRenderWindowHost {
 	void detach_modules();
 	void route_window_event(Platform::Events::Event &event);
 	void internal_update(F32 delta_time);
+	[[nodiscard]] F64 seconds_until_frame_slot() const;
 	[[nodiscard]] Option<F64> idle_timeout() const;
 	void internal_on_main_window_event(Platform::Events::Event &event);
 	void internal_on_secondary_window_event(RenderWindow &rw, Platform::Events::Event &event);
@@ -131,6 +132,8 @@ class Application : public Rendering::IRenderWindowHost {
 	bool m_running = true;
 	bool m_pending_resize = false;
 	bool m_frame_in_progress = false;
+	F64 m_frame_interval = 0.0;
+	Foundation::TimePoint m_last_frame_start{};
 
 	Uint32 m_render_width = 0;
 	Uint32 m_render_height = 0;

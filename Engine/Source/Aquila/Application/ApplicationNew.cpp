@@ -113,10 +113,13 @@ void Application::run() {
 	on_init();
 	attach_modules();
 
+	m_frame_interval = 1.0 / Window::highest_refresh_rate();
 	Foundation::FrameScheduler *scheduler = Foundation::FrameScheduler::get();
 	while (m_running) {
 		if (!scheduler->is_pending()) {
 			m_window->wait_events(idle_timeout());
+		} else if (const F64 until_slot = seconds_until_frame_slot(); until_slot > 0.0) {
+			m_window->wait_events(until_slot);
 		} else {
 			m_window->poll_events();
 		}
@@ -154,7 +157,8 @@ void Application::run() {
 			break;
 		}
 
-		if (scheduler->is_pending()) {
+		if (seconds_until_frame_slot() <= 0.0 && scheduler->is_pending()) {
+			m_last_frame_start = Foundation::now();
 			const bool full_frame = scheduler->consume();
 			m_timer->tick();
 
@@ -171,6 +175,10 @@ void Application::run() {
 	m_ctx->wait_idle();
 	detach_modules();
 	on_shutdown();
+}
+
+F64 Application::seconds_until_frame_slot() const {
+	return m_frame_interval - Foundation::elapsed_seconds(m_last_frame_start, Foundation::now());
 }
 
 Option<F64> Application::idle_timeout() const {
